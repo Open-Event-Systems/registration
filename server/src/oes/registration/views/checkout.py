@@ -1,5 +1,5 @@
 """Checkout views."""
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Optional
 from uuid import UUID
 
@@ -245,7 +245,7 @@ async def update_checkout(
 
     _validate_checkout_and_event(checkout, cart_data, events, user)
 
-    # lock rows and verify changes can be applied before completing the transaction
+    # lock rows and verify changes can be applied before completing the checkout
     if not checkout.changes_applied:
         registration_entities, access_codes, error_response = await _validate_changes(
             cart_data, registration_service, access_code_service, True
@@ -254,33 +254,34 @@ async def update_checkout(
         if error_response:
             await db.rollback()
             return error_response
+
     else:
         registration_entities = {}
         access_codes = {}
 
-    try:
-        result = await checkout_service.update_checkout(checkout, body.value)
-    except ValidationError as e:
-        raise BodyValidationError(e)
-    except CheckoutStateError as e:
-        raise HTTPException(409, str(e))
+    result = await _update_checkout(body.value, checkout, checkout_service)
 
     # After this point, any error will roll back the database but will not cancel or
     # refund the transaction
-
     try:
-        response = await _handle_update(
-            registration_entities,
-            access_codes,
-            registration_service,
-            account_service,
-            event_service,
-            checkout,
-            result,
-            hook_sender,
-        )
+        if result.state == CheckoutState.complete and not checkout.changes_applied:
+            updated_entities = await _apply_changes(
+                checkout,
+                registration_entities,
+                access_codes,
+                registration_service,
+                account_service,
+                hook_sender,
+            )
+
+            # Assign registration numbers at the end, so the row storing the number
+            # does not stay locked while updating the checkout
+            await _assign_registration_numbers(
+                cart_data, updated_entities, event_service
+            )
+
         await db.commit()
-        return response
+        return _make_checkout_update_response(result, checkout)
     except Exception:
         # TODO: use a specific logger?
         logger.opt(exception=True).error(
@@ -302,55 +303,6 @@ def _validate_checkout_and_event(
     event = events.get_event(cart_data.event_id)
     if not event or not event.is_open_to(user):
         raise HTTPException(409)
-
-
-async def _handle_update(
-    registration_entities: Mapping[UUID, RegistrationEntity],
-    access_codes: Mapping[str, AccessCodeEntity],
-    registration_service: RegistrationService,
-    account_service: AccountService,
-    event_service: EventService,
-    checkout_entity: CheckoutEntity,
-    checkout_result: PaymentServiceCheckout,
-    hook_sender: HookSender,
-):
-    if (
-        checkout_result.state == CheckoutState.complete
-        and not checkout_entity.changes_applied
-    ):
-        updated = await apply_checkout_changes(
-            checkout_entity,
-            registration_entities,
-            access_codes,
-            registration_service,
-            account_service,
-            hook_sender,
-        )
-        cart_data = checkout_entity.get_cart_data()
-        event_id = cart_data.event_id
-
-        # Assign registration numbers at the end, so the row storing the number
-        # does not stay locked while updating the checkout
-        event_stats = await event_service.get_event_stats(event_id, lock=True)
-        assign_registration_numbers(event_stats, updated)
-
-    if checkout_result.is_open:
-        return Response(
-            200,
-            content=Content(
-                b"application/json",
-                get_converter().dumps(
-                    CreateCheckoutResponse(
-                        id=checkout_entity.id,
-                        service=checkout_entity.service,
-                        external_id=checkout_result.id,
-                        data=checkout_result.response_data,
-                    )
-                ),
-            ),
-        )
-    else:
-        return Response(204)
 
 
 async def _validate_changes(
@@ -389,6 +341,70 @@ async def _validate_changes(
         )
     else:
         return registrations, access_codes, None
+
+
+async def _update_checkout(
+    body: dict,
+    checkout: CheckoutEntity,
+    checkout_service: CheckoutService,
+) -> PaymentServiceCheckout:
+    try:
+        return await checkout_service.update_checkout(checkout, body)
+    except ValidationError as e:
+        raise BodyValidationError(e)
+    except CheckoutStateError as e:
+        raise HTTPException(409, str(e))
+
+
+async def _apply_changes(
+    checkout_entity: CheckoutEntity,
+    registration_entities: Mapping[UUID, RegistrationEntity],
+    access_codes: Mapping[str, AccessCodeEntity],
+    registration_service: RegistrationService,
+    account_service: AccountService,
+    hook_sender: HookSender,
+) -> list[RegistrationEntity]:
+    results = await apply_checkout_changes(
+        checkout_entity,
+        registration_entities,
+        access_codes,
+        registration_service,
+        account_service,
+        hook_sender,
+    )
+    checkout_entity.changes_applied = True
+    return results
+
+
+async def _assign_registration_numbers(
+    cart_data: CartData,
+    registration_entities: Iterable[RegistrationEntity],
+    event_service: EventService,
+):
+    event_stats = await event_service.get_event_stats(cart_data.event_id, lock=True)
+    assign_registration_numbers(event_stats, registration_entities)
+
+
+def _make_checkout_update_response(
+    checkout_result: PaymentServiceCheckout, checkout_entity: CheckoutEntity
+):
+    if checkout_result.is_open:
+        return Response(
+            200,
+            content=Content(
+                b"application/json",
+                get_converter().dumps(
+                    CreateCheckoutResponse(
+                        id=checkout_entity.id,
+                        service=checkout_entity.service,
+                        external_id=checkout_result.id,
+                        data=checkout_result.response_data,
+                    )
+                ),
+            ),
+        )
+    else:
+        return Response(204)
 
 
 async def _validate_checkout_method(

@@ -195,41 +195,6 @@ class CheckoutService:
         res = await service.get_checkout(external_id, extra_data)
         return res
 
-    async def validate_changes(
-        self,
-        checkout_entity: CheckoutEntity,
-        registration_service: RegistrationService,
-        *,
-        lock: bool = False,
-    ) -> list[RegistrationEntity]:
-        """Validate that cart changes can be applied.
-
-        Warning:
-            Even though registration rows can be locked, two concurrent checkouts can
-            create the same new registration and experience a conflict.
-
-        Args:
-            checkout_entity: The :class:`CheckoutEntity`.
-            registration_service: The :class:`RegistrationService`.
-            lock: Whether to lock the registrations.
-
-        Returns:
-            A list of :class:`RegistrationEntity` which changes cannot be applied to.
-        """
-        invalid = []
-
-        cart_data = checkout_entity.get_cart_data()
-        registrations = await registration_service.get_registrations(
-            (r.id for r in cart_data.registrations), lock=lock
-        )
-        registrations_by_id = {r.id: r for r in registrations}
-        for cart_registration in cart_data.registrations:
-            entity = registrations_by_id.get(cart_registration.id)
-            if entity and not entity.validate_changes_from_cart(cart_registration):
-                invalid.append(entity)
-
-        return invalid
-
     async def cancel_checkout(
         self,
         id: UUID,
