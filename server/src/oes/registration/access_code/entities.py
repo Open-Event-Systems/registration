@@ -1,10 +1,11 @@
 """Access code entities."""
+import re
 import secrets
 from datetime import datetime
 from typing import Optional
 
+from oes.registration.access_code.models import AccessCodeSettings
 from oes.registration.entities.base import Base, JSONData
-from oes.registration.models.access_code import AccessCodeSettings
 from oes.registration.serialization import get_converter
 from oes.registration.util import get_now
 from sqlalchemy import String
@@ -64,9 +65,15 @@ class AccessCodeEntity(Base):
 
 
 # TODO: placeholder for now, investigate different options
-_code_chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+_code_chars = "BCDFGHJKLMNPQRSTVWXYZ23456789"
 
 
 def generate_code() -> str:
     """Generate a code."""
-    return "".join(secrets.choice(_code_chars) for _ in range(12))
+    # 2^43 should be reasonable especially since codes have a set lifetime
+    return "".join(secrets.choice(_code_chars) for _ in range(9))
+
+
+def normalize_code(code: str) -> str:
+    """Return the code with unnecessary characters removed."""
+    return re.sub(r"[^a-z]+", "", code, re.I)

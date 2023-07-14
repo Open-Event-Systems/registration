@@ -1,14 +1,14 @@
 from datetime import datetime
 
 import pytest
-from oes.registration.entities.access_code import AccessCodeEntity, generate_code
+from oes.registration.access_code.entities import AccessCodeEntity, generate_code
 
 
 def test_generate_code():
     # not super robust
     code1 = generate_code()
     code2 = generate_code()
-    assert len(code1) == 12
+    assert len(code1) == 9
     assert code1 != code2
 
 

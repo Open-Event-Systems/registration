@@ -1,10 +1,13 @@
 """Access code service."""
-from collections.abc import Sequence
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Sequence
 
-from oes.registration.entities.access_code import AccessCodeEntity, generate_code
-from oes.registration.models.access_code import AccessCodeSettings
+from oes.registration.access_code.entities import (
+    AccessCodeEntity,
+    generate_code,
+    normalize_code,
+)
+from oes.registration.access_code.models import AccessCodeSettings
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +27,7 @@ class AccessCodeService:
             code: The code.
             lock: Whether to lock the resource.
         """
+        code = normalize_code(code)
         return await self.db.get(AccessCodeEntity, code, with_for_update=lock)
 
     async def create_access_code(

@@ -1,9 +1,12 @@
 """Cart service."""
 import asyncio
+from collections.abc import Mapping
 from inspect import iscoroutinefunction
 from typing import Optional
 from uuid import UUID
 
+from oes.registration.access_code.entities import AccessCodeEntity
+from oes.registration.access_code.service import AccessCodeService
 from oes.registration.auth.account_service import AccountService
 from oes.registration.entities.cart import CartEntity
 from oes.registration.entities.registration import RegistrationEntity
@@ -104,84 +107,173 @@ async def _call_pricing_hooks(
     return cur_result
 
 
-async def validate_changes_apply(
-    registration_service: RegistrationService,
+_err_out_of_date = (
+    "This registration has changed. Please remove it and make your changes again."
+)
+
+_err_access_code = (
+    "The access code is no longer valid. Please remove it and make your changes again."
+)
+
+
+def validate_changes(
     cart_data: CartData,
-    *,
-    lock: bool = False,
-) -> list[RegistrationEntity]:
+    registration_entities: Mapping[UUID, RegistrationEntity],
+    access_codes: Mapping[str, AccessCodeEntity],
+) -> Mapping[UUID, str]:
     """Validate that cart changes can be applied.
 
-    Warning:
-        Even though registration rows can be locked, two concurrent checkouts can
-        create the same new registration and experience a conflict.
+    Args:
+        cart_data: The :class:`CartData`.
+        registration_entities: A mapping of IDs to :class:`RegistrationEntity`.
+        access_codes: A mapping of access codes to :class:`AccessCodeEntity`.
+
+    Returns:
+        A mapping of registration IDs to error messages.
+    """
+    errors = {}
+
+    for cart_registration in cart_data.registrations:
+        entity = registration_entities.get(cart_registration.id)
+        if entity and not entity.validate_changes_from_cart(cart_registration):
+            errors[cart_registration.id] = _err_out_of_date
+
+        if not _validate_access_code(cart_registration, access_codes):
+            errors[cart_registration.id] = _err_access_code
+
+    return errors
+
+
+def _validate_access_code(
+    cart_registration: CartRegistration,
+    access_codes: Mapping[str, AccessCodeEntity],
+) -> bool:
+    if cart_registration.access_code is not None:
+        access_code = access_codes.get(cart_registration.access_code)
+        if not access_code or not access_code.check_valid():
+            return False
+    return True
+
+
+async def get_registration_entities_from_cart(
+    cart_data: CartData,
+    registration_service: RegistrationService,
+    *,
+    lock: bool = False,
+) -> Mapping[UUID, Optional[RegistrationEntity]]:
+    """Get the :class:`RegistrationEntity` for each registration in a cart.
 
     Args:
         cart_data: The :class:`CartData`.
         registration_service: The :class:`RegistrationService`.
-        lock: Whether to lock the registrations.
+        lock: Whether to lock tne entities.
 
     Returns:
-        A list of :class:`RegistrationEntity` which changes cannot be applied to.
+        A mapping of registration IDs to entities.
     """
-    invalid = []
+    results = {}
 
     registrations = await registration_service.get_registrations(
-        (r.id for r in cart_data.registrations), lock=lock
+        (cr.id for cr in cart_data.registrations), lock=lock
+    )
+    for entity in registrations:
+        results[entity.id] = entity
+
+    return results
+
+
+async def get_access_codes_from_cart(
+    cart_data: CartData,
+    access_code_service: AccessCodeService,
+    *,
+    lock: bool = False,
+) -> Mapping[str, AccessCodeEntity]:
+    """Get the :class:`AccessCodeEntity` instances used in a cart."""
+    codes = sorted(
+        cr.access_code for cr in cart_data.registrations if cr.access_code is not None
     )
 
-    registrations_by_id = {r.id: r for r in registrations}
-    for cart_registration in cart_data.registrations:
-        entity = registrations_by_id.get(cart_registration.id)
-        if entity and not entity.validate_changes_from_cart(cart_registration):
-            invalid.append(entity)
+    results = {}
 
-    return invalid
+    for code in codes:
+        entity = await access_code_service.get_access_code(code, lock=lock)
+        if entity:
+            results[code] = entity
+
+    return results
 
 
 async def apply_changes(
+    cart_data: CartData,
+    registration_entities: Mapping[UUID, RegistrationEntity],
+    access_codes: Mapping[str, AccessCodeEntity],
     registration_service: RegistrationService,
     account_service: AccountService,
-    cart_data: CartData,
     hook_sender: HookSender,
 ) -> list[RegistrationEntity]:
-    """Apply all registration changes in a checkout.
+    """Apply changes from a cart.
+
+    The changes must have already been validated.
+
+    Marks access codes as used.
+
+    Schedules hooks for registration creation/update.
 
     Args:
-        registration_service: The :class:`RegistrationService`.
-        account_service: The :class:`AccountService`.
         cart_data: The :class:`CartData` to apply.
+        registration_entities: A mapping of registration IDs to entities.
+        access_codes: A mapping of access codes to entities.
+        registration_service: The registration service.
+        account_service: The account service.
         hook_sender: A :class:`HookSender` instance.
 
     Returns:
-        A list of the created/updated registrations.
-
-    Raises:
-        InvalidChangeError: If a registration is out of date.
+        A list of created/updated :class:`RegistrationEntity`.
     """
-    registrations = await registration_service.get_registrations(
-        (r.id for r in cart_data.registrations), lock=True
-    )
-    registrations_by_id = {r.id: r for r in registrations}
-
     results = []
 
     # update each registration, or create it if it doesn't exist
     for cart_registration in cart_data.registrations:
-        registration_entity = registrations_by_id.get(cart_registration.id)
-        if registration_entity:
-            await registration_entity.apply_changes_from_cart(
-                cart_registration, hook_sender
-            )
-        else:
-            # TODO: should we check if the old_data is blank?
-            registration_entity = RegistrationEntity.create_from_cart(cart_registration)
-            await registration_service.create_registration(registration_entity)
-            await _add_account(cart_registration, registration_entity, account_service)
+        entity = await _create_or_update_registration(
+            cart_registration,
+            registration_entities,
+            registration_service,
+            account_service,
+            hook_sender,
+        )
 
-        results.append(registration_entity)
+        results.append(entity)
+
+        _mark_access_code_used(cart_registration, access_codes)
 
     return results
+
+
+async def _create_or_update_registration(
+    cart_registration: CartRegistration,
+    registration_entities: Mapping[UUID, RegistrationEntity],
+    registration_service: RegistrationService,
+    account_service: AccountService,
+    hook_sender: HookSender,
+) -> RegistrationEntity:
+    entity = registration_entities.get(cart_registration.id)
+    if entity:
+        await entity.apply_changes_from_cart(cart_registration, hook_sender)
+    else:
+        entity = RegistrationEntity.create_from_cart(cart_registration)
+        await registration_service.create_registration(entity)
+        await _add_account(cart_registration, entity, account_service)
+
+    return entity
+
+
+def _mark_access_code_used(
+    cart_registration: CartRegistration,
+    access_codes: Mapping[str, AccessCodeEntity],
+):
+    if cart_registration.access_code is not None:
+        access_code = access_codes[cart_registration.access_code]
+        access_code.used = True
 
 
 async def _add_account(

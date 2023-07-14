@@ -4,12 +4,12 @@ from typing import Optional
 
 from attrs import frozen
 from blacksheep import Response, auth
+from oes.registration.access_code.models import AccessCodeSettings
+from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.handlers import RequireAdmin
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
-from oes.registration.models.access_code import AccessCodeSettings
-from oes.registration.services.access_code import AccessCodeService
 from oes.registration.util import check_not_found
 from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import AccessCodeListResponse, AccessCodeResponse

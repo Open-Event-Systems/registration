@@ -1,15 +1,15 @@
 """Response types."""
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date, datetime  # noqa
 from typing import Any, Optional
 from uuid import UUID
 
 from attrs import frozen
 from cattrs import BaseValidationError
-from oes.registration.entities.access_code import AccessCodeEntity
-from oes.registration.models.access_code import AccessCodeSettings
+from oes.registration.access_code.entities import AccessCodeEntity
+from oes.registration.access_code.models import AccessCodeSettings
 from oes.registration.models.pricing import LineItem, Modifier, PricingResult
 from oes.registration.models.registration import (
     RegistrationState,
@@ -176,7 +176,7 @@ class PricingResultResponse:
 class CheckoutErrorResponse:
     """A checkout error including the invalid registration IDs."""
 
-    registration_ids: list[UUID]
+    errors: Mapping[UUID, str]
 
 
 @frozen

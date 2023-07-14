@@ -43,6 +43,9 @@ class CartRegistration:
     submission_id: Optional[str] = None
     """Used to ensure form submissions are unique."""
 
+    access_code: Optional[str] = None
+    """The access code used with this cart item."""
+
     old_data: dict[str, Any] = {}
     """The old/current data."""
 
@@ -59,6 +62,7 @@ class CartRegistration:
         new: Union[Registration, RegistrationEntity],
         *,
         submission_id: Optional[str] = None,
+        access_code: Optional[str] = None,
         meta: Optional[dict[str, Any]] = None,
     ) -> CartRegistration:
         """Create a :class:`CartRegistration` from a registration."""
@@ -66,6 +70,7 @@ class CartRegistration:
             id=new.id,
             old_data=_reg_to_data(old),
             new_data=_reg_to_data(new),
+            access_code=access_code,
             meta=meta,
             submission_id=submission_id,
         )
@@ -117,8 +122,8 @@ class CartData:
             A new :class:`CartData` with the added registration.
 
         Raises:
-            CartError: If the registration or submission is already in the cart, or if
-                the registration belongs to a different event.
+            CartError: If the registration, submission ID, or access code is already
+                in the cart, or if the registration belongs to a different event.
         """
         if cart_registration.id in [cr.id for cr in self.registrations]:
             raise CartError(
@@ -135,6 +140,19 @@ class CartData:
             ]
         ):
             raise CartError("Duplicate submission")
+
+        if (
+            cart_registration.access_code is not None
+            and cart_registration.access_code
+            in [
+                cr.access_code
+                for cr in self.registrations
+                if cr.access_code is not None
+            ]
+        ):
+            # this does not check if the access code is valid or is used in another
+            # cart, that happens later
+            raise CartError("Access code already used")
 
         event_id = cart_registration.new_data.get("event_id")
         if event_id is not None and event_id != self.event_id:

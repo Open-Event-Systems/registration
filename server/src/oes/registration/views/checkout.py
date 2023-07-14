@@ -1,4 +1,5 @@
 """Checkout views."""
+from collections.abc import Mapping
 from typing import Optional
 from uuid import UUID
 
@@ -14,6 +15,8 @@ from blacksheep import (
 from blacksheep.exceptions import NotFound
 from blacksheep.server.openapi.common import ContentInfo, ResponseInfo
 from loguru import logger
+from oes.registration.access_code.entities import AccessCodeEntity
+from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.handlers import RequireCart
@@ -21,6 +24,7 @@ from oes.registration.auth.user import User
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.entities.checkout import CheckoutEntity, CheckoutState
+from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.service import HookSender
 from oes.registration.models.cart import CartData
 from oes.registration.models.config import Config
@@ -35,8 +39,10 @@ from oes.registration.payment.base import (
 from oes.registration.serialization import get_converter
 from oes.registration.services.cart import (
     CartService,
+    get_access_codes_from_cart,
+    get_registration_entities_from_cart,
     price_cart,
-    validate_changes_apply,
+    validate_changes,
 )
 from oes.registration.services.checkout import CheckoutService, apply_checkout_changes
 from oes.registration.services.event import EventService
@@ -120,6 +126,7 @@ async def create_checkout(
     cart_service: CartService,
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
+    access_code_service: AccessCodeService,
     event_config: EventConfig,
     config: Config,
     db: AsyncSession,
@@ -138,9 +145,13 @@ async def create_checkout(
         raise HTTPException(409)
 
     # make sure the changes can still be applied
-    error_response = await _validate_changes_apply(
-        cart, registration_service, lock=False
+    _, _, error_response = await _validate_changes(
+        cart,
+        registration_service,
+        access_code_service,
+        False,
     )
+
     if error_response:
         await db.rollback()
         return error_response
@@ -216,6 +227,7 @@ async def update_checkout(
     body: FromJSON[dict],
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
+    access_code_service: AccessCodeService,
     account_service: AccountService,
     event_service: EventService,
     events: EventConfig,
@@ -235,12 +247,16 @@ async def update_checkout(
 
     # lock rows and verify changes can be applied before completing the transaction
     if not checkout.changes_applied:
-        error_response = await _validate_changes_apply(
-            cart_data, registration_service, lock=True
+        registration_entities, access_codes, error_response = await _validate_changes(
+            cart_data, registration_service, access_code_service, True
         )
+
         if error_response:
             await db.rollback()
             return error_response
+    else:
+        registration_entities = {}
+        access_codes = {}
 
     try:
         result = await checkout_service.update_checkout(checkout, body.value)
@@ -254,6 +270,8 @@ async def update_checkout(
 
     try:
         response = await _handle_update(
+            registration_entities,
+            access_codes,
             registration_service,
             account_service,
             event_service,
@@ -287,6 +305,8 @@ def _validate_checkout_and_event(
 
 
 async def _handle_update(
+    registration_entities: Mapping[UUID, RegistrationEntity],
+    access_codes: Mapping[str, AccessCodeEntity],
     registration_service: RegistrationService,
     account_service: AccountService,
     event_service: EventService,
@@ -299,16 +319,18 @@ async def _handle_update(
         and not checkout_entity.changes_applied
     ):
         updated = await apply_checkout_changes(
+            checkout_entity,
+            registration_entities,
+            access_codes,
             registration_service,
             account_service,
-            checkout_entity,
             hook_sender,
         )
         cart_data = checkout_entity.get_cart_data()
         event_id = cart_data.event_id
 
         # Assign registration numbers at the end, so the row storing the number
-        # does not stay locked while updating the transaction
+        # does not stay locked while updating the checkout
         event_stats = await event_service.get_event_stats(event_id, lock=True)
         assign_registration_numbers(event_stats, updated)
 
@@ -331,25 +353,42 @@ async def _handle_update(
         return Response(204)
 
 
-async def _validate_changes_apply(
-    cart_data: CartData, registration_service: RegistrationService, lock: bool
-):
-    invalid = await validate_changes_apply(registration_service, cart_data, lock=lock)
+async def _validate_changes(
+    cart_data: CartData,
+    registration_service: RegistrationService,
+    access_code_service: AccessCodeService,
+    lock: bool,
+) -> tuple[
+    Mapping[UUID, RegistrationEntity],
+    Mapping[str, AccessCodeEntity],
+    Optional[Response],
+]:
+    registrations = await get_registration_entities_from_cart(
+        cart_data,
+        registration_service,
+        lock=lock,
+    )
 
-    if len(invalid) > 0:
-        return Response(
-            409,
-            content=Content(
-                b"application/json",
-                get_converter().dumps(
-                    CheckoutErrorResponse(
-                        registration_ids=[r.id for r in invalid],
-                    )
+    access_codes = await get_access_codes_from_cart(
+        cart_data, access_code_service, lock=lock
+    )
+
+    errors = validate_changes(cart_data, registrations, access_codes)
+
+    if len(errors) > 0:
+        return (
+            registrations,
+            access_codes,
+            Response(
+                409,
+                content=Content(
+                    b"application/json",
+                    get_converter().dumps(CheckoutErrorResponse(errors=errors)),
                 ),
             ),
         )
     else:
-        return None
+        return registrations, access_codes, None
 
 
 async def _validate_checkout_method(

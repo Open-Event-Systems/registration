@@ -2,9 +2,11 @@
 import asyncio
 import copy
 import itertools
+from collections.abc import Mapping
 from typing import Any, Optional, Union, overload
 from uuid import UUID
 
+from oes.registration.access_code.entities import AccessCodeEntity
 from oes.registration.auth.account_service import AccountService
 from oes.registration.entities.checkout import CheckoutEntity, CheckoutState
 from oes.registration.entities.registration import RegistrationEntity
@@ -349,26 +351,27 @@ class CheckoutService:
 
 
 async def apply_checkout_changes(
+    checkout_entity: CheckoutEntity,
+    registration_entities: Mapping[UUID, RegistrationEntity],
+    access_codes: Mapping[str, AccessCodeEntity],
     registration_service: RegistrationService,
     account_service: AccountService,
-    checkout_entity: CheckoutEntity,
     hook_sender: HookSender,
 ) -> list[RegistrationEntity]:
-    """Apply all registration changes in a checkout.
+    """Apply changes in a checkout and marks the checkout as applied.
 
-    Marks the ``checkout_entity`` as having been applied.
+    Calls :func:`apply_changes` under the hood.
 
     Args:
-        registration_service: The :class:`RegistrationService`.
-        account_service: The :class:`AccountService`.
-        checkout_entity: The :class:`CheckoutEntity` to apply.
-        hook_sender: The hook sender.
+        checkout_entity: The :class:`CheckoutEntity`.
+        registration_entities: A mapping of registration IDs to entities.
+        access_codes: A mapping of access codes to entities.
+        registration_service: The registration service.
+        account_service: The account service.
+        hook_sender: A :class:`HookSender`.
 
     Returns:
-        A list of the created/updated registrations.
-
-    Raises:
-        InvalidChangeError: If a registration is out of date.
+        A list of created/updated registrations.
     """
     if checkout_entity.state != CheckoutState.complete:
         raise CheckoutStateError("Checkout is not complete")
@@ -377,9 +380,13 @@ async def apply_checkout_changes(
         raise CheckoutStateError("Changes have already been applied")
 
     cart_data = checkout_entity.get_cart_data()
-
     results = await apply_changes(
-        registration_service, account_service, cart_data, hook_sender
+        cart_data,
+        registration_entities,
+        access_codes,
+        registration_service,
+        account_service,
+        hook_sender,
     )
 
     checkout_entity.changes_applied = True

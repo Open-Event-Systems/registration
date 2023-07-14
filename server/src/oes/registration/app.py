@@ -14,6 +14,7 @@ from guardpost import Policy
 from guardpost.common import AuthenticatedRequirement
 from httpx import AsyncClient
 from loguru import logger
+from oes.registration.access_code.service import AccessCodeService
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.credential_service import CredentialService
 from oes.registration.auth.email_auth_service import EmailAuthService
@@ -47,7 +48,6 @@ from oes.registration.models.config import Config
 from oes.registration.payment.config import load_services
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import json_dumps, json_loads
-from oes.registration.services.access_code import AccessCodeService
 from oes.registration.services.cart import CartService
 from oes.registration.services.checkout import CheckoutService
 from oes.registration.services.event import EventService
