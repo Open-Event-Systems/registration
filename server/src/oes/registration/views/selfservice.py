@@ -2,6 +2,8 @@
 from typing import Optional
 
 from blacksheep import FromQuery, auth
+from oes.registration.access_code.models import AccessCodeSettings
+from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.handlers import RequireSelfService
 from oes.registration.auth.user import User
@@ -30,14 +32,20 @@ from oes.registration.views.responses import (
 )
 async def list_self_service_registration(
     event_id: FromQuery[Optional[str]],
+    access_code: FromQuery[Optional[str]],
     service: RegistrationService,
     event_config: EventConfig,
     user: User,
+    access_code_service: AccessCodeService,
 ) -> SelfServiceRegistrationListResponse:
     """List self-service registrations."""
+    access_code_settings = await _get_access_code(
+        access_code.value, access_code_service
+    )
+
     if event_id.value:
         event = check_not_found(event_config.get_event(event_id.value))
-        add_options = get_allowed_add_interviews(event)
+        add_options = get_allowed_add_interviews(event, access_code_settings)
     else:
         add_options = []
 
@@ -57,7 +65,9 @@ async def list_self_service_registration(
     for reg in registrations:
         event = event_config.get_event(reg.event_id)
         if event and event.is_visible_to(user):
-            change_options = get_allowed_change_interviews(event, reg)
+            change_options = get_allowed_change_interviews(
+                event, reg, access_code_settings
+            )
             model = render_self_service_registration(event, reg)
             results.append(
                 SelfServiceRegistrationResponse(
@@ -68,3 +78,14 @@ async def list_self_service_registration(
     return SelfServiceRegistrationListResponse(
         results, [InterviewOption(o.id, o.name) for o in add_options]
     )
+
+
+async def _get_access_code(
+    code: Optional[str],
+    service: AccessCodeService,
+) -> Optional[AccessCodeSettings]:
+    if code:
+        entity = await service.get_access_code(code)
+        if entity and entity.check_valid():
+            return entity.get_settings()
+    return None

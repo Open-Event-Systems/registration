@@ -1,8 +1,9 @@
 """Registration service."""
 from collections.abc import Iterable, Sequence
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
 
+from oes.registration.access_code.models import AccessCodeInterview, AccessCodeSettings
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.entities import AccountEntity
 from oes.registration.entities.event_stats import EventStatsEntity
@@ -153,8 +154,14 @@ def render_self_service_registration(
     return result
 
 
-def get_allowed_add_interviews(event: Event) -> list[EventInterviewOption]:
+def get_allowed_add_interviews(
+    event: Event,
+    access_code: Optional[AccessCodeSettings] = None,
+) -> list[Union[EventInterviewOption, AccessCodeInterview]]:
     """Get the add interviews allowed for a registration."""
+    if access_code is not None:
+        return list(access_code.interviews)
+
     event_dict = get_converter().unstructure(event)
 
     context = {
@@ -169,9 +176,20 @@ def get_allowed_add_interviews(event: Event) -> list[EventInterviewOption]:
 
 
 def get_allowed_change_interviews(
-    event: Event, registration: RegistrationEntity
-) -> list[EventInterviewOption]:
+    event: Event,
+    registration: RegistrationEntity,
+    access_code: Optional[AccessCodeSettings] = None,
+) -> list[Union[EventInterviewOption, AccessCodeInterview]]:
     """Get the change interviews allowed for a registration."""
+    if access_code is not None:
+        if (
+            access_code.registration_id is None
+            or access_code.registration_id == registration.id
+        ):
+            return list(access_code.change_interviews)
+        else:
+            return []
+
     model = registration.get_model()
     event_dict = get_converter().unstructure(event)
     registration_dict = get_converter().unstructure(model)

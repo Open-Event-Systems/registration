@@ -20,6 +20,8 @@ from blacksheep.url import build_absolute_url
 from cattrs import BaseValidationError
 from oes.interview.response import IncompleteInterviewStateResponse
 from oes.interview.state import InvalidStateError
+from oes.registration.access_code.models import AccessCodeSettings
+from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.handlers import RequireAdmin, RequireCart, RequireSelfService
 from oes.registration.auth.user import User
@@ -29,10 +31,10 @@ from oes.registration.entities.cart import CartEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.models.cart import CartData, CartError, CartRegistration
 from oes.registration.models.config import Config
-from oes.registration.models.event import Event, EventConfig
+from oes.registration.models.event import Event, EventConfig, SimpleEventInfo
 from oes.registration.models.pricing import PricingResult
 from oes.registration.models.registration import Registration, RegistrationState
-from oes.registration.serialization import get_config_converter, get_converter
+from oes.registration.serialization import get_converter
 from oes.registration.services.cart import CartService, price_cart
 from oes.registration.services.interview import InterviewService
 from oes.registration.services.registration import (
@@ -40,7 +42,7 @@ from oes.registration.services.registration import (
     get_allowed_add_interviews,
     get_allowed_change_interviews,
 )
-from oes.registration.util import check_not_found, get_now
+from oes.registration.util import check_not_found, get_now, merge_dict
 from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import BodyValidationError, PricingResultResponse
 
@@ -237,6 +239,7 @@ async def add_registration_to_cart(
     service: CartService,
     reg_service: RegistrationService,
     interview_service: InterviewService,
+    access_code_service: AccessCodeService,
     event_config: EventConfig,
     body: FromJSON[dict[str, Any]],
     user: User,
@@ -268,6 +271,7 @@ async def add_registration_to_cart(
             service,
             reg_service,
             interview_service,
+            access_code_service,
         )
 
     cart_url = get_absolute_url_to_path(request, f"/carts/{new_cart_entity.id}")
@@ -338,11 +342,13 @@ async def create_cart_add_interview_state(
     id: str,
     interview_id: FromQuery[str],
     registration_id: FromQuery[Optional[UUID]],
+    access_code: FromQuery[Optional[str]],
     config: Config,
     event_config: EventConfig,
     service: CartService,
     registration_service: RegistrationService,
     interview_service: InterviewService,
+    access_code_service: AccessCodeService,
     user: User,
 ) -> IncompleteInterviewStateResponse:
     """Get an interview state to add a registration to a cart."""
@@ -360,13 +366,19 @@ async def create_cart_add_interview_state(
     else:
         registration = None
 
+    access_code_settings = await _get_access_code(
+        access_code.value, access_code_service
+    )
+
     valid_interview_id = _check_interview_availability(
-        interview_id.value, event, registration
+        interview_id.value, event, registration, access_code_settings
     )
 
     # Build state
     context = _get_interview_context(event)
-    initial_data = _get_interview_initial_data(event.id, registration, user)
+    initial_data = _get_interview_initial_data(
+        event.id, registration, user, access_code.value, access_code_settings
+    )
     submission_id = uuid.uuid4()
 
     target_url = get_absolute_url_to_path(request, f"/carts/{entity.id}/registrations")
@@ -412,9 +424,9 @@ async def _get_registration_for_change(
 
 
 def _get_interview_context(event: Event) -> dict[str, Any]:
-    event_data = get_config_converter().unstructure(event)
+    event_data = SimpleEventInfo.create(event)
     return {
-        "event": event_data,
+        "event": get_converter().unstructure(event_data),
     }
 
 
@@ -422,6 +434,8 @@ def _get_interview_initial_data(
     event_id: str,
     registration: Optional[RegistrationEntity],
     user: Optional[User],
+    access_code: Optional[str],
+    access_code_settings: Optional[AccessCodeSettings],
 ) -> dict[str, Any]:
     if registration:
         model = registration.get_model()
@@ -440,15 +454,24 @@ def _get_interview_initial_data(
         meta = (
             {
                 "account_id": str(user.id),
+                "email": user.email,
             }
             if user and user.id
             else {}
         )
 
-    return {
+    if access_code is not None:
+        meta["access_code"] = access_code
+
+    data = {
         "registration": registration_data,
         "meta": meta,
     }
+
+    if access_code_settings is not None:
+        merge_dict(data, access_code_settings.initial_data)
+
+    return data
 
 
 async def _add_direct(
@@ -473,6 +496,7 @@ async def _add_from_interview(
     service: CartService,
     reg_service: RegistrationService,
     interview_service: InterviewService,
+    access_code_service: AccessCodeService,
 ):
     try:
         interview_result = interview_service.get_validated_state(
@@ -485,18 +509,36 @@ async def _add_from_interview(
     new_reg = _parse_registration_data(interview_result.data.get("registration", {}))
     cur_reg_entity = await reg_service.get_registration(new_reg.id)
 
+    meta = interview_result.data.get("meta", {})
+
+    access_code_settings = await _get_access_code(
+        meta.get("access_code"),
+        access_code_service,
+    )
+
     # make sure interview is still available
     _check_interview_availability(
         interview_result.interview_id,
         event,
         cur_reg_entity,
+        access_code_settings,
     )
 
     # Add to cart
-    meta = interview_result.data.get("meta")
     return await _add_to_cart(
         cart, cur_reg_entity, new_reg, interview_result.submission_id, meta, service
     )
+
+
+async def _get_access_code(
+    code: Optional[str],
+    service: AccessCodeService,
+) -> Optional[AccessCodeSettings]:
+    if code:
+        entity = await service.get_access_code(code)
+        if entity and entity.check_valid():
+            return entity.get_settings()
+    return None
 
 
 def _parse_add_body(body: dict[str, Any]) -> AddRegistrationRequest:
@@ -511,12 +553,15 @@ def _check_interview_availability(
     interview_id: str,
     event: Event,
     registration: Optional[RegistrationEntity],
+    access_code_settings: Optional[AccessCodeSettings],
 ) -> str:
     """Raise not found if the interview is not permitted."""
     if registration:
-        allowed = get_allowed_change_interviews(event, registration)
+        allowed = get_allowed_change_interviews(
+            event, registration, access_code_settings
+        )
     else:
-        allowed = get_allowed_add_interviews(event)
+        allowed = get_allowed_add_interviews(event, access_code_settings)
 
     if interview_id not in [o.id for o in allowed]:
         raise NotFound

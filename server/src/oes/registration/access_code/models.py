@@ -7,17 +7,25 @@ from attrs import frozen
 
 
 @frozen
+class AccessCodeInterview:
+    """An interview option from an access code."""
+
+    id: str
+    name: str
+
+
+@frozen
 class AccessCodeSettings:
     """Access code settings."""
 
     registration_id: Optional[UUID] = None
     """Restrict changes to a given registration ID."""
 
-    interview_ids: Set[str] = frozenset()
-    """The interview IDs to allow."""
+    interviews: Set[AccessCodeInterview] = frozenset()
+    """The interviews to allow."""
 
-    change_interview_ids: Set[str] = frozenset()
-    """The change interview IDs to allow."""
+    change_interviews: Set[AccessCodeInterview] = frozenset()
+    """The change interviews to allow."""
 
     initial_data: Mapping[str, Any] = {}
     """The data to merge into the interview's initial data."""
