@@ -12,17 +12,23 @@ import { ModalRootProps } from "@mantine/core/lib/Modal/ModalRoot/ModalRoot.js"
 import { useMediaQuery } from "@mantine/hooks"
 import { ReactNode } from "react"
 
-const useStyles = createStyles({
+export type DialogParams = {
+  noPadding?: boolean
+}
+
+const useStyles = createStyles((_theme, { noPadding }: DialogParams) => ({
   overlay: {},
   content: {},
   header: {},
-  body: {},
+  body: {
+    padding: noPadding ? 0 : undefined,
+  },
   title: {
     fontWeight: "bold",
   },
   closeButton: {},
   loadingOverlay: {},
-})
+}))
 
 export type DialogProps = {
   title?: ReactNode
@@ -33,7 +39,8 @@ export type DialogProps = {
   onClose?: () => void
   loading?: boolean
   LoadingOverlayProps?: LoadingOverlayProps
-} & Omit<ModalRootProps, "styles" | "children" | "onClose"> &
+} & DialogParams &
+  Omit<ModalRootProps, "styles" | "children" | "onClose"> &
   DefaultProps<Selectors<typeof useStyles>>
 
 export const Dialog = (props: DialogProps) => {
@@ -49,6 +56,7 @@ export const Dialog = (props: DialogProps) => {
     onClose,
     loading,
     LoadingOverlayProps,
+    noPadding,
     ...other
   } = useComponentDefaultProps(
     "OESDialog",
@@ -58,12 +66,15 @@ export const Dialog = (props: DialogProps) => {
     props
   )
 
-  const { classes } = useStyles(undefined, {
-    name: "OESDialog",
-    classNames,
-    styles,
-    unstyled,
-  })
+  const { classes } = useStyles(
+    { noPadding },
+    {
+      name: "OESDialog",
+      classNames,
+      styles,
+      unstyled,
+    }
+  )
 
   const theme = useMantineTheme()
   const mediaQuery =
@@ -78,13 +89,13 @@ export const Dialog = (props: DialogProps) => {
     >
       <Modal.Overlay className={classes.overlay} />
       <Modal.Content className={classes.content}>
-        <Modal.Header className={classes.body}>
+        <Modal.Header className={classes.header}>
           <Modal.Title className={classes.title}>{title}</Modal.Title>
           {!hideCloseButton && (
             <Modal.CloseButton className={classes.closeButton} />
           )}
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className={classes.body}>
           {children}
           <LoadingOverlay
             className={classes.loadingOverlay}

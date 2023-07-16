@@ -22,10 +22,16 @@ import { OptionsDialogProps } from "#src/features/selfservice/components/options
 import { LogoProps } from "#src/components/layout/Logo.js"
 import { EmailAuthProps } from "#src/features/auth/components/EmailAuth.js"
 import { DialogProps } from "#src/components/dialog/Dialog.js"
+import {
+  DialogMenuItemProps,
+  DialogMenuProps,
+} from "#src/components/dialog/DialogMenu.js"
 
 interface Components {
   // src/components
   OESDialog: DialogProps
+  DialogMenu: DialogMenuProps
+  DialogMenuItem: DialogMenuItemProps
   AppShellLayout: AppShellLayoutProps
   ContainerLayout: ContainerLayoutProps
   Header: HeaderProps
