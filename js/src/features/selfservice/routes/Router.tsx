@@ -36,16 +36,18 @@ const LayoutRoute = () => (
 const SelfServiceLoader = ({
   children,
   eventId,
+  accessCode,
 }: {
   children?: ReactNode
   eventId: string
+  accessCode?: string
 }) => {
   const wretch = useWretch()
   const accountStore = useAccountStore()
   const eventStore = useEvents()
   const currentCartStore = useCurrentCartStore()
   const selfServiceLoader = useLoader(() =>
-    listSelfServiceRegistrations(wretch, eventId)
+    listSelfServiceRegistrations(wretch, eventId, accessCode)
   )
 
   const loader = useLoader(async () => {
@@ -71,7 +73,7 @@ const SelfServiceLoader = ({
 }
 
 const SelfServiceAppRoute = () => {
-  const { eventId = "" } = useParams()
+  const { eventId = "", accessCode = "" } = useParams()
   return (
     <>
       <InterviewStateStoreProvider>
@@ -79,7 +81,7 @@ const SelfServiceAppRoute = () => {
           <CartStoreProvider>
             <Fragment key={eventId}>
               <CurrentCartStoreProvider eventId={eventId}>
-                <SelfServiceLoader eventId={eventId}>
+                <SelfServiceLoader eventId={eventId} accessCode={accessCode}>
                   <Outlet />
                 </SelfServiceLoader>
               </CurrentCartStoreProvider>

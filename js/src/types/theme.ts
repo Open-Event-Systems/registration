@@ -21,9 +21,11 @@ import { CheckoutDialogProps } from "#src/features/checkout/components/checkout/
 import { OptionsDialogProps } from "#src/features/selfservice/components/options/OptionsDialog.js"
 import { LogoProps } from "#src/components/layout/Logo.js"
 import { EmailAuthProps } from "#src/features/auth/components/EmailAuth.js"
+import { DialogProps } from "#src/components/dialog/Dialog.js"
 
 interface Components {
   // src/components
+  OESDialog: DialogProps
   AppShellLayout: AppShellLayoutProps
   ContainerLayout: ContainerLayoutProps
   Header: HeaderProps

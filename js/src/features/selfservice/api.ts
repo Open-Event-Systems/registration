@@ -10,14 +10,18 @@ import { queryStringAddon } from "wretch/addons"
  */
 export const listSelfServiceRegistrations = async (
   wretch: Wretch,
-  eventId?: string
+  eventId?: string,
+  accessCode?: string
 ): Promise<SelfServiceRegistrationListResponse> => {
-  const res = await wretch
-    .url("/self-service/registrations")
-    .addon(queryStringAddon)
-    .query({ event_id: eventId })
-    .get()
-    .json<SelfServiceRegistrationListResponse>()
+  let req = wretch.url("/self-service/registrations").addon(queryStringAddon)
 
-  return res
+  if (eventId) {
+    req = req.query({ event_id: eventId })
+  }
+
+  if (accessCode) {
+    req = req.query({ access_code: accessCode })
+  }
+
+  return await req.get().json<SelfServiceRegistrationListResponse>()
 }
