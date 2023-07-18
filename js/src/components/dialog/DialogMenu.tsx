@@ -6,10 +6,11 @@ import {
   Selectors,
   Stack,
   StackProps,
+  createPolymorphicComponent,
   createStyles,
   useComponentDefaultProps,
 } from "@mantine/core"
-import { ComponentPropsWithoutRef, ElementType } from "react"
+import { forwardRef } from "react"
 
 const useStyles = createStyles({
   root: {},
@@ -48,25 +49,34 @@ const useItemStyles = createStyles((theme) => ({
 export type DialogMenuItemProps = NavLinkProps &
   DefaultProps<NavLinkStylesNames | Selectors<typeof useItemStyles>>
 
-export const DialogMenuItem = <C extends ElementType = "button">(
-  props: DialogMenuItemProps & { component?: C } & ComponentPropsWithoutRef<C>
-) => {
-  const { className, classNames, styles, unstyled, ...other } =
-    useComponentDefaultProps("DialogMenuItem", {}, props)
+const _DialogMenuItem = forwardRef<HTMLButtonElement, DialogMenuItemProps>(
+  (props, ref) => {
+    const { className, classNames, styles, unstyled, ...other } =
+      useComponentDefaultProps("DialogMenuItem", {}, props)
 
-  const { classes, cx } = useItemStyles(undefined, {
-    name: "DialogMenuItem",
-    classNames,
-    styles,
-    unstyled,
-  })
+    const { classes, cx } = useItemStyles(undefined, {
+      name: "DialogMenuItem",
+      classNames,
+      styles,
+      unstyled,
+    })
 
-  return (
-    <NavLink
-      className={cx(classes.root, className)}
-      active
-      variant="subtle"
-      {...other}
-    />
-  )
-}
+    return (
+      <NavLink
+        component="button"
+        className={cx(classes.root, className)}
+        active
+        variant="subtle"
+        {...other}
+        ref={ref}
+      />
+    )
+  }
+)
+
+_DialogMenuItem.displayName = "DialogMenuItem"
+
+export const DialogMenuItem = createPolymorphicComponent<
+  "button",
+  DialogMenuItemProps
+>(_DialogMenuItem)

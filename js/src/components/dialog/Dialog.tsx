@@ -36,11 +36,12 @@ export type DialogProps = {
   fullScreen?: boolean
   fullScreenMediaQuery?: string
   hideCloseButton?: boolean
+  opened?: boolean
   onClose?: () => void
   loading?: boolean
   LoadingOverlayProps?: LoadingOverlayProps
 } & DialogParams &
-  Omit<ModalRootProps, "styles" | "children" | "onClose"> &
+  Omit<ModalRootProps, "styles" | "children" | "opened" | "onClose"> &
   DefaultProps<Selectors<typeof useStyles>>
 
 export const Dialog = (props: DialogProps) => {
@@ -53,6 +54,7 @@ export const Dialog = (props: DialogProps) => {
     fullScreen,
     fullScreenMediaQuery,
     hideCloseButton,
+    opened,
     onClose,
     loading,
     LoadingOverlayProps,
@@ -85,6 +87,7 @@ export const Dialog = (props: DialogProps) => {
     <Modal.Root
       fullScreen={fullScreen ?? fullScreenQueryResult}
       onClose={onClose ?? (() => null)}
+      opened={!!opened}
       {...other}
     >
       <Modal.Overlay className={classes.overlay} />
