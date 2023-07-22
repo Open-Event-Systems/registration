@@ -1,4 +1,5 @@
-import { Loader, LoadingState, NotFoundError } from "#src/util/loader.js"
+import { isNotFoundError } from "#src/util/api.js"
+import { Loader, LoadingState } from "#src/util/loader.js"
 import { observer } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"
 
@@ -47,7 +48,7 @@ export const LoaderComponent = observer(
   }: LoaderComponentProps<T>) => {
     useEffect(() => {
       loader.load().catch((err) => {
-        if (err instanceof NotFoundError) {
+        if (isNotFoundError(err)) {
           // ignore
         } else {
           throw err

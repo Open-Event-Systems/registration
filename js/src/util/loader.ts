@@ -1,4 +1,5 @@
 import { LoaderComponent } from "#src/components/loading/Loading.js"
+import { isNotFoundError } from "#src/util/api.js"
 import { makeAutoObservable, runInAction } from "mobx"
 import { createElement, ComponentType, ReactNode } from "react"
 
@@ -24,11 +25,15 @@ export interface Loader<T> extends Promise<T> {
 }
 
 /**
- * Thrown when a loading resource is not found.
+ * Thrown when a resource was not found.
+ *
+ * Used in cases where the load operation is not a fetch request.
  */
 export class NotFoundError extends Error {
+  status = 404 as const
+
   constructor() {
-    super()
+    super("The resource was not found")
   }
 }
 
@@ -57,7 +62,7 @@ export const createLoader = <T>(
         })
         return res
       } catch (e) {
-        if (e instanceof NotFoundError) {
+        if (isNotFoundError(e)) {
           runInAction(() => {
             this.state = LoadingState.notFound
           })

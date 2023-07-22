@@ -15,9 +15,26 @@ export const isWretchError = (e: unknown): e is WretchError => {
   )
 }
 
+export interface NotFoundError {
+  status: 404
+}
+
+/**
+ * Test if an exception is from a not found response.
+ */
+export const isNotFoundError = (e: unknown): e is NotFoundError => {
+  return (
+    (isWretchError(e) && e.status == 404) ||
+    (e instanceof Error && "status" in e && e.status == 404)
+  )
+}
+
+/**
+ * Wrap a promise to resolve with null in the case of a not found error.
+ */
 export const handleNotFound = <T>(promise: Promise<T>): Promise<T | null> => {
   return promise.catch((err) => {
-    if (isWretchError(err) && err.status == 404) {
+    if (isNotFoundError(err)) {
       return null
     }
     return Promise.reject(err)

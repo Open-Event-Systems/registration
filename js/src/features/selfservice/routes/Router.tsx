@@ -1,4 +1,5 @@
 import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
+import { Title } from "#src/components/title/Title.js"
 import { SigninDialogManager } from "#src/features/auth/components/SigninDialogManager.js"
 import { useAccountStore } from "#src/features/auth/hooks.js"
 import { useCurrentCartStore } from "#src/features/cart/hooks.js"
@@ -9,8 +10,15 @@ import {
 import { useEvents } from "#src/features/event/hooks.js"
 import { EventStoreProvider } from "#src/features/event/providers.js"
 import { InterviewStateStoreProvider } from "#src/features/interview/routes.js"
-import { listSelfServiceRegistrations } from "#src/features/selfservice/api.js"
-import { SelfServiceLoaderContext } from "#src/features/selfservice/hooks.js"
+import {
+  checkAccessCode,
+  listSelfServiceRegistrations,
+} from "#src/features/selfservice/api.js"
+import {
+  AccessCodeLoaderContext,
+  SelfServiceLoaderContext,
+  useAccessCodeLoader,
+} from "#src/features/selfservice/hooks.js"
 import { CartPage } from "#src/features/selfservice/routes/CartPage.js"
 import { EventPage } from "#src/features/selfservice/routes/EventPage.js"
 import { useWretch } from "#src/hooks/api.js"
@@ -21,6 +29,8 @@ import {
   ShowLoadingOverlay,
 } from "#src/routes/LoadingOverlay.js"
 import { NotFoundPage } from "#src/routes/NotFoundPage.js"
+import { NotFoundError } from "#src/util/loader.js"
+import { Text } from "@mantine/core"
 import { Fragment, ReactNode } from "react"
 import { Outlet, createBrowserRouter, useParams } from "react-router-dom"
 
@@ -46,6 +56,11 @@ const SelfServiceLoader = ({
   const accountStore = useAccountStore()
   const eventStore = useEvents()
   const currentCartStore = useCurrentCartStore()
+  const accessCodeLoader = useLoader(() =>
+    accessCode
+      ? checkAccessCode(wretch, eventId, accessCode)
+      : Promise.reject(new NotFoundError())
+  )
   const selfServiceLoader = useLoader(() =>
     listSelfServiceRegistrations(wretch, eventId, accessCode)
   )
@@ -65,9 +80,11 @@ const SelfServiceLoader = ({
       placeholder={<ShowLoadingOverlay />}
       notFound={<NotFoundPage />}
     >
-      <SelfServiceLoaderContext.Provider value={selfServiceLoader}>
-        {children}
-      </SelfServiceLoaderContext.Provider>
+      <AccessCodeLoaderContext.Provider value={accessCodeLoader}>
+        <SelfServiceLoaderContext.Provider value={selfServiceLoader}>
+          {children}
+        </SelfServiceLoaderContext.Provider>
+      </AccessCodeLoaderContext.Provider>
     </loader.Component>
   )
 }
@@ -80,11 +97,13 @@ const SelfServiceAppRoute = () => {
         <EventStoreProvider>
           <CartStoreProvider>
             <Fragment key={eventId}>
-              <CurrentCartStoreProvider eventId={eventId}>
-                <SelfServiceLoader eventId={eventId} accessCode={accessCode}>
-                  <Outlet />
-                </SelfServiceLoader>
-              </CurrentCartStoreProvider>
+              <Fragment key={accessCode}>
+                <CurrentCartStoreProvider eventId={eventId}>
+                  <SelfServiceLoader eventId={eventId} accessCode={accessCode}>
+                    <Outlet />
+                  </SelfServiceLoader>
+                </CurrentCartStoreProvider>
+              </Fragment>
             </Fragment>
           </CartStoreProvider>
         </EventStoreProvider>
@@ -93,6 +112,26 @@ const SelfServiceAppRoute = () => {
     </>
   )
 }
+
+const AccessCodeRoute = () => {
+  const loader = useAccessCodeLoader()
+  return (
+    <loader.Component
+      placeholder={<ShowLoadingOverlay />}
+      notFound={<AccessCodeNotFoundPage />}
+    >
+      <Outlet />
+    </loader.Component>
+  )
+}
+
+const AccessCodeNotFoundPage = () => (
+  <Title title="Access Code Not Found">
+    <Text component="p">
+      The access code was not found. It may be invalid or expired.
+    </Text>
+  </Title>
+)
 
 export const router = createBrowserRouter([
   {
@@ -109,6 +148,15 @@ export const router = createBrowserRouter([
                 element: <EventPage />,
               },
               {
+                element: <AccessCodeRoute />,
+                children: [
+                  {
+                    path: "/events/:eventId/access-code/:accessCode",
+                    element: <EventPage />,
+                  },
+                ],
+              },
+              {
                 path: "/events/:eventId/cart",
                 element: <CartPage />,
               },
@@ -120,6 +168,10 @@ export const router = createBrowserRouter([
   },
   {
     path: "*",
-    element: <NotFoundPage />,
+    element: (
+      <SimpleLayout>
+        <NotFoundPage />
+      </SimpleLayout>
+    ),
   },
 ])

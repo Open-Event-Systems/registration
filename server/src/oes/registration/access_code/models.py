@@ -1,5 +1,5 @@
 """Access code models."""
-from collections.abc import Mapping, Set
+from collections.abc import Mapping, Sequence
 from typing import Any, Optional
 from uuid import UUID
 
@@ -21,10 +21,10 @@ class AccessCodeSettings:
     registration_id: Optional[UUID] = None
     """Restrict changes to a given registration ID."""
 
-    interviews: Set[AccessCodeInterview] = frozenset()
+    interviews: Sequence[AccessCodeInterview] = ()
     """The interviews to allow."""
 
-    change_interviews: Set[AccessCodeInterview] = frozenset()
+    change_interviews: Sequence[AccessCodeInterview] = ()
     """The change interviews to allow."""
 
     initial_data: Mapping[str, Any] = {}

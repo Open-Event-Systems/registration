@@ -367,12 +367,14 @@ async def create_cart_add_interview_state(
         registration = None
 
     access_code_settings = await _get_access_code(
-        access_code.value, access_code_service
+        access_code.value, event.id, access_code_service
     )
 
     valid_interview_id = _check_interview_availability(
         interview_id.value, event, registration, access_code_settings
     )
+    if not valid_interview_id:
+        raise NotFound
 
     # Build state
     context = _get_interview_context(event)
@@ -485,7 +487,9 @@ async def _add_direct(
     # Get existing data
     cur_reg_entity = await reg_service.get_registration(new_reg.id)
 
-    return await _add_to_cart(cart, cur_reg_entity, new_reg, None, add.meta, service)
+    return await _add_to_cart(
+        cart, cur_reg_entity, new_reg, None, None, add.meta, service
+    )
 
 
 async def _add_from_interview(
@@ -511,32 +515,45 @@ async def _add_from_interview(
 
     meta = interview_result.data.get("meta", {})
 
+    access_code = meta.get("access_code")
     access_code_settings = await _get_access_code(
-        meta.get("access_code"),
+        access_code,
+        event.id,
         access_code_service,
     )
 
+    if access_code is not None and access_code_settings is None:
+        raise HTTPException(409)
+
     # make sure interview is still available
-    _check_interview_availability(
+    if not _check_interview_availability(
         interview_result.interview_id,
         event,
         cur_reg_entity,
         access_code_settings,
-    )
+    ):
+        raise HTTPException(409)
 
     # Add to cart
     return await _add_to_cart(
-        cart, cur_reg_entity, new_reg, interview_result.submission_id, meta, service
+        cart,
+        cur_reg_entity,
+        new_reg,
+        interview_result.submission_id,
+        access_code,
+        meta,
+        service,
     )
 
 
 async def _get_access_code(
     code: Optional[str],
+    event_id: str,
     service: AccessCodeService,
 ) -> Optional[AccessCodeSettings]:
     if code:
         entity = await service.get_access_code(code)
-        if entity and entity.check_valid():
+        if entity and entity.event_id == event_id and entity.check_valid():
             return entity.get_settings()
     return None
 
@@ -554,8 +571,8 @@ def _check_interview_availability(
     event: Event,
     registration: Optional[RegistrationEntity],
     access_code_settings: Optional[AccessCodeSettings],
-) -> str:
-    """Raise not found if the interview is not permitted."""
+) -> Optional[str]:
+    """Check if the interview is permitted."""
     if registration:
         allowed = get_allowed_change_interviews(
             event, registration, access_code_settings
@@ -564,7 +581,7 @@ def _check_interview_availability(
         allowed = get_allowed_add_interviews(event, access_code_settings)
 
     if interview_id not in [o.id for o in allowed]:
-        raise NotFound
+        return None
     return interview_id
 
 
@@ -581,11 +598,16 @@ async def _add_to_cart(
     old_reg: Optional[RegistrationEntity],
     new_reg: Registration,
     submission_id: Optional[str],
+    access_code: Optional[str],
     meta: Optional[dict[str, Any]],
     service: CartService,
 ) -> CartEntity:
     cr = CartRegistration.create(
-        old_reg, new_reg, submission_id=submission_id, meta=meta
+        old_reg,
+        new_reg,
+        submission_id=submission_id,
+        access_code=access_code,
+        meta=meta,
     )
 
     try:

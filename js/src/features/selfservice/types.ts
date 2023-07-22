@@ -20,9 +20,8 @@ export interface SelfServiceRegistrationListResponse {
   add_options: InterviewOption[]
 }
 
-declare module "@open-event-systems/interview-lib" {
-  interface InterviewStateMetadata {
-    eventId?: string
-    cartId?: string
+declare module "#src/hooks/location.js" {
+  interface LocationState {
+    accessCodeDialogRegistrationId?: string
   }
 }

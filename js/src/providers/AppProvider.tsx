@@ -1,3 +1,4 @@
+import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
 import {
   AccountStoreProvider,
   AuthStoreProvider,
@@ -18,7 +19,11 @@ export const AppProvider = ({ children }: { children?: ReactNode }) => {
 
   return (
     <appStoreLoader.Component
-      notFound={<NotFoundPage />}
+      notFound={
+        <SimpleLayout>
+          <NotFoundPage />
+        </SimpleLayout>
+      }
       placeholder={<ShowLoadingOverlay />}
     >
       {(appStore) => (

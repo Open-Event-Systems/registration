@@ -21,17 +21,21 @@ import { CheckoutDialogProps } from "#src/features/checkout/components/checkout/
 import { OptionsDialogProps } from "#src/features/selfservice/components/options/OptionsDialog.js"
 import { LogoProps } from "#src/components/layout/Logo.js"
 import { EmailAuthProps } from "#src/features/auth/components/EmailAuth.js"
-import { DialogProps } from "#src/components/dialog/Dialog.js"
 import {
-  DialogMenuItemProps,
-  DialogMenuProps,
-} from "#src/components/dialog/DialogMenu.js"
+  ButtonListButtonProps,
+  ButtonListDividerProps,
+  ButtonListLabelProps,
+  ButtonListProps,
+} from "#src/components/button_list/ButtonList.js"
+import { ModalDialogProps } from "#src/components/dialog/ModalDialog.js"
 
 interface Components {
   // src/components
-  OESDialog: DialogProps
-  DialogMenu: DialogMenuProps
-  DialogMenuItem: DialogMenuItemProps
+  ButtonList: ButtonListProps
+  ButtonListButton: ButtonListButtonProps
+  ButtonListLabel: ButtonListLabelProps
+  ButtonListDivider: ButtonListDividerProps
+  ModalDialog: ModalDialogProps
   AppShellLayout: AppShellLayoutProps
   ContainerLayout: ContainerLayoutProps
   Header: HeaderProps

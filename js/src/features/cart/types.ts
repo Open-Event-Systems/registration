@@ -33,3 +33,24 @@ export interface PricingResult {
   total_price: number
   modifiers: Modifier[]
 }
+
+export interface InterviewOption {
+  id: string
+  name: string
+}
+
+declare module "@open-event-systems/interview-lib" {
+  interface InterviewStateMetadata {
+    eventId?: string
+    cartId?: string
+  }
+}
+
+declare module "#src/hooks/location.js" {
+  interface LocationState {
+    showInterviewDialog?: {
+      eventId: string
+      recordId: string
+    }
+  }
+}

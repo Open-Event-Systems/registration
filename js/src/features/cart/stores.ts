@@ -1,18 +1,27 @@
 import {
   fetchCart,
+  fetchCartInterview,
   fetchEmptyCart,
   removeRegistrationFromCart,
 } from "#src/features/cart/api.js"
 import { Cart } from "#src/features/cart/types.js"
 import { getCurrentCartId, setCurrentCartId } from "#src/features/cart/utils.js"
-import { Loader, NotFoundError, createLoader } from "#src/util/loader.js"
+import { isNotFoundError } from "#src/util/api.js"
+import { Loader, createLoader } from "#src/util/loader.js"
+import {
+  InterviewStateRecord,
+  InterviewStateStore,
+} from "@open-event-systems/interview-lib"
 import { makeAutoObservable, reaction, runInAction } from "mobx"
 import { Wretch } from "wretch"
 
 export class CartStore {
   loaders = new Map<string, Loader<Cart>>()
 
-  constructor(public wretch: Wretch) {
+  constructor(
+    public wretch: Wretch,
+    public interviewStateStore: InterviewStateStore
+  ) {
     makeAutoObservable(this)
   }
 
@@ -51,6 +60,59 @@ export class CartStore {
       )
     })
     return [id, cart]
+  }
+
+  /**
+   * Start a new interview with a cart.
+   * @param cartId - The cart ID.
+   * @param cart - The cart data.
+   * @param interviewId - The interview ID.
+   * @param registrationId - The registration ID.
+   * @param accessCode - An access code.
+   * @returns A new {@link InterviewStateRecord}.
+   */
+  async startInterviewForCart(
+    cartId: string,
+    cart: Cart,
+    interviewId: string,
+    registrationId?: string,
+    accessCode?: string
+  ): Promise<InterviewStateRecord> {
+    const res = await fetchCartInterview(
+      this.wretch,
+      cartId,
+      interviewId,
+      registrationId,
+      accessCode
+    )
+    return await this.interviewStateStore.startInterview(res, {
+      cartId: cartId,
+      eventId: cart.event_id,
+    })
+  }
+
+  /**
+   * Start a new interview. Checks and sets the current cart.
+   * @param currentCart - A {@link CurrentCartStore}.
+   * @param interviewId - The interview ID.
+   * @param registrationId - The registration ID.
+   * @param accessCode - An access code.
+   * @returns A new {@link InterviewStateRecord}.
+   */
+  async startInterview(
+    currentCart: CurrentCartStore,
+    interviewId: string,
+    registrationId?: string,
+    accessCode?: string
+  ): Promise<InterviewStateRecord> {
+    const [cartId, cart] = await currentCart.checkAndSetCurrentCart()
+    return await this.startInterviewForCart(
+      cartId,
+      cart,
+      interviewId,
+      registrationId,
+      accessCode
+    )
   }
 }
 
@@ -95,7 +157,7 @@ export class CurrentCartStore {
       }
       return cart
     } catch (e) {
-      if (e instanceof NotFoundError) {
+      if (isNotFoundError(e)) {
         return null
       }
       throw e
@@ -106,14 +168,14 @@ export class CurrentCartStore {
    * Check that the current cart exists and matches the current event. If not, fetch the
    * empty cart and update the stored current cart ID.
    */
-  async checkAndSetCurrentCart(): Promise<readonly [string, Cart]> {
+  async checkAndSetCurrentCart(): Promise<[string, Cart]> {
     const curId = this.currentCartId
     const cur = await this.checkCurrentCart()
     if (cur) {
       runInAction(() => {
         this.loader = createLoader(async () => cur, cur)
       })
-      return [curId as string, cur] as const
+      return [curId as string, cur]
     }
 
     const [emptyId, empty] = await fetchEmptyCart(this.wretch, this.eventId)
@@ -121,7 +183,7 @@ export class CurrentCartStore {
       this.currentCartId = emptyId
       this.loader = createLoader(async () => empty, empty)
     })
-    return [emptyId, empty] as const
+    return [emptyId, empty]
   }
 
   /**

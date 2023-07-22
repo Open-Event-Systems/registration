@@ -76,4 +76,4 @@ def generate_code() -> str:
 
 def normalize_code(code: str) -> str:
     """Return the code with unnecessary characters removed."""
-    return re.sub(r"[^a-z]+", "", code, re.I)
+    return re.sub(r"[^a-z0-9]+", "", code, flags=re.I)

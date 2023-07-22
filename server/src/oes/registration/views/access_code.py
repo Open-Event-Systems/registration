@@ -3,11 +3,12 @@ from datetime import datetime
 from typing import Optional
 
 from attrs import frozen
-from blacksheep import Response, auth
+from blacksheep import FromQuery, Response, auth
+from blacksheep.exceptions import NotFound
 from oes.registration.access_code.models import AccessCodeSettings
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
-from oes.registration.auth.handlers import RequireAdmin
+from oes.registration.auth.handlers import RequireAdmin, RequireCart
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.util import check_not_found
@@ -50,6 +51,24 @@ async def list_access_codes(
         )
         for r in results
     ]
+
+
+@auth(RequireCart)
+@app.router.get("/access-code/{code}")
+@docs(
+    tags=["Access Code"],
+)
+async def check_access_code(
+    event_id: FromQuery[str],
+    code: str,
+    service: AccessCodeService,
+) -> Response:
+    """Check if an access code is usable."""
+    entity = await service.get_access_code(code)
+    if not entity or entity.event_id != event_id.value or not entity.check_valid():
+        raise NotFound
+    else:
+        return Response(204)
 
 
 @auth(RequireAdmin)

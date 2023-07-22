@@ -12,9 +12,10 @@ import {
 } from "#src/features/selfservice/components/card/RegistrationCard.js"
 import { observer } from "mobx-react-lite"
 import { useLocation, useNavigate } from "#src/hooks/location.js"
-import { InterviewDialogManager } from "#src/features/interview/components/InterviewDialogManager.js"
-import { OptionsDialogManager } from "#src/features/interview/components/OptionsDialogManager.js"
-import { useSelfServiceLoader } from "#src/features/selfservice/hooks.js"
+import {
+  useAccessCodeLoader,
+  useSelfServiceLoader,
+} from "#src/features/selfservice/hooks.js"
 import { Event } from "#src/features/event/types.js"
 import { SelfServiceRegistrationResponse } from "#src/features/selfservice/types.js"
 import { fetchCartInterview } from "#src/features/cart/api.js"
@@ -27,14 +28,18 @@ import {
 import { useEvents } from "#src/features/event/hooks.js"
 import { useCurrentCartStore } from "#src/features/cart/hooks.js"
 import { Link as RLink } from "react-router-dom"
+import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog.js"
+import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
+import { Cart } from "#src/features/cart/types.js"
+import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/access-code/AccessCodeOptionsDialog.js"
 
 export const EventPage = () => {
-  const { eventId = "" } = useParams()
-  const wretch = useWretch()
+  const { eventId = "", accessCode = "" } = useParams()
   const events = useEvents()
   const event = events.getEvent(eventId) as Event
   const selfService = useSelfServiceLoader()
   const currentCartStore = useCurrentCartStore()
+  const accessCodeLoader = useAccessCodeLoader()
 
   const loc = useLocation()
   const navigate = useNavigate()
@@ -87,9 +92,7 @@ export const EventPage = () => {
                           navigate(loc, {
                             state: {
                               ...loc.state,
-                              showAddOptionsDialog: {
-                                eventId: eventId,
-                              },
+                              showInterviewOptionsDialog: eventId,
                             },
                           })
                         }}
@@ -110,32 +113,27 @@ export const EventPage = () => {
                     ) : null}
                   </Grid>
                 )}
-                <OptionsDialogManager
-                  eventId={eventId}
-                  options={results.add_options}
+                <InterviewOptionsDialog.Manager options={results.add_options} />
+                <AccessCodeOptionsDialog.Manager
+                  opened={
+                    !!accessCodeLoader.value &&
+                    !loc.state?.showInterviewDialog?.eventId
+                  }
+                  accessCode={accessCode}
+                  response={results}
                 />
-                <InterviewDialogManager
-                  eventId={eventId}
-                  onComplete={async (response, metadata) => {
-                    if (metadata?.cartId && metadata.eventId) {
-                      const addResponse = await wretch
-                        .url(response.target_url, true)
-                        .json({
-                          state: response.state,
-                        })
-                        .post()
-                        .res()
-
-                      await addResponse.json()
+                <InterviewDialog.Manager
+                  onComplete={async (response, record) => {
+                    if (record.metadata.cartId && record.metadata.eventId) {
+                      const res = await response
+                      const body: Cart = await res.json()
 
                       // kind of hacky
-                      const url = new URL(addResponse.url)
+                      const url = new URL(res.url)
                       const parts = url.pathname.split("/")
                       const newCartId = parts[parts.length - 1]
-                      currentCartStore.setCurrentCart(newCartId)
-
-                      // navigate to cart page
-                      navigate(`/events/${eventId}/cart`)
+                      currentCartStore.setCurrentCart(newCartId, body)
+                      navigate(`/events/${record.metadata.eventId}/cart`)
                     }
                   }}
                 />

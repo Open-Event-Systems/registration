@@ -60,19 +60,30 @@ export const fetchCartInterview = async (
   wretch: Wretch,
   cartId: string,
   interviewId: string,
-  registrationId?: string
+  registrationId?: string,
+  accessCode?: string
 ): Promise<InterviewStateResponse> => {
-  const res = await wretch
-    .url(`/carts/${cartId}/new-interview`)
-    .addon(queryStringAddon)
-    .query({
+  let req = wretch.url(`/carts/${cartId}/new-interview`).addon(queryStringAddon)
+
+  if (interviewId) {
+    req = req.query({
       interview_id: interviewId,
+    })
+  }
+
+  if (registrationId) {
+    req = req.query({
       registration_id: registrationId,
     })
-    .get()
-    .json<InterviewStateResponse>()
+  }
 
-  return res
+  if (accessCode) {
+    req = req.query({
+      access_code: accessCode,
+    })
+  }
+
+  return await req.get().json<InterviewStateResponse>()
 }
 
 /**

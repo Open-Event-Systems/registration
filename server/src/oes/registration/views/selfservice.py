@@ -40,7 +40,7 @@ async def list_self_service_registration(
 ) -> SelfServiceRegistrationListResponse:
     """List self-service registrations."""
     access_code_settings = await _get_access_code(
-        access_code.value, access_code_service
+        access_code.value, event_id.value, access_code_service
     )
 
     if event_id.value:
@@ -82,10 +82,14 @@ async def list_self_service_registration(
 
 async def _get_access_code(
     code: Optional[str],
+    event_id: Optional[str],
     service: AccessCodeService,
 ) -> Optional[AccessCodeSettings]:
+    if not event_id:
+        return None
+
     if code:
         entity = await service.get_access_code(code)
-        if entity and entity.check_valid():
+        if entity and entity.event_id == event_id and entity.check_valid():
             return entity.get_settings()
     return None
