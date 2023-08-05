@@ -29,6 +29,7 @@ from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper, serialize
 from oes.registration.entities.cart import CartEntity
 from oes.registration.entities.registration import RegistrationEntity
+from oes.registration.interview.service import InterviewService
 from oes.registration.models.cart import CartData, CartError, CartRegistration
 from oes.registration.models.config import Config
 from oes.registration.models.event import Event, EventConfig, SimpleEventInfo
@@ -36,7 +37,6 @@ from oes.registration.models.pricing import PricingResult
 from oes.registration.models.registration import Registration, RegistrationState
 from oes.registration.serialization import get_converter
 from oes.registration.services.cart import CartService, price_cart
-from oes.registration.services.interview import InterviewService
 from oes.registration.services.registration import (
     RegistrationService,
     get_allowed_add_interviews,

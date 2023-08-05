@@ -10,6 +10,7 @@ import uvicorn
 from blacksheep import Application, Content, HTTPException, Request, Response
 from blacksheep.plugins import json
 from blacksheep.server.remotes.forwarding import XForwardedHeadersMiddleware
+from cattrs import Converter
 from guardpost import Policy
 from guardpost.common import AuthenticatedRequirement
 from httpx import AsyncClient
@@ -43,15 +44,15 @@ from oes.registration.http_client import (
     setup_http_client,
     shutdown_http_client,
 )
+from oes.registration.interview.service import InterviewService
 from oes.registration.log import setup_logging
 from oes.registration.models.config import Config
 from oes.registration.payment.config import load_services
 from oes.registration.serialization import get_converter
-from oes.registration.serialization.json import json_dumps, json_loads
+from oes.registration.serialization.json import default_encoder, json_dumps, json_loads
 from oes.registration.services.cart import CartService
 from oes.registration.services.checkout import CheckoutService
 from oes.registration.services.event import EventService
-from oes.registration.services.interview import InterviewService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.views.responses import BodyValidationError, ExceptionDetails
 from rodi import GetServiceContext
@@ -241,6 +242,8 @@ def app_factory():
     setup_logging(debug=cmd_config.debug)
 
     app.services.add_instance(cmd_config)
+    app.services.add_instance(default_encoder)
+    app.services.add_instance(get_converter(), Converter)
 
     # set up authentication
     app.use_authentication().add(TokenAuthHandler(cmd_config, config))

@@ -4,6 +4,14 @@ from typing import Any, NewType, Optional
 
 from attrs import field, frozen, validators
 from oes.registration.hook.models import HookConfig
+from typed_settings import Secret, option
+
+
+def _make_secret(v):
+    if isinstance(v, Secret):
+        return v
+    else:
+        return Secret(v)
 
 
 @frozen
@@ -60,6 +68,14 @@ class InterviewConfig:
 
     update_url: str
     """The URL of the interview service's update endpoint."""
+
+    url: Optional[str] = option(default=None, help="The URL of the interview service")
+
+    api_key: Secret[str] = option(
+        default="",
+        converter=_make_secret,
+        help="The API key to use with the interview service",
+    )
 
 
 @frozen

@@ -14,8 +14,8 @@ packages = [
 python = ">=3.9,<3.11"
 sqlalchemy = "^2.0.5"
 psycopg2-binary = "^2.9.5"
-attrs = "^22.2.0"
-cattrs = "^22.2.0"
+attrs = "^23.1"
+cattrs = "^23.1"
 orjson = "^3.8.9"
 pyjwt = "^2.6.0"
 asyncpg = "^0.27.0"
@@ -29,14 +29,16 @@ importlib-metadata = "^6.4.1"
 webauthn = "^1.8.1"
 
 # TODO: proper versioning of this
-oes-template = { git = "https://github.com/Open-Event-Systems/template.git", branch = "main" }
-oes-hook = { git = "https://github.com/Open-Event-Systems/hook.git", branch = "main" }
-oes-interview = { git = "https://github.com/Open-Event-Systems/interview.git", branch = "main", subdirectory = "python" }
+oes-template = { git = "https://github.com/Open-Event-Systems/template.git", branch = "dev-0.3.0" }
+#oes-hook = { git = "https://github.com/Open-Event-Systems/hook.git", branch = "main" }
+#oes-interview = { git = "https://github.com/Open-Event-Systems/interview.git", branch = "main", subdirectory = "python" }
 
 # Payment services
 stripe = {version = "^5.4.0", optional = true}
 alembic = "^1.11.1"
 oauthlib = "^3.2.2"
+oes-interview = {path = "../../interview/python"}
+typed-settings = "^23.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

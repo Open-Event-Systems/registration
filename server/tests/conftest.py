@@ -6,6 +6,7 @@ import pytest_asyncio
 from oes.registration.config import load_event_config
 from oes.registration.database import DBConfig
 from oes.registration.models.event import EventConfig
+from oes.registration.serialization import get_converter
 
 
 @pytest_asyncio.fixture
@@ -31,3 +32,8 @@ async def db(db_config: DBConfig):
 @pytest.fixture
 def example_events() -> EventConfig:
     return load_event_config(Path("tests/test_data/events.yml"))
+
+
+@pytest.fixture
+def converter():
+    return get_converter()

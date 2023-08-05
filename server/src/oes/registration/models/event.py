@@ -4,11 +4,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from datetime import date  # noqa
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from attrs import Factory, field, frozen
 from oes.registration.models.identifier import validate_identifier
-from oes.template import Condition, Template, evaluate
+from oes.template import Template, ValueOrEvaluable, evaluate
 from typing_extensions import Self
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ class Whenable(ABC):
 
     @property
     @abstractmethod
-    def when(self) -> Condition:
+    def when(self) -> Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]]:
         """The ``when`` condition."""
         ...
 

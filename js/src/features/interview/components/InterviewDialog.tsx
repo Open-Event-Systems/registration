@@ -6,52 +6,49 @@ import { useInterviewState } from "#src/features/interview/hooks.js"
 import { useWretch } from "#src/hooks/api.js"
 import { useLocation, useNavigate } from "#src/hooks/location.js"
 import { Skeleton } from "@mantine/core"
-import { ExitView } from "@open-event-systems/interview-components/components/interview/ExitView.js"
-import { QuestionView } from "@open-event-systems/interview-components/components/interview/QuestionView.js"
 import {
-  AskResult,
-  ExitResult,
-  FormValues,
-  InterviewStateRecord,
-} from "@open-event-systems/interview-lib"
-import { observer } from "mobx-react-lite"
-import { ReactNode, useLayoutEffect, useState } from "react"
+  ExitView,
+  InterviewComponent,
+  QuestionView,
+} from "@open-event-systems/interview-components"
+import { InterviewStateRecord } from "@open-event-systems/interview-lib"
+import { FormValues } from "@open-event-systems/interview-lib"
+import { action, runInAction } from "mobx"
+import { observer, useLocalObservable } from "mobx-react-lite"
+import { useEffect } from "react"
 import { WretchResponse } from "wretch"
 
 export type InterviewDialogProps = {
   recordId: string
-  content?: AskResult | ExitResult | null
-  onSubmit: (values: FormValues, button: number | null) => Promise<void>
+  onSubmit: (values: FormValues) => Promise<void>
 } & Omit<ModalDialogProps, "children" | "onSubmit" | "content">
 
 export const InterviewDialog = (props: InterviewDialogProps) => {
-  const { recordId, opened, content, onClose, onSubmit, ...other } = props
+  const { recordId, opened, onClose, onSubmit, ...other } = props
 
-  let title: ReactNode = <Skeleton height={24} width={120} />
-  let contentEl
-
-  if (content?.type == "exit") {
-    title = content.title
-    contentEl = <ExitView key={recordId} content={content} onClose={onClose} />
-  } else if (content?.type == "question") {
-    title = content.title || "Question"
-    contentEl = (
-      <QuestionView key={recordId} content={content} onSubmit={onSubmit} />
-    )
-  } else {
-    contentEl = (
-      <>
-        <Skeleton height={24} mt={6} />
-        <Skeleton height={24} mt={6} />
-        <Skeleton height={150} mt={30} />
-      </>
-    )
-  }
+  const interviewStateStore = useInterviewState()
 
   return (
-    <ModalDialog opened={opened} title={title} onClose={onClose} {...other}>
-      {contentEl}
-    </ModalDialog>
+    <InterviewComponent
+      recordId={recordId}
+      stateStore={interviewStateStore}
+      onSubmit={onSubmit}
+      renderQuestion={(props, title) => (
+        <ModalDialog
+          opened={opened}
+          onClose={onClose}
+          title={title || "Question"}
+          {...other}
+        >
+          <QuestionView key={recordId} {...props} />
+        </ModalDialog>
+      )}
+      renderExit={(props, title) => (
+        <ModalDialog opened={opened} onClose={onClose} title={title} {...other}>
+          <ExitView key={recordId} {...props} onClose={onClose} />
+        </ModalDialog>
+      )}
+    />
   )
 }
 
@@ -62,7 +59,10 @@ const Manager = observer(
         response: Promise<WretchResponse>,
         record: InterviewStateRecord
       ) => Promise<void>
-    } & Omit<InterviewDialogProps, "onSubmit" | "recordId">
+    } & Omit<
+      InterviewDialogProps,
+      "onSubmit" | "onClose" | "recordId" | "opened"
+    >
   ) => {
     const { onComplete, ...other } = props
 
@@ -73,74 +73,100 @@ const Manager = observer(
     const interviewState = useInterviewState()
 
     const locState = loc.state?.showInterviewDialog
+    const recordId = locState?.recordId
 
-    const record = locState?.recordId
-      ? interviewState.getRecord(locState.recordId)
-      : void 0
+    const state = useLocalObservable(() => ({
+      prevRecordId: recordId,
+      submitting: false,
+    }))
 
-    const responseContent =
-      !!record && !record.stateResponse.complete
-        ? record.stateResponse.content
-        : null
+    const show = !!recordId
 
-    const [prevContent, setPrevContent] = useState(responseContent)
-
-    const show = !!locState?.recordId && !!record
-
-    useLayoutEffect(() => {
-      if (show) {
-        setPrevContent(responseContent)
-      }
-    }, [responseContent, show])
+    useEffect(
+      action(() => {
+        if (recordId) {
+          state.prevRecordId = recordId
+        }
+      }),
+      [recordId]
+    )
 
     const handleClose = () => {
       navigate(loc, { state: { ...loc.state, showInterviewDialog: undefined } })
     }
 
-    const handleSubmit = async (values: FormValues, button: number | null) => {
-      if (!record || !locState) {
+    const handleSubmit = action(async (values: FormValues) => {
+      if (!recordId || !locState) {
         return
       }
 
-      const newRecord = await interviewState.updateInterview(
-        record,
-        values,
-        button ?? void 0
-      )
-      if (newRecord.stateResponse.complete) {
-        const target = newRecord.stateResponse.target_url
-        const submitResponse = wretch
-          .url(target, true)
-          .json({
-            state: newRecord.stateResponse.state,
-          })
-          .post()
-          .res()
+      const record = interviewState.getRecord(recordId)
 
-        onComplete(submitResponse, newRecord)
-      } else {
-        navigate(loc, {
-          state: {
-            ...loc.state,
-            showInterviewDialog: {
-              recordId: newRecord.id,
-              eventId: locState.eventId,
+      if (!record) {
+        return
+      }
+
+      state.submitting = true
+
+      try {
+        const newRecord = await interviewState.updateInterview(record, values)
+
+        if (
+          newRecord.stateResponse.complete &&
+          newRecord.stateResponse.target_url
+        ) {
+          const submitResponse = wretch
+            .url(newRecord.stateResponse.target_url, true)
+            .json({
+              state: newRecord.stateResponse.state,
+            })
+            .post()
+            .res()
+
+          await onComplete(submitResponse, newRecord)
+        } else {
+          navigate(loc, {
+            state: {
+              ...loc.state,
+              showInterviewDialog: {
+                recordId: newRecord.id,
+                eventId: locState.eventId,
+              },
             },
-          },
+          })
+        }
+      } finally {
+        runInAction(() => {
+          state.submitting = false
         })
       }
-    }
+    })
 
-    return (
-      <InterviewDialog
-        {...other}
-        recordId={record?.id ?? ""}
-        opened={show}
-        onClose={handleClose}
-        onSubmit={handleSubmit}
-        content={show ? responseContent : prevContent}
-      />
-    )
+    if (recordId) {
+      return (
+        <InterviewDialog
+          recordId={recordId}
+          opened={show}
+          onClose={handleClose}
+          onSubmit={handleSubmit}
+          loading={state.submitting}
+          {...other}
+        />
+      )
+    } else {
+      return (
+        <ModalDialog
+          title={<Skeleton height={24} width={120} />}
+          onClose={handleClose}
+          opened={show}
+          {...other}
+        >
+          <Skeleton height={24} mt={6} />
+          <Skeleton height={24} mt={6} />
+          <Skeleton height={150} mt={30} />
+        </ModalDialog>
+      )
+    }
   }
 )
 

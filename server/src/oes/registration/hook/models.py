@@ -6,15 +6,6 @@ from enum import Enum
 from typing import Any, Union
 
 from attrs import Factory, field, frozen
-from oes.hook import (
-    ExecutableHookConfig,
-    Hook,
-    HttpHookConfig,
-    PythonHookConfig,
-    executable_hook_factory,
-    http_hook_factory,
-    python_hook_factory,
-)
 from oes.registration.http_client import get_http_client
 from oes.registration.serialization.json import json_dumps
 from typing_extensions import assert_never
@@ -71,11 +62,7 @@ class URLOnlyHTTPHookConfig:
     """The URL."""
 
 
-HookConfigObject = Union[
-    URLOnlyHTTPHookConfig,
-    ExecutableHookConfig,
-    PythonHookConfig,
-]
+HookConfigObject = Union[URLOnlyHTTPHookConfig,]
 """Hook configuration types."""
 
 

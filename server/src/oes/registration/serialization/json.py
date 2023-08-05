@@ -1,5 +1,6 @@
 """JSON serialization types."""
 import base64
+from abc import abstractmethod
 from collections.abc import Callable
 from datetime import date, datetime
 from functools import cache
@@ -8,6 +9,22 @@ from typing import Any, Mapping, Union
 from uuid import UUID
 
 import orjson
+from typing_extensions import Protocol
+
+
+class JSONEncoder(Protocol):
+    """JSON encoder/decoder."""
+
+    @abstractmethod
+    def dumps(self, obj: object, /) -> bytes:
+        """JSON ``dumps``."""
+        ...
+
+    @abstractmethod
+    def loads(self, data: Union[bytes, bytearray, memoryview, str], /) -> Any:
+        """JSON ``loads``."""
+        ...
+
 
 TypeFn = Callable[[Any], bool]
 Serializer = Callable[[Any], object]
@@ -43,6 +60,18 @@ def json_default(v: object) -> object:
     type_ = type(v)
     serializer = _get_serializer(type_)  # type: ignore
     return serializer(v)
+
+
+class _DefaultJSONEncoder(JSONEncoder):
+    def dumps(self, obj: object) -> bytes:
+        return orjson.dumps(obj, default=json_default)
+
+    def loads(self, data: Union[bytes, bytearray, memoryview, str]) -> Any:
+        return orjson.loads(data)
+
+
+default_encoder: JSONEncoder = _DefaultJSONEncoder()
+"""The default JSON encoder."""
 
 
 @cache
