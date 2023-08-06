@@ -49,7 +49,12 @@ from oes.registration.log import setup_logging
 from oes.registration.models.config import Config
 from oes.registration.payment.config import load_services
 from oes.registration.serialization import get_converter
-from oes.registration.serialization.json import default_encoder, json_dumps, json_loads
+from oes.registration.serialization.json import (
+    JSONEncoder,
+    default_encoder,
+    json_dumps,
+    json_loads,
+)
 from oes.registration.services.cart import CartService
 from oes.registration.services.checkout import CheckoutService
 from oes.registration.services.event import EventService
@@ -242,7 +247,7 @@ def app_factory():
     setup_logging(debug=cmd_config.debug)
 
     app.services.add_instance(cmd_config)
-    app.services.add_instance(default_encoder)
+    app.services.add_instance(default_encoder, JSONEncoder)
     app.services.add_instance(get_converter(), Converter)
 
     # set up authentication

@@ -146,9 +146,9 @@ def render_self_service_registration(
 
     result = SelfServiceRegistration(
         id=model.id,
-        title=event.display_options.registration.title.render(**context),
-        subtitle=event.display_options.registration.subtitle.render(**context),
-        description=event.display_options.registration.description.render(**context),
+        title=event.display_options.registration.title.render(context),
+        subtitle=event.display_options.registration.subtitle.render(context),
+        description=event.display_options.registration.description.render(context),
     )
 
     return result

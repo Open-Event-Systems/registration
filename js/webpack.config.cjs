@@ -18,11 +18,21 @@ module.exports = (env, argv) => {
     },
     module: {
       rules: [
-        // babel-loader for all js/ts source files
+        // babel-loader for all non-js source files, or js files in the project
         {
-          test: /\.[tj]sx?$/,
+          // test: /\.(tsx?|jsx)$/,
           exclude: /node_modules/,
-          use: "babel-loader",
+          oneOf: [
+            {
+              test: /\.(tsx?|jsx)$/,
+              use: "babel-loader",
+            },
+            {
+              test: /\.js$/,
+              exclude: /node_modules/,
+              use: "babel-loader",
+            },
+          ],
         },
 
         // config.json

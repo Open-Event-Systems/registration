@@ -1,3 +1,4 @@
+"""Interview models."""
 from datetime import datetime
 from typing import Any, Optional
 
@@ -47,10 +48,7 @@ class InterviewResultResponse:
         self, *, target_url: Optional[str] = None, now: Optional[datetime] = None
     ) -> bool:
         """Return whether the result is valid."""
-
         now = now if now is not None else get_now()
-        print(not target_url, target_url == self.target_url)
-        print(now < self.expiration_date)
 
         return (
             self.complete

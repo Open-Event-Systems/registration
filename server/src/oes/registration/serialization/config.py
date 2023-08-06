@@ -1,7 +1,7 @@
 """Serialization used internally for configuration."""
 import base64
 from collections.abc import Sequence
-from typing import Tuple, get_args, get_origin
+from typing import Tuple, Union, get_args, get_origin
 
 from cattrs import Converter
 from oes.registration.models.config import Base64Bytes
@@ -10,17 +10,17 @@ from oes.registration.serialization.common import (
     configure_converter as configure_common,
 )
 from oes.template import (
-    Condition,
     Expression,
     LogicAnd,
+    LogicNot,
     LogicOr,
     Template,
-    structure_condition,
+    ValueOrEvaluable,
     structure_expression,
     structure_template,
-    unstructure_and,
+    structure_value_or_evaluable,
     unstructure_expression,
-    unstructure_or,
+    unstructure_logic,
     unstructure_template,
 )
 
@@ -35,21 +35,25 @@ def configure_converter(c: Converter):
         lambda cls: get_origin(cls) is Sequence,
         lambda v, t: structure_sequence(c, v, t),
     )
-    c.register_structure_hook(Template, lambda v, t: structure_template(v))
+    c.register_structure_hook(Template, structure_template)
+    c.register_structure_hook(Expression, structure_expression)
     c.register_structure_hook(
-        Expression,
-        lambda v, t: structure_expression(v),
+        ValueOrEvaluable, lambda v, t: structure_value_or_evaluable(c, v, t)
     )
-    c.register_structure_hook(
-        Condition,
-        lambda v, t: structure_condition(c, v),
+    c.register_structure_hook_func(
+        lambda cls: cls == Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]],
+        lambda v, t: structure_value_or_evaluable_sequence(c, v, t),
     )
 
     c.register_unstructure_hook(Base64Bytes, unstructure_base64_bytes)
     c.register_unstructure_hook(Template, unstructure_template)
     c.register_unstructure_hook(Expression, unstructure_expression)
-    c.register_unstructure_hook(LogicAnd, lambda v: unstructure_and(c, v))
-    c.register_unstructure_hook(LogicOr, lambda v: unstructure_or(c, v))
+
+    c.register_unstructure_hook_func(
+        lambda cls: isinstance(cls, type)
+        and issubclass(cls, (LogicAnd, LogicOr, LogicNot)),
+        lambda v: unstructure_logic(c, v),
+    )
 
 
 # Sequence[T] is structured as tuple[T, ...]
@@ -68,6 +72,14 @@ def structure_base64_bytes(v, t):
 
     decoded = base64.b64decode(v)
     return Base64Bytes(decoded)
+
+
+def structure_value_or_evaluable_sequence(c, v, t):
+    """Structure a value or evaluable sequence."""
+    if isinstance(v, Sequence) and not isinstance(v, str):
+        return c.structure(v, Sequence[ValueOrEvaluable])
+    else:
+        return c.structure(v, ValueOrEvaluable)
 
 
 def unstructure_base64_bytes(v):

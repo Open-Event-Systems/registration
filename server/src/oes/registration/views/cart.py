@@ -18,8 +18,7 @@ from blacksheep.messages import get_absolute_url_to_path
 from blacksheep.server.openapi.common import ContentInfo, RequestBodyInfo, ResponseInfo
 from blacksheep.url import build_absolute_url
 from cattrs import BaseValidationError
-from oes.interview.response import IncompleteInterviewStateResponse
-from oes.interview.state import InvalidStateError
+from loguru import logger
 from oes.registration.access_code.models import AccessCodeSettings
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
@@ -336,21 +335,20 @@ async def remove_registration_from_cart(
     },
     tags=["Cart"],
 )
-@serialize(IncompleteInterviewStateResponse)
+@serialize(dict[str, Any])
 async def create_cart_add_interview_state(
     request: Request,
     id: str,
     interview_id: FromQuery[str],
     registration_id: FromQuery[Optional[UUID]],
     access_code: FromQuery[Optional[str]],
-    config: Config,
     event_config: EventConfig,
     service: CartService,
     registration_service: RegistrationService,
     interview_service: InterviewService,
     access_code_service: AccessCodeService,
     user: User,
-) -> IncompleteInterviewStateResponse:
+) -> dict[str, Any]:
     """Get an interview state to add a registration to a cart."""
     entity = check_not_found(await service.get_cart(id))
     cart = entity.get_cart_data_model()
@@ -381,11 +379,11 @@ async def create_cart_add_interview_state(
     initial_data = _get_interview_initial_data(
         event.id, registration, user, access_code.value, access_code_settings
     )
-    submission_id = uuid.uuid4()
+    submission_id = uuid.uuid4().hex
 
     target_url = get_absolute_url_to_path(request, f"/carts/{entity.id}/registrations")
 
-    state = interview_service.create_state(
+    response = await interview_service.start_interview(
         valid_interview_id,
         target_url=target_url.value.decode(),
         submission_id=submission_id,
@@ -393,11 +391,7 @@ async def create_cart_add_interview_state(
         initial_data=initial_data,
     )
 
-    return IncompleteInterviewStateResponse(
-        state=state,
-        update_url=config.interview.update_url,
-        content=None,
-    )
+    return response
 
 
 def _validate_registration(data: dict[str, Any]) -> Registration:
@@ -502,12 +496,10 @@ async def _add_from_interview(
     interview_service: InterviewService,
     access_code_service: AccessCodeService,
 ):
-    try:
-        interview_result = interview_service.get_validated_state(
-            state, current_url=current_url
-        )
-    except InvalidStateError as e:
-        raise HTTPException(409, str(e))
+    interview_result = await interview_service.get_result(state, target_url=current_url)
+    if not interview_result:
+        logger.debug("Interview result is not valid")
+        raise HTTPException(409)
 
     # Get existing data
     new_reg = _parse_registration_data(interview_result.data.get("registration", {}))
@@ -523,15 +515,17 @@ async def _add_from_interview(
     )
 
     if access_code is not None and access_code_settings is None:
+        logger.debug("Access code is not valid")
         raise HTTPException(409)
 
     # make sure interview is still available
     if not _check_interview_availability(
-        interview_result.interview_id,
+        interview_result.interview["id"],
         event,
         cur_reg_entity,
         access_code_settings,
     ):
+        logger.debug("Interview is not available")
         raise HTTPException(409)
 
     # Add to cart

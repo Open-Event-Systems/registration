@@ -74,7 +74,7 @@ def _make_line_item(
     return LineItem(
         type_id=rule.type_id,
         registration_id=UUID(cart_registration.new_data.get("id")),
-        name=rule.name.render(**context),
+        name=rule.name.render(context),
         price=rule.price,
         modifiers=modifiers,
         total_price=rule.price + sum(m.amount for m in modifiers),
@@ -89,7 +89,7 @@ def _eval_modifiers(li_rule: LineItemRule, context: dict[str, Any]):
 
 def _make_modifier(rule: ModifierRule, context: dict[str, Any]) -> Modifier:
     return Modifier(
-        type_id=rule.type_id.render(**context) if rule.type_id is not None else None,
-        name=rule.name.render(**context),
+        type_id=rule.type_id.render(context) if rule.type_id is not None else None,
+        name=rule.name.render(context),
         amount=rule.amount,
     )

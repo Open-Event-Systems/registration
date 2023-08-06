@@ -1,24 +1,19 @@
+"""Interview service."""
 import uuid
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from typing import Any, Optional
-from uuid import UUID
 
 from cattrs import Converter
 from httpx import AsyncClient
 from oes.registration.interview.models import (
     InterviewListItem,
-    InterviewResult,
     InterviewResultRequest,
     InterviewResultResponse,
     StartInterviewRequest,
 )
-from oes.registration.models.config import Config, InterviewConfig
-from oes.registration.serialization.json import (
-    JSONEncoder,
-    default_encoder,
-    json_default,
-)
+from oes.registration.models.config import Config
+from oes.registration.serialization.json import JSONEncoder, default_encoder
 from oes.template import Context
 
 
@@ -91,6 +86,7 @@ class InterviewService:
                 "Content-Type": "application/json",
             },
         )
+        result.raise_for_status()
         return self._json_encoder.loads(result.content)
 
     async def get_result(

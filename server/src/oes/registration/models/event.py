@@ -56,7 +56,7 @@ class ModifierRule(Whenable):
     amount: int
     """The amount."""
 
-    when: Condition
+    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]]
     """The condition/conditions when the modifier applies."""
 
 
@@ -79,7 +79,7 @@ class LineItemRule(Whenable):
     modifiers: Sequence[ModifierRule] = ()
     """Modifier rules."""
 
-    when: Condition
+    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]]
     """The condition/conditions when the line item is present."""
 
 
@@ -110,7 +110,7 @@ class EventInterviewOption(Whenable):
     name: str
     """The interview name."""
 
-    when: Condition = ()
+    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """The condition."""
 
 
