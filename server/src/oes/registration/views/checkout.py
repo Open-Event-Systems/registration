@@ -10,6 +10,7 @@ from blacksheep import (
     FromQuery,
     HTTPException,
     Response,
+    allow_anonymous,
     auth,
 )
 from blacksheep.exceptions import NotFound
@@ -21,30 +22,29 @@ from oes.registration.app import app
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.handlers import RequireCart
 from oes.registration.auth.user import User
-from oes.registration.database import transaction
-from oes.registration.docs import docs, docs_helper
-from oes.registration.entities.checkout import CheckoutEntity, CheckoutState
-from oes.registration.entities.registration import RegistrationEntity
-from oes.registration.hook.service import HookSender
-from oes.registration.models.cart import CartData
-from oes.registration.models.config import Config
-from oes.registration.models.event import EventConfig
-from oes.registration.models.payment import PaymentServiceCheckout
-from oes.registration.models.pricing import PricingResult
-from oes.registration.payment.base import (
-    CheckoutMethod,
-    CheckoutStateError,
-    ValidationError,
-)
-from oes.registration.serialization import get_converter
-from oes.registration.services.cart import (
+from oes.registration.cart.models import CartData, PricingResult
+from oes.registration.cart.service import (
     CartService,
     get_access_codes_from_cart,
     get_registration_entities_from_cart,
     price_cart,
     validate_changes,
 )
-from oes.registration.services.checkout import CheckoutService, apply_checkout_changes
+from oes.registration.checkout.entities import CheckoutEntity, CheckoutState
+from oes.registration.checkout.models import PaymentServiceCheckout
+from oes.registration.checkout.service import CheckoutService, apply_checkout_changes
+from oes.registration.database import transaction
+from oes.registration.docs import docs, docs_helper
+from oes.registration.entities.registration import RegistrationEntity
+from oes.registration.hook.service import HookSender
+from oes.registration.models.config import Config
+from oes.registration.models.event import EventConfig
+from oes.registration.payment.base import (
+    CheckoutMethod,
+    CheckoutStateError,
+    ValidationError,
+)
+from oes.registration.serialization import get_converter
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import (
     RegistrationService,
@@ -55,6 +55,7 @@ from oes.registration.views.responses import (
     BodyValidationError,
     CheckoutErrorResponse,
     CreateCheckoutResponse,
+    PricingResultResponse,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -219,6 +220,7 @@ async def cancel_checkout(id: UUID, checkout_service: CheckoutService) -> Respon
             "An updated checkout", content=[ContentInfo(CreateCheckoutResponse)]
         ),
         204: ResponseInfo("Returned when the checkout was completed"),
+        422: ResponseInfo("An error with payment occurred"),
     },
     tags=["Checkout"],
 )
@@ -418,3 +420,36 @@ async def _validate_checkout_method(
         cart_data, pricing_result
     )
     return any(o.service == service and o.method == method for o in options)
+
+
+@allow_anonymous()
+@app.router.get("/receipts/{receipt_id}")
+@docs_helper(
+    response_type=PricingResultResponse,
+    response_summary="The receipt data",
+    tags=["Checkout"],
+)
+async def get_receipt(
+    receipt_id: str,
+    service: CheckoutService,
+    config: Config,
+) -> PricingResultResponse:
+    """Get receipt information by ID."""
+    checkout = check_not_found(await service.get_checkout_by_receipt_id(receipt_id))
+
+    assert checkout.receipt_id is not None
+    receipt_url = _make_receipt_url(checkout.receipt_id, config)
+
+    return PricingResultResponse.create(
+        checkout.get_pricing_result(),
+        receipt_url=receipt_url,
+        date=checkout.date_closed,
+    )
+
+
+def _make_receipt_url(receipt_id: str, config: Config) -> str:
+    url = config.payment.receipt_base_url
+    if not url.endswith("/"):
+        url += "/"
+
+    return url + receipt_id

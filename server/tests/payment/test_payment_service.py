@@ -1,5 +1,5 @@
 import pytest
-from oes.registration.entities.checkout import CheckoutState
+from oes.registration.checkout.entities import CheckoutState
 from oes.registration.payment.base import CreateCheckoutRequest, PaymentService
 
 

@@ -30,7 +30,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from oes.registration.auth.entities import AccountEntity
-    from oes.registration.models.cart import CartRegistration, InvalidChangeError
+    from oes.registration.cart.models import CartRegistration, InvalidChangeError
 
 
 class RegistrationEntity(Base):

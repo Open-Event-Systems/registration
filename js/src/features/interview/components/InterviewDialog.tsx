@@ -5,7 +5,7 @@ import {
 import { useInterviewState } from "#src/features/interview/hooks.js"
 import { useWretch } from "#src/hooks/api.js"
 import { useLocation, useNavigate } from "#src/hooks/location.js"
-import { Skeleton } from "@mantine/core"
+import { Skeleton, Text } from "@mantine/core"
 import {
   ExitView,
   InterviewComponent,
@@ -15,11 +15,12 @@ import { InterviewStateRecord } from "@open-event-systems/interview-lib"
 import { FormValues } from "@open-event-systems/interview-lib"
 import { action, runInAction } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
-import { useEffect } from "react"
+import { useCallback, useLayoutEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { WretchResponse } from "wretch"
 
 export type InterviewDialogProps = {
-  recordId: string
+  recordId?: string
   onSubmit: (values: FormValues) => Promise<void>
 } & Omit<ModalDialogProps, "children" | "onSubmit" | "content">
 
@@ -28,27 +29,59 @@ export const InterviewDialog = (props: InterviewDialogProps) => {
 
   const interviewStateStore = useInterviewState()
 
+  const [titleEl, setTitleEl] = useState<HTMLElement | null>(() => null)
+  const setRef = useCallback((el: HTMLElement | null) => {
+    setTitleEl(el)
+  }, [])
+
   return (
-    <InterviewComponent
-      recordId={recordId}
-      stateStore={interviewStateStore}
-      onSubmit={onSubmit}
-      renderQuestion={(props, title) => (
-        <ModalDialog
-          opened={opened}
-          onClose={onClose}
-          title={title || "Question"}
-          {...other}
-        >
-          <QuestionView key={recordId} {...props} />
-        </ModalDialog>
+    <ModalDialog
+      opened={opened}
+      onClose={onClose}
+      styles={{
+        body: {
+          minHeight: 400,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "stretch",
+          "& > *": {
+            flex: "auto",
+          },
+        },
+      }}
+      title={<Text ref={setRef} span></Text>}
+      {...other}
+    >
+      {recordId ? (
+        <InterviewComponent
+          key={recordId}
+          recordId={recordId}
+          stateStore={interviewStateStore}
+          onSubmit={onSubmit}
+          renderQuestion={(props, title) => (
+            <>
+              {titleEl ? createPortal(<>{title}</>, titleEl) : null}
+              <QuestionView {...props} />
+            </>
+          )}
+          renderExit={(props, title) => (
+            <>
+              {titleEl ? createPortal(<>{title}</>, titleEl) : null}
+              <ExitView {...props} onClose={onClose} />
+            </>
+          )}
+        />
+      ) : (
+        <>
+          {titleEl
+            ? createPortal(<Skeleton height={24} width={120} />, titleEl)
+            : null}
+          <Skeleton height={24} mt={6} />
+          <Skeleton height={24} mt={6} />
+          <Skeleton height={150} mt={30} />
+        </>
       )}
-      renderExit={(props, title) => (
-        <ModalDialog opened={opened} onClose={onClose} title={title} {...other}>
-          <ExitView key={recordId} {...props} onClose={onClose} />
-        </ModalDialog>
-      )}
-    />
+    </ModalDialog>
   )
 }
 
@@ -82,14 +115,14 @@ const Manager = observer(
 
     const show = !!recordId
 
-    useEffect(
-      action(() => {
-        if (recordId) {
+    useLayoutEffect(() => {
+      if (recordId) {
+        runInAction(() => {
+          state.submitting = false
           state.prevRecordId = recordId
-        }
-      }),
-      [recordId]
-    )
+        })
+      }
+    }, [recordId])
 
     const handleClose = () => {
       navigate(loc, { state: { ...loc.state, showInterviewDialog: undefined } })
@@ -135,38 +168,25 @@ const Manager = observer(
             },
           })
         }
-      } finally {
+      } catch (_) {
         runInAction(() => {
           state.submitting = false
         })
       }
     })
 
-    if (recordId) {
-      return (
-        <InterviewDialog
-          recordId={recordId}
-          opened={show}
-          onClose={handleClose}
-          onSubmit={handleSubmit}
-          loading={state.submitting}
-          {...other}
-        />
-      )
-    } else {
-      return (
-        <ModalDialog
-          title={<Skeleton height={24} width={120} />}
-          onClose={handleClose}
-          opened={show}
-          {...other}
-        >
-          <Skeleton height={24} mt={6} />
-          <Skeleton height={24} mt={6} />
-          <Skeleton height={150} mt={30} />
-        </ModalDialog>
-      )
-    }
+    const curRecordId = show ? recordId : state.prevRecordId
+
+    return (
+      <InterviewDialog
+        recordId={curRecordId}
+        opened={show}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+        loading={state.submitting}
+        {...other}
+      />
+    )
   }
 )
 

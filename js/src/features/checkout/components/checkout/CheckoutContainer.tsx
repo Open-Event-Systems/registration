@@ -31,7 +31,14 @@ export const CheckoutError = ({ children }: { children?: ReactNode }) => {
 }
 
 const formatError = (err: unknown) => {
-  return `${err}`
+  console.log(err, typeof err)
+  if (err && typeof err == "object" && err instanceof Error) {
+    return err.message
+  } else if (err && typeof err == "object" && "detail" in err) {
+    return `${err.detail}`
+  } else {
+    return `${err}`
+  }
 }
 
 export type CheckoutContainerProps<ID extends PaymentServiceID> = {

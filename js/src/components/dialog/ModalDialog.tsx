@@ -32,7 +32,9 @@ const useStyles = createStyles((_theme, params: ModalDialogParams) => ({
   root: {},
   inner: {},
   content: {},
-  header: {},
+  header: {
+    zIndex: "initial",
+  },
   overlay: {},
   title: {
     fontWeight: "bold",
@@ -87,11 +89,7 @@ export const ModalDialog = (props: ModalDialogProps) => {
           {!hideCloseButton && <Modal.CloseButton className={classes.close} />}
         </Modal.Header>
         <Modal.Body className={classes.body}>{children}</Modal.Body>
-        <LoadingOverlay
-          className={classes.loading}
-          visible={!!loading}
-          zIndex={1001} // just above the header
-        />
+        <LoadingOverlay className={classes.loading} visible={!!loading} />
       </Modal.Content>
     </Modal.Root>
   )

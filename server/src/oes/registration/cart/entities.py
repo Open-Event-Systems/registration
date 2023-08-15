@@ -4,9 +4,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
+from oes.registration.cart.models import CART_HASH_SIZE, CartData, PricingResult
 from oes.registration.entities.base import Base, JSONData
-from oes.registration.models.cart import CART_HASH_SIZE, CartData
-from oes.registration.models.pricing import PricingResult
 from oes.registration.serialization import get_converter
 from oes.registration.util import get_now
 from sqlalchemy import String, null

@@ -1,9 +1,14 @@
 import uuid
 
 import pytest
-from oes.registration.entities.checkout import CheckoutEntity, CheckoutState
-from oes.registration.models.cart import CartData, CartRegistration
-from oes.registration.models.pricing import LineItem, PricingResult
+from oes.registration.cart.models import (
+    CartData,
+    CartRegistration,
+    LineItem,
+    PricingResult,
+    PricingResultRegistration,
+)
+from oes.registration.checkout.entities import CheckoutEntity, CheckoutState
 from oes.registration.util import get_now
 
 
@@ -88,13 +93,18 @@ def test_set_pricing_result():
     id_ = uuid.uuid4()
     result = PricingResult(
         currency="USD",
-        line_items=(
-            LineItem(
-                type_id="1",
+        registrations=(
+            PricingResultRegistration(
                 registration_id=id_,
-                name="Item",
-                price=100,
-                total_price=100,
+                name="Registration",
+                line_items=(
+                    LineItem(
+                        type_id="1",
+                        name="Item",
+                        price=100,
+                        total_price=100,
+                    ),
+                ),
             ),
         ),
         total_price=100,

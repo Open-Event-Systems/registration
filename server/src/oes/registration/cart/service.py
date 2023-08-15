@@ -1,26 +1,26 @@
 """Cart service."""
 import asyncio
-from collections.abc import Mapping
 from inspect import iscoroutinefunction
-from typing import Optional
+from typing import Mapping, Optional
 from uuid import UUID
 
 from oes.registration.access_code.entities import AccessCodeEntity
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.auth.account_service import AccountService
-from oes.registration.entities.cart import CartEntity
-from oes.registration.entities.registration import RegistrationEntity
-from oes.registration.hook.models import HookConfig, HookEvent
-from oes.registration.hook.service import HookSender
-from oes.registration.models.cart import CartData, CartRegistration
-from oes.registration.models.config import Config
-from oes.registration.models.event import Event, SimpleEventInfo
-from oes.registration.models.pricing import (
+from oes.registration.cart.entities import CartEntity
+from oes.registration.cart.models import (
+    CartData,
+    CartRegistration,
     PricingEventBody,
     PricingRequest,
     PricingResult,
 )
-from oes.registration.pricing import default_pricing
+from oes.registration.checkout.pricing import default_pricing
+from oes.registration.entities.registration import RegistrationEntity
+from oes.registration.hook.models import HookConfig, HookEvent
+from oes.registration.hook.service import HookSender
+from oes.registration.models.config import Config
+from oes.registration.models.event import Event, SimpleEventInfo
 from oes.registration.serialization import get_converter
 from oes.registration.services.registration import (
     RegistrationService,
@@ -110,7 +110,6 @@ async def _call_pricing_hooks(
 _err_out_of_date = (
     "This registration has changed. Please remove it and make your changes again."
 )
-
 _err_access_code = (
     "The access code is no longer valid. Please remove it and make your changes again."
 )

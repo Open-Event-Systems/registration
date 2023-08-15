@@ -1,13 +1,13 @@
 import uuid
 
 import pytest
-from oes.registration.entities.registration import RegistrationEntity
-from oes.registration.models.cart import (
+from oes.registration.cart.models import (
     CART_HASH_SIZE,
     CartData,
     CartError,
     CartRegistration,
 )
+from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.models.registration import Registration, RegistrationState
 from oes.registration.util import get_now
 

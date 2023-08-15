@@ -5,11 +5,12 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
+from uuid import UUID
 
 from attrs import field, frozen
 from loguru import logger
-from oes.registration.entities.checkout import CheckoutState
-from oes.registration.models.payment import PaymentServiceCheckout
+from oes.registration.checkout.entities import CheckoutState
+from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.payment.base import (
     CheckoutCancelError,
     CheckoutMethod,
@@ -99,7 +100,9 @@ class StripePaymentService(PaymentService):
         return intent
 
     async def create_checkout(
-        self, request: CreateCheckoutRequest
+        self,
+        request: CreateCheckoutRequest,
+        checkout_id: Optional[UUID] = None,
     ) -> PaymentServiceCheckout:
         loop = asyncio.get_running_loop()
         intent = await loop.run_in_executor(None, self._create_intent, request)

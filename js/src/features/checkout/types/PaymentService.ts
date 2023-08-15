@@ -4,10 +4,6 @@ import {
 } from "#src/features/checkout/types/Checkout.js"
 import { CheckoutComponent } from "#src/features/checkout/types/CheckoutComponent.js"
 
-// export const checkoutComponents: Record<
-//   PaymentServiceID,
-//   () => Promise<CheckoutComponent<PaymentServiceID>>
-// > = {
 export const checkoutComponents: {
   [K in keyof PaymentServiceMap]?: () => Promise<CheckoutComponent<K>>
 } = {
@@ -21,7 +17,13 @@ export const checkoutComponents: {
     const module = await import(
       "#src/features/checkout/impl/stripe/StripeCheckoutComponent.js"
     )
-    return await module.StripeCheckoutComponent
+    return module.StripeCheckoutComponent
+  },
+  square: async () => {
+    const module = await import(
+      "#src/features/checkout/impl/square/SquareCheckoutComponent.js"
+    )
+    return module.SquareCheckoutComponent
   },
 }
 

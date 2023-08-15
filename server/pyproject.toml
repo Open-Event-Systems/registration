@@ -27,6 +27,7 @@ uvicorn = {extras = ["standard"], version = "^0.21.1"}
 httpx = "^0.24.0"
 importlib-metadata = "^6.4.1"
 webauthn = "^1.8.1"
+squareup = {version = "^29.0.0.20230720", optional = true}
 
 # TODO: proper versioning of this
 oes-template = { git = "https://github.com/Open-Event-Systems/template.git", branch = "dev-0.3.0" }
@@ -37,7 +38,6 @@ oes-template = { git = "https://github.com/Open-Event-Systems/template.git", bra
 stripe = {version = "^5.4.0", optional = true}
 alembic = "^1.11.1"
 oauthlib = "^3.2.2"
-oes-interview = {path = "../../interview/python"}
 typed-settings = "^23.0.1"
 
 
@@ -50,10 +50,12 @@ pytest-asyncio = "^0.21.0"
 
 [tool.poetry.extras]
 stripe = ["stripe"]
+square = ["squareup"]
 
 
 [tool.poetry.plugins."oes.registration.payment_services"]
 stripe = "oes.registration.payment.stripe:create_stripe_service"
+square = "oes.registration.payment.square:create_square_service"
 mock = "oes.registration.payment.mock:create_mock_service"
 
 [tool.poetry.scripts]

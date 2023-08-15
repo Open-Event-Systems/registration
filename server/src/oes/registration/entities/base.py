@@ -66,7 +66,7 @@ def import_entities():
     """Import all modules that contain entities."""
     import oes.registration.access_code.entities  # noqa
     import oes.registration.auth.entities  # noqa
-    from oes.registration.entities import cart  # noqa
-    from oes.registration.entities import checkout  # noqa
+    import oes.registration.cart.entities  # noqa
+    import oes.registration.checkout.entities  # noqa
     from oes.registration.entities import event_stats  # noqa
     from oes.registration.entities import registration  # noqa

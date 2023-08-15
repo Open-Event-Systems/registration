@@ -44,13 +44,19 @@ export const updateCheckout = async <ID extends PaymentServiceID>(
     req = req.json(data)
   }
 
-  const res = await req.post().res()
+  return await req
+    .post()
+    .error(422, (e) => {
+      const errObj = e.json
+      throw new Error(errObj.detail)
+    })
+    .res((res) => {
+      if (res.status == 204) {
+        return null
+      }
 
-  if (res.status == 204) {
-    return null
-  } else {
-    return await res.json()
-  }
+      return res.json()
+    })
 }
 
 /**

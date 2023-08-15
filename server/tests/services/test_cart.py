@@ -3,10 +3,10 @@ from unittest.mock import create_autospec
 
 import pytest
 import pytest_asyncio
-from oes.registration.entities.cart import CartEntity
-from oes.registration.models.cart import CartData, CartRegistration
+from oes.registration.cart.entities import CartEntity
+from oes.registration.cart.models import CartData, CartRegistration
+from oes.registration.cart.service import CartService
 from oes.registration.models.config import Config
-from oes.registration.services.cart import CartService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

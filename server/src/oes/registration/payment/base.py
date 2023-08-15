@@ -4,12 +4,12 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Iterable, Mapping
 from typing import Any, Optional
+from uuid import UUID
 
 import orjson
 from attrs import frozen
-from oes.registration.models.cart import CartData
-from oes.registration.models.payment import PaymentServiceCheckout
-from oes.registration.models.pricing import PricingResult
+from oes.registration.cart.models import CartData, PricingResult
+from oes.registration.checkout.models import PaymentServiceCheckout
 
 
 class PaymentServiceError(RuntimeError):
@@ -211,12 +211,15 @@ class PaymentService(ABC):
 
     @abstractmethod
     async def create_checkout(
-        self, request: CreateCheckoutRequest
+        self,
+        request: CreateCheckoutRequest,
+        checkout_id: Optional[UUID] = None,
     ) -> PaymentServiceCheckout:
         """Create a checkout with the payment service.
 
         Args:
             request: A :class:`CreateCheckoutRequest` instance.
+            checkout_id: The checkout ID.
 
         Returns:
             A :class:`PaymentServiceCheckout`.
@@ -226,7 +229,7 @@ class PaymentService(ABC):
     @abstractmethod
     async def cancel_checkout(
         self, id: str, extra_data: Optional[dict[str, Any]] = None
-    ) -> PaymentServiceCheckout:
+    ) -> Optional[PaymentServiceCheckout]:
         """Cancel a checkout.
 
         Args:
@@ -234,7 +237,8 @@ class PaymentService(ABC):
             extra_data: Additional data about the checkout.
 
         Returns:
-            An updated :class:`PaymentServiceCheckout` instance.
+            An updated :class:`PaymentServiceCheckout` instance, or None if the
+            checkout is not found.
 
         Raises:
             CheckoutCancelError: if the checkout could not be canceled.

@@ -1,9 +1,9 @@
-"""Payment models."""
+"""Checkout models."""
 from datetime import datetime
 from typing import Any, Optional
 
-from attrs import frozen
-from oes.registration.entities.checkout import CheckoutState
+from attrs import Factory, frozen
+from oes.registration.checkout.entities import CheckoutState
 
 
 @frozen
@@ -25,10 +25,10 @@ class PaymentServiceCheckout:
     date_closed: Optional[datetime] = None
     """The date the checkout was closed with the service."""
 
-    checkout_data: Optional[dict[str, Any]] = None
+    checkout_data: dict[str, Any] = Factory(dict)
     """Additional checkout data with the service."""
 
-    response_data: Optional[dict[str, Any]] = None
+    response_data: dict[str, Any] = Factory(dict)
     """Additional checkout data with the service that will not be stored."""
 
     @property

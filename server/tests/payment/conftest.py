@@ -1,11 +1,19 @@
+import json
 import os
 import uuid
 
 import pytest
 import pytest_asyncio
-from oes.registration.models.cart import CartData, CartRegistration
-from oes.registration.models.pricing import LineItem, PricingResult
+from oes.registration.cart.models import (
+    CartData,
+    CartRegistration,
+    LineItem,
+    Modifier,
+    PricingResult,
+    PricingResultRegistration,
+)
 from oes.registration.payment.base import CreateCheckoutRequest, PaymentService
+from oes.registration.payment.square import SquareConfig, SquarePaymentService
 from oes.registration.payment.stripe import StripeConfig, StripePaymentService
 
 
@@ -27,9 +35,43 @@ def make_stripe_service():
     )
 
 
+def make_square_service():
+    access_token = os.getenv("TEST_SQUARE_ACCESS_TOKEN")
+    location_id = os.getenv("TEST_SQUARE_LOCATION_ID")
+    catalog_item_mapping_str = os.getenv("TEST_SQUARE_CATALOG_ITEM_MAPPING")
+    modifier_mapping_str = os.getenv("TEST_SQUARE_MODIFIER_MAPPING")
+
+    if not access_token:
+        pytest.skip("TEST_SQUARE_ACCESS_TOKEN not set")
+
+    if not location_id:
+        pytest.skip("TEST_SQUARE_LOCATION_ID not set")
+
+    catalog_item_mapping = (
+        json.loads(catalog_item_mapping_str) if catalog_item_mapping_str else {}
+    )
+    modifier_mapping = json.loads(modifier_mapping_str) if modifier_mapping_str else {}
+
+    try:
+        import square  # noqa
+    except ImportError:
+        pytest.skip("squareup library not installed")
+
+    return SquarePaymentService(
+        SquareConfig(
+            access_token=access_token,
+            location_id=location_id,
+            environment="sandbox",
+            catalog_item_mapping=catalog_item_mapping,
+            modifier_mapping=modifier_mapping,
+        )
+    )
+
+
 @pytest.fixture(
     params=[
-        make_stripe_service,
+        # make_stripe_service,
+        make_square_service
     ]
 )
 def payment_service(request):
@@ -39,14 +81,20 @@ def payment_service(request):
 
 @pytest.fixture
 def checkout_request(payment_service: PaymentService):
-    id_ = uuid.uuid4()
+    id1 = uuid.uuid4()
+    id2 = uuid.uuid4()
     req = CreateCheckoutRequest(
         service=payment_service.id,
         cart_data=CartData(
             event_id="example-event",
             registrations=(
                 CartRegistration(
-                    id=uuid.uuid4(),
+                    id=id1,
+                    old_data={},
+                    new_data={},
+                ),
+                CartRegistration(
+                    id=id2,
                     old_data={},
                     new_data={},
                 ),
@@ -54,16 +102,63 @@ def checkout_request(payment_service: PaymentService):
         ),
         pricing_result=PricingResult(
             currency="USD",
-            line_items=(
-                LineItem(
-                    registration_id=id_,
-                    type_id="item1",
-                    name="Test Item",
-                    price=1000,
-                    total_price=1000,
+            registrations=(
+                PricingResultRegistration(
+                    registration_id=id1,
+                    name="Test Registration 1",
+                    line_items=(
+                        LineItem(
+                            type_id="item1",
+                            name="Test Item 1",
+                            modifiers=(
+                                Modifier(
+                                    type_id="modifier1", name="Addon 1", amount=1500
+                                ),
+                                Modifier(
+                                    type_id="discount1", name="Discount 1", amount=-500
+                                ),
+                            ),
+                            price=5000,
+                            total_price=6000,
+                        ),
+                    ),
+                ),
+                PricingResultRegistration(
+                    registration_id=id2,
+                    name="Test Registration 2",
+                    line_items=(
+                        LineItem(
+                            type_id="item1",
+                            name="Test Item 1",
+                            modifiers=(
+                                Modifier(
+                                    type_id="modifier1", name="Addon 1", amount=1500
+                                ),
+                                Modifier(
+                                    type_id="discount1", name="Discount 1", amount=-500
+                                ),
+                            ),
+                            price=5000,
+                            total_price=6000,
+                        ),
+                        LineItem(
+                            type_id="item2",
+                            name="Test Item 2",
+                            modifiers=(
+                                Modifier(
+                                    type_id="discount1", name="Discount 1", amount=-500
+                                ),
+                                Modifier(
+                                    type_id="discount2", name="Discount 2", amount=-500
+                                ),
+                            ),
+                            price=1000,
+                            total_price=0,
+                        ),
+                    ),
                 ),
             ),
-            total_price=1000,
+            total_price=12000,
         ),
     )
 

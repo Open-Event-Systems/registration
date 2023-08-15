@@ -49,6 +49,9 @@ class PaymentConfig:
     currency: str = "USD"
     """The currency code."""
 
+    receipt_base_url: str = ""
+    """Receipt base URL."""
+
     services: Optional[dict[str, PaymentServiceConfig]] = {}
     """Per-service payment config."""
 

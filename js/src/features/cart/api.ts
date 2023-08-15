@@ -1,8 +1,8 @@
 import { Wretch } from "wretch"
 import { queryStringAddon } from "wretch/addons"
 import { Cart, PricingResult } from "#src/features/cart/types.js"
-import { InterviewStateResponse } from "@open-event-systems/interview-lib"
 import { CheckoutMethod } from "#src/features/checkout/types/Checkout.js"
+import { StateResponse } from "@open-event-systems/interview-lib"
 
 /**
  * Fetch the empty cart for an event.
@@ -62,7 +62,7 @@ export const fetchCartInterview = async (
   interviewId: string,
   registrationId?: string,
   accessCode?: string
-): Promise<InterviewStateResponse> => {
+): Promise<StateResponse> => {
   let req = wretch.url(`/carts/${cartId}/new-interview`).addon(queryStringAddon)
 
   if (interviewId) {
@@ -83,7 +83,7 @@ export const fetchCartInterview = async (
     })
   }
 
-  return await req.get().json<InterviewStateResponse>()
+  return await req.get().json<StateResponse>()
 }
 
 /**

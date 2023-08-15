@@ -29,7 +29,7 @@ def structure_datetime(v: object) -> datetime:
     elif isinstance(v, (float, int)):
         dt = datetime.fromtimestamp(v, tz=timezone.utc)
     elif isinstance(v, str):
-        dt = datetime.fromisoformat(v)
+        dt = datetime.fromisoformat(_fix_iso_z_suffix(v))
     else:
         raise TypeError(f"Invalid datetime: {v!r}")
 
@@ -37,6 +37,10 @@ def structure_datetime(v: object) -> datetime:
         dt = dt.astimezone()
 
     return dt
+
+
+def _fix_iso_z_suffix(v: str) -> str:
+    return v[:-1] + "+00:00" if v.endswith("Z") else v
 
 
 def structure_date(v: object) -> date:

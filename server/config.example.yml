@@ -29,8 +29,41 @@ payment:
   # The currency code
   currency: USD
 
+  # The base URL for links to receipts.
+  receipt_base_url: http://localhost/receipt
+
   # Payment service configuration
-  services: {}
+  services:
+
+    # Square configuration
+    # square:
+
+    #   # The application ID
+    #   application_id:
+
+    #   # The access token
+    #   access_token:
+
+    #   # The location ID
+    #   location_id:
+
+    #   # "sandbox" or "production"
+    #   environment: sandbox
+
+    #   # Map line item type IDs to Square catalog item variation IDs.
+    #   catalog_item_mapping: {}
+
+    #   # Map modifier type IDs to Square modifier IDs.
+    #   modifier_mapping: {}
+
+    # Stripe configuration
+    # stripe:
+
+    #   # The application's publishable key
+    #   publishable_key: changeit
+
+    #   # The application's secret key
+    #   secret_key: changeit
 
 # Interview config
 interview:

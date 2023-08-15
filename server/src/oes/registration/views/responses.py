@@ -6,11 +6,16 @@ from datetime import date, datetime  # noqa
 from typing import Any, Optional
 from uuid import UUID
 
-from attrs import frozen
+from attrs import Factory, frozen
 from cattrs import BaseValidationError
 from oes.registration.access_code.entities import AccessCodeEntity
 from oes.registration.access_code.models import AccessCodeSettings
-from oes.registration.models.pricing import LineItem, Modifier, PricingResult
+from oes.registration.cart.models import (
+    LineItem,
+    Modifier,
+    PricingResult,
+    PricingResultRegistration,
+)
 from oes.registration.models.registration import (
     RegistrationState,
     SelfServiceRegistration,
@@ -132,7 +137,6 @@ class ModifierResponse:
 class LineItemResponse:
     """A line item."""
 
-    registration_id: UUID
     name: str
     price: int
     total_price: int
@@ -142,7 +146,6 @@ class LineItemResponse:
     @classmethod
     def create(cls, line_item: LineItem) -> Self:
         return cls(
-            registration_id=line_item.registration_id,
             name=line_item.name,
             price=line_item.price,
             total_price=line_item.total_price,
@@ -152,18 +155,45 @@ class LineItemResponse:
 
 
 @frozen
+class PricingResultRegistrationResponse:
+    """A registration in a pricing result."""
+
+    registration_id: UUID
+    line_items: Sequence[LineItemResponse] = ()
+    name: Optional[str] = None
+
+    @classmethod
+    def create(cls, reg: PricingResultRegistration) -> Self:
+        return cls(
+            registration_id=reg.registration_id,
+            line_items=tuple(LineItemResponse.create(li) for li in reg.line_items),
+            name=reg.name,
+        )
+
+
+@frozen
 class PricingResultResponse:
     """A cart pricing result."""
 
-    line_items: Sequence[LineItemResponse]
+    receipt_url: Optional[str]
+    date: Optional[str]
+    registrations: Sequence[PricingResultRegistrationResponse]
     total_price: int
     modifiers: Sequence[ModifierResponse] = ()
 
     @classmethod
-    def create(cls, pricing_result: PricingResult) -> Self:
+    def create(
+        cls,
+        pricing_result: PricingResult,
+        receipt_url: Optional[str] = None,
+        date: Optional[datetime] = None,
+    ) -> Self:
         return cls(
-            line_items=tuple(
-                LineItemResponse.create(li) for li in pricing_result.line_items
+            receipt_url=receipt_url,
+            date=date.strftime("%c") if date is not None else None,
+            registrations=tuple(
+                PricingResultRegistrationResponse.create(reg)
+                for reg in pricing_result.registrations
             ),
             total_price=pricing_result.total_price,
             modifiers=tuple(
@@ -186,7 +216,7 @@ class CreateCheckoutResponse:
     id: UUID
     service: str
     external_id: str
-    data: Optional[dict[str, Any]] = None
+    data: dict[str, Any] = Factory(dict)
 
 
 @frozen

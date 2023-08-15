@@ -1,12 +1,12 @@
 """Checkout entities."""
 import copy
+import secrets
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
+from oes.registration.cart.models import CART_HASH_SIZE, CartData, PricingResult
 from oes.registration.entities.base import PKUUID, Base, JSONData
-from oes.registration.models.cart import CART_HASH_SIZE, CartData
-from oes.registration.models.pricing import PricingResult
 from oes.registration.serialization import get_converter
 from oes.registration.util import get_now
 from sqlalchemy import String
@@ -15,6 +15,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 SERVICE_ID_MAX_LENGTH = 32
 """Max length of a service ID."""
+
+RECEIPT_ID_MAX_LENGTH = 32
+"""Max length of a receipt ID."""
 
 
 class CheckoutState(str, Enum):
@@ -44,8 +47,13 @@ class CheckoutEntity(Base):
     date_created: Mapped[datetime] = mapped_column(default=lambda: get_now())
     """The date the checkout was created."""
 
-    date_closed = Mapped[Optional[datetime]]
+    date_closed: Mapped[Optional[datetime]]
     """The date the checkout was canceled or completed."""
+
+    receipt_id: Mapped[Optional[str]] = mapped_column(
+        String(RECEIPT_ID_MAX_LENGTH), unique=True
+    )
+    """The receipt ID."""
 
     changes_applied: Mapped[bool] = mapped_column(nullable=False, default=False)
     """Whether the changes have been applied."""
@@ -154,3 +162,18 @@ class CheckoutEntity(Base):
     def get_pricing_result(self) -> PricingResult:
         """Get the :class:`PricingResult`."""
         return get_converter().structure(self.pricing_result or {}, PricingResult)
+
+    def set_receipt_id(self) -> str:
+        """Set a random receipt ID if one is not already set."""
+        if not self.receipt_id:
+            self.receipt_id = _generate_receipt_id()
+
+        return self.receipt_id
+
+
+_receipt_alphabet = "23456789BCDFGHJKLMNPQRSTVWXYZ"
+
+
+def _generate_receipt_id() -> str:
+    """Generate a receipt ID."""
+    return "".join(secrets.choice(_receipt_alphabet) for _ in range(12))

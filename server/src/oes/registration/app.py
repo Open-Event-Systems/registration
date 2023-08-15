@@ -26,6 +26,8 @@ from oes.registration.auth.handlers import (
     require_event,
     require_self_service,
 )
+from oes.registration.cart.service import CartService
+from oes.registration.checkout.service import CheckoutService
 from oes.registration.config import CommandLineConfig, load_config, load_event_config
 from oes.registration.database import (
     DBConfig,
@@ -55,8 +57,6 @@ from oes.registration.serialization.json import (
     json_dumps,
     json_loads,
 )
-from oes.registration.services.cart import CartService
-from oes.registration.services.checkout import CheckoutService
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.views.responses import BodyValidationError, ExceptionDetails

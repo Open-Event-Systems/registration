@@ -1,21 +1,20 @@
-"""Checkout service module."""
+"""Checkout service."""
 import asyncio
 import copy
 import itertools
-from collections.abc import Mapping
-from typing import Any, Optional, Union, overload
+from typing import Any, Mapping, Optional, Union, overload
 from uuid import UUID
 
 from oes.registration.access_code.entities import AccessCodeEntity
 from oes.registration.auth.account_service import AccountService
-from oes.registration.entities.checkout import CheckoutEntity, CheckoutState
+from oes.registration.cart.models import CartData, PricingResult
+from oes.registration.cart.service import apply_changes
+from oes.registration.checkout.entities import CheckoutEntity, CheckoutState
+from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
 from oes.registration.log import AuditLogType, audit_log
-from oes.registration.models.cart import CartData
-from oes.registration.models.payment import PaymentServiceCheckout
-from oes.registration.models.pricing import PricingResult
 from oes.registration.payment.base import (
     CheckoutCancelError,
     CheckoutMethod,
@@ -26,9 +25,9 @@ from oes.registration.payment.base import (
     UpdateRequest,
 )
 from oes.registration.payment.config import PaymentServices
-from oes.registration.services.cart import apply_changes
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import get_now
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -84,6 +83,14 @@ class CheckoutService:
         """Get a checkout by ID."""
         obj = await self.db.get(CheckoutEntity, id, with_for_update=lock)
         return obj
+
+    async def get_checkout_by_receipt_id(
+        self, receipt_id: str
+    ) -> Optional[CheckoutEntity]:
+        """Get a checkout by receipt ID."""
+        q = select(CheckoutEntity).where(CheckoutEntity.receipt_id == receipt_id)
+        res = await self.db.execute(q)
+        return res.scalar()
 
     async def create_checkout(
         self,
@@ -224,6 +231,9 @@ class CheckoutService:
         except CheckoutCancelError:
             return False
 
+        if not result:
+            return None
+
         if result.state != CheckoutState.canceled:
             return False
 
@@ -246,6 +256,8 @@ class CheckoutService:
     ):
         """Update the checkout entity with the data returned in the checkout result.
 
+        Sets the receipt ID.
+
         Mutates ``current``.
         """
         # TODO: differences between doing this and using the .cancel/complete methods
@@ -257,6 +269,10 @@ class CheckoutService:
             current.date_closed = (
                 result.date_closed if result.date_closed is not None else get_now()
             )
+
+            if new_state == CheckoutState.complete:
+                current.set_receipt_id()
+
         elif result.date_closed is not None:
             current.date_closed = result.date_closed
 
@@ -306,7 +322,9 @@ class CheckoutService:
 
         if result.state == CheckoutState.complete:
             audit_log.bind(type=AuditLogType.checkout_complete).success(
-                "Checkout {checkout} completed", checkout=checkout
+                "Checkout {checkout} completed, receipt {receipt_id}",
+                checkout=checkout,
+                receipt_id=checkout.receipt_id,
             )
             await self.hook_sender.schedule_hooks_for_event(
                 HookEvent.checkout_closed, result

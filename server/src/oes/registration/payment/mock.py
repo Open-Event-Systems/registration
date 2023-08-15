@@ -1,9 +1,10 @@
 """Mock payment service."""
 import uuid
 from typing import Any, Iterable, Optional
+from uuid import UUID
 
-from oes.registration.entities.checkout import CheckoutState
-from oes.registration.models.payment import PaymentServiceCheckout
+from oes.registration.checkout.entities import CheckoutState
+from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.payment.base import (
     CheckoutCancelError,
     CheckoutMethod,
@@ -43,7 +44,9 @@ class MockPaymentService(PaymentService):
         return [CheckoutMethod(service=self.id, method="mock-card", name="Mock Card")]
 
     async def create_checkout(
-        self, request: CreateCheckoutRequest
+        self,
+        request: CreateCheckoutRequest,
+        checkout_id: Optional[UUID] = None,
     ) -> PaymentServiceCheckout:
         id_ = str(uuid.uuid4())
         return PaymentServiceCheckout(

@@ -1,7 +1,7 @@
 import uuid
 
-from oes.registration.entities.cart import CartEntity
-from oes.registration.models.cart import CartData, CartRegistration
+from oes.registration.cart.entities import CartEntity
+from oes.registration.cart.models import CartData, CartRegistration
 
 
 def test_create_cart_entity():

@@ -2,10 +2,7 @@ import { Subtitle, Title } from "#src/components/title/Title.js"
 import { fetchCartPricingResult } from "#src/features/cart/api.js"
 import { useCurrentCartStore } from "#src/features/cart/hooks.js"
 import { Cart } from "#src/features/cart/types.js"
-import {
-  Cart as CartComponent,
-  CartPlaceholder,
-} from "#src/features/cart/components/Cart.js"
+import { Cart as CartComponent } from "#src/features/cart/components/Cart.js"
 import { useWretch } from "#src/hooks/api.js"
 import { LineItem as LineItemComponent } from "#src/features/cart/components/LineItem.js"
 import { Modifier as ModifierComponent } from "#src/features/cart/components/Modifier.js"
@@ -21,6 +18,7 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useSelfServiceLoader } from "#src/features/selfservice/hooks.js"
 import { Link as RLink } from "react-router-dom"
+import { CartRegistration } from "#src/features/cart/components/CartRegistration.js"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -74,7 +72,7 @@ const CartViewPlaceholder = () => (
   <Title title="Cart">
     <Subtitle subtitle="Your current shopping cart.">
       <Stack>
-        <CartPlaceholder />
+        <CartComponent.Placeholder />
       </Stack>
     </Subtitle>
   </Title>
@@ -110,36 +108,46 @@ const CartView = observer(
     const checkoutAvailable =
       !checkoutComplete &&
       loader.checkLoaded() &&
-      loader.value.line_items.length > 0
+      loader.value.registrations.length > 0
 
     return (
-      <loader.Component placeholder={<CartPlaceholder />}>
+      <loader.Component placeholder={<CartComponent.Placeholder />}>
         {(result) => (
           <>
-            {result.line_items.length > 0 ? (
+            {result.registrations.length > 0 ? (
               <CartComponent totalPrice={result.total_price}>
-                {result.line_items.map((li, i) => (
-                  <LineItemComponent
-                    key={i}
-                    onRemove={async () => {
-                      const [newId, newCart] =
-                        await currentCartStore.cartStore.removeRegistrationFromCart(
-                          cartId,
-                          li.registration_id
-                        )
-                      currentCartStore.setCurrentCart(newId, newCart)
-                    }}
-                    name={li.name}
-                    description={li.description}
-                    price={li.price}
-                    modifiers={li.modifiers.map((m, i) => (
-                      <ModifierComponent
-                        key={i}
-                        name={m.name}
-                        amount={m.amount}
-                      />
-                    ))}
-                  />
+                {result.registrations.map((reg, i) => (
+                  <>
+                    {i != 0 && <CartComponent.Divider />}
+                    <CartRegistration
+                      key={reg.registration_id}
+                      name={reg.name ?? void 0}
+                      onRemove={async () => {
+                        const [newId, newCart] =
+                          await currentCartStore.cartStore.removeRegistrationFromCart(
+                            cartId,
+                            reg.registration_id
+                          )
+                        currentCartStore.setCurrentCart(newId, newCart)
+                      }}
+                    >
+                      {reg.line_items.map((li, i) => (
+                        <LineItemComponent
+                          key={i}
+                          name={li.name}
+                          description={li.description}
+                          price={li.price}
+                          modifiers={li.modifiers.map((m, i) => (
+                            <ModifierComponent
+                              key={i}
+                              name={m.name}
+                              amount={m.amount}
+                            />
+                          ))}
+                        />
+                      ))}
+                    </CartRegistration>
+                  </>
                 ))}
               </CartComponent>
             ) : (

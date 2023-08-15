@@ -26,7 +26,10 @@ class Whenable(ABC):
 
     def when_matches(self, **context: Any) -> bool:
         """Return whether the conditions match."""
-        return bool(evaluate(self.when, context))
+        if isinstance(self.when, Sequence) and not isinstance(self.when, str):
+            return all(evaluate(expr, context) for expr in self.when)
+        else:
+            return bool(evaluate(self.when, context))
 
 
 @frozen(kw_only=True)
@@ -35,6 +38,9 @@ class RegistrationOption:
 
     id: str = field(validator=validate_identifier)
     """The option ID."""
+
+    type_id: Optional[Template] = None
+    """A type ID for the option."""
 
     name: str
     """The option name."""
@@ -64,7 +70,7 @@ class ModifierRule(Whenable):
 class LineItemRule(Whenable):
     """Event line item pricing rule."""
 
-    type_id: Optional[str] = None
+    type_id: Optional[Template] = None
     """A type ID for the line item."""
 
     name: Template

@@ -1,6 +1,7 @@
 const path = require("path")
 const HtmlWebpackPlugin = require("html-webpack-plugin")
 const { DefinePlugin } = require("webpack")
+const MiniCssExtractPlugin = require("mini-css-extract-plugin")
 
 module.exports = (env, argv) => {
   const prod = argv.mode !== "development"
@@ -9,6 +10,7 @@ module.exports = (env, argv) => {
     mode: prod ? "production" : "development",
     entry: {
       selfservice: "./src/features/selfservice/index.tsx",
+      receipt: "./src/features/receipt/index.tsx",
     },
     output: {
       publicPath: "/", // TODO: make configurable
@@ -20,7 +22,6 @@ module.exports = (env, argv) => {
       rules: [
         // babel-loader for all non-js source files, or js files in the project
         {
-          // test: /\.(tsx?|jsx)$/,
           exclude: /node_modules/,
           oneOf: [
             {
@@ -33,6 +34,12 @@ module.exports = (env, argv) => {
               use: "babel-loader",
             },
           ],
+        },
+
+        // css files
+        {
+          test: /\.css$/,
+          use: [MiniCssExtractPlugin.loader, "css-loader"],
         },
 
         // config.json
@@ -81,18 +88,29 @@ module.exports = (env, argv) => {
       new DefinePlugin({
         "process.env.DELAY": JSON.stringify(process.env.DELAY),
       }),
+      new MiniCssExtractPlugin(),
       // html page for each entry point
       new HtmlWebpackPlugin({
         title: "Registration",
         template: "./src/index.html",
         chunks: ["selfservice"],
+        filename: "index.html",
+      }),
+      new HtmlWebpackPlugin({
+        title: "Receipt",
+        template: "./src/index.html",
+        chunks: ["receipt"],
+        filename: "receipt/index.html",
       }),
     ],
     // source map config
     devtool: prod ? false : "eval-cheap-source-map",
     devServer: {
       historyApiFallback: {
-        rewrites: [],
+        rewrites: [
+          { from: /^\/receipt(\/|$)/, to: "/receipt/index.html" },
+          { from: /^\//, to: "/index.html" },
+        ],
       },
       port: 9000,
     },

@@ -1,16 +1,18 @@
+import itertools
 import uuid
 
 import pytest
 from attrs import evolve
-from oes.registration.models.cart import CartData, CartRegistration
-from oes.registration.models.event import EventConfig, SimpleEventInfo
-from oes.registration.models.pricing import (
+from oes.registration.cart.models import (
+    CartData,
+    CartRegistration,
     Modifier,
     PricingEventBody,
     PricingRequest,
     PricingResult,
 )
-from oes.registration.pricing import default_pricing, get_added_option_ids
+from oes.registration.checkout.pricing import default_pricing, get_added_option_ids
+from oes.registration.models.event import EventConfig, SimpleEventInfo
 from oes.registration.serialization import get_converter
 
 
@@ -20,21 +22,32 @@ def example_pricing_hook(body: dict):
 
     new_result = PricingResult(
         currency=body_obj.request.currency,
-        line_items=[
+        registrations=tuple(
             evolve(
-                li,
-                modifiers=[
-                    *li.modifiers,
-                    Modifier(name="10% Discount", amount=-int(li.price * 0.10)),
-                ],
-                total_price=max(0, li.total_price - int(li.price * 0.10)),
+                reg,
+                line_items=tuple(
+                    evolve(
+                        li,
+                        modifiers=[
+                            *li.modifiers,
+                            Modifier(name="10% Discount", amount=-int(li.price * 0.10)),
+                        ],
+                        total_price=max(0, li.total_price - int(li.price * 0.10)),
+                    )
+                    for li in reg.line_items
+                ),
             )
-            for li in body_obj.prev_result.line_items
-        ],
+            for reg in body_obj.prev_result.registrations
+        ),
         total_price=max(
             0,
             body_obj.prev_result.total_price
-            + sum(-int(li.price * 0.10) for li in body_obj.prev_result.line_items),
+            + sum(
+                -int(li.price * 0.10)
+                for li in itertools.chain.from_iterable(
+                    reg.line_items for reg in body_obj.prev_result.registrations
+                )
+            ),
         ),
     )
     return get_converter().unstructure(new_result)
@@ -69,6 +82,7 @@ async def test_eval_line_items(example_events: EventConfig):
 
     result = await default_pricing(event, request)
     assert result.total_price == 4500
-    assert len(result.line_items) == 1
-    assert result.line_items[0].price == 5000
-    assert result.line_items[0].total_price == 4500
+    assert len(result.registrations) == 1
+    assert len(result.registrations[0].line_items) == 1
+    assert result.registrations[0].line_items[0].price == 5000
+    assert result.registrations[0].line_items[0].total_price == 4500

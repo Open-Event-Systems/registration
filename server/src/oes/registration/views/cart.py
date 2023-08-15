@@ -24,18 +24,22 @@ from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.handlers import RequireAdmin, RequireCart, RequireSelfService
 from oes.registration.auth.user import User
+from oes.registration.cart.entities import CartEntity
+from oes.registration.cart.models import (
+    CartData,
+    CartError,
+    CartRegistration,
+    PricingResult,
+)
+from oes.registration.cart.service import CartService, price_cart
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper, serialize
-from oes.registration.entities.cart import CartEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.interview.service import InterviewService
-from oes.registration.models.cart import CartData, CartError, CartRegistration
 from oes.registration.models.config import Config
 from oes.registration.models.event import Event, EventConfig, SimpleEventInfo
-from oes.registration.models.pricing import PricingResult
 from oes.registration.models.registration import Registration, RegistrationState
 from oes.registration.serialization import get_converter
-from oes.registration.services.cart import CartService, price_cart
 from oes.registration.services.registration import (
     RegistrationService,
     get_allowed_add_interviews,
@@ -182,7 +186,9 @@ async def read_cart_pricing_result(
     # don't price an empty cart
     if len(model.registrations) == 0:
         return PricingResultResponse(
-            line_items=[],
+            receipt_url=None,
+            date=None,
+            registrations=(),
             total_price=0,
         )
 

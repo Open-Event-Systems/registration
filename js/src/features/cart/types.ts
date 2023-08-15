@@ -27,9 +27,17 @@ export interface LineItem {
   description?: string
 }
 
-export interface PricingResult {
-  currency: string
+export interface PricingResultRegistration {
+  registration_id: string
   line_items: LineItem[]
+  name?: string | null
+}
+
+export interface PricingResult {
+  receipt_url?: string
+  date?: string
+  currency: string
+  registrations: PricingResultRegistration[]
   total_price: number
   modifiers: Modifier[]
 }
