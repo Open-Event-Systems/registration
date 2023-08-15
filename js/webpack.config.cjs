@@ -26,7 +26,22 @@ module.exports = (env, argv) => {
           oneOf: [
             {
               test: /\.(tsx?|jsx)$/,
-              use: "babel-loader",
+              use: {
+                loader: "babel-loader",
+                options: {
+                  presets: [
+                    "@babel/preset-env",
+                    [
+                      "@babel/preset-react",
+                      {
+                        runtime: "automatic",
+                      },
+                    ],
+                    "@babel/preset-typescript",
+                  ],
+                  plugins: ["@babel/plugin-transform-runtime"],
+                },
+              },
             },
             {
               test: /\.js$/,
