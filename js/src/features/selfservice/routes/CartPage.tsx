@@ -7,7 +7,11 @@ import { useWretch } from "#src/hooks/api.js"
 import { LineItem as LineItemComponent } from "#src/features/cart/components/LineItem.js"
 import { Modifier as ModifierComponent } from "#src/features/cart/components/Modifier.js"
 import { Anchor, Box, Button, Grid, Group, Stack, Text } from "@mantine/core"
-import { IconAlertCircle, IconShoppingCart } from "@tabler/icons-react"
+import {
+  IconAlertCircle,
+  IconPlus,
+  IconShoppingCart,
+} from "@tabler/icons-react"
 import { useLocation, useNavigate } from "#src/hooks/location.js"
 import { observer } from "mobx-react-lite"
 import { useLoader } from "#src/hooks/loader.js"
@@ -19,6 +23,8 @@ import { useParams } from "react-router-dom"
 import { useSelfServiceLoader } from "#src/features/selfservice/hooks.js"
 import { Link as RLink } from "react-router-dom"
 import { CartRegistration } from "#src/features/cart/components/CartRegistration.js"
+import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog.js"
+import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -81,11 +87,15 @@ const CartViewPlaceholder = () => (
 const CartView = observer(
   ({ cartId, eventId }: { cartId: string; eventId: string }) => {
     const wretch = useWretch()
-    const loader = useLoader(() => fetchCartPricingResult(wretch, cartId))
+
+    const selfService = useSelfServiceLoader()
+    const loader = useLoader(() => {
+      return Promise.all([selfService, fetchCartPricingResult(wretch, cartId)])
+    })
+
     const loc = useLocation()
     const navigate = useNavigate()
     const currentCartStore = useCurrentCartStore()
-    const selfService = useSelfServiceLoader()
 
     const [checkoutComplete, setCheckoutComplete] = useState(false)
 
@@ -108,11 +118,11 @@ const CartView = observer(
     const checkoutAvailable =
       !checkoutComplete &&
       loader.checkLoaded() &&
-      loader.value.registrations.length > 0
+      loader.value[1].registrations.length > 0
 
     return (
       <loader.Component placeholder={<CartComponent.Placeholder />}>
-        {(result) => (
+        {([selfServiceResults, result]) => (
           <>
             {result.registrations.length > 0 ? (
               <CartComponent totalPrice={result.total_price}>
@@ -153,8 +163,28 @@ const CartView = observer(
             ) : (
               <EmptyCartView />
             )}
-            {checkoutAvailable && (
-              <Grid>
+            <Grid>
+              {selfServiceResults.add_options.length > 0 && (
+                <Grid.Col xs={12} sm="content">
+                  <Button
+                    variant="outline"
+                    leftIcon={<IconPlus />}
+                    fullWidth
+                    onClick={() => {
+                      // show dialog
+                      navigate(loc, {
+                        state: {
+                          ...loc.state,
+                          showInterviewOptionsDialog: eventId,
+                        },
+                      })
+                    }}
+                  >
+                    Add Registration
+                  </Button>
+                </Grid.Col>
+              )}
+              {checkoutAvailable && (
                 <Grid.Col xs={12} sm="content">
                   <Button
                     variant="filled"
@@ -164,8 +194,8 @@ const CartView = observer(
                     Checkout
                   </Button>
                 </Grid.Col>
-              </Grid>
-            )}
+              )}
+            </Grid>
             <CheckoutMethodsManager cartId={cartId} />
             <CheckoutManager
               cartId={cartId}
@@ -174,6 +204,26 @@ const CartView = observer(
 
                 // reload self-service memberships
                 selfService.fetch()
+              }}
+            />
+            <InterviewOptionsDialog.Manager
+              options={selfServiceResults.add_options}
+            />
+            <InterviewDialog.Manager
+              onComplete={async (response, record) => {
+                if (record.metadata.cartId && record.metadata.eventId) {
+                  const res = await response
+                  const body: Cart = await res.json()
+
+                  // kind of hacky
+                  const url = new URL(res.url)
+                  const parts = url.pathname.split("/")
+                  const newCartId = parts[parts.length - 1]
+                  currentCartStore.setCurrentCart(newCartId, body)
+                  navigate(`/events/${record.metadata.eventId}/cart`, {
+                    replace: true,
+                  })
+                }
               }}
             />
           </>
