@@ -26,4 +26,4 @@ USER python
 ENV PATH=$PATH:/app/bin
 ENV ALEMBIC_CONFIG=/config/alembic.ini
 ENTRYPOINT ["/app/bin/oes-registration"]
-CMD ["--config", "/config/config.yml", "--events", "/config/events.yml"]
+CMD ["--bind", "0.0.0.0", "--port", "8000", "--config", "/config/config.yml", "--events", "/config/events.yml"]
