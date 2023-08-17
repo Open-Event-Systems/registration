@@ -32,6 +32,7 @@ import { InterviewOptionsDialog } from "#src/features/cart/components/interview/
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
 import { Cart } from "#src/features/cart/types.js"
 import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/access-code/AccessCodeOptionsDialog.js"
+import { Markdown } from "@open-event-systems/interview-components"
 
 export const EventPage = () => {
   const { eventId = "", accessCode = "" } = useParams()
@@ -213,7 +214,7 @@ const RegistrationsView = observer(
                 })
               }}
             >
-              {r.registration.description}
+              <Markdown>{r.registration.description}</Markdown>
             </RegistrationCard>
           ))}
         </CardGrid>
