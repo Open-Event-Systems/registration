@@ -127,6 +127,10 @@ async def validate_refresh_token(
         else None
     )
 
+    if not account:
+        logger.debug(f"Account ID {account_id} not found")
+        return None
+
     credential = next(
         (c for c in account.credentials if c.id == dec_refresh_token.credential_id),
         None,
