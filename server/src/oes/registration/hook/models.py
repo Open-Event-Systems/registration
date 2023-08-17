@@ -1,14 +1,10 @@
 """Hook models."""
 from __future__ import annotations
 
-from collections.abc import Generator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from enum import Enum
-from typing import Any, Union
 
 from attrs import Factory, field, frozen
-from oes.registration.http_client import get_http_client
-from oes.registration.serialization.json import json_dumps
-from typing_extensions import assert_never
 
 RETRY_SECONDS = (
     5,
@@ -55,78 +51,28 @@ class HookEvent(str, Enum):
 
 
 @frozen
-class URLOnlyHTTPHookConfig:
-    """Config for a webhook without needing to set ``http_func``."""
-
-    url: str = field(repr=False)
-    """The URL."""
-
-
-HookConfigObject = Union[URLOnlyHTTPHookConfig,]
-"""Hook configuration types."""
-
-
-async def _http_func(body: Any, config: HttpHookConfig) -> Any:
-    client = get_http_client()
-    json_data = json_dumps(body)
-    response = await client.post(
-        config.url,
-        content=json_data,
-        headers={"Content-Type": "application/json"},
-    )
-    response.raise_for_status()
-    if response.status_code == 204:
-        return None
-    else:
-        return response.json()
-
-
-@frozen
 class HookConfigEntry:
     """Hook configuration entry."""
 
     on: HookEvent
     """The hook trigger."""
 
-    hook: HookConfigObject
-    """The hook configuration."""
+    url: str = field(repr=False)
+    """The hook URL."""
 
     retry: bool = True
     """Whether to retry the hook if it fails."""
-
-    def get_hook(self) -> Hook:
-        """Get the configured :class:`Hook`."""
-        if isinstance(self.hook, URLOnlyHTTPHookConfig):
-            return http_hook_factory(
-                HttpHookConfig(
-                    self.hook.url,
-                    _http_func,
-                )
-            )
-        elif isinstance(self.hook, ExecutableHookConfig):
-            return executable_hook_factory(self.hook)
-        elif isinstance(self.hook, PythonHookConfig):
-            return python_hook_factory(self.hook)
-        else:
-            assert_never(self.hook)
 
 
 @frozen
 class HookConfig:
     """Hook configuration."""
 
-    def _build_by_event(self) -> dict[str, list[HookConfigEntry]]:
-        dict_: dict[str, list[HookConfigEntry]] = {}
-        for obj in self.hooks:
-            list_ = dict_.setdefault(obj.on, [])
-            list_.append(obj)
-        return dict_
-
-    hooks: Sequence[HookConfigEntry] = field(converter=lambda v: tuple(v))
+    hooks: Sequence[HookConfigEntry]
     _by_event: Mapping[str, list[HookConfigEntry]] = field(
         init=False,
         eq=False,
-        default=Factory(_build_by_event, takes_self=True),
+        default=Factory(lambda s: _build_by_event(s.hooks), takes_self=True),
     )
 
     def __iter__(self) -> Generator[HookConfigEntry, None, None]:
@@ -138,18 +84,12 @@ class HookConfig:
         """Yield :class:`HookConfigEntry` objects for the given event type."""
         yield from self._by_event.get(hook_event, [])
 
-    def hook_config_exists(self, hook_event: HookEvent, config: object) -> bool:
-        """Get whether the given hook config exists in this configuration.
 
-        Used e.g. to check if an executable hook loaded from the database actually
-        corresponds to an entry in the config file.
-
-        Args:
-            hook_event: The event type.
-            config: The configuration object.
-        """
-        for entry in self._by_event.get(hook_event, []):
-            if entry.hook == config:
-                return True
-        else:
-            return False
+def _build_by_event(
+    hooks: Iterable[HookConfigEntry],
+) -> dict[str, list[HookConfigEntry]]:
+    dict_: dict[str, list[HookConfigEntry]] = {}
+    for obj in hooks:
+        list_ = dict_.setdefault(obj.on, [])
+        list_.append(obj)
+    return dict_

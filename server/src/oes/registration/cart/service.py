@@ -1,6 +1,4 @@
 """Cart service."""
-import asyncio
-from inspect import iscoroutinefunction
 from typing import Mapping, Optional
 from uuid import UUID
 
@@ -18,7 +16,7 @@ from oes.registration.cart.models import (
 from oes.registration.checkout.pricing import default_pricing
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookConfig, HookEvent
-from oes.registration.hook.service import HookSender
+from oes.registration.hook.service import HookSender, invoke_hook
 from oes.registration.models.config import Config
 from oes.registration.models.event import Event, SimpleEventInfo
 from oes.registration.serialization import get_converter
@@ -90,18 +88,12 @@ async def _call_pricing_hooks(
 ) -> PricingResult:
     """Call all pricing hooks in order."""
     cur_result = result
-    for hook_entry in hook_config.get_by_event(HookEvent.cart_price):
-        hook = hook_entry.get_hook()
+    for hook in hook_config.get_by_event(HookEvent.cart_price):
         body = PricingEventBody(
             request=request,
             prev_result=cur_result,
         )
-        body_dict = get_converter().unstructure(body)
-        if iscoroutinefunction(hook):
-            result_dict = await hook(body_dict)
-        else:
-            loop = asyncio.get_running_loop()
-            result_dict = await loop.run_in_executor(None, hook, body_dict)
+        result_dict = await invoke_hook(hook, body)
         cur_result = get_converter().structure(result_dict, PricingResult)
 
     return cur_result

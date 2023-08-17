@@ -102,9 +102,7 @@ async def test_retry_hook_id_at(mock_attempt_invoke_hooks, mock_asyncio, mock_ge
     await task
 
     mock_asyncio.sleep.assert_called_with(diff)
-    mock_attempt_invoke_hooks.assert_called_with(
-        [id_], retry_service, session_factory, config
-    )
+    mock_attempt_invoke_hooks.assert_called_with([id_], retry_service, session_factory)
 
 
 @pytest.mark.asyncio

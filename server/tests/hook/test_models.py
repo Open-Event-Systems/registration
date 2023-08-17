@@ -1,33 +1,17 @@
 import pytest
-from oes.hook import PythonHookConfig
-from oes.registration.hook.models import (
-    HookConfig,
-    HookConfigEntry,
-    HookEvent,
-    URLOnlyHTTPHookConfig,
-)
+from oes.registration.hook.models import HookConfig, HookConfigEntry, HookEvent
 from oes.registration.serialization import get_config_converter
 from ruamel.yaml import YAML
 
 config_str = """
 hooks:
   - on: registration.created
-    hook:
-      python: tests.hook.test_models:hook_fn
+    url: http://localhost:8000/created
   - on: cart.price
-    hook:
-      url: http://localhost:8000/test
+    url: http://localhost:8000/price
 """
 
 yaml = YAML(typ="safe")
-
-
-def hook_fn(obj):
-    pass
-
-
-def hook_fn2(obj):
-    pass
 
 
 @pytest.fixture
@@ -38,20 +22,16 @@ def hook_config():
 
 def test_build_hook_config(hook_config: HookConfig):
     expected = HookConfig(
-        [
+        (
             HookConfigEntry(
                 on=HookEvent.registration_created,
-                hook=PythonHookConfig(
-                    python="tests.hook.test_models:hook_fn",
-                ),
+                url="http://localhost:8000/created",
             ),
             HookConfigEntry(
                 on=HookEvent.cart_price,
-                hook=URLOnlyHTTPHookConfig(
-                    url="http://localhost:8000/test",
-                ),
+                url="http://localhost:8000/price",
             ),
-        ]
+        )
     )
 
     assert list(hook_config) == list(expected.hooks)
@@ -62,21 +42,6 @@ def test_get_hooks_by_event(hook_config: HookConfig):
     assert list(hook_config.get_by_event(HookEvent.cart_price)) == [
         HookConfigEntry(
             on=HookEvent.cart_price,
-            hook=URLOnlyHTTPHookConfig(
-                url="http://localhost:8000/test",
-            ),
+            url="http://localhost:8000/price",
         )
     ]
-
-
-def test_hook_config_exists(hook_config: HookConfig):
-    good = PythonHookConfig(
-        python="tests.hook.test_models:hook_fn",
-    )
-
-    bad = PythonHookConfig(
-        python="tests.hook.test_models:hook_fn2",
-    )
-
-    assert hook_config.hook_config_exists(HookEvent.registration_created, good)
-    assert not hook_config.hook_config_exists(HookEvent.registration_created, bad)

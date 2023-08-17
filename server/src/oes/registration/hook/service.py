@@ -1,12 +1,11 @@
 """Hook service module."""
 import asyncio
 import contextlib
-from asyncio import AbstractEventLoop, CancelledError, Task, get_running_loop
-from collections.abc import Awaitable, Callable
+from asyncio import AbstractEventLoop, CancelledError, Task
+from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import Future
 from datetime import datetime
 from functools import partial, wraps
-from inspect import iscoroutinefunction
 from typing import Any, Iterable, Optional, TypeVar
 from uuid import UUID
 
@@ -14,7 +13,9 @@ import sqlalchemy.event
 from loguru import logger
 from oes.registration.hook.entities import HookLogEntity
 from oes.registration.hook.models import HookConfig, HookConfigEntry, HookEvent
+from oes.registration.http_client import get_http_client
 from oes.registration.serialization import get_converter
+from oes.registration.serialization.json import json_dumps, json_loads
 from oes.registration.util import get_now
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session
@@ -134,7 +135,6 @@ class HookRetryService:
             [id],
             self,
             self._session_factory,
-            self.config,
         )
         task = self._loop.create_task(coro)
         task.add_done_callback(lambda t: self._tasks.remove(t))
@@ -235,7 +235,6 @@ class HookSender:
                     [hook_id],
                     self.retry_service,
                     self.db_factory,
-                    self.config,
                 )
             else:
                 self.callback_service.add_callback(
@@ -247,7 +246,6 @@ async def attempt_invoke_hooks(
     ids: Iterable[UUID],
     retry_service: HookRetryService,
     db_factory: async_sessionmaker,
-    hook_config: HookConfig,
 ):
     """Attempt to invoke the hooks with the given IDs.
 
@@ -259,7 +257,6 @@ async def attempt_invoke_hooks(
         ids: The hook IDs.
         retry_service: The :class:`HookRetryService`.
         db_factory: The DB session factory.
-        hook_config: The hook configuration.
     """
     session = db_factory()
     try:
@@ -269,7 +266,7 @@ async def attempt_invoke_hooks(
             entity = await service.get_hook_entity(id_)
             if entity and entity.get_is_retryable():
                 await _attempt_invoke_hook_entity_and_commit(
-                    entity, session, retry_service, hook_config
+                    entity, session, retry_service
                 )
     finally:
         await session.close()
@@ -279,11 +276,10 @@ async def _attempt_invoke_hook_entity_and_commit(
     entity: HookLogEntity,
     session: AsyncSession,
     retry_service: HookRetryService,
-    config: HookConfig,
 ) -> Any:
     """Attempt to send the hook and remove it."""
     try:
-        await attempt_invoke_hook_entity(entity, retry_service, config)
+        await attempt_invoke_hook_entity(entity, retry_service)
     except Exception:
         # ignore errors, they were already handled
         await session.commit()
@@ -295,7 +291,6 @@ async def _attempt_invoke_hook_entity_and_commit(
 async def attempt_invoke_hook_entity(
     entity: HookLogEntity,
     retry_service: HookRetryService,
-    config: HookConfig,
 ) -> Any:
     """Attempt to invoke the hook described by a :class:`HookLogEntity`.
 
@@ -305,10 +300,9 @@ async def attempt_invoke_hook_entity(
     Args:
         entity: The :class:`HookLogEntity`.
         retry_service: The :class:`HookRetryService`.
-        config: The :class:`HookConfig`.
     """
     try:
-        result = await invoke_hook_entity(entity, config)
+        result = await invoke_hook_entity(entity)
     except Exception:
         retry_at = entity.update_attempts()
         if retry_at is not None:
@@ -324,20 +318,15 @@ async def attempt_invoke_hook_entity(
         return result
 
 
-async def invoke_hook_entity(entity: HookLogEntity, config: HookConfig) -> Any:
+async def invoke_hook_entity(entity: HookLogEntity) -> Any:
     """Invoke the hook described by a :class:`HookLogEntity`."""
     hook_config = entity.get_config_entry()
-
-    # verify that hooks retrieved from the db exist in the config (do not allow
-    # running arbitrary code from a db column)
-    if not config.hook_config_exists(hook_config.on, hook_config.hook):
-        raise ValueError(f"Hook does not exist in config: {hook_config}")
 
     body = entity.body
     return await invoke_hook(hook_config, body)
 
 
-async def invoke_hook(hook_config: HookConfigEntry, body: dict[str, Any]) -> Any:
+async def invoke_hook(hook_config: HookConfigEntry, body: object) -> Any:
     """Invoke a hook with the given body.
 
     Args:
@@ -347,9 +336,33 @@ async def invoke_hook(hook_config: HookConfigEntry, body: dict[str, Any]) -> Any
     Returns:
         The returned body.
     """
-    hook = hook_config.get_hook()
-    if iscoroutinefunction(hook):
-        return await hook(body)
+    headers = {}
+
+    if body is None:
+        json_data = None
+    elif isinstance(body, Mapping):
+        json_data = json_dumps(body)
     else:
-        loop = get_running_loop()
-        return await loop.run_in_executor(None, hook, body)
+        json_data = json_dumps(get_converter().unstructure(body))
+
+    if json_data is not None:
+        headers["Content-Type"] = "application/json"
+
+    client = get_http_client()
+    response = await client.post(
+        hook_config.url,
+        content=json_data,
+        headers=headers,
+    )
+
+    response.raise_for_status()
+
+    if response.status_code == 204:
+        return None
+
+    body_bytes = response.content
+
+    if not body_bytes:
+        return None
+
+    return json_loads(body_bytes)

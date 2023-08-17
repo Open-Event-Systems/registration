@@ -1,13 +1,11 @@
 """Email auth service."""
-import asyncio
-from inspect import iscoroutinefunction
 from typing import Optional
 
 from loguru import logger
 from oes.registration.auth.entities import EmailAuthCodeEntity
 from oes.registration.auth.models import EmailAuthCodeHookBody
 from oes.registration.hook.models import HookConfig, HookEvent
-from oes.registration.serialization import get_converter
+from oes.registration.hook.service import invoke_hook
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -79,17 +77,11 @@ async def send_auth_code(
         date_created=entity.date_created,
         date_expires=entity.date_expires,
     )
-    body_dict = get_converter().unstructure(body)
 
     hooks = hook_config.get_by_event(HookEvent.email_auth_code)
     i = 0
     for i, hook in enumerate(hooks, start=1):
-        fn = hook.get_hook()
-        if iscoroutinefunction(fn):
-            await fn(body_dict)
-        else:
-            loop = asyncio.get_running_loop()
-            await loop.run_in_executor(None, fn, body_dict)
+        await invoke_hook(hook, body)
 
     if i == 0:
         logger.error("No email auth hooks were run")

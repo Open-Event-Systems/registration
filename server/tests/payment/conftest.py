@@ -59,6 +59,7 @@ def make_square_service():
 
     return SquarePaymentService(
         SquareConfig(
+            application_id="changeit",
             access_token=access_token,
             location_id=location_id,
             environment="sandbox",
