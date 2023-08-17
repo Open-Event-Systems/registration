@@ -95,7 +95,7 @@ def _make_line_item(rule: LineItemRule, context: Context) -> LineItem:
     modifiers = tuple(_eval_modifiers(rule, context))
 
     return LineItem(
-        type_id=rule.type_id.render(context) if rule.description is not None else None,
+        type_id=rule.type_id.render(context) if rule.type_id is not None else None,
         name=rule.name.render(context),
         description=rule.description.render(context)
         if rule.description is not None
