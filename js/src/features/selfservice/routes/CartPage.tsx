@@ -189,6 +189,7 @@ const CartView = observer(
                   <Button
                     variant="filled"
                     leftIcon={<IconShoppingCart />}
+                    fullWidth
                     onClick={() => showOptions()}
                   >
                     Checkout
@@ -236,12 +237,20 @@ const CartView = observer(
 CartView.displayName = "CartView"
 
 const EmptyCartView = () => (
-  <Text color="dimmed">
-    <Group align="center">
-      <IconAlertCircle />
-      <Text span inline>
-        Your cart is empty.
-      </Text>
-    </Group>
-  </Text>
+  <Box
+    sx={{
+      minHeight: 200,
+      display: "flex",
+      alignItems: "center",
+    }}
+  >
+    <Text color="dimmed">
+      <Group align="center">
+        <IconAlertCircle />
+        <Text span inline>
+          Your cart is empty.
+        </Text>
+      </Group>
+    </Text>
+  </Box>
 )
