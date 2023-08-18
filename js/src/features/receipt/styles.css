@@ -33,6 +33,7 @@ body {
 .receipt-registration-body,
 .receipt-registration-row,
 .receipt-line-item-row,
+.receipt-line-description-row,
 .receipt-modifier-row,
 .receipt-footer,
 .receipt-footer-row {
@@ -104,13 +105,13 @@ body {
   grid-column: item-amount;
 }
 
-.receipt-line-modifier-name {
+.receipt-modifier-name {
   grid-column: item-name;
   text-align: right;
   font-size: 0.75rem;
 }
 
-.receipt-line-modifier-amount {
+.receipt-modifier-amount {
   grid-column: item-amount;
   text-align: right;
   font-size: 0.75rem;
