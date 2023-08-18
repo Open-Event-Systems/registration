@@ -14,6 +14,7 @@ from oes.registration.cart.models import (
     PricingResult,
 )
 from oes.registration.checkout.pricing import default_pricing
+from oes.registration.entities.event_stats import EventStatsEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookConfig, HookEvent
 from oes.registration.hook.service import HookSender, invoke_hook
@@ -198,6 +199,7 @@ async def apply_changes(
     cart_data: CartData,
     registration_entities: Mapping[UUID, RegistrationEntity],
     access_codes: Mapping[str, AccessCodeEntity],
+    event_stats: EventStatsEntity,
     registration_service: RegistrationService,
     account_service: AccountService,
     hook_sender: HookSender,
@@ -214,6 +216,7 @@ async def apply_changes(
         cart_data: The :class:`CartData` to apply.
         registration_entities: A mapping of registration IDs to entities.
         access_codes: A mapping of access codes to entities.
+        event_stats: The :class:`EventStatsEntity`.
         registration_service: The registration service.
         account_service: The account service.
         hook_sender: A :class:`HookSender` instance.
@@ -228,6 +231,7 @@ async def apply_changes(
         entity = await _create_or_update_registration(
             cart_registration,
             registration_entities,
+            event_stats,
             registration_service,
             account_service,
             hook_sender,
@@ -243,16 +247,19 @@ async def apply_changes(
 async def _create_or_update_registration(
     cart_registration: CartRegistration,
     registration_entities: Mapping[UUID, RegistrationEntity],
+    event_stats: EventStatsEntity,
     registration_service: RegistrationService,
     account_service: AccountService,
     hook_sender: HookSender,
 ) -> RegistrationEntity:
     entity = registration_entities.get(cart_registration.id)
     if entity:
-        await entity.apply_changes_from_cart(cart_registration, hook_sender)
+        await entity.apply_changes_from_cart(
+            cart_registration, event_stats, hook_sender
+        )
     else:
         entity = RegistrationEntity.create_from_cart(cart_registration)
-        await registration_service.create_registration(entity)
+        await registration_service.create_registration(entity, event_stats)
         await _add_account(cart_registration, entity, account_service)
 
     return entity

@@ -11,6 +11,7 @@ from oes.registration.cart.models import CartData, PricingResult
 from oes.registration.cart.service import apply_changes
 from oes.registration.checkout.entities import CheckoutEntity, CheckoutState
 from oes.registration.checkout.models import PaymentServiceCheckout
+from oes.registration.entities.event_stats import EventStatsEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
@@ -337,6 +338,7 @@ async def apply_checkout_changes(
     checkout_entity: CheckoutEntity,
     registration_entities: Mapping[UUID, RegistrationEntity],
     access_codes: Mapping[str, AccessCodeEntity],
+    event_stats: EventStatsEntity,
     registration_service: RegistrationService,
     account_service: AccountService,
     hook_sender: HookSender,
@@ -349,6 +351,7 @@ async def apply_checkout_changes(
         checkout_entity: The :class:`CheckoutEntity`.
         registration_entities: A mapping of registration IDs to entities.
         access_codes: A mapping of access codes to entities.
+        event_stats: The :class:`EventStatsEntity` for the event.
         registration_service: The registration service.
         account_service: The account service.
         hook_sender: A :class:`HookSender`.
@@ -367,6 +370,7 @@ async def apply_checkout_changes(
         cart_data,
         registration_entities,
         access_codes,
+        event_stats,
         registration_service,
         account_service,
         hook_sender,

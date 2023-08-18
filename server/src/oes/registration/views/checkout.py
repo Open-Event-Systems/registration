@@ -35,6 +35,7 @@ from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.checkout.service import CheckoutService, apply_checkout_changes
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
+from oes.registration.entities.event_stats import EventStatsEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.service import HookSender
 from oes.registration.models.config import Config
@@ -267,19 +268,18 @@ async def update_checkout(
     # refund the transaction
     try:
         if result.state == CheckoutState.complete and not checkout.changes_applied:
-            updated_entities = await _apply_changes(
+            event_stats = await event_service.get_event_stats(
+                cart_data.event_id, lock=True
+            )
+
+            await _apply_changes(
                 checkout,
                 registration_entities,
                 access_codes,
+                event_stats,
                 registration_service,
                 account_service,
                 hook_sender,
-            )
-
-            # Assign registration numbers at the end, so the row storing the number
-            # does not stay locked while updating the checkout
-            await _assign_registration_numbers(
-                cart_data, updated_entities, event_service
             )
 
         await db.commit()
@@ -366,6 +366,7 @@ async def _apply_changes(
     checkout_entity: CheckoutEntity,
     registration_entities: Mapping[UUID, RegistrationEntity],
     access_codes: Mapping[str, AccessCodeEntity],
+    event_stats: EventStatsEntity,
     registration_service: RegistrationService,
     account_service: AccountService,
     hook_sender: HookSender,
@@ -374,6 +375,7 @@ async def _apply_changes(
         checkout_entity,
         registration_entities,
         access_codes,
+        event_stats,
         registration_service,
         account_service,
         hook_sender,

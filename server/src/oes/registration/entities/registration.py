@@ -271,6 +271,7 @@ class RegistrationEntity(Base):
     async def apply_changes_from_cart(
         self,
         cart_registration: CartRegistration,
+        event_stats: EventStatsEntity,
         hook_sender: HookSender,
     ):
         """Apply changes from a :class:`CartRegistration`.
@@ -291,20 +292,25 @@ class RegistrationEntity(Base):
         self.update_properties_from_model(writable)
         state_change_event = self._update_state_from_cart(cart_registration)
 
+        # assign number on creation
+        if state_change_event and self.state == RegistrationState.created:
+            self.assign_number(event_stats)
+
         new_data = self.get_model()
 
-        await hook_sender.schedule_hooks_for_event(
-            HookEvent.registration_updated,
-            RegistrationUpdatedEvent(
-                old_data=old_data,
-                new_data=new_data,
-            ),
-        )
-
+        # Send created/canceled event if the state changed, otherwise an updated event
         if state_change_event:
             await hook_sender.schedule_hooks_for_event(
                 state_change_event,
                 new_data,
+            )
+        else:
+            await hook_sender.schedule_hooks_for_event(
+                HookEvent.registration_updated,
+                RegistrationUpdatedEvent(
+                    old_data=old_data,
+                    new_data=new_data,
+                ),
             )
 
     def _update_state_from_cart(self, cart_registration: CartRegistration):

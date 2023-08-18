@@ -27,6 +27,7 @@ from oes.registration.models.registration import (
 )
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import json_loads
+from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import check_not_found
 from oes.registration.views.parameters import AttrsBody
@@ -92,6 +93,7 @@ async def create_registration(
     request: Request,
     body: AttrsBody[CreateRegistrationRequest],
     service: RegistrationService,
+    event_service: EventService,
     event_config: EventConfig,
 ) -> Response:
     """Create a registration."""
@@ -99,6 +101,8 @@ async def create_registration(
     event = event_config.get_event(body.value.event_id)
     if not event:
         raise HTTPException(422, "Event ID not found")
+
+    event_stats = await event_service.get_event_stats(event.id, lock=True)
 
     # should already be loaded
     body_json = await request.json(loads=json_loads)
@@ -117,7 +121,7 @@ async def create_registration(
         extra_data=writable.extra_data,
     )
 
-    await service.create_registration(entity)
+    await service.create_registration(entity, event_stats)
 
     return registration_response(entity.get_model())
 

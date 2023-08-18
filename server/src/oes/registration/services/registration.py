@@ -31,18 +31,24 @@ class RegistrationService:
         self.hook_sender = hook_sender
         self.config = config
 
-    async def create_registration(self, registration: RegistrationEntity):
+    async def create_registration(
+        self, registration: RegistrationEntity, event_stats: EventStatsEntity
+    ):
         """Create a new registration entity."""
         self.db.add(registration)
         await self.db.flush()
+        registration._updated = True  # no need for additional version increases
 
         if registration.state == RegistrationState.created:
+            audit_log.bind(type=AuditLogType.registration_create).success(
+                "Registration {registration} created", registration=registration
+            )
+
+            registration.assign_number(event_stats)
+
             await self.hook_sender.schedule_hooks_for_event(
                 HookEvent.registration_created,
                 registration.get_model(),
-            )
-            audit_log.bind(type=AuditLogType.registration_create).success(
-                "Registration {registration} created", registration=registration
             )
         elif registration.state == RegistrationState.pending:
             audit_log.bind(type=AuditLogType.registration_create_pending).success(

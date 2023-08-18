@@ -5,6 +5,7 @@ from uuid import UUID
 
 import pytest
 import pytest_asyncio
+from oes.registration.entities.event_stats import EventStatsEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.service import HookSender
 from oes.registration.models.config import Config
@@ -18,8 +19,15 @@ def service(db: AsyncSession):
     return RegistrationService(db, create_autospec(HookSender), create_autospec(Config))
 
 
+@pytest.fixture
+def event_stats():
+    return EventStatsEntity(next_number=1)
+
+
 @pytest_asyncio.fixture
-async def registration_id(service: RegistrationService, db: AsyncSession):
+async def registration_id(
+    service: RegistrationService, event_stats: EventStatsEntity, db: AsyncSession
+):
     id_ = uuid.uuid4()
     reg = RegistrationEntity(
         id=id_,
@@ -29,7 +37,7 @@ async def registration_id(service: RegistrationService, db: AsyncSession):
             "extra": 123,
         },
     )
-    await service.create_registration(reg)
+    await service.create_registration(reg, event_stats)
     await db.commit()
     return id_
 
