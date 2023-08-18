@@ -15,7 +15,6 @@ import { ReactNode, useEffect } from "react"
 export const CheckoutComplete = ({ onClose }: { onClose?: () => void }) => {
   return (
     <>
-      <Title order={6}>Complete</Title>
       <Text component="p">Your order is complete.</Text>
       <Button onClick={onClose}>Close</Button>
     </>

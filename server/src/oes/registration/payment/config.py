@@ -8,6 +8,7 @@ from importlib_metadata import entry_points
 from loguru import logger
 from oes.registration.models.config import PaymentConfig
 from oes.registration.payment.base import PaymentService
+from oes.registration.payment.system import SystemPaymentService
 
 PaymentServiceFactory = Callable[[dict[str, Any]], Optional[PaymentService]]
 """Factory function to configure and return a :class:`PaymentService`.
@@ -68,6 +69,7 @@ class PaymentServices:
 def load_services(config: PaymentConfig) -> PaymentServices:
     """Load :class:`PaymentService` classes."""
     services = PaymentServices()
+    services.services["system"] = SystemPaymentService()
 
     # TODO: get explicit enable/disable settings from somewhere?
 

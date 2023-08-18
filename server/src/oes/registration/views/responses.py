@@ -206,7 +206,7 @@ class PricingResultResponse:
 class CheckoutErrorResponse:
     """A checkout error including the invalid registration IDs."""
 
-    errors: Mapping[UUID, str]
+    errors: Mapping[str, str]
 
 
 @frozen

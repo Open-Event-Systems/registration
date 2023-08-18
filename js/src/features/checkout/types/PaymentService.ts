@@ -7,6 +7,12 @@ import { CheckoutComponent } from "#src/features/checkout/types/CheckoutComponen
 export const checkoutComponents: {
   [K in keyof PaymentServiceMap]?: () => Promise<CheckoutComponent<K>>
 } = {
+  system: async () => {
+    const module = await import(
+      "#src/features/checkout/impl/mock/SystemCheckoutComponent.js"
+    )
+    return module.SystemCheckoutComponent
+  },
   mock: async () => {
     const module = await import(
       "#src/features/checkout/impl/mock/MockCheckoutComponent.js"

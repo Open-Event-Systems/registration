@@ -1,4 +1,4 @@
-"""Mock payment service."""
+"""System payment service."""
 import uuid
 from typing import Any, Iterable, Optional
 from uuid import UUID
@@ -13,25 +13,15 @@ from oes.registration.payment.base import (
     CreateCheckoutRequest,
     PaymentService,
     UpdateRequest,
-    ValidationError,
 )
 from oes.registration.util import get_now
 
 
-class MockPaymentService(PaymentService):
-    """Mock payment service."""
+class SystemPaymentService(PaymentService):
+    """System payment service."""
 
-    id = "mock"
-    name = "Mock"
-
-    def _get_checkout(
-        self, id: str, extra_data: Optional[dict[str, Any]]
-    ) -> PaymentServiceCheckout:
-        extra_data = extra_data or {}
-        state = CheckoutState(extra_data.get("state", CheckoutState.pending))
-        return PaymentServiceCheckout(
-            service=self.id, id=id, state=state, checkout_data={"state": state.value}
-        )
+    id = "system"
+    name = "System"
 
     async def get_checkout(
         self, id: str, extra_data: Optional[dict[str, Any]] = None
@@ -41,9 +31,11 @@ class MockPaymentService(PaymentService):
     async def get_checkout_methods(
         self, request: CheckoutMethodsRequest
     ) -> Iterable[CheckoutMethod]:
-        if request.pricing_result.total_price != 0:
+        if request.pricing_result.total_price == 0:
             return [
-                CheckoutMethod(service=self.id, method="mock-card", name="Mock Card")
+                CheckoutMethod(
+                    service=self.id, method="zero-balance", name="Complete Checkout"
+                )
             ]
         else:
             return []
@@ -95,12 +87,6 @@ class MockPaymentService(PaymentService):
         elif checkout.state == CheckoutState.canceled:
             raise CheckoutCancelError("Checkout is canceled")
 
-        card = request.body.get("card")
-        try:
-            int(card)
-        except (TypeError, ValueError):
-            raise ValidationError("Invalid card")
-
         return PaymentServiceCheckout(
             service=self.id,
             id=checkout.id,
@@ -113,9 +99,11 @@ class MockPaymentService(PaymentService):
 
     update_handler = _update_handler
 
-
-def create_mock_service(
-    config: dict[str, Any],
-) -> Optional[MockPaymentService]:
-    """Factory to create the :class:`MockPaymentService`."""
-    return MockPaymentService()
+    def _get_checkout(
+        self, id: str, extra_data: Optional[dict[str, Any]]
+    ) -> PaymentServiceCheckout:
+        extra_data = extra_data or {}
+        state = CheckoutState(extra_data.get("state", CheckoutState.pending))
+        return PaymentServiceCheckout(
+            service=self.id, id=id, state=state, checkout_data={"state": state.value}
+        )

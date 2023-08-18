@@ -337,7 +337,11 @@ async def _validate_changes(
                 409,
                 content=Content(
                     b"application/json",
-                    get_converter().dumps(CheckoutErrorResponse(errors=errors)),
+                    get_converter().dumps(
+                        CheckoutErrorResponse(
+                            errors={str(id_): err for id_, err in errors.items()}
+                        )
+                    ),
                 ),
             ),
         )
