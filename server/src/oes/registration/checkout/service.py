@@ -10,7 +10,7 @@ from oes.registration.auth.account_service import AccountService
 from oes.registration.cart.models import CartData, PricingResult
 from oes.registration.cart.service import apply_changes
 from oes.registration.checkout.entities import CheckoutEntity, CheckoutState
-from oes.registration.checkout.models import PaymentServiceCheckout
+from oes.registration.checkout.models import CheckoutHookBody, PaymentServiceCheckout
 from oes.registration.entities.event_stats import EventStatsEntity
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookEvent
@@ -144,7 +144,7 @@ class CheckoutService:
 
         await self.hook_sender.schedule_hooks_for_event(
             HookEvent.checkout_created,
-            checkout,
+            CheckoutHookBody.create(entity),
         )
 
         audit_log.bind(type=AuditLogType.checkout_create).success(
@@ -243,14 +243,7 @@ class CheckoutService:
         if checkout.cancel(result.date_closed):
             await self.hook_sender.schedule_hooks_for_event(
                 HookEvent.checkout_canceled,
-                PaymentServiceCheckout(
-                    service=checkout.service,
-                    id=checkout.external_id,
-                    state=checkout.state,
-                    date_created=checkout.date_created,
-                    date_closed=checkout.date_closed,
-                    checkout_data=checkout.external_data,
-                ),
+                CheckoutHookBody.create(checkout),
             )
         return True
 
@@ -330,7 +323,7 @@ class CheckoutService:
                 receipt_id=checkout.receipt_id,
             )
             await self.hook_sender.schedule_hooks_for_event(
-                HookEvent.checkout_closed, result
+                HookEvent.checkout_closed, CheckoutHookBody.create(self)
             )
 
         return result
