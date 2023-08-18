@@ -15,7 +15,7 @@ from oes.registration.entities.base import (
     JSONData,
 )
 from oes.registration.util import get_now
-from sqlalchemy import ForeignKey, Index, String, func
+from sqlalchemy import ForeignKey, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 CREDENTIAL_TYPE_LEN = 32
@@ -114,7 +114,7 @@ class EmailAuthCodeEntity(Base):
     __table_args__ = (
         Index(
             "uq_email_auth_lower_email",
-            func.lower("email"),
+            text("lower(email)"),
             unique=True,
         ),
     )
