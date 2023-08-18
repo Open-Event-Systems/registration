@@ -323,7 +323,7 @@ class CheckoutService:
                 receipt_id=checkout.receipt_id,
             )
             await self.hook_sender.schedule_hooks_for_event(
-                HookEvent.checkout_closed, CheckoutHookBody.create(self)
+                HookEvent.checkout_closed, CheckoutHookBody.create(checkout)
             )
 
         return result
