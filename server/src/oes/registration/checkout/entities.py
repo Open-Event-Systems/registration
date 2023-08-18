@@ -146,9 +146,9 @@ class CheckoutEntity(Base):
             copy.deepcopy(external_data) if external_data is not None else {}
         )
 
-    def set_cart_data(self, cart_data: CartData):
+    def set_cart_data(self, cart_id: str, cart_data: CartData):
         """Set the cart data."""
-        self.cart_id = cart_data.get_hash()
+        self.cart_id = cart_id
         self.cart_data = get_converter().unstructure(cart_data)
 
     def get_cart_data(self) -> CartData:

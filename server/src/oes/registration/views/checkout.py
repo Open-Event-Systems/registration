@@ -3,6 +3,7 @@ from collections.abc import Iterable, Mapping
 from typing import Optional
 from uuid import UUID
 
+from attrs import evolve
 from blacksheep import (
     Content,
     FromBytes,
@@ -158,6 +159,9 @@ async def create_checkout(
         await db.rollback()
         return error_response
 
+    # set user's email in cart metadata
+    cart = evolve(cart, meta={"email": user.email, **(cart.meta or {})})
+
     # Price the cart (this will be the official price)
     pricing_result = await price_cart(
         cart, config.payment.currency, event, config.hooks
@@ -172,6 +176,7 @@ async def create_checkout(
 
     checkout_entity, checkout = await checkout_service.create_checkout(
         service_id=service.value,
+        cart_id=cart_id,
         cart_data=cart,
         pricing_result=pricing_result,
     )

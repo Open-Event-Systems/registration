@@ -80,7 +80,7 @@ def test_set_cart_data():
     )
 
     entity = CheckoutEntity()
-    entity.set_cart_data(cd)
+    entity.set_cart_data(cd.get_hash(), cd)
     assert entity.cart_id == cd.get_hash()
     assert isinstance(entity.cart_data, dict)
     assert entity.cart_data != {}

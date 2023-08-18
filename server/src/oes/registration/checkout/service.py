@@ -96,6 +96,7 @@ class CheckoutService:
     async def create_checkout(
         self,
         service_id: str,
+        cart_id: str,
         cart_data: CartData,
         pricing_result: PricingResult,
         method: Optional[str] = None,
@@ -106,6 +107,7 @@ class CheckoutService:
 
         Args:
             service_id: The payment service ID.
+            cart_id: The cart ID.
             cart_data: The cart data.
             pricing_result: The pricing result.
             method: Payment method type.
@@ -119,7 +121,7 @@ class CheckoutService:
             state=CheckoutState.pending,
             service=service.id,
         )
-        entity.set_cart_data(cart_data)
+        entity.set_cart_data(cart_id, cart_data)
         entity.set_pricing_result(pricing_result)
 
         request = CreateCheckoutRequest(

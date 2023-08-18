@@ -5,7 +5,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from attrs import Factory, frozen
@@ -304,11 +304,18 @@ class SquarePaymentService(PaymentService):
                 f"{request.pricing_result.currency})"
             )
 
+        email, first_name, last_name = self._get_customer_info(request)
+
         return PaymentServiceCheckout(
             service=self.id,
             id=created_order.id,
             state=_get_state(created_order.state),
             date_created=created_order.created_at,
+            checkout_data={
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+            },
             response_data={
                 "application_id": self._config.application_id,
                 "location_id": self._config.location_id,
@@ -317,6 +324,25 @@ class SquarePaymentService(PaymentService):
                 "sandbox": self._config.environment != "production",
             },
         )
+
+    def _get_customer_info(
+        self, req: CreateCheckoutRequest
+    ) -> Union[tuple[str, Optional[str], Optional[str]], tuple[None, None, None]]:
+        """Get the email and name from the cart data.
+
+        Uses the email in the cart.meta.email field, or the first email in the data.
+        """
+        meta_email = req.cart_data.meta.get("email") if req.cart_data.meta else None
+
+        for reg in req.cart_data.registrations:
+            email = reg.new_data.get("email")
+            first_name = reg.new_data.get("first_name")
+            last_name = reg.new_data.get("last_name")
+
+            if email and (not meta_email or email.lower() == meta_email.lower()):
+                return email, first_name, last_name
+
+        return meta_email, None, None
 
     def _create_order(self, order: SquareOrder) -> SquareOrder:
         res: ApiResponse = self._client.orders.create_order(
@@ -398,6 +424,7 @@ class SquarePaymentService(PaymentService):
                 raise ValidationError("Order not found")
 
             assert order.total_money is not None
+            raise RuntimeError
 
             with _transform_errors():
                 payment_id: str = await asyncio.to_thread(
@@ -444,6 +471,7 @@ class SquarePaymentService(PaymentService):
                 return None
         except SquareError:
             # Just ignore errors and continue with payment
+            logger.opt(exception=True).error("Failed to get/create Square customer")
             return None
 
     def _update_order_state(
@@ -540,7 +568,7 @@ class SquarePaymentService(PaymentService):
                 "query": {
                     "filter": {
                         "email_address": {
-                            "exact": email.lower().strip(),
+                            "fuzzy": email.lower().strip(),
                         }
                     }
                 }
@@ -563,13 +591,11 @@ class SquarePaymentService(PaymentService):
         last_name: Optional[str] = None,
     ) -> SquareCustomer:
         res: ApiResponse = self._client.customers.create_customer(
-            converter.unstructure(
-                SquareCustomer(
-                    email_address=email,
-                    given_name=first_name,
-                    family_name=last_name,
-                ),
-            )
+            {
+                "email_address": email,
+                "given_name": first_name,
+                "family_name": last_name,
+            }
         )
 
         if res.is_success():
