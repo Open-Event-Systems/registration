@@ -22,14 +22,23 @@ export type EmailAuthProps = {
   email?: string | null
   onSubmit?: (email: string) => Promise<boolean>
   onVerify?: (email: string, code: string) => Promise<boolean>
+  onComplete?: () => Promise<void>
 } & DefaultProps<Selectors<typeof useStyles>>
 
 /**
  * Email auth input.
  */
 export const EmailAuth = (props: EmailAuthProps) => {
-  const { className, classNames, styles, unstyled, email, onSubmit, onVerify } =
-    useComponentDefaultProps("EmailAuth", {}, props)
+  const {
+    className,
+    classNames,
+    styles,
+    unstyled,
+    email,
+    onSubmit,
+    onVerify,
+    onComplete,
+  } = useComponentDefaultProps("EmailAuth", {}, props)
 
   const { classes, cx } = useStyles(undefined, {
     name: "EmailAuth",
@@ -43,7 +52,44 @@ export const EmailAuth = (props: EmailAuthProps) => {
   const [code, setCode] = useState("")
   const [error, setError] = useState<string | null>(null)
 
-  if (email) {
+  /*
+    we have to require a second tap because some platforms (iOS) will only show the
+    webauthn prompt if it is called in an onclick handler.
+
+    https://stackoverflow.com/a/67953799
+  */
+  const [success, setSuccess] = useState(false)
+
+  if (success) {
+    return (
+      <form
+        className={cx(classes.root, className)}
+        onSubmit={(e) => {
+          e.preventDefault()
+        }}
+      >
+        <Stack className={classes.stack}>
+          <Text>You&apos;ve successfully verified your email.</Text>
+          <Button
+            onClick={() => {
+              if (loading) {
+                return
+              }
+
+              if (onComplete) {
+                setLoading(true)
+                onComplete().finally(() => {
+                  setLoading(false)
+                })
+              }
+            }}
+          >
+            Continue
+          </Button>
+        </Stack>
+      </form>
+    )
+  } else if (email) {
     // code input
     return (
       <form
@@ -63,6 +109,7 @@ export const EmailAuth = (props: EmailAuthProps) => {
                 setError("Try again")
               }
               setLoading(false)
+              setSuccess(true)
             })
             .catch((e) => {
               setError("Try again")
