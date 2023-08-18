@@ -363,16 +363,16 @@ async def create_cart_add_interview_state(
     if not event.is_open_to(user):
         raise HTTPException(409)
 
-    if registration_id.value is not None:
-        registration = await _get_registration_for_change(
-            registration_id.value, registration_service, user
-        )
-    else:
-        registration = None
-
     access_code_settings = await _get_access_code(
         access_code.value, event.id, access_code_service
     )
+
+    if registration_id.value is not None:
+        registration = await _get_registration_for_change(
+            registration_id.value, registration_service, user, access_code_settings
+        )
+    else:
+        registration = None
 
     valid_interview_id = _check_interview_availability(
         interview_id.value, event, registration, access_code_settings
@@ -412,14 +412,23 @@ async def _get_registration_for_change(
     id: UUID,
     service: RegistrationService,
     user: User,
+    access_code_settings: AccessCodeSettings,
 ) -> RegistrationEntity:
     reg = await service.get_registration(id, include_accounts=True)
     if not reg:
         raise NotFound
 
-    # Check that the user account is assocated with this registration
-    # TODO: check emails also
-    if not user.id or user.id not in [a.id for a in reg.accounts]:
+    # Check that the user account is associated with this registration
+    if (
+        (
+            not access_code_settings
+            or not access_code_settings.registration_id
+            or access_code_settings.registration_id != id
+        )
+        and (not user.id or user.id not in [a.id for a in reg.accounts])
+        and (not user.email or not reg.email or user.email.lower() != reg.email.lower())
+        and not user.is_admin
+    ):
         raise NotFound
 
     return reg
