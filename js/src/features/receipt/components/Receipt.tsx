@@ -25,7 +25,7 @@ export const receiptClassNames = {
   lineItem: "receipt-line-item-row",
   lineItemName: "receipt-line-item-name",
   lineItemAmount: "receipt-line-item-amount",
-  lineItemDescriptionRow: "line-item-description-row",
+  lineItemDescriptionRow: "receipt-line-item-description-row",
   description: "receipt-line-item-description",
   descriptionSpacer: "receipt-line-item-description-spacer",
   modifierRow: "receipt-modifier-row",
