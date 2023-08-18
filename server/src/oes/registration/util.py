@@ -82,7 +82,8 @@ def normalize_origin(origin: str) -> str:
     result = (url.schema + b"://" + url.host).decode()
 
     if (
-        url.schema == b"https"
+        url.port == 0
+        or url.schema == b"https"
         and url.port == 443
         or url.schema == b"http"
         and url.port == 80
