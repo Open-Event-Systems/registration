@@ -424,7 +424,6 @@ class SquarePaymentService(PaymentService):
                 raise ValidationError("Order not found")
 
             assert order.total_money is not None
-            raise RuntimeError
 
             with _transform_errors():
                 payment_id: str = await asyncio.to_thread(
