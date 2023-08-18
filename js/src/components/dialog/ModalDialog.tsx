@@ -31,7 +31,14 @@ export type ModalDialogProps = {
 const useStyles = createStyles((_theme, params: ModalDialogParams) => ({
   root: {},
   inner: {},
-  content: {},
+  content: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  fullscreenContent: {
+    // avoid issue w/ app shell cutting off the header
+    height: "100%",
+  },
   header: {
     zIndex: "initial",
   },
@@ -40,6 +47,7 @@ const useStyles = createStyles((_theme, params: ModalDialogParams) => ({
     fontWeight: "bold",
   },
   body: {
+    flex: "auto",
     padding: params.noPadding ? 0 : undefined,
   },
   close: {},
@@ -83,7 +91,9 @@ export const ModalDialog = (props: ModalDialogProps) => {
       {...other}
     >
       <Modal.Overlay className={classes.overlay} />
-      <Modal.Content className={classes.content}>
+      <Modal.Content
+        className={cx(classes.content, fullScreen && classes.fullscreenContent)}
+      >
         <Modal.Header className={classes.header}>
           <Modal.Title className={classes.title}>{title}</Modal.Title>
           {!hideCloseButton && <Modal.CloseButton className={classes.close} />}

@@ -14,6 +14,11 @@ const useStyles = createStyles({
   body: {
     padding: "0 0 8px 0",
   },
+  content: {},
+  fullscreenContent: {
+    // avoid issue w/ app shell cutting off the header
+    height: "100%",
+  },
 })
 
 export type SigninDialogProps = Omit<
@@ -52,6 +57,7 @@ export const SigninDialog = (props: SigninDialogProps) => {
       fullScreen={isSmall}
       classNames={{
         body: classes.body,
+        content: cx(classes.content, isSmall && classes.fullscreenContent),
       }}
       closeOnClickOutside={false}
       withCloseButton={false}
