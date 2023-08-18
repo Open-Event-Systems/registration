@@ -24,7 +24,7 @@ from oes.registration.models.registration import (
 )
 from oes.registration.serialization import get_converter
 from oes.registration.util import get_now, merge_dict
-from sqlalchemy import ForeignKey, Index, String
+from sqlalchemy import ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -46,6 +46,10 @@ class RegistrationEntity(Base):
             postgresql_ops={
                 "extra_data": "jsonb_path_ops",
             },
+        ),
+        Index(
+            "ix_registration_email",
+            text("lower(email)"),
         ),
     )
 

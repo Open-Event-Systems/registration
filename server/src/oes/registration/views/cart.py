@@ -1,6 +1,6 @@
 """Cart views."""
 import uuid
-from typing import Any, Optional, Union
+from typing import Any, Mapping, Optional, Union
 from uuid import UUID
 
 from attrs import frozen
@@ -354,7 +354,7 @@ async def create_cart_add_interview_state(
     interview_service: InterviewService,
     access_code_service: AccessCodeService,
     user: User,
-) -> dict[str, Any]:
+) -> Mapping[str, Any]:
     """Get an interview state to add a registration to a cart."""
     entity = check_not_found(await service.get_cart(id))
     cart = entity.get_cart_data_model()

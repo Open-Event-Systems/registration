@@ -54,6 +54,7 @@ async def list_self_service_registration(
             await service.list_self_service_registrations(
                 user.id,
                 event_id=event_id.value,
+                email=user.email,
             )
         )
         if user.id

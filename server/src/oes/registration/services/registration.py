@@ -18,9 +18,10 @@ from oes.registration.models.registration import (
     SelfServiceRegistration,
 )
 from oes.registration.serialization import get_converter
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, selectinload
+from sqlalchemy.sql.operators import or_
 
 
 class RegistrationService:
@@ -114,13 +115,20 @@ class RegistrationService:
         self,
         account_id: UUID,
         event_id: Optional[str] = None,
+        email: Optional[str] = None,
     ) -> Sequence[RegistrationEntity]:
         """List self-service registrations."""
-        q = (
-            select(RegistrationEntity)
-            .join(RegistrationEntity.accounts)
-            .where(AccountEntity.id == account_id)
-        )
+        q = select(RegistrationEntity).outerjoin(RegistrationEntity.accounts)
+
+        if email is not None:
+            q = q.where(
+                or_(
+                    func.lower(RegistrationEntity.email) == email.lower(),
+                    AccountEntity.id == account_id,
+                )
+            )
+        else:
+            q = q.where(AccountEntity.id == account_id)
 
         if event_id is not None:
             q = q.where(RegistrationEntity.event_id == event_id)
