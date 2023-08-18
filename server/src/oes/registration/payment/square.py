@@ -336,11 +336,12 @@ class SquarePaymentService(PaymentService):
 
         for reg in req.cart_data.registrations:
             email = reg.new_data.get("email")
+            pref_name = reg.new_data.get("preferred_name")
             first_name = reg.new_data.get("first_name")
             last_name = reg.new_data.get("last_name")
 
             if email and (not meta_email or email.lower() == meta_email.lower()):
-                return email, first_name, last_name
+                return email, pref_name or first_name, last_name
 
         return meta_email, None, None
 
