@@ -37,8 +37,8 @@ from webauthn.helpers.structs import (
     ResidentKeyRequirement,
 )
 
-WEBAUTHN_REGISTRATION_LIFETIME = timedelta(seconds=180)
-WEBAUTHN_AUTHENTICATION_LIFETIME = timedelta(seconds=180)
+WEBAUTHN_REGISTRATION_LIFETIME = timedelta(seconds=600)
+WEBAUTHN_AUTHENTICATION_LIFETIME = timedelta(seconds=600)
 
 
 class WebAuthnError(ValueError):
