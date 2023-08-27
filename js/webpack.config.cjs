@@ -22,7 +22,6 @@ module.exports = (env, argv) => {
       rules: [
         // babel-loader for all non-js source files, or js files in the project
         {
-          exclude: /node_modules/,
           oneOf: [
             {
               test: /\.(tsx?|jsx)$/,

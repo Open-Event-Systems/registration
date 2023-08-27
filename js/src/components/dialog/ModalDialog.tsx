@@ -79,7 +79,8 @@ export const ModalDialog = (props: ModalDialogProps) => {
     { name: "ModalDialog", classNames, styles, unstyled }
   )
 
-  const fullScreen = propFullScreen ?? useMediaQuery(fullScreenMediaQuery)
+  const queryResult = useMediaQuery(fullScreenMediaQuery)
+  const fullScreen = propFullScreen ?? queryResult
 
   return (
     <Modal.Root

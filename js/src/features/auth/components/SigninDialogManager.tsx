@@ -3,7 +3,7 @@ import { SigninDialog } from "#src/features/auth/components/SigninDialog.js"
 import {
   SigninOptionType,
   SigninOptions,
-} from "#src/features/auth/components/SigninOptions.js"
+} from "#src/features/auth/components/SigninOptionsMenu.js"
 import { useAccountStore, useAuth } from "#src/features/auth/hooks.js"
 import { AccountStore } from "#src/features/auth/stores/AccountStore.js"
 import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"

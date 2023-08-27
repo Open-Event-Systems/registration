@@ -21,6 +21,7 @@ import type { RegistrationResponseJSON } from "@simplewebauthn/typescript-types"
 import { Wretch } from "wretch"
 import { action, makeAutoObservable, runInAction } from "mobx"
 import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"
+import { ComponentType } from "react"
 
 /**
  * The local storage key for the stored credential ID.

@@ -34,6 +34,31 @@ const config: StorybookConfig = {
             use: "svgo-loader",
             type: "asset/resource",
           },
+
+          // babel-loader for all non-js source files
+          {
+            oneOf: [
+              {
+                test: /\.(tsx?|jsx)$/,
+                use: {
+                  loader: "babel-loader",
+                  options: {
+                    presets: [
+                      "@babel/preset-env",
+                      [
+                        "@babel/preset-react",
+                        {
+                          runtime: "automatic",
+                        },
+                      ],
+                      "@babel/preset-typescript",
+                    ],
+                    plugins: ["@babel/plugin-transform-runtime"],
+                  },
+                },
+              },
+            ],
+          },
         ],
       },
       resolve: {
