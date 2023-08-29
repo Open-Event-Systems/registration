@@ -19,19 +19,13 @@ import {
 import type { RegistrationResponseJSON } from "@simplewebauthn/typescript-types"
 
 import { Wretch } from "wretch"
-import { action, makeAutoObservable, runInAction } from "mobx"
+import { action, makeAutoObservable, runInAction, when } from "mobx"
 import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"
-import { ComponentType } from "react"
 
 /**
  * The local storage key for the stored credential ID.
  */
 const WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY = "oes-credential-id-v1"
-
-/**
- * Number of times WebAuthn will be tried.
- */
-const WEBAUTHN_MAX_FAIL_COUNT = 2
 
 /**
  * Options for account creation.
@@ -49,87 +43,63 @@ export interface CreateAccountOptions {
 }
 
 /**
- * Manage account creation/login.
+ * Manages account creation/login.
  */
 export class AccountStore {
   /**
-   * Whether the initial auth setup finished.
+   * Resolves when setup is finished.
    */
-  public initialSetupComplete = false
+  ready: Promise<void>
+  private _ready = false
 
   /**
-   * Whether the initial auth finished.
+   * WebAuthn availability and type.
    */
-  public initialAuthComplete = false
+  isWebAuthnAvailable: "platform" | boolean = false
 
-  public webAuthnAvailable: "platform" | boolean = false
+  /**
+   * Whether WebAuthn failed.
+   */
+  webAuthnError = false
 
-  private webAuthnFailCount = 0
+  /**
+   * The saved WebAuthn credential ID.
+   */
+  webAuthnCredentialId: string | null = null
 
   constructor(private wretch: Wretch, private authStore: AuthStore) {
-    makeAutoObservable(this)
+    makeAutoObservable(this, {
+      ready: false,
+    })
 
-    // set initial auth to complete when auth info becomes available
-    authStore.getAuthInfo().then(
-      action(() => {
-        this.initialAuthComplete = true
-      })
-    )
+    this.ready = when(() => this._ready)
   }
 
   /**
    * Perform initial setup.
    */
-  async setup(): Promise<AuthInfo | null> {
-    // get webauthn info
-    await this.checkWebAuthnAvailable()
-
-    const loaded = await this.authStore.load()
-
-    if (loaded) {
+  async setup(): Promise<void> {
+    try {
+      await Promise.all([this.webAuthnSetup()])
+    } finally {
       runInAction(() => {
-        this.initialSetupComplete = true
+        this._ready = true
       })
-      return loaded
     }
+  }
 
-    // try to authenticate using other means
-    let result = await this.authenticate()
-
-    // kind of a hacky way to retry webauthn
-    while (result === false) {
-      await new Promise((r) => window.setTimeout(r, 1000))
-      result = await this.authenticate()
-    }
-
+  private async webAuthnSetup() {
+    this.webAuthnCredentialId = getSavedWebAuthnCredentialId()
+    const webAuthnState = await checkWebAuthnAvailability()
     runInAction(() => {
-      this.initialSetupComplete = true
-      this.webAuthnFailCount = 0
+      this.isWebAuthnAvailable = webAuthnState
     })
-
-    return result
-  }
-
-  /**
-   * Send a verification email.
-   */
-  async sendVerificationEmail(email: string) {
-    await sendVerificationEmail(this.wretch, email)
-  }
-
-  /**
-   * Verify an email address.
-   * @returns A validated email token, or null if not successful.
-   */
-  async verifyEmail(email: string, code: string): Promise<string | null> {
-    const res = await verifyEmail(this.wretch, email, code)
-    return res?.token ?? null
   }
 
   /**
    * Create a new account without credentials and update the {@link AuthStore}.
    */
-  async createBasicAccount(emailToken?: string | null): Promise<AuthInfo> {
+  async createBasicAccount(emailToken?: string): Promise<AuthInfo> {
     const tokenResponse = await createAccount(this.wretch, emailToken)
     const authInfo = AuthInfo.createFromResponse(tokenResponse)
     await this.authStore.setAuthInfo(authInfo)
@@ -137,110 +107,94 @@ export class AccountStore {
   }
 
   /**
-   * Check whether WebAuthn and a platform authenticator is available.
-   *
-   * Updates a boolean in the state.
-   */
-  private async checkWebAuthnAvailable(): Promise<"platform" | boolean> {
-    if (!browserSupportsWebAuthn()) {
-      this.webAuthnAvailable = false
-      return false
-    }
-
-    const platformAuthAvailable = await platformAuthenticatorIsAvailable()
-    return runInAction(() => {
-      if (!platformAuthAvailable) {
-        this.webAuthnAvailable = true
-        return true
-      } else {
-        this.webAuthnAvailable = "platform"
-        return "platform"
-      }
-    })
-  }
-
-  /**
-   * Get the saved WebAuthn credential ID
-   */
-  getSavedWebAuthnCredentialId(): string | null {
-    const id = window.localStorage.getItem(
-      WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY
-    )
-    if (!id || typeof id !== "string") {
-      return null
-    } else {
-      return id
-    }
-  }
-
-  /**
-   * Get a WebAuthn registration challenge.
-   */
-  async getWebAuthnRegistrationChallenge(): Promise<WebAuthnChallenge> {
-    return await getWebAuthnRegistrationChallenge(this.wretch)
-  }
-
-  /**
    * Create an account using WebAuthn and update the {@link AuthStore}.
    * @returns The created account {@link AuthInfo} or null if unsuccessful.
    */
-  createWebAuthnAccount(
+  async createWebAuthnAccount(
     challenge: WebAuthnChallenge,
-    emailToken?: string | null
+    emailToken?: string
   ): Promise<AuthInfo | null> {
-    return startRegistration(challenge.options)
-      .catch((err: Error) => {
-        console.error("WebAuthn registration failed:", err)
+    let result
+    try {
+      result = await startRegistration(challenge)
+    } catch (err) {
+      console.error("WebAuthn registration failed:", err)
+      runInAction(() => {
+        this.webAuthnError = true
+      })
+      return null
+    }
+
+    if (result) {
+      console.error("WebAuthn registration failed")
+      runInAction(() => {
+        this.webAuthnError = true
+      })
+      return null
+    }
+
+    const credentialId = result.id
+    const tokenResponse = await completeWebAuthnRegistration(this.wretch, {
+      challenge: challenge.challenge,
+      result: JSON.stringify(result),
+      email_token: emailToken,
+    })
+
+    if (!tokenResponse) {
+      return null
+    }
+
+    const authInfo = AuthInfo.createFromResponse(tokenResponse)
+    runInAction(() => {
+      this.webAuthnCredentialId = credentialId
+    })
+    saveWebAuthnCredentialId(credentialId)
+    return await this.authStore.setAuthInfo(authInfo)
+  }
+
+  /**
+   * Attempt to authenticate.
+   * @returns The {@link AuthInfo} or null if authentication failed.
+   */
+  async authenticate(challenge?: WebAuthnChallenge): Promise<AuthInfo | null> {
+    const useWebAuthn =
+      this.isWebAuthnAvailable && this.webAuthnCredentialId && challenge
+
+    if (useWebAuthn) {
+      const result = await this.performWebAuthnAuthentication(challenge)
+      if (!result) {
         return null
-      })
-      .then(async (attestationResponse: RegistrationResponseJSON | null) => {
-        if (!attestationResponse) {
-          return null
-        }
+      } else {
+        return result
+      }
+    }
 
-        const credentialId = attestationResponse.id
-
-        const tokenResponse = await completeWebAuthnRegistration(this.wretch, {
-          challenge: challenge.challenge,
-          result: JSON.stringify(attestationResponse),
-          email_token: emailToken,
-        })
-
-        if (!tokenResponse) {
-          return null
-        }
-
-        const authInfo = AuthInfo.createFromResponse(tokenResponse)
-
-        window.localStorage.setItem(
-          WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY,
-          credentialId
-        )
-        await this.authStore.setAuthInfo(authInfo)
-        return authInfo
-      })
+    return null
   }
 
   /**
    * Perform WebAuthn authentication.
    * @returns The resulting {@link AuthInfo} or null if unsuccessful.
    */
-  async performWebAuthnAuthentication(): Promise<AuthInfo | null> {
-    const credentialId = this.getSavedWebAuthnCredentialId()
-    if (!credentialId) {
-      return null
-    }
-
-    const challenge = await getWebAuthnAuthenticationChallenge(
-      this.wretch,
-      credentialId
-    )
-
+  async performWebAuthnAuthentication(
+    challenge: WebAuthnChallenge
+  ): Promise<AuthInfo | null> {
     let authResult
     try {
       authResult = await startAuthentication(challenge.options)
     } catch (err) {
       console.error("WebAuthn authentication failed:", err)
+      runInAction(() => {
+        this.webAuthnError = true
+      })
+      return null
+    }
+
+    if (!authResult) {
+      console.error("WebAuthn authentication failed")
+      runInAction(() => {
+        this.webAuthnError = true
+      })
       return null
     }
 
@@ -254,79 +208,39 @@ export class AccountStore {
     }
 
     const authInfo = AuthInfo.createFromResponse(tokenResponse)
+
     await this.authStore.setAuthInfo(authInfo)
     return authInfo
   }
+}
 
-  /**
-   * Create an account.
-   *
-   * Tries to set up WebAuthn first, then falls back to a refresh-token-only account.
-   *
-   * @returns The resulting {@link AuthInfo}, null if unsuccessful, or false if an error
-   *     occurred.
-   */
-  createAccount(
-    options?: CreateAccountOptions,
-    webAuthnChallenge?: WebAuthnChallenge
-  ): Promise<AuthInfo | false | null> {
-    const useWebAuthn =
-      !!webAuthnChallenge &&
-      this.webAuthnAvailable != false &&
-      (this.webAuthnAvailable == "platform" || !!options?.allowSecurityKey) &&
-      this.webAuthnFailCount < WEBAUTHN_MAX_FAIL_COUNT
-
-    if (useWebAuthn) {
-      // retry loop
-      return this.createWebAuthnAccount(
-        webAuthnChallenge,
-        options?.emailToken
-      ).then(
-        action((result) => {
-          if (!result) {
-            this.webAuthnFailCount++
-            return false
-          } else {
-            return result
-          }
-        })
-      )
-    }
-
-    // fall back to standard account
-    return this.createBasicAccount(options?.emailToken)
+const checkWebAuthnAvailability = async () => {
+  if (!browserSupportsWebAuthn()) {
+    return false
   }
 
-  /**
-   * Attempt to authenticate.
-   * @returns The {@link AuthInfo}, null if authentication was not possible, or false if
-   *     there was an error.
-   */
-  async authenticate(): Promise<AuthInfo | false | null> {
-    const webAuthnCredentialId = this.getSavedWebAuthnCredentialId()
+  const platformAuthAvailable = await platformAuthenticatorIsAvailable()
+  return platformAuthAvailable ? "platform" : true
+}
 
-    const useWebAuthn =
-      this.webAuthnAvailable &&
-      !!webAuthnCredentialId &&
-      this.webAuthnFailCount < WEBAUTHN_MAX_FAIL_COUNT
-
-    if (useWebAuthn) {
-      const result = await this.performWebAuthnAuthentication()
-      if (!result) {
-        runInAction(() => {
-          this.webAuthnFailCount++
-        })
-        if (this.webAuthnFailCount >= WEBAUTHN_MAX_FAIL_COUNT) {
-          window.localStorage.removeItem(
-            WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY
-          )
-        }
-        return false
-      } else {
-        return result
-      }
-    }
-
+const getSavedWebAuthnCredentialId = () => {
+  const id = window.localStorage.getItem(
+    WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY
+  )
+  if (!id || typeof id !== "string") {
     return null
+  } else {
+    return id
+  }
+}
+
+const saveWebAuthnCredentialId = (credentialId: string | null | undefined) => {
+  if (credentialId) {
+    window.localStorage.setItem(
+      WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY,
+      credentialId
+    )
+  } else {
+    window.localStorage.removeItem(WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY)
   }
 }

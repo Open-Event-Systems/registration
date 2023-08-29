@@ -4,17 +4,19 @@ import {
 } from "#src/components/dialog/ModalDialog.js"
 import { SigninOptionsMenu } from "#src/features/auth/components/SigninOptionsMenu.js"
 import { AccountStore } from "#src/features/auth/stores/AccountStore.js"
+import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
 import {
   SignInOption,
   SignInOptions,
 } from "#src/features/auth/types/SignInOptions.js"
+import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"
 import {
   DefaultProps,
   Selectors,
   createStyles,
   useComponentDefaultProps,
 } from "@mantine/core"
-import { observer } from "mobx-react-lite"
+import { observer, useLocalObservable } from "mobx-react-lite"
 
 const useStyles = createStyles({
   root: {},
@@ -81,11 +83,18 @@ export const SigninDialog = (props: SigninDialogProps) => {
 }
 
 export type SigninDialogManagerProps = {
+  authStore: AuthStore
   accountStore: AccountStore
 }
 
 SigninDialog.Manager = observer((props: SigninDialogManagerProps) => {
-  const { accountStore } = props
+  const { authStore, accountStore } = props
+
+  const state = useLocalObservable(() => ({
+    emailToken: null as string | null,
+    webAuthnRegistrationChallenge: null as WebAuthnChallenge | null,
+    webAuthnAuthenticationChallenge: null as WebAuthnChallenge | null,
+  }))
 
   // TODO: loading and stuff
   return null

@@ -28,8 +28,18 @@ export class AuthStore {
    */
   authWretch: Wretch
 
-  private authInfo: AuthInfo | null = null
-  private authInfoPromise: Promise<AuthInfo | null> = Promise.resolve(null)
+  /**
+   * Promise that resolves after initial auth setup.
+   */
+  ready: Promise<void>
+  private _ready = false
+
+  /**
+   * The current {@link AuthInfo}.
+   */
+  authInfo: AuthInfo | null = null
+
+  private authInfoPromise: Promise<AuthInfo | null> | null = null
 
   private client: oauth.Client
   private authServer: oauth.AuthorizationServer
@@ -54,12 +64,19 @@ export class AuthStore {
       token_endpoint: `${baseURLStr}/auth/token`,
     }
 
-    makeAutoObservable<this, "client" | "authServer">(this, {
-      wretch: false,
-      authWretch: false,
-      client: false,
-      authServer: false,
-    })
+    makeAutoObservable<this, "client" | "authServer" | "authInfoPromise">(
+      this,
+      {
+        wretch: false,
+        authWretch: false,
+        client: false,
+        authServer: false,
+        ready: false,
+        authInfoPromise: false,
+      }
+    )
+
+    this.ready = when(() => this._ready)
 
     // update the auth info if another window updates it in storage
     window.addEventListener("storage", (e) => {
@@ -107,6 +124,13 @@ export class AuthStore {
    */
   async getAuthInfo(): Promise<AuthInfo> {
     let promise = this.authInfoPromise
+
+    if (promise == null) {
+      // initial setup
+      promise = this.load()
+      this.authInfoPromise = promise
+    }
+
     let authInfo = await promise
     while (!authInfo) {
       await when(() => this.authInfoPromise != promise)
@@ -121,7 +145,8 @@ export class AuthStore {
    * Set the current {@link AuthInfo}.
    */
   setAuthInfo(authInfo: AuthInfo | null): Promise<AuthInfo | null> {
-    this.authInfoPromise = this.authInfoPromise.then(
+    const promise = this.authInfoPromise ?? Promise.resolve(null)
+    this.authInfoPromise = promise.then(
       action(() => {
         this.authInfo = authInfo
         saveAuthInfo(authInfo)
@@ -137,27 +162,31 @@ export class AuthStore {
    */
   async load(): Promise<AuthInfo | null> {
     const loaded = loadAuthInfo()
+    let result = null
+
     if (loaded) {
       if (loaded.getIsExpired()) {
         const refreshed = await this._refresh(loaded)
         if (refreshed) {
-          await this.setAuthInfo(refreshed)
+          result = await this.setAuthInfo(refreshed)
         }
-        return refreshed
       } else {
-        await this.setAuthInfo(loaded)
-        return loaded
+        result = await this.setAuthInfo(loaded)
       }
-    } else {
-      return null
     }
+
+    runInAction(() => {
+      this._ready = true
+    })
+    return result
   }
 
   /**
    * Attempt to refresh the given {@link AuthInfo}.
    */
   async attemptRefresh(authInfo: AuthInfo): Promise<AuthInfo | null> {
-    this.authInfoPromise = this.authInfoPromise.then(async (curAuthInfo) => {
+    const promise = this.authInfoPromise ?? Promise.resolve(null)
+    this.authInfoPromise = promise.then(async (curAuthInfo) => {
       // bail if the current auth info was changed
       if (curAuthInfo?.accessToken != authInfo.accessToken) {
         return curAuthInfo
