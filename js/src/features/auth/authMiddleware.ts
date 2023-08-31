@@ -17,8 +17,8 @@ export const getRetryMiddleware =
       const newOpts = setAuthHeader(baseURL, authInfo.accessToken, url, opts)
       const response = await next(url, newOpts)
 
-      if (response.status == 401) {
-        await authStore.attemptRefresh(authInfo)
+      if (response.status == 401 && authStore.authInfo == authInfo) {
+        await authStore.attemptRefresh()
         continue
       } else {
         return response

@@ -18,9 +18,7 @@ import { StackLayoutProps } from "#src/components/layout/StackLayout.js"
 import { TitleAreaProps } from "#src/components/layout/TitleArea.js"
 import { SigninDialogProps } from "#src/features/auth/components/SigninDialog.js"
 import { CheckoutDialogProps } from "#src/features/checkout/components/checkout/CheckoutDialog.js"
-import { OptionsDialogProps } from "#src/features/selfservice/components/options/OptionsDialog.js"
 import { LogoProps } from "#src/components/layout/Logo.js"
-import { EmailAuthProps } from "#src/features/auth/components/EmailAuth.js"
 import {
   ButtonListButtonProps,
   ButtonListDividerProps,
@@ -28,6 +26,7 @@ import {
   ButtonListProps,
 } from "#src/components/button_list/ButtonList.js"
 import { ModalDialogProps } from "#src/components/dialog/ModalDialog.js"
+import { EmailAuthProps } from "#src/features/auth/components/signin/EmailAuth.js"
 
 interface Components {
   // src/components
@@ -58,7 +57,6 @@ interface Components {
   // src/features/selfservice/components
   CardGrid: CardGridProps
   RegistrationCard: RegistrationCardProps
-  OptionsDialog: OptionsDialogProps
 
   // src/routes
   LoadingOverlay: LoadingOverlayProps

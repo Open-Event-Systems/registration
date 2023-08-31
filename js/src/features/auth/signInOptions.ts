@@ -1,5 +1,12 @@
+import { createEmailAuth } from "#src/features/auth/components/signin/EmailAuth.js"
+import { createGuestSignIn } from "#src/features/auth/components/signin/Guest.js"
+import { createWebAuthnSignIn } from "#src/features/auth/components/signin/WebAuthn.js"
 import { SignInOptions } from "#src/features/auth/types/SignInOptions.js"
 import { PlatformWebAuthnDetails } from "#src/features/auth/types/WebAuthn.js"
+import {
+  browserSupportsWebAuthn,
+  platformAuthenticatorIsAvailable,
+} from "@simplewebauthn/browser"
 import {
   IconAt,
   IconBrandWindows,
@@ -14,33 +21,55 @@ export const signInOptions: SignInOptions = {
     name: "Sign in with email",
     description: "Use your email address to sign in",
     icon: IconAt,
+    factory: createEmailAuth,
   },
-  platformWebAuthn(accountStore) {
-    // TODO: refactor to wait for check to complete, check failure count, etc.
-    if (!accountStore.webAuthnAvailable) {
+  async platformWebAuthn() {
+    let available: "platform" | boolean
+    const webAuthnAvailable = browserSupportsWebAuthn()
+
+    if (webAuthnAvailable) {
+      const hasPlatformAuth = await platformAuthenticatorIsAvailable()
+
+      if (hasPlatformAuth) {
+        available = "platform"
+      } else {
+        available = true
+      }
+    } else {
+      available = false
+    }
+
+    // TODO: this only supports platform webauthn for now
+    if (available == "platform") {
+      const details = getPlatformWebAuthnDetails(window.navigator.userAgent)
+      return {
+        id: "platformWebAuthn",
+        name: details.name,
+        description: details.description,
+        icon: details.icon,
+        factory: createWebAuthnSignIn,
+      }
+    } else {
       return false
     }
-
-    const details = getPlatformWebAuthnDetails(window.navigator.userAgent)
-
-    return {
-      id: "platformWebAuthn",
-      name: details.name,
-      description: details.description,
-      icon: details.icon,
-    }
   },
-  webauthn: {
-    id: "webauthn",
-    name: "Use security key",
-    description: "Use a security key to sign in",
-    icon: IconKey,
+  webAuthn(): false {
+    // TODO: this only supports platform webauthn for now
+    return false
+    // return {
+    //   id: "webAuthn",
+    //   name: "Use security key",
+    //   description: "Use a security key to sign in",
+    //   icon: IconKey,
+    //   factory: createWebAuthnSignIn,
+    // }
   },
   guest: {
     id: "guest",
     name: "Continue as guest",
     description: "You might not be able to make changes later",
     icon: IconUser,
+    factory: createGuestSignIn,
   },
 }
 
@@ -63,7 +92,7 @@ export const getPlatformWebAuthnDetails = (
     return {
       name: "Use device",
       description: "Sign in with your phone's keyring/Touch ID",
-      emailName: "Rememberme",
+      emailName: "Remember me",
       emailDescription: "Stay signed in using your phone's keyring/Touch ID",
       emailSkip: "Don't stay signed in",
       icon: IconFingerprint,

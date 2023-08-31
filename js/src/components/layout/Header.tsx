@@ -72,7 +72,7 @@ export const Header = observer((props: HeaderProps) => {
       <UserMenu
         username={authStore.email || "Guest"}
         onSignOut={() => {
-          authStore.setAuthInfo(null)
+          authStore.signOut()
         }}
       />
     )

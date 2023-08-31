@@ -1,4 +1,4 @@
-import { action, makeAutoObservable, runInAction, when } from "mobx"
+import { makeAutoObservable, runInAction, when } from "mobx"
 import * as oauth from "oauth4webapi"
 import { Wretch } from "wretch"
 import { getRetryMiddleware } from "#src/features/auth/authMiddleware.js"
@@ -29,16 +29,11 @@ export class AuthStore {
   authWretch: Wretch
 
   /**
-   * Promise that resolves after initial auth setup.
+   * Whether initial setup is complete.
    */
-  ready: Promise<void>
-  private _ready = false
+  ready = false
 
-  /**
-   * The current {@link AuthInfo}.
-   */
-  authInfo: AuthInfo | null = null
-
+  private _authInfo: AuthInfo | null = null
   private authInfoPromise: Promise<AuthInfo | null> | null = null
 
   private client: oauth.Client
@@ -64,19 +59,12 @@ export class AuthStore {
       token_endpoint: `${baseURLStr}/auth/token`,
     }
 
-    makeAutoObservable<this, "client" | "authServer" | "authInfoPromise">(
-      this,
-      {
-        wretch: false,
-        authWretch: false,
-        client: false,
-        authServer: false,
-        ready: false,
-        authInfoPromise: false,
-      }
-    )
-
-    this.ready = when(() => this._ready)
+    makeAutoObservable<this, "client" | "authServer">(this, {
+      wretch: false,
+      authWretch: false,
+      client: false,
+      authServer: false,
+    })
 
     // update the auth info if another window updates it in storage
     window.addEventListener("storage", (e) => {
@@ -85,7 +73,7 @@ export class AuthStore {
           const obj = JSON.parse(e.newValue)
           const loaded = AuthInfo.createFromObject(obj)
           if (loaded && !loaded.getIsExpired()) {
-            this.setAuthInfo(loaded)
+            this._authInfo = loaded
           }
         } catch (_) {
           // ignore
@@ -120,40 +108,45 @@ export class AuthStore {
   }
 
   /**
-   * Get a promise that resolves to an {@link AuthInfo}.
+   * The current {@link AuthInfo}.
    */
-  async getAuthInfo(): Promise<AuthInfo> {
-    let promise = this.authInfoPromise
+  get authInfo(): AuthInfo | null {
+    return this._authInfo
+  }
 
-    if (promise == null) {
-      // initial setup
-      promise = this.load()
-      this.authInfoPromise = promise
-    }
-
-    let authInfo = await promise
-    while (!authInfo) {
-      await when(() => this.authInfoPromise != promise)
-      promise = this.authInfoPromise
-      authInfo = await promise
-    }
-
-    return authInfo
+  set authInfo(value: AuthInfo | null) {
+    this._authInfo = value
+    this.authInfoPromise = (this.authInfoPromise ?? Promise.resolve(null)).then(
+      () => value
+    )
+    saveAuthInfo(value)
   }
 
   /**
-   * Set the current {@link AuthInfo}.
+   * Remove auth info and reload.
    */
-  setAuthInfo(authInfo: AuthInfo | null): Promise<AuthInfo | null> {
-    const promise = this.authInfoPromise ?? Promise.resolve(null)
-    this.authInfoPromise = promise.then(
-      action(() => {
-        this.authInfo = authInfo
-        saveAuthInfo(authInfo)
-        return authInfo
-      })
-    )
-    return this.authInfoPromise
+  signOut() {
+    saveAuthInfo(null)
+    window.location.reload()
+  }
+
+  /**
+   * Get a promise that resolves to an {@link AuthInfo}.
+   */
+  async getAuthInfo(): Promise<AuthInfo> {
+    if (!this.authInfoPromise) {
+      this.authInfoPromise = this.load()
+    }
+
+    // wait for any load/refresh operation to finish
+    let promise = this.authInfoPromise
+    let result = await promise
+    while (!result) {
+      await when(() => this.authInfoPromise != promise)
+      promise = this.authInfoPromise
+      result = await promise
+    }
+    return result
   }
 
   /**
@@ -161,6 +154,14 @@ export class AuthStore {
    * @returns The loaded token, or null if not found/not usable.
    */
   async load(): Promise<AuthInfo | null> {
+    if (!this.authInfoPromise) {
+      this.authInfoPromise = this._load()
+    }
+
+    return await this.authInfoPromise
+  }
+
+  private async _load(): Promise<AuthInfo | null> {
     const loaded = loadAuthInfo()
     let result = null
 
@@ -168,38 +169,53 @@ export class AuthStore {
       if (loaded.getIsExpired()) {
         const refreshed = await this._refresh(loaded)
         if (refreshed) {
-          result = await this.setAuthInfo(refreshed)
+          result = refreshed
+          this._authInfo = result
+          saveAuthInfo(result)
         }
       } else {
-        result = await this.setAuthInfo(loaded)
+        result = loaded
+        this._authInfo = result
+        saveAuthInfo(result)
       }
     }
 
     runInAction(() => {
-      this._ready = true
+      this.ready = true
     })
     return result
   }
 
   /**
-   * Attempt to refresh the given {@link AuthInfo}.
+   * Attempt to refresh the current {@link AuthInfo}.
    */
-  async attemptRefresh(authInfo: AuthInfo): Promise<AuthInfo | null> {
-    const promise = this.authInfoPromise ?? Promise.resolve(null)
-    this.authInfoPromise = promise.then(async (curAuthInfo) => {
-      // bail if the current auth info was changed
-      if (curAuthInfo?.accessToken != authInfo.accessToken) {
-        return curAuthInfo
-      }
+  async attemptRefresh(): Promise<AuthInfo | null> {
+    const curPromise = this.authInfoPromise ?? Promise.resolve(null)
+    const refreshInfo = this._authInfo
 
-      const refreshed = await this._refresh(curAuthInfo)
-      runInAction(() => {
-        this.authInfo = refreshed
+    this.authInfoPromise = curPromise
+      .then(async (curInfo) => {
+        if (curInfo && curInfo == refreshInfo) {
+          const refreshed = await this._refresh(curInfo)
+          if (refreshed) {
+            runInAction(() => {
+              saveAuthInfo(refreshed)
+            })
+          }
+          return refreshed
+        } else {
+          // don't refresh if something else updated the authinfo in the meantime
+          return curInfo
+        }
       })
-      saveAuthInfo(refreshed)
-      return refreshed
-    })
-    return this.authInfoPromise
+      .then((res) => {
+        runInAction(() => {
+          this._authInfo = res
+        })
+        return res
+      })
+
+    return await this.authInfoPromise
   }
 
   /** OAuth refresh. */

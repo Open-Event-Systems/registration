@@ -1,7 +1,7 @@
 import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
 import { Title } from "#src/components/title/Title.js"
-import { SigninDialogManager } from "#src/features/auth/components/SigninDialogManager.js"
-import { useAccountStore } from "#src/features/auth/hooks.js"
+import { SigninDialog } from "#src/features/auth/components/SigninDialog.js"
+import { useAuth } from "#src/features/auth/hooks.js"
 import { useCurrentCartStore } from "#src/features/cart/hooks.js"
 import {
   CartStoreProvider,
@@ -53,7 +53,6 @@ const SelfServiceLoader = ({
   accessCode?: string
 }) => {
   const wretch = useWretch()
-  const accountStore = useAccountStore()
   const eventStore = useEvents()
   const currentCartStore = useCurrentCartStore()
   const accessCodeLoader = useLoader(() =>
@@ -66,7 +65,6 @@ const SelfServiceLoader = ({
   )
 
   const loader = useLoader(async () => {
-    await accountStore.setup()
     const event = await eventStore.load(eventId)
     if (!event) {
       return null
@@ -91,6 +89,7 @@ const SelfServiceLoader = ({
 
 const SelfServiceAppRoute = () => {
   const { eventId = "", accessCode = "" } = useParams()
+  const authStore = useAuth()
   return (
     <>
       <InterviewStateStoreProvider>
@@ -108,7 +107,7 @@ const SelfServiceAppRoute = () => {
           </CartStoreProvider>
         </EventStoreProvider>
       </InterviewStateStoreProvider>
-      <SigninDialogManager />
+      <SigninDialog.Manager wretch={authStore.wretch} authStore={authStore} />
     </>
   )
 }

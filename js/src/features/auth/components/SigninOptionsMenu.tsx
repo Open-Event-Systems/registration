@@ -12,6 +12,7 @@ import {
   createStyles,
   useComponentDefaultProps,
 } from "@mantine/core"
+import { ComponentPropsWithRef } from "react"
 
 const useStyles = createStyles({
   root: {},
@@ -24,6 +25,7 @@ const useStyles = createStyles({
 export type SigninOptionsProps = {
   onSelect?: (id: keyof SignInOptions) => void
   options: SignInOption[]
+  OptionProps?: Partial<OptionProps>
 } & Omit<BoxProps, "children" | "styles"> &
   DefaultProps<Selectors<typeof useStyles>>
 
@@ -35,6 +37,7 @@ export const SigninOptionsMenu = (props: SigninOptionsProps) => {
     unstyled,
     options,
     onSelect,
+    OptionProps,
     ...other
   } = useComponentDefaultProps("SigninOptionsMenu", {}, props)
 
@@ -48,6 +51,7 @@ export const SigninOptionsMenu = (props: SigninOptionsProps) => {
   const children = options.map((opt) => (
     <Option
       key={opt.id}
+      {...OptionProps}
       option={opt}
       onClick={onSelect ? () => onSelect(opt.id) : undefined}
     />
@@ -60,7 +64,11 @@ export const SigninOptionsMenu = (props: SigninOptionsProps) => {
   )
 }
 
-type OptionProps = NavLinkProps & { option: SignInOption; onClick?: () => void }
+type OptionProps = NavLinkProps &
+  ComponentPropsWithRef<"button"> & {
+    option: SignInOption
+    onClick?: () => void
+  }
 
 const Option = (props: OptionProps) => {
   const { option, onClick, ...other } = props
