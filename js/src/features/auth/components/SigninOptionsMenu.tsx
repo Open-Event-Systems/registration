@@ -79,7 +79,8 @@ const Option = (props: OptionProps) => {
     <NavLink
       label={option.name}
       description={option.description}
-      icon={<Icon />}
+      icon={Icon ? <Icon /> : undefined}
+      active={option.highlight}
       sx={{
         "&:focus": {
           outline: "none",
