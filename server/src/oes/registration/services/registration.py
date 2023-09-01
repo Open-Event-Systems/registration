@@ -57,6 +57,11 @@ class RegistrationService:
                 registration=registration,
             )
 
+            await self.hook_sender.schedule_hooks_for_event(
+                HookEvent.registration_pending,
+                registration.get_model(),
+            )
+
     async def get_registration(
         self, id: UUID, *, lock: bool = False, include_accounts: bool = False
     ) -> Optional[RegistrationEntity]:

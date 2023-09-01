@@ -28,11 +28,14 @@ class HookEvent(str, Enum):
     email_auth_code = "email.auth_code"
     """An email auth code is generated."""
 
+    registration_pending = "registration.pending"
+    """A registration is created in the ``pending`` state."""
+
     registration_created = "registration.created"
     """A registration is created or transitions to the ``created`` state."""
 
     registration_updated = "registration.updated"
-    """A registration is updated."""
+    """A registration is updated without changing its state."""
 
     registration_canceled = "registration.canceled"
     """A registration is canceled."""
