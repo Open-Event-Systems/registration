@@ -1,13 +1,21 @@
 import {
   createAccount,
+  getWebAuthnRegistrationChallenge,
   sendVerificationEmail,
   verifyEmail,
 } from "#src/features/auth/api.js"
 import { SigninOptionsMenu } from "#src/features/auth/components/SigninOptionsMenu.js"
-import { performWebAuthnRegistration } from "#src/features/auth/components/signin/WebAuthn.js"
-import { getPlatformWebAuthnDetails } from "#src/features/auth/signInOptions.js"
+import {
+  getPlatformWebAuthnDetails,
+  getWebAuthnAvailability,
+  performWebAuthnRegistration,
+  saveWebAuthnCredentialId,
+} from "#src/features/auth/components/signin/WebAuthn.js"
 import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
-import { SignInState } from "#src/features/auth/types/SignInOptions.js"
+import {
+  SignInOptionComponentProps,
+  SignInOption,
+} from "#src/features/auth/types/SignInOptions.js"
 import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"
 import {
   Button,
@@ -19,10 +27,11 @@ import {
   createStyles,
   useComponentDefaultProps,
 } from "@mantine/core"
-import { IconUserOff } from "@tabler/icons-react"
+import { IconAt, IconUserOff } from "@tabler/icons-react"
 import { action, makeAutoObservable, runInAction } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { ComponentPropsWithRef } from "react"
+import { Wretch } from "wretch"
 
 declare module "#src/hooks/location.js" {
   interface LocationState {
@@ -30,25 +39,54 @@ declare module "#src/hooks/location.js" {
   }
 }
 
-class EmailAuthState {
+enum Step {
+  send = "send",
+  verify = "verify",
+  complete = "complete",
+}
+
+class EmailSignIn implements SignInOption {
+  id = "email"
+  name = "Sign in with email"
+  description = "Use your email address to sign in"
+  icon = IconAt
+
+  constructor(private wretch: Wretch) {
+    makeAutoObservable(this)
+  }
+
+  async getRender() {
+    const webAuthnAvailable = await getWebAuthnAvailability()
+    const render = (props: SignInOptionComponentProps) => (
+      <EmailAuth
+        webAuthn={webAuthnAvailable == "platform"}
+        state={this}
+        wretch={this.wretch}
+        {...props}
+      />
+    )
+    return render
+  }
+}
+
+class EmailSignInState {
   email = ""
-  emailInput = ""
   code = ""
-  emailToken: string | null = null
+  step = Step.send
   error: string | null = null
+  emailToken: string | null = null
+  webAuthnChallenge: WebAuthnChallenge | null = null
 
-  webAuthnRegistrationChallenge: WebAuthnChallenge | null = null
-
-  constructor(private signInState: SignInState) {
+  constructor(private wretch: Wretch) {
     makeAutoObservable(this)
   }
 
   async sendEmail(email: string) {
     this.error = null
     try {
-      await sendVerificationEmail(this.signInState.wretch, email)
+      await sendVerificationEmail(this.wretch, email)
       runInAction(() => {
-        this.email = email
+        this.step = Step.verify
       })
     } catch (e) {
       runInAction(() => {
@@ -60,10 +98,11 @@ class EmailAuthState {
   async verifyEmail(email: string, code: string) {
     this.error = null
     try {
-      const res = await verifyEmail(this.signInState.wretch, email ?? "", code)
+      const res = await verifyEmail(this.wretch, email, code)
       runInAction(() => {
         if (res) {
           this.emailToken = res.token
+          this.step = Step.complete
         } else {
           this.error = "Try again"
         }
@@ -76,7 +115,7 @@ class EmailAuthState {
   }
 
   async create() {
-    const result = await createAccount(this.signInState.wretch, this.emailToken)
+    const result = await createAccount(this.wretch, this.emailToken)
     if (result) {
       return AuthInfo.createFromResponse(result)
     } else {
@@ -93,16 +132,30 @@ const useStyles = createStyles({
 })
 
 export type EmailAuthProps = {
-  state: SignInState
-} & Omit<ComponentPropsWithRef<"form">, "onSubmit"> &
+  state: EmailSignIn
+  wretch: Wretch
+  webAuthn: boolean
+} & SignInOptionComponentProps &
+  Omit<ComponentPropsWithRef<"form">, "onSubmit"> &
   DefaultProps<Selectors<typeof useStyles>>
 
 /**
  * Email auth.
  */
 const EmailAuth = observer((props: EmailAuthProps) => {
-  const { className, classNames, styles, unstyled, state, ...other } =
-    useComponentDefaultProps("EmailAuth", {}, props)
+  const {
+    className,
+    classNames,
+    styles,
+    unstyled,
+    state: _state,
+    webAuthn,
+    wretch,
+    loading,
+    onComplete,
+    setLoading,
+    ...other
+  } = useComponentDefaultProps("EmailAuth", {}, props)
 
   const { classes, cx } = useStyles(undefined, {
     name: "EmailAuth",
@@ -111,13 +164,11 @@ const EmailAuth = observer((props: EmailAuthProps) => {
     unstyled,
   })
 
-  const emailAuthState = useLocalObservable(() => new EmailAuthState(state))
-
-  const webAuthnAllowed = state.isWebAuthnAvailable == "platform"
+  const localState = useLocalObservable(() => new EmailSignInState(wretch))
 
   let content
 
-  if (emailAuthState.emailToken && webAuthnAllowed) {
+  if (localState.step == Step.complete && webAuthn) {
     const webAuthnDetails = getPlatformWebAuthnDetails(
       window.navigator.userAgent
     )
@@ -133,48 +184,50 @@ const EmailAuth = observer((props: EmailAuthProps) => {
               name: webAuthnDetails.emailName,
               description: webAuthnDetails.emailDescription,
               icon: webAuthnDetails.icon,
-              factory: () => Promise.resolve(null),
+              async getRender() {
+                return null
+              },
             },
             {
               id: "email",
               name: webAuthnDetails.emailSkip,
+              description: null,
               icon: IconUserOff,
-              factory: () => Promise.resolve(null),
+              async getRender() {
+                return null
+              },
             },
           ]}
           onSelect={(id) => {
-            if (state.loading) {
+            if (loading) {
               return
             }
 
-            state.loading = true
+            setLoading(true)
 
-            if (
-              id == "platformWebAuthn" &&
-              emailAuthState.webAuthnRegistrationChallenge
-            ) {
+            if (id == "platformWebAuthn" && localState.webAuthnChallenge) {
               performWebAuthnRegistration(
-                state,
-                emailAuthState.webAuthnRegistrationChallenge,
-                emailAuthState.emailToken
+                wretch,
+                localState.webAuthnChallenge,
+                localState.emailToken
               )
                 .then((res) => {
                   if (res) {
                     const [credentialId, authInfo] = res
-                    state.webAuthnCredentialId = credentialId
-                    state.handleComplete(authInfo)
+                    saveWebAuthnCredentialId(credentialId)
+                    onComplete(authInfo)
                   }
                 })
-                .finally(() => (state.loading = false))
+                .finally(() => setLoading(false))
             } else {
-              emailAuthState
+              localState
                 .create()
                 .then((res) => {
                   if (res) {
-                    state.handleComplete(res)
+                    onComplete(res)
                   }
                 })
-                .finally(() => (state.loading = false))
+                .finally(() => setLoading(false))
             }
           }}
           OptionProps={{
@@ -183,7 +236,10 @@ const EmailAuth = observer((props: EmailAuthProps) => {
         />
       </Stack>
     )
-  } else if (emailAuthState.email) {
+  } else if (
+    localState.step == Step.verify ||
+    localState.step == Step.complete
+  ) {
     // ask for code
     content = (
       <Stack className={classes.stack}>
@@ -193,15 +249,15 @@ const EmailAuth = observer((props: EmailAuthProps) => {
         <TextInput
           key="code"
           inputMode="numeric"
-          value={emailAuthState.code}
-          onChange={action((e) => (emailAuthState.code = e.target.value))}
-          error={emailAuthState.error || undefined}
+          value={localState.code}
+          onChange={action((e) => (localState.code = e.target.value))}
+          error={localState.error || undefined}
           label="Code"
         />
         <Button type="submit">Verify</Button>
       </Stack>
     )
-  } else {
+  } else if (localState.step == Step.send) {
     // ask for email
     content = (
       <Stack className={classes.stack}>
@@ -210,9 +266,9 @@ const EmailAuth = observer((props: EmailAuthProps) => {
           key="email"
           inputMode="email"
           autoComplete="email"
-          value={emailAuthState.emailInput}
-          onChange={action((e) => (emailAuthState.emailInput = e.target.value))}
-          error={emailAuthState.error ?? undefined}
+          value={localState.email}
+          onChange={action((e) => (localState.email = e.target.value))}
+          error={localState.error ?? undefined}
           label="Email"
         />
         <Button type="submit">Continue</Button>
@@ -226,34 +282,38 @@ const EmailAuth = observer((props: EmailAuthProps) => {
       {...other}
       onSubmit={(e) => {
         e.preventDefault()
-        if (state.loading) {
+        if (loading) {
           return
         }
 
-        if (emailAuthState.emailToken) {
-          // do nothing
-        } else if (emailAuthState.email) {
-          state.loading = true
-          emailAuthState
-            .verifyEmail(emailAuthState.email, emailAuthState.code)
+        if (localState.step == Step.verify) {
+          setLoading(true)
+          localState
+            .verifyEmail(localState.email, localState.code)
             .then(() => {
-              if (emailAuthState.emailToken) {
-                if (!webAuthnAllowed) {
-                  // if webauthn isn't allowed, complete the sign in now
-                  return emailAuthState.create().then((authInfo) => {
+              if (localState.emailToken) {
+                if (webAuthn) {
+                  return getWebAuthnRegistrationChallenge(wretch).then(
+                    action((challenge) => {
+                      localState.webAuthnChallenge = challenge
+                      localState.step = Step.complete
+                    })
+                  )
+                } else {
+                  return localState.create().then((authInfo) => {
                     if (authInfo) {
-                      state.handleComplete(authInfo)
+                      onComplete(authInfo)
                     }
                   })
                 }
               }
             })
-            .finally(() => (state.loading = false))
-        } else {
-          state.loading = true
-          emailAuthState
-            .sendEmail(emailAuthState.emailInput)
-            .finally(() => (state.loading = false))
+            .finally(() => setLoading(false))
+        } else if (localState.step == Step.send) {
+          setLoading(true)
+          localState
+            .sendEmail(localState.email)
+            .finally(() => setLoading(false))
         }
       }}
     >
@@ -264,4 +324,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
 
 EmailAuth.displayName = "EmailAuth"
 
-export const createEmailAuth = () => Promise.resolve(EmailAuth)
+/**
+ * Get an email sign in state
+ */
+export const getEmailSignIn = async (wretch: Wretch) => new EmailSignIn(wretch)

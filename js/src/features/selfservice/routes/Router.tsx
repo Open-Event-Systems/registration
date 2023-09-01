@@ -91,7 +91,7 @@ const SelfServiceAppRoute = () => {
   const { eventId = "", accessCode = "" } = useParams()
   const authStore = useAuth()
   return (
-    <>
+    <SigninDialog.Manager wretch={authStore.wretch} authStore={authStore}>
       <InterviewStateStoreProvider>
         <EventStoreProvider>
           <CartStoreProvider>
@@ -107,8 +107,7 @@ const SelfServiceAppRoute = () => {
           </CartStoreProvider>
         </EventStoreProvider>
       </InterviewStateStoreProvider>
-      <SigninDialog.Manager wretch={authStore.wretch} authStore={authStore} />
-    </>
+    </SigninDialog.Manager>
   )
 }
 

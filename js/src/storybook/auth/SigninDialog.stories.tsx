@@ -1,10 +1,9 @@
 import { SigninDialog } from "#src/features/auth/components/SigninDialog.js"
 import { SigninOptionsMenu } from "#src/features/auth/components/SigninOptionsMenu.js"
-import {
-  getPlatformWebAuthnDetails,
-  signInOptions,
-} from "#src/features/auth/signInOptions.js"
+import { getPlatformWebAuthnDetails } from "#src/features/auth/components/signin/WebAuthn.js"
 import { Meta, StoryObj } from "@storybook/react"
+import { IconUserOff } from "@tabler/icons-react"
+import { IconAt } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 
 const webAuthnDetails = getPlatformWebAuthnDetails("")
@@ -45,15 +44,27 @@ export const Default: StoryObj<typeof SigninDialog> = {
       <SigninDialog {...args} loading={loading}>
         <SigninOptionsMenu
           options={[
-            signInOptions.email,
+            {
+              id: "email",
+              icon: IconAt,
+              name: "Sign in with email",
+              description: "Use your email address to sign in",
+              getRender: async () => () => null,
+            },
             {
               id: "platformWebAuthn",
               icon: webAuthnDetails.icon,
               name: webAuthnDetails.name,
               description: webAuthnDetails.description,
-              factory: () => Promise.resolve(null),
+              getRender: async () => () => null,
             },
-            signInOptions.guest,
+            {
+              id: "guest",
+              icon: IconUserOff,
+              name: "Continue as guest",
+              description: "You might not be able to make changes later",
+              getRender: async () => () => null,
+            },
           ]}
           onSelect={onSelect}
         />
@@ -87,15 +98,27 @@ export const iOSWebAuthn: StoryObj<typeof SigninDialog> = {
       <SigninDialog {...args} loading={loading}>
         <SigninOptionsMenu
           options={[
-            signInOptions.email,
+            {
+              id: "email",
+              icon: IconAt,
+              name: "Sign in with email",
+              description: "Use your email address to sign in",
+              getRender: async () => () => null,
+            },
             {
               id: "platformWebAuthn",
               icon: iOSWebAuthnDetails.icon,
               name: iOSWebAuthnDetails.name,
               description: iOSWebAuthnDetails.description,
-              factory: () => Promise.resolve(null),
+              getRender: async () => () => null,
             },
-            signInOptions.guest,
+            {
+              id: "guest",
+              icon: IconUserOff,
+              name: "Continue as guest",
+              description: "You might not be able to make changes later",
+              getRender: async () => () => null,
+            },
           ]}
           onSelect={onSelect}
         />
@@ -128,15 +151,27 @@ export const AndroidWebAuthn: StoryObj<typeof SigninDialog> = {
       <SigninDialog {...args} loading={loading}>
         <SigninOptionsMenu
           options={[
-            signInOptions.email,
+            {
+              id: "email",
+              icon: IconAt,
+              name: "Sign in with email",
+              description: "Use your email address to sign in",
+              getRender: async () => () => null,
+            },
             {
               id: "platformWebAuthn",
               icon: androidWebAuthnDetails.icon,
               name: androidWebAuthnDetails.name,
               description: androidWebAuthnDetails.description,
-              factory: () => Promise.resolve(null),
+              getRender: async () => () => null,
             },
-            signInOptions.guest,
+            {
+              id: "guest",
+              icon: IconUserOff,
+              name: "Continue as guest",
+              description: "You might not be able to make changes later",
+              getRender: async () => () => null,
+            },
           ]}
           onSelect={onSelect}
         />
@@ -169,15 +204,27 @@ export const WindowsWebAuthn: StoryObj<typeof SigninDialog> = {
       <SigninDialog {...args} loading={loading}>
         <SigninOptionsMenu
           options={[
-            signInOptions.email,
+            {
+              id: "email",
+              icon: IconAt,
+              name: "Sign in with email",
+              description: "Use your email address to sign in",
+              getRender: async () => () => null,
+            },
             {
               id: "platformWebAuthn",
               icon: windowsWebAuthnDetails.icon,
               name: windowsWebAuthnDetails.name,
               description: windowsWebAuthnDetails.description,
-              factory: () => Promise.resolve(null),
+              getRender: async () => () => null,
             },
-            signInOptions.guest,
+            {
+              id: "guest",
+              icon: IconUserOff,
+              name: "Continue as guest",
+              description: "You might not be able to make changes later",
+              getRender: async () => () => null,
+            },
           ]}
           onSelect={onSelect}
         />
