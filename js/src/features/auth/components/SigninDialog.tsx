@@ -13,7 +13,7 @@ import {
   createStyles,
   useComponentDefaultProps,
 } from "@mantine/core"
-import { action } from "mobx"
+import { action, runInAction } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"
 import { Wretch } from "wretch"
@@ -119,14 +119,14 @@ SigninDialog.Manager = observer((props: SigninDialogManagerProps) => {
         state.selectOption(signInOption).then((res) => {
           if (res == null) {
             // navigate back on error
-            navigate(-1)
+            return state.load().then(() => navigate(-1))
           }
         })
       } else {
         state.selectedOptionRender = null
       }
     }),
-    [signInOption]
+    [signInOptionID]
   )
 
   // navigate back on complete

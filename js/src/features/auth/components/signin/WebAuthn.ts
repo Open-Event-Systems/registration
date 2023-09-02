@@ -5,7 +5,10 @@ import {
   getWebAuthnRegistrationChallenge,
 } from "#src/features/auth/api.js"
 import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
-import { SignInOption } from "#src/features/auth/types/SignInOptions.js"
+import {
+  SignInOption,
+  SignInState,
+} from "#src/features/auth/types/SignInOptions.js"
 import {
   PlatformWebAuthnDetails,
   WebAuthnChallenge,
@@ -76,7 +79,10 @@ class PlatformWebAuthnOption implements SignInOption {
 /**
  * Get platform WebAuthn sign in.
  */
-export const getPlatformWebAuthnSignIn = async (wretch: Wretch) => {
+export const getPlatformWebAuthnSignIn = async (
+  wretch: Wretch,
+  state: SignInState
+) => {
   const credentialId = getSavedWebAuthnCredentialId()
 
   // this is for registration only, not auth
@@ -88,7 +94,9 @@ export const getPlatformWebAuthnSignIn = async (wretch: Wretch) => {
 
   if (webAuthnAvailable == "platform") {
     const challenge = await getWebAuthnRegistrationChallenge(wretch)
-    return new PlatformWebAuthnOption(wretch, challenge)
+    return new PlatformWebAuthnOption(wretch, challenge, () =>
+      state.setWebAuthnError()
+    )
   } else {
     return null
   }
