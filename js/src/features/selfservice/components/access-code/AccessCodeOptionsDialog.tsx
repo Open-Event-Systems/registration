@@ -95,6 +95,7 @@ const AccessCodeOptionsDialogManager = observer(
 
     return (
       <AccessCodeOptionsDialog
+        registrationId={loc.state?.accessCodeDialogRegistrationId}
         onSelect={action(async (interviewId, registrationId) => {
           if (state.loading) {
             return
