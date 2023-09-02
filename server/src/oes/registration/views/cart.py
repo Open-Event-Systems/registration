@@ -493,6 +493,9 @@ async def _add_direct(
 ):
     new_reg = _parse_registration_data(add.registration)
 
+    # All registrations going thru carts end up in the created state
+    new_reg.state = RegistrationState.created
+
     # Get existing data
     cur_reg_entity = await reg_service.get_registration(new_reg.id)
 
@@ -518,6 +521,10 @@ async def _add_from_interview(
 
     # Get existing data
     new_reg = _parse_registration_data(interview_result.data.get("registration", {}))
+
+    # All registrations going thru carts end up in the created state
+    new_reg.state = RegistrationState.created
+
     cur_reg_entity = await reg_service.get_registration(new_reg.id)
 
     meta = interview_result.data.get("meta", {})
