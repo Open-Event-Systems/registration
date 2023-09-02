@@ -55,6 +55,7 @@ async def list_self_service_registration(
                 user.id,
                 event_id=event_id.value,
                 email=user.email,
+                access_code_settings=access_code_settings,
             )
         )
         if user.id

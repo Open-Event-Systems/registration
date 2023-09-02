@@ -121,8 +121,24 @@ class RegistrationService:
         account_id: UUID,
         event_id: Optional[str] = None,
         email: Optional[str] = None,
+        access_code_settings: Optional[AccessCodeSettings] = None,
     ) -> Sequence[RegistrationEntity]:
         """List self-service registrations."""
+        if access_code_settings and access_code_settings.registration_id:
+            return await self._get_access_code_registration(
+                access_code_settings.registration_id
+            )
+        else:
+            return await self._list_self_service_registrations(
+                account_id, event_id, email
+            )
+
+    async def _list_self_service_registrations(
+        self,
+        account_id: UUID,
+        event_id: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> Sequence[RegistrationEntity]:
         q = select(RegistrationEntity).outerjoin(RegistrationEntity.accounts)
 
         if email is not None:
@@ -142,6 +158,15 @@ class RegistrationService:
 
         q = q.order_by(RegistrationEntity.date_created)
 
+        q = q.options(contains_eager(RegistrationEntity.accounts))
+        res = await self.db.execute(q)
+        return res.unique().scalars().all()
+
+    async def _get_access_code_registration(
+        self, registration_id: UUID
+    ) -> Sequence[RegistrationEntity]:
+        q = select(RegistrationEntity).outerjoin(RegistrationEntity.accounts)
+        q = q.where(RegistrationEntity.id == registration_id)
         q = q.options(contains_eager(RegistrationEntity.accounts))
         res = await self.db.execute(q)
         return res.unique().scalars().all()

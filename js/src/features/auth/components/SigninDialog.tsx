@@ -13,7 +13,7 @@ import {
   createStyles,
   useComponentDefaultProps,
 } from "@mantine/core"
-import { action, runInAction } from "mobx"
+import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"
 import { Wretch } from "wretch"
