@@ -13,6 +13,7 @@ from oes.registration.cart.models import (
 )
 from oes.registration.checkout.pricing import default_pricing, get_added_option_ids
 from oes.registration.models.event import EventConfig, SimpleEventInfo
+from oes.registration.models.registration import RegistrationState
 from oes.registration.serialization import get_converter
 
 
@@ -54,11 +55,19 @@ def example_pricing_hook(body: dict):
 
 
 def test_get_added_option_ids():
-    old_data = {"option_ids": ["a", "b"]}
+    old_data = {"state": RegistrationState.created.value, "option_ids": ["a", "b"]}
 
-    new_data = {"option_ids": ["b", "c"]}
+    new_data = {"state": RegistrationState.created.value, "option_ids": ["b", "c"]}
 
     assert get_added_option_ids(old_data, new_data) == {"c"}
+
+
+def test_get_added_option_ids_created():
+    old_data = {"state": RegistrationState.pending.value, "option_ids": ["a", "b"]}
+
+    new_data = {"state": RegistrationState.created.value, "option_ids": ["a", "c"]}
+
+    assert get_added_option_ids(old_data, new_data) == {"a", "c"}
 
 
 @pytest.mark.asyncio

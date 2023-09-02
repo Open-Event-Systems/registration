@@ -12,6 +12,7 @@ from oes.registration.cart.models import (
     PricingResultRegistration,
 )
 from oes.registration.models.event import Event, LineItemRule, ModifierRule
+from oes.registration.models.registration import RegistrationState
 from oes.template import Context
 
 
@@ -58,10 +59,18 @@ def get_added_option_ids(
     old_data: dict[str, Any], new_data: dict[str, Any]
 ) -> frozenset[str]:
     """Get the set of option_ids added between two registration data."""
-    old_ids = old_data.get("option_ids", [])
-    new_ids = new_data.get("option_ids", [])
+    old_state = old_data.get("state", RegistrationState.pending.value)
+    new_state = new_data.get("state", RegistrationState.created.value)
 
-    return frozenset(o for o in new_ids if o not in old_ids)
+    if (
+        old_state == RegistrationState.pending
+        and new_state == RegistrationState.created
+    ):
+        return frozenset(new_data.get("option_ids", []))
+    else:
+        old_ids = old_data.get("option_ids", [])
+        new_ids = new_data.get("option_ids", [])
+        return frozenset(o for o in new_ids if o not in old_ids)
 
 
 def _make_pricing_registration(
