@@ -62,7 +62,7 @@ export const AccessCodeOptionsDialog = (
             <ButtonList.Button
               key={i}
               onClick={() => {
-                onSelect && onSelect(registrationId, opt.id)
+                onSelect && onSelect(opt.id, registrationId)
               }}
             >
               {opt.name || opt.id}
