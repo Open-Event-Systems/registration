@@ -53,6 +53,7 @@ export const ReceiptPage = () => {
           <Fragment key={reg.registration_id}>
             <Receipt.Registration
               id={`r${i + 1}`}
+              name={reg.name ?? undefined}
               receiptUrl={
                 receipt.receipt_url
                   ? getReceiptUrl(receipt.receipt_url, i + 1)
