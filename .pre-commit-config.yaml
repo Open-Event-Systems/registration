@@ -38,7 +38,7 @@ repos:
     rev: 6.0.0
     hooks:
       - id: flake8
-        exclude: ^registration/alembic/versions/
+        exclude: ^python/registration/alembic/versions/
         additional_dependencies:
           - flake8-simplify
           - flake8-newspaper-style
@@ -50,6 +50,6 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
-        exclude: ^registration/tests/
+        exclude: ^python/registration/tests/
         additional_dependencies:
           - attrs
