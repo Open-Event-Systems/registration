@@ -1,6 +1,0 @@
-node_modules
-.venv
-*.py[co]
-__pycache__
-.vscode
-.idea
