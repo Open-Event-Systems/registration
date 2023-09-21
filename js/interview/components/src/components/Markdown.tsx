@@ -51,5 +51,5 @@ export const Markdown = (props: MarkdownProps) => {
 export const MarkdownContext = createContext(
   markdown({
     linkify: true,
-  })
+  }),
 )
