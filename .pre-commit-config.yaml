@@ -14,7 +14,7 @@ repos:
     rev: 5.12.0
     hooks:
       - id: isort
-        args: [--profile, black, --filter-files]
+        args: [--profile, black, --filter-files, --line-length, "88"]
 
   - repo: https://github.com/psf/black
     rev: 23.3.0
@@ -50,6 +50,6 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
-        exclude: ^python/registration/tests/
+        exclude: (/tests/|/alembic/versions/)
         additional_dependencies:
           - attrs
