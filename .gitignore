@@ -1,9 +1,0 @@
-.venv
-*.py[co]
-__pycache__
-.*_cache
-.coverage
-build
-dist
-htmlcov
-config.yml
