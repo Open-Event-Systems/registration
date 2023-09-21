@@ -1,0 +1,8 @@
+__pycache__
+.venv
+.env
+build
+dist
+.*_cache
+.coverage
+htmlcov
