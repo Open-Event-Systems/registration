@@ -1,8 +1,0 @@
-*.py[co]
-__pycache__
-.venv
-.*_cache
-.coverage
-htmlcov
-build
-dist
