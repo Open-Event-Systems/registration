@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "oes.interview"
+version = "0.2.0"
+description = "OES Interview Python library"
+authors = ["Wes <wes@anthronewengland.com>"]
+license = "LGPL-3.0-or-later"
+readme = "README.md"
+packages = [{ include = "oes", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+
+attrs = "^23.1"
+cattrs = "^23.1"
+orjson = "^3.8.8"
+typing-extensions = "^4.7.1"
+pynacl = "^1.5.0"
+jinja2 = "^3.1.2"
+pyparsing = "^3.0.9"
+importlib-metadata =  "^6.0.0"
+loguru = "^0.7.0"
+ruamel-yaml = "^0.17.21"
+publicsuffixlist =  "^0.10.0.20230617"
+email-validator =  "^2.0.0.post2"
+httpx = { version = "^0.23.3" }
+typed-settings = "^23.0.0"
+blacksheep = "^1.2.18"
+uvicorn = {extras = ["standard"], version = "^0.23.2"}
+
+oes-util = { git = "https://github.com/Open-Event-Systems/utils.git", rev = "38a763c244", subdirectory = "python" }
+oes-template = { git = "https://github.com/Open-Event-Systems/template.git", branch = "dev-0.3.0" }
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.1"
+pytest-cov = "^4.0.0"
+myst-parser = "^0.18.1"
+sphinx = "^5.3.0"
+sphinx-rtd-theme = "^1.1.1"
+pytest-asyncio = "^0.21.0"
+
+[tool.pytest.ini_options]
+addopts = "--cov=oes.interview"
+testpaths = [
+    "tests",
+]
+
+[tool.mypy]
+python_version = "3.9"
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+
+# Console script entry point
+[tool.poetry.plugins."console_scripts"]
+oes-interview = "oes.interview.server.run:main"
+
+# Field entry points
+[tool.poetry.plugins."oes.interview.field"]
+text = "oes.interview.input.field_types.text:TextField"
+number = "oes.interview.input.field_types.number:NumberField"
+date = "oes.interview.input.field_types.date:DateField"
+button = "oes.interview.input.field_types.button:Button"
+select = "oes.interview.input.field_types.select:SelectField"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

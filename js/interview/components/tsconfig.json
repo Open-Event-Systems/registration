@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "paths": {
+      "#src/*.js": ["./src/*.js"]
+    }
+  },
+  "include": ["./src/**/*"],
+  "exclude": ["./src/stories/**/*"],
+  "references": [{ "path": "../lib" }]
+}

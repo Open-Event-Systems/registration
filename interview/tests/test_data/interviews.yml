@@ -1,0 +1,43 @@
+---
+- id: interview1
+  questions:
+    - id: question1
+      title: Name
+      fields:
+        - set: name
+          type: text
+          label: Name
+  steps:
+    - block:
+        - set: name2
+          value: name
+
+- id: interview2
+  questions:
+    - questions.yml
+  steps:
+    - eval: use_preferred_name
+
+- id: interview3
+  questions:
+    - id: birth-date
+      fields:
+        - set: birth_date
+          type: date
+          min: 1900-01-01
+          max: 2020-01-01
+    - id: level
+      fields:
+        - set: level
+          type: select
+          options:
+            - label: Standard
+              default: true
+              value: standard
+            - label: VIP
+              value: vip
+  steps:
+    - eval:
+        - birth_date
+        - level
+    - url: http://localhost

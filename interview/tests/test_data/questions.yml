@@ -1,0 +1,18 @@
+---
+- id: q1
+  title: Question 1
+  description: |
+    What is your name?
+  fields:
+    - set: person.name
+      type: text
+      label: Name
+    - set: use_preferred_name
+      type: button
+      options:
+        - label: Use Other Name
+          value: true
+        - label: Next
+          value: false
+          default: true
+          primary: true

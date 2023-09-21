@@ -1,0 +1,12 @@
+---
+# Example config
+
+# The key used to authenticate data
+encryption_key: _________________changeit__________________
+
+# The API key other applications will use
+api_key: changeit
+
+# The allowed origins
+allowed_origins:
+  - http://localhost:8001
