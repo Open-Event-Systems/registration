@@ -50,6 +50,6 @@ repos:
     rev: v1.3.0
     hooks:
       - id: mypy
-        exclude: (/tests/|/alembic/versions/)
+        exclude: /alembic/versions/
         additional_dependencies:
           - attrs
