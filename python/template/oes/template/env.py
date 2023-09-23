@@ -6,7 +6,6 @@ from typing import ContextManager
 
 import jinja2
 from jinja2.sandbox import ImmutableSandboxedEnvironment
-
 from oes.template.functions import age_filter, date_filter
 
 _default_jinja2_env = ImmutableSandboxedEnvironment()
@@ -35,7 +34,6 @@ def set_jinja2_env(env: jinja2.Environment) -> ContextManager[jinja2.Environment
     Returns:
         A context manager to automatically reset the environment value.
     """
-
     token = _jinja2_env_context.set(env)
 
     @contextmanager

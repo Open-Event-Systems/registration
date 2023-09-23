@@ -3,11 +3,6 @@ from datetime import date
 from typing import Union
 
 
-def date_filter(value: Union[str, date]) -> date:
-    """Parse a string into a :obj:`date`."""
-    return value if isinstance(value, date) else date.fromisoformat(str(value))
-
-
 def age_filter(
     value: Union[str, date], current_date: Union[str, date, None] = None
 ) -> int:
@@ -31,3 +26,8 @@ def age_filter(
         age -= 1
 
     return age
+
+
+def date_filter(value: Union[str, date]) -> date:
+    """Parse a string into a :obj:`date`."""
+    return value if isinstance(value, date) else date.fromisoformat(str(value))

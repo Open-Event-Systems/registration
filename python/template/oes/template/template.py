@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Union
 
 import jinja2.environment
-
 from oes.template.env import get_jinja2_env
 from oes.template.types import Context
 
@@ -58,6 +57,7 @@ def _compile(src: str) -> jinja2.Template:
 
 
 def structure_template(v: object, t: object) -> Template:
+    """Structure a :class:`Template`."""
     if isinstance(v, (str, Template)):
         return Template(v)
     else:
@@ -65,4 +65,5 @@ def structure_template(v: object, t: object) -> Template:
 
 
 def unstructure_template(v: Template) -> str:
+    """Unstructure a :class:`Template`."""
     return v.source

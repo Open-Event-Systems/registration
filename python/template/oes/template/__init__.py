@@ -1,4 +1,4 @@
-"""OES Template Library"""
+"""OES Template Library."""
 
 from oes.template.env import get_jinja2_env, set_jinja2_env
 from oes.template.expression import (

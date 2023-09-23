@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import typing
 from collections.abc import Mapping, Sequence
-from typing import Any, Tuple, Union
+from typing import Any, Union
 
 from attrs import frozen
-from typing_extensions import TYPE_CHECKING
-
 from oes.template.expression import Expression
 from oes.template.types import Context, Evaluable, ValueOrEvaluable
+from typing_extensions import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from cattrs import Converter
@@ -77,15 +76,18 @@ def structure_value_or_evaluable(
 
 def structure_logic(c: Converter, v: object, t: object) -> Evaluable:
     """Structure a logic object."""
+    exprs: Sequence[ValueOrEvaluable]
     if isinstance(v, Mapping) and len(v) == 1:
         if "and" in v:
-            exprs = c.structure(v["and"], Tuple[ValueOrEvaluable, ...])
+            exprs = c.structure(v["and"], tuple[ValueOrEvaluable, ...])
             return LogicAnd(exprs)
         elif "or" in v:
-            exprs = c.structure(v["or"], Tuple[ValueOrEvaluable, ...])
+            exprs = c.structure(v["or"], tuple[ValueOrEvaluable, ...])
             return LogicOr(exprs)
         elif "not" in v:
-            expr = c.structure(v["not_"], ValueOrEvaluable)
+            expr: ValueOrEvaluable = c.structure(
+                v["not_"], ValueOrEvaluable
+            )  # type: ignore
             return LogicNot(expr)
 
     raise ValueError(f"Invalid logic expression: {v}")

@@ -5,14 +5,14 @@ description = "Library for working with templates and expressions"
 authors = ["Wes <wes@anthronewengland.com>"]
 license = "LGPL-3.0-or-later"
 readme = "README.md"
-packages = [{include = "oes", from = "src"}]
+packages = [{include = "oes"}]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = "^3.9"
 jinja2 = "^3.1.2"
 attrs = "^23.1"
 typing-extensions = "^4.7.1"
-
+oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", subdirectory = "python/util", rev = "570a5d01353b00cf8733a6050378295b0edd1d74" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.0"
@@ -23,3 +23,15 @@ cattrs = "^23.1"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+packages = [
+    "oes.template",
+]
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = [
+    "openapidocs.v3",
+]
+ignore_missing_imports = true

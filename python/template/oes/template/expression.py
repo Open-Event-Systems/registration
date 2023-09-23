@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any, Union
 
 import jinja2.environment
-
 from oes.template.env import get_jinja2_env
 from oes.template.types import Context, Evaluable
 
@@ -58,6 +57,7 @@ def _compile(src: str) -> jinja2.environment.TemplateExpression:
 
 
 def structure_expression(v: object, t: object) -> Expression:
+    """Structure an :class:`Expression`."""
     if isinstance(v, (str, Expression)):
         return Expression(v)
     else:
@@ -65,4 +65,5 @@ def structure_expression(v: object, t: object) -> Expression:
 
 
 def unstructure_expression(v: Expression) -> str:
+    """Unstructure an :class:`Expression`."""
     return v.source
