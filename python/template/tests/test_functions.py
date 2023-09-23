@@ -1,7 +1,6 @@
 from datetime import date
 
 import pytest
-
 from oes.template import Template
 from oes.template.functions import age_filter, date_filter
 

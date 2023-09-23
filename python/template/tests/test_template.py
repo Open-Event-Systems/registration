@@ -2,7 +2,6 @@ import copy
 
 import pytest
 from cattrs.preconf.json import make_converter
-
 from oes.template.template import Template, structure_template, unstructure_template
 
 converter = make_converter()

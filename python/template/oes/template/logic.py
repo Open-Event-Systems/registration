@@ -86,8 +86,9 @@ def structure_logic(c: Converter, v: object, t: object) -> Evaluable:
             return LogicOr(exprs)
         elif "not" in v:
             expr: ValueOrEvaluable = c.structure(
-                v["not_"], ValueOrEvaluable
-            )  # type: ignore
+                v["not"],
+                ValueOrEvaluable,  # type: ignore
+            )
             return LogicNot(expr)
 
     raise ValueError(f"Invalid logic expression: {v}")

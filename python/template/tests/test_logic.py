@@ -1,6 +1,5 @@
 import pytest
 from cattrs.preconf.json import make_converter
-
 from oes.template.expression import (
     Expression,
     structure_expression,
@@ -95,6 +94,16 @@ cases = [
         {"and": ("a + b == 10", {"or": "c"})},
         {"a": 5, "b": 5, "c": 1},
         True,
+    ),
+    (
+        {"not": "value"},
+        {"value": False},
+        True,
+    ),
+    (
+        {"not": {"not": "value"}},
+        {"value": False},
+        False,
     ),
 ]
 

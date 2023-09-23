@@ -1,5 +1,4 @@
 import jinja2
-
 from oes.template.env import _default_jinja2_env, get_jinja2_env, set_jinja2_env
 
 env2 = jinja2.Environment()

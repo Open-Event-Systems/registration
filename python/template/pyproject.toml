@@ -28,10 +28,5 @@ build-backend = "poetry.core.masonry.api"
 packages = [
     "oes.template",
 ]
+mypy_path = "$MYPY_CONFIG_FILE_DIR"
 explicit_package_bases = true
-
-[[tool.mypy.overrides]]
-module = [
-    "openapidocs.v3",
-]
-ignore_missing_imports = true

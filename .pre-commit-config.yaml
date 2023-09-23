@@ -17,12 +17,12 @@ repos:
         args: [--profile, black, --filter-files, --line-length, "88"]
 
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 23.9.1
     hooks:
       - id: black
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
+    rev: v3.0.3
     hooks:
       - id: prettier
         types_or:
@@ -35,7 +35,7 @@ repos:
           - json
 
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 6.1.0
     hooks:
       - id: flake8
         exclude: ^python/registration/alembic/versions/
@@ -46,10 +46,28 @@ repos:
           - flake8-docstrings
           - flake8-annotations
 
+  # mypy, for each Python package
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.3.0
+    rev: v1.5.1
     hooks:
       - id: mypy
-        exclude: /alembic/versions/
+        name: mypy (util)
+        files: ^python/util
+        args: [--config-file=python/util/pyproject.toml]
         additional_dependencies:
           - attrs
+          - cattrs
+          - loguru
+          - blacksheep
+          - orjson
+          - pytest
+
+      - id: mypy
+        name: mypy (template)
+        files: ^python/template
+        args: [--config-file=python/template/pyproject.toml]
+        additional_dependencies:
+          - attrs
+          - cattrs
+          - jinja2
+          - pytest

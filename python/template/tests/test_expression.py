@@ -3,7 +3,6 @@ import copy
 import pytest
 from cattrs.preconf.json import make_converter
 from jinja2 import Undefined
-
 from oes.template.expression import (
     Expression,
     structure_expression,

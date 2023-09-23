@@ -39,6 +39,7 @@ testpaths = ["tests"]
 packages = [
     "oes.util",
 ]
+mypy_path = "$MYPY_CONFIG_FILE_DIR"
 explicit_package_bases = true
 
 [[tool.mypy.overrides]]
