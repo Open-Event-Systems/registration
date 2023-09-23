@@ -2,7 +2,7 @@ from unittest.mock import create_autospec, patch
 
 from cattrs.preconf.json import make_converter
 from importlib_metadata import EntryPoint
-from oes.interview.input.field import get_class_for_field_type, structure_field
+from oes.interview.input.field import _get_class_for_field_type, structure_field
 from oes.interview.input.field_types.text import TextField
 from oes.interview.input.types import Field
 from oes.interview.variables.locator import Locator, parse_locator
@@ -33,7 +33,7 @@ def test_get_class_for_field_type(mock):
         mock_ep,
     ]
 
-    res = get_class_for_field_type("test")
+    res = _get_class_for_field_type("test")
     assert res is _Nested.func
 
 

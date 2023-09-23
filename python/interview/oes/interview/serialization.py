@@ -44,6 +44,7 @@ from oes.util import is_attrs_class, is_attrs_instance
 
 @singledispatch
 def json_default(obj: object) -> object:
+    """JSON default encoder function."""
     if is_attrs_instance(obj):
         return converter.unstructure(obj)
     else:
@@ -62,7 +63,6 @@ def _(obj: date) -> str:
 
 def configure_converter(converter: Converter):
     """Configure the given converter."""
-
     # omit None if it is the default
     converter.register_unstructure_hook_factory(
         lambda cls: is_attrs_class(cls),

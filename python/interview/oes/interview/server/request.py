@@ -41,6 +41,8 @@ def _load_json(v: object) -> object:
 
 @frozen(kw_only=True)
 class JSONRequest(UpdateRequest):
+    """JSON request object."""
+
     state: bytes = field(converter=_from_b85)
     responses: Optional[dict[str, Any]] = field(
         default=None,
@@ -58,6 +60,8 @@ class JSONRequest(UpdateRequest):
 
 @frozen(kw_only=True)
 class MultipartRequest(UpdateRequest):
+    """Multipart request object."""
+
     responses: Optional[dict[str, Any]] = field(
         default=None,
         converter=_load_json,
@@ -121,7 +125,6 @@ async def _parse_json_request(request: Request) -> JSONRequest:
 
 async def _parse_multipart_request(request: Request) -> MultipartRequest:
     """Parse a ``multipart/form-data`` request."""
-
     parts = dict(await _get_multipart(request))
     if "state" in parts:
         parts["state"] = _strip_state(parts["state"])

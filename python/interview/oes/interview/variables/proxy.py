@@ -10,6 +10,8 @@ _T = TypeVar("_T")
 
 
 class MappingProxy(Mapping[_K, _V]):
+    """Mapping access proxy."""
+
     _expression: Locator
     _target: Mapping[_K, _V]
 
@@ -33,6 +35,8 @@ class MappingProxy(Mapping[_K, _V]):
 
 
 class SequenceProxy(Sequence[_T]):
+    """Sequence access proxy."""
+
     _expression: Locator
     _target: Sequence[_T]
 
@@ -62,7 +66,7 @@ class SequenceProxy(Sequence[_T]):
     def __repr__(self) -> str:
         return repr(self._target)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, (list, tuple, Sequence))
             and not isinstance(other, (str, bytes))
@@ -70,13 +74,13 @@ class SequenceProxy(Sequence[_T]):
             and tuple(self) == tuple(other)
         )
 
-    def __add__(self, other) -> Sequence[_T]:
+    def __add__(self, other: object) -> Sequence[_T]:
         if isinstance(other, (list, tuple, Sequence)):
             return list(self._target) + list(other)
         else:
             return NotImplemented
 
-    def __radd__(self, other) -> Sequence[_T]:
+    def __radd__(self, other: object) -> Sequence[_T]:
         if isinstance(other, (list, tuple, Sequence)):
             return list(other) + list(self._target)
         else:

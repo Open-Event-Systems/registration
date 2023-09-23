@@ -76,7 +76,6 @@ def make_question_structure_fn(
     converter: Converter,
 ) -> Callable[[Mapping[str, Any], Any], Question]:
     """Get a function to structure a :class:`Question`."""
-
     return make_dict_structure_fn(
         Question,
         converter,
@@ -88,7 +87,6 @@ def make_question_unstructure_fn(
     converter: Converter,
 ) -> Callable[[Question], Mapping[str, Any]]:
     """Get a function to unstructure a :class:`Question`."""
-
     return make_dict_unstructure_fn(
         Question,
         converter,

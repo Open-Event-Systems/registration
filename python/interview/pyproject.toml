@@ -5,10 +5,10 @@ description = "OES Interview Python library"
 authors = ["Wes <wes@anthronewengland.com>"]
 license = "LGPL-3.0-or-later"
 readme = "README.md"
-packages = [{ include = "oes", from = "src" }]
+packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.11"
+python = "^3.9"
 
 attrs = "^23.1"
 cattrs = "^23.1"
@@ -27,8 +27,8 @@ typed-settings = "^23.0.0"
 blacksheep = "^1.2.18"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 
-oes-util = { git = "https://github.com/Open-Event-Systems/utils.git", rev = "38a763c244", subdirectory = "python" }
-oes-template = { git = "https://github.com/Open-Event-Systems/template.git", branch = "dev-0.3.0" }
+oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", rev = "570a5d01353b00cf8733a6050378295b0edd1d74", subdirectory = "python/util" }
+oes-template = { git = "https://github.com/Open-Event-Systems/registration.git", rev= "c36ed086421203a2bbf68a10924a597fa2abb269", subdirectory = "python/template" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
@@ -45,10 +45,20 @@ testpaths = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
-namespace_packages = true
 explicit_package_bases = true
-mypy_path = "$MYPY_CONFIG_FILE_DIR/src"
+mypy_path = [
+    "$MYPY_CONFIG_FILE_DIR",
+    "$MYPY_CONFIG_FILE_DIR/../util",
+    "$MYPY_CONFIG_FILE_DIR/../template",
+]
+
+
+[[tool.mypy.overrides]]
+module = [
+    "openapidocs.v3",
+    "publicsuffixlist",
+]
+ignore_missing_imports = true
 
 # Console script entry point
 [tool.poetry.plugins."console_scripts"]

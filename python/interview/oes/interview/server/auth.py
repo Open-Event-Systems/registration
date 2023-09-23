@@ -24,6 +24,8 @@ authorization.default_policy = _policy
 
 
 class APIKeyHandler(AuthenticationHandler):
+    """API key auth handler."""
+
     def __init__(self, api_key: Secret[str]):
         self._api_key = api_key
 

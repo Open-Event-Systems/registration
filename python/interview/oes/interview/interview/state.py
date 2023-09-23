@@ -119,7 +119,6 @@ class InterviewState:
         Accepts either a mapping of :class:`Locator` to objects, or a single
         :class:`Locator` and a value.
         """
-
         if isinstance(val_or_loc, Mapping) and len(vals) == 0:
             to_set = val_or_loc
         else:
@@ -180,7 +179,6 @@ class InterviewState:
         Raises:
             InvalidStateError: If decryption/verification fails.
         """
-
         try:
             box = SecretBox(secret)
             decrypted = box.decrypt(encrypted)
@@ -213,7 +211,6 @@ def make_interview_state_structure_fn(
     converter: Converter,
 ) -> Callable[[Mapping[str, Any], Any], InterviewState]:
     """Get a function to structure an :class:`InterviewState`."""
-
     return make_dict_structure_fn(
         InterviewState,
         converter,
@@ -225,7 +222,6 @@ def make_interview_state_unstructure_fn(
     converter: Converter,
 ) -> Callable[[InterviewState], Mapping[str, Any]]:
     """Get a function to unstructure an :class:`InterviewState`."""
-
     return make_dict_unstructure_fn(
         InterviewState,
         converter,

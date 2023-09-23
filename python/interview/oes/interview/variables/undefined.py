@@ -41,7 +41,8 @@ for attr in dir(Undefined):
 class Context(jinja2.environment.Context):
     """Jinja2 context that returns proxy instances when appropriate."""
 
-    def resolve_or_missing(self, key: str):
+    def resolve_or_missing(self, key: str) -> object:
+        """Make a proxy for mappings/sequences."""
         val = super().resolve_or_missing(key)
         return _make_proxy(Variable(key), val)
 

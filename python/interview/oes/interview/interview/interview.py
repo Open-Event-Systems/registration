@@ -72,7 +72,6 @@ def make_interview_structure_fn(
     converter: Converter,
 ) -> Callable[[Mapping[str, Any], Any], Interview]:
     """Get a function to structure a :class:`Interview`."""
-
     structure = make_dict_structure_fn(
         Interview, converter, _questions_by_id=override(omit=True)
     )
@@ -83,7 +82,6 @@ def make_interview_unstructure_fn(
     converter: Converter,
 ) -> Callable[[Interview], Mapping[str, Any]]:
     """Get a function to unstructure a :class:`Interview`."""
-
     structure = make_dict_unstructure_fn(
         Interview,
         converter,

@@ -170,7 +170,7 @@ class ParametrizedIndex(Locator):
         """Return the value of this locator."""
         return self.evaluate_index(context).evaluate(context)
 
-    def set(self, value: object, context: MutableContext):
+    def set(self, value: object, context: MutableContext) -> object:
         """Set the value at this locator."""
         return self.evaluate_index(context).set(value, context)
 

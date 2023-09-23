@@ -33,7 +33,6 @@ class JSONStateResponse:
         secret: bytes,
     ) -> Self:
         """Create a JSON state response."""
-
         enc = state.encrypt(secret=secret, converter=converter, default=json_default)
         state_str = base64.b85encode(enc)
 

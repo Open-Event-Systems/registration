@@ -86,7 +86,6 @@ class Option(_Protocol[Any], Protocol):
         self, __context: Context, *, id: Optional[str] = None
     ) -> Mapping[str, object]:
         """Get the JSON schema for this option."""
-
         if id is None and self.id is None:
             raise ValueError("An ID must be provided")
 

@@ -269,7 +269,6 @@ def _set_get_result_docs(docs: OpenAPIHandler, op: Operation):
 )
 async def get_result(request: Request, settings: Settings) -> Response:
     """Get an interview result."""
-
     update_req = await parse_request(request)
 
     try:

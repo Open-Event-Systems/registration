@@ -48,7 +48,6 @@ class InterviewConfigEntry:
 
     def get_interview(self, converter: Converter) -> Interview:
         """Get an :class:`Interview` object from this config entry."""
-
         questions = tuple(
             itertools.chain.from_iterable(
                 _load_question_or_path(converter, entry) for entry in self.questions

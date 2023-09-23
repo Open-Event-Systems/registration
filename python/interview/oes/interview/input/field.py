@@ -55,7 +55,6 @@ class BaseField(FieldWithType, ABC):
     @property
     def field_info(self) -> Any:
         """An attrs field info object."""
-
         return attr.ib(
             type=self.optional_type,
             default=self.default,
@@ -88,7 +87,6 @@ class BaseOptionsField(FieldWithOptions, Generic[_B_co], ABC):
     @property
     def options_by_id(self) -> Mapping[str, _B_co]:
         """A mapping of options by ID."""
-
         return {
             (opt.id or str(num)): opt for num, opt in enumerate(self.options, start=1)
         }
@@ -144,13 +142,13 @@ def structure_field(converter: Converter, v: object, t: object) -> Field:
     """Structure a field definition from the config."""
     if isinstance(v, Mapping) and "type" in v:
         typ = v["type"]
-        cls = get_class_for_field_type(typ)
+        cls = _get_class_for_field_type(typ)
         return converter.structure(v, cls)
     else:
         raise ValueError(f"Invalid field: {v}")
 
 
-def get_class_for_field_type(field_type: str) -> Type[Field]:
+def _get_class_for_field_type(field_type: str) -> Type[Field]:
     path = _get_dotted_name_for_field_type(field_type)
     return _import_type(path)
 

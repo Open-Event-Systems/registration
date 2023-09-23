@@ -25,7 +25,6 @@ async def run_interview(
     Returns:
         A pair of the updated state and response content.
     """
-
     if state.question_id is not None:
         state = _apply_responses(state, responses)
 
@@ -83,7 +82,6 @@ async def _run_interview_steps(
     state: InterviewState,
 ) -> tuple[InterviewState, Optional[ResultContent]]:
     """Run the steps, returning content or a completed interview."""
-
     continue_ = True
     content = None
     while continue_:

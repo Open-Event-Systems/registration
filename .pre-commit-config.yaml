@@ -71,3 +71,23 @@ repos:
           - cattrs
           - jinja2
           - pytest
+
+      - id: mypy
+        name: mypy (interview)
+        files: ^python/interview
+        args: [--config-file=python/interview/pyproject.toml]
+        additional_dependencies:
+          - attrs
+          - cattrs
+          - loguru
+          - blacksheep
+          - ruamel.yaml
+          - importlib_metadata
+          - pytest
+          - pyparsing
+          - uvicorn
+          - httpx
+          - typed_settings
+          - orjson
+          - email_validator
+          - pynacl
