@@ -10,10 +10,11 @@
   },
   "imports": {
     "#src/*.js": {
-      "default": [
+      "test": [
         "./src/*.ts",
         "./dist/*.js"
-      ]
+      ],
+      "default": "./dist/*.js"
     }
   },
   "files": [

@@ -1,0 +1,6 @@
+{
+  "workspaces": [
+    "interview/lib",
+    "interview/components"
+  ]
+}

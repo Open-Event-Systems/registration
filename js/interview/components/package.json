@@ -9,11 +9,7 @@
     ".": "./dist/index.js"
   },
   "imports": {
-    "#src/*.js": [
-      "./src/*.tsx",
-      "./src/*.ts",
-      "./dist/*.js"
-    ]
+    "#src/*.js": "./dist/*.js"
   },
   "files": [
     "dist/**/*",
