@@ -1,6 +1,7 @@
 {
   "workspaces": [
     "interview/lib",
-    "interview/components"
+    "interview/components",
+    "registration"
   ]
 }

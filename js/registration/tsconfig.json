@@ -15,5 +15,9 @@
     "skipLibCheck": true,
     "resolveJsonModule": true
   },
-  "include": ["./src/**/*", "./theme.ts"]
+  "include": ["./src/**/*", "./theme.ts"],
+  "references": [
+    { "path": "../interview/components" },
+    { "path": "../interview/lib" }
+  ]
 }
