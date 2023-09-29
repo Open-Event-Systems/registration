@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, datetime
+from unittest.mock import patch
 
 import pytest
-from oes.template import Template
+from oes.template import Expression, Template
 from oes.template.functions import age_filter, date_filter
 
 
@@ -45,3 +46,20 @@ def test_age_and_date_filters_in_template(date1, birth_date, cur_date, expected)
 
     res = tmpl.render({"date1": date1, "date2": birth_date, "date3": cur_date})
     assert res == expected
+
+
+@patch("oes.template.functions.datetime")
+def test_today(datetime_mock):
+    now = datetime(2023, 1, 1, 12).astimezone()
+    datetime_mock.now.return_value = now
+    today = now.date()
+    expr = Expression("get_today()")
+    assert expr.evaluate({}) == today
+
+
+@patch("oes.template.functions.datetime")
+def test_now(datetime_mock):
+    now = datetime(2023, 1, 1, 12).astimezone()
+    datetime_mock.now.return_value = now
+    expr = Expression("get_now()")
+    assert expr.evaluate({}) == now

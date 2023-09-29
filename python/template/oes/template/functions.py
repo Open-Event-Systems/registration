@@ -1,5 +1,5 @@
 """Test/filter functions."""
-from datetime import date
+from datetime import date, datetime
 from typing import Union
 
 
@@ -31,3 +31,13 @@ def age_filter(
 def date_filter(value: Union[str, date]) -> date:
     """Parse a string into a :obj:`date`."""
     return value if isinstance(value, date) else date.fromisoformat(str(value))
+
+
+def today_func() -> date:
+    """Get the current date."""
+    return now_func().date()
+
+
+def now_func() -> datetime:
+    """Get the current datetime."""
+    return datetime.now().astimezone()

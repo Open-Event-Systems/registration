@@ -6,7 +6,7 @@ from oes.template.expression import (
     structure_expression,
     unstructure_expression,
 )
-from oes.template.functions import age_filter, date_filter
+from oes.template.functions import age_filter, date_filter, now_func, today_func
 from oes.template.logic import (
     LogicAnd,
     LogicNot,
@@ -40,4 +40,6 @@ __all__ = [
     "ValueOrEvaluable",
     "age_filter",
     "date_filter",
+    "today_func",
+    "now_func",
 ]
