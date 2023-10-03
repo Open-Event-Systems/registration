@@ -1,12 +1,13 @@
 """State module."""
 from __future__ import annotations
 
+import copy
 import uuid
 import zlib
 from collections.abc import Callable, Mapping, Set
 from datetime import datetime, timedelta, timezone
 from struct import Struct
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Union, cast, overload
 
 import orjson
 from attrs import Factory, evolve, field, frozen
@@ -51,7 +52,7 @@ class InterviewState:
     """Whether the state is complete."""
 
     context: Context = field(
-        converter=lambda v: merge_dict({}, v),
+        converter=lambda v: copy.deepcopy(v),
         factory=dict,
     )
     """Context data."""
@@ -63,7 +64,7 @@ class InterviewState:
     """The current question ID."""
 
     data: Context = field(
-        converter=lambda v: merge_dict({}, v),
+        converter=lambda v: copy.deepcopy(v),
         factory=dict,
     )
     """Interview data."""
@@ -77,7 +78,7 @@ class InterviewState:
     @property
     def template_context(self) -> Context:
         """The context to use when evaluating templates."""
-        return dict(self._template_context)
+        return self._template_context
 
     def set_question(self, question_id: Optional[str]) -> Self:
         """Set or clear the current question ID.
@@ -122,9 +123,9 @@ class InterviewState:
         if isinstance(val_or_loc, Mapping) and len(vals) == 0:
             to_set = val_or_loc
         else:
-            to_set = {val_or_loc: vals[0]}
+            to_set = {cast(Locator, val_or_loc): vals[0]}
 
-        new_data = merge_dict({}, self.data)
+        new_data = dict(copy.deepcopy(self.data))
         for loc, val in to_set.items():
             loc.set(val, new_data)
 

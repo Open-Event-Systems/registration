@@ -8,7 +8,8 @@ from attrs import field, frozen
 from cattrs import Converter
 from oes.interview.config.file import load_config_file, resolve_config_path
 from oes.interview.input.question import Question
-from oes.interview.interview.interview import Interview, Step
+from oes.interview.interview.interview import Interview
+from oes.interview.interview.types import Step
 from oes.interview.util import validate_identifier
 
 

@@ -12,13 +12,13 @@ from cattrs import Converter
 from cattrs.preconf.orjson import OrjsonConverter, make_converter
 from oes.interview.input.logic import evaluate_whenable
 from oes.interview.interview.error import InterviewError
-from oes.interview.interview.interview import Step, StepResult
+from oes.interview.interview.interview import StepResult
 from oes.interview.interview.result import AskResult, ExitResult, ResultContent
 from oes.interview.interview.state import InterviewState
+from oes.interview.interview.types import Step
 from oes.interview.variables.locator import Locator, UndefinedError
 from oes.interview.variables.undefined import Undefined
 from oes.template import Context, Expression, Template, ValueOrEvaluable, evaluate
-from oes.util import merge_dict
 
 
 @frozen
@@ -71,7 +71,7 @@ class SetStep(Step):
         val = self.value.evaluate(ctx)
 
         if val != cur_val:
-            new_data = merge_dict({}, copy.deepcopy(state.data))
+            new_data = dict(copy.deepcopy(state.data))
             self.set.set(val, new_data)
 
             changed = True
@@ -129,7 +129,7 @@ class ExitStep(Step):
     exit: Template
     """The reason."""
 
-    description: Optional[Template] = ""
+    description: Optional[Template] = Template("")
     """An optional description."""
 
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()

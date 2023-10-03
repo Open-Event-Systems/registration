@@ -1,7 +1,6 @@
 """Interview module."""
 from __future__ import annotations
 
-from abc import abstractmethod
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Mapping, Optional
 
@@ -9,9 +8,8 @@ from attrs import Factory, field, frozen
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.interview.input.question import Question
-from oes.interview.input.types import Whenable
 from oes.interview.interview.result import ResultContent
-from typing_extensions import Protocol
+from oes.interview.interview.types import Step
 
 if TYPE_CHECKING:
     from oes.interview.interview.state import InterviewState
@@ -29,15 +27,6 @@ class StepResult:
 
     content: Optional[ResultContent] = None
     """Result content."""
-
-
-class Step(Whenable, Protocol):
-    """A step in an interview."""
-
-    @abstractmethod
-    async def __call__(self, state: InterviewState, /) -> StepResult:
-        """Handle the step."""
-        ...
 
 
 @frozen(kw_only=True)

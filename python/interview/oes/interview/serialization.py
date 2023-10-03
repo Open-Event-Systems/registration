@@ -20,7 +20,6 @@ from oes.interview.input.question import (
 from oes.interview.input.types import Field
 from oes.interview.interview.interview import (
     Interview,
-    Step,
     make_interview_structure_fn,
     make_interview_unstructure_fn,
 )
@@ -30,6 +29,7 @@ from oes.interview.interview.state import (
     make_interview_state_unstructure_fn,
 )
 from oes.interview.interview.step import structure_step
+from oes.interview.interview.types import Step
 from oes.interview.variables.locator import Locator, parse_locator
 from oes.template import (
     Expression,
@@ -88,7 +88,7 @@ def configure_converter(converter: Converter):
     # structure immutable sequences as tuples
     converter.register_structure_hook_func(
         lambda cls: get_origin(cls) is Sequence,
-        lambda v, t: converter.structure(v, Tuple[get_args(t)[0], ...]),
+        lambda v, t: converter.structure(v, Tuple[get_args(t)[0], ...]),  # type: ignore
     )
 
     # handle Field
