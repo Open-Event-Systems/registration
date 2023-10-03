@@ -67,7 +67,9 @@ def load_interviews(
     with resolve_config_path(config_path) as path:
         doc = load_config_file(path)
 
-        entries = converter.structure(doc, Sequence[InterviewConfigEntry])
+        entries = converter.structure(
+            doc, Sequence[InterviewConfigEntry]  # type: ignore
+        )
 
         interviews = {i.id: i.get_interview(converter) for i in entries}
 
@@ -86,7 +88,7 @@ def _load_question_or_path(
 def _load_question_file(converter: Converter, path: Path) -> Sequence[Question]:
     with resolve_config_path(path) as resolved:
         doc = load_config_file(resolved)
-        return converter.structure(doc, Sequence[Question])
+        return converter.structure(doc, Sequence[Question])  # type: ignore
 
 
 def structure_question_or_path(
