@@ -1,11 +1,11 @@
 """Text field type."""
-from typing import Any, Literal, Mapping, Optional
+from typing import Any, Callable, Literal, Optional, Type
 
 import attr
 from attrs import Attribute, converters, frozen, validators
 from email_validator import EmailNotValidError, validate_email
-from oes.interview.input.field import BaseField
-from oes.interview.input.types import Context
+from oes.interview.input.field import FieldBase
+from oes.interview.input.types import Context, JSONSchema
 from publicsuffixlist import PublicSuffixList
 
 DEFAULT_MAX_LEN = 300
@@ -13,7 +13,7 @@ DEFAULT_MAX_LEN = 300
 
 
 @frozen(kw_only=True)
-class TextField(BaseField):
+class TextField(FieldBase):
     """A text field."""
 
     type: Literal["text"] = "text"
@@ -41,58 +41,57 @@ class TextField(BaseField):
     """The autocomplete type for this field's input."""
 
     @property
-    def value_type(self) -> object:
+    def value_type(self) -> Type:
         return str
 
     @property
-    def field_info(self) -> Any:
-        validators_ = []
+    def validators(self) -> list[Callable[[Any, Attribute, Any], Any]]:
+        validators_ = super().validators
+        extra_validators: list[Callable[[Any, Attribute, Any], Any]] = [
+            validators.min_len(self.min),
+            validators.max_len(self.max),
+        ]
 
         if self.regex is not None:
-            validators_.append(validators.matches_re(self.regex))
+            extra_validators.append(validators.matches_re(self.regex))
 
         if self.format == "email":
-            validators_.extend((_validate_email, _validate_email_domain))
+            extra_validators.append(_validate_email)
+            extra_validators.append(_validate_email_domain)
 
+        return [*validators_, validators.optional(extra_validators)]
+
+    @property
+    def field_info(self) -> Any:
         return attr.ib(
             type=self.optional_type,
             converter=converters.pipe(
                 _strip_strings,
                 _coerce_null,
             ),
-            validator=[
-                *self.validators,
-                validators.optional(
-                    [
-                        validators.min_len(self.min),
-                        validators.max_len(self.max),
-                        *validators_,
-                    ]
-                ),
-            ],
+            validator=self.validators,
         )
 
-    def get_schema(self, context: Context) -> Mapping[str, object]:
+    def get_schema(self, context: Context, /) -> JSONSchema:
         schema = {
-            "type": "string",
-            "x-type": "text",
+            **super().get_schema(context),
+            "type": ["string", "null"] if self.optional else "string",
             "minLength": self.min,
             "maxLength": self.max,
-            "nullable": self.optional,
         }
 
         if self.format is not None:
             schema["format"] = self.format
 
-        if self.label:
-            schema["title"] = self.label.render(context)
-
-        if self.default:
-            schema["default"] = self.default
-
         re_val = self.regex_js or self.regex
         if re_val:
             schema["pattern"] = re_val
+
+        if self.autocomplete:
+            schema["x-autocomplete"] = self.autocomplete
+
+        if self.input_mode:
+            schema["x-input-mode"] = self.input_mode
 
         return schema
 

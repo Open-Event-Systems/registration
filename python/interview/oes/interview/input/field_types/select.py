@@ -1,12 +1,11 @@
 """Select field module."""
-from collections.abc import Sequence
-from typing import Any, Literal, Mapping, Optional
+from collections.abc import Callable, Sequence
+from typing import Any, Literal, Optional
 
 import attr
-from attrs import frozen, validators
-from oes.interview.input.field import BaseOptionsField
-from oes.interview.input.types import FieldWithType, Option
-from oes.interview.variables.locator import Locator
+from attrs import converters, frozen, validators
+from oes.interview.input.field import OptionsFieldBase
+from oes.interview.input.types import JSONSchema, Option
 from oes.template import Context, Template
 
 
@@ -27,8 +26,8 @@ class SelectFieldOption(Option):
     """The option value."""
 
     def get_schema(
-        self, context: Context, *, id: Optional[str] = None
-    ) -> Mapping[str, object]:
+        self, context: Context, /, *, id: Optional[str] = None
+    ) -> JSONSchema:
         """Get the schema for this option."""
         schema = {
             **super().get_schema(context, id=id),
@@ -39,15 +38,10 @@ class SelectFieldOption(Option):
 
 
 @frozen(kw_only=True)
-class SelectField(BaseOptionsField[SelectFieldOption], FieldWithType):
+class SelectField(OptionsFieldBase[SelectFieldOption]):
     """A select field."""
 
     type: Literal["select"] = "select"
-    set: Optional[Locator] = None
-
-    label: Optional[Template] = None
-    """The field label."""
-
     component: str = "dropdown"
     """The component type to display."""
 
@@ -64,23 +58,21 @@ class SelectField(BaseOptionsField[SelectFieldOption], FieldWithType):
     def optional(self) -> bool:
         return self.min == 0
 
-    def get_schema(self, context: Context) -> Mapping[str, object]:
+    def get_schema(self, context: Context) -> JSONSchema:
         options = [b.get_schema(context, id=id) for id, b in self.options_by_id.items()]
         if self.is_single_value:
             if self.optional:
                 options.append({"type": "null"})
 
             schema = {
-                "type": "string",
-                "x-type": "select",
+                **super().get_schema(context),
                 "x-component": self.component,
                 "oneOf": options,
-                "nullable": self.optional,
             }
         else:
             schema = {
+                **super().get_schema(context),
                 "type": "array",
-                "x-type": "select",
                 "x-component": self.component,
                 "items": {
                     "oneOf": options,
@@ -89,9 +81,6 @@ class SelectField(BaseOptionsField[SelectFieldOption], FieldWithType):
                 "maxItems": self.max,
                 "uniqueItems": True,
             }
-
-        if self.label:
-            schema["title"] = self.label.render(context)
 
         defaults = [id for id, opt in self.options_by_id.items() if opt.default]
 
@@ -102,23 +91,27 @@ class SelectField(BaseOptionsField[SelectFieldOption], FieldWithType):
 
     @property
     def field_info(self) -> Any:
-        validators_ = []
-        if self.is_single_value:
-            if not self.optional:
-                validators_.append(validators.not_(validators.instance_of(type(None))))
-
-            return attr.ib(
-                type=Any,
-                converter=self.convert_option,
-                validator=validators_,
-            )
+        if not self.is_single_value:
+            validators_: list[Callable[[Any, Any, Any], Any]] = [
+                validators.instance_of(
+                    tuple,
+                ),
+                validators.min_len(self.min),
+                validators.max_len(self.max),
+            ]
         else:
-            validators_.append(validators.instance_of(list))  # type: ignore
-            validators_.append(validators.min_len(self.min))
-            validators_.append(validators.max_len(self.max))
+            validators_ = []
 
-            return attr.ib(
-                type=list,
-                converter=self.convert_options,
-                validator=validators_,
-            )
+        return attr.ib(
+            type=Any,
+            converter=converters.pipe(self._convert_none, self.convert_option)
+            if self.is_single_value
+            else converters.pipe(self._convert_none, self.convert_options),
+            validator=validators_,
+        )
+
+    def _convert_none(self, v):
+        if v is None and (not self.is_single_value or not self.optional):
+            raise ValueError(f"Invalid option: {v}")
+
+        return v

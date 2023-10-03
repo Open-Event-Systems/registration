@@ -86,7 +86,6 @@ field_multi_optional = SelectField(
 def test_select_schema():
     schema = field_single.get_schema({})
     assert schema == {
-        "type": "string",
         "x-type": "select",
         "x-component": "radio",
         "default": "2",
@@ -100,14 +99,12 @@ def test_select_schema():
                 "title": "Option 2",
             },
         ],
-        "nullable": False,
     }
 
 
 def test_optional_select_schema():
     schema = field_single_optional.get_schema({})
     assert schema == {
-        "type": "string",
         "x-type": "select",
         "x-component": "checkbox",
         "default": "2",
@@ -122,7 +119,6 @@ def test_optional_select_schema():
             },
             {"type": "null"},
         ],
-        "nullable": True,
     }
 
 
@@ -190,8 +186,8 @@ def test_multi_select_optional_schema():
         (field_single, "1", 1),
         (field_single, "2", 2),
         (field_single_optional, None, None),
-        (field_multi, ["1", "3"], [1, 3]),
-        (field_multi_optional, [], []),
+        (field_multi, ["1", "3"], (1, 3)),
+        (field_multi_optional, [], ()),
     ),
 )
 def test_select_field(field, val, expected):
@@ -236,10 +232,8 @@ def test_boolean_schema():
     )
 
     assert field.get_schema({}) == {
-        "type": "string",
         "x-type": "select",
         "x-component": "checkbox",
-        "nullable": True,
         "oneOf": [
             {
                 "const": "1",

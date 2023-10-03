@@ -1,24 +1,25 @@
 """Field module."""
-import importlib
-import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
-from typing import Any, Generic, Mapping, Optional, Type, TypeVar
+from typing import Any, Generic, Mapping, Optional, Type, TypeVar, cast
 
 import attr
-import importlib_metadata
 from attrs import Attribute, frozen, validators
 from cattrs import Converter
-from oes.interview.input.types import Field, FieldWithOptions, FieldWithType, Option
+from oes.interview.input.types import Field, JSONSchema, Option
 from oes.interview.variables.locator import Locator
-from oes.template import Template
+from oes.template import Context, Template
 
 
 @frozen(kw_only=True)
-class BaseField(FieldWithType, ABC):
+class FieldBase(Field, ABC):
     """The field implementation base class."""
 
+    type: str
+    """The field type."""
+
     set: Optional[Locator] = None
+    """The variable to store the value in."""
 
     optional: bool = False
     """Whether the field is optional."""
@@ -26,22 +27,19 @@ class BaseField(FieldWithType, ABC):
     label: Optional[Template] = None
     """The field label."""
 
+    default: Any = None
+    """A default value.
+
+    Only used for displaying in the client, not used for parsing.
+    """
+
     error_messages: Optional[Mapping[str, str]] = None
     """Mapping to override error messages."""
 
     @property
     @abstractmethod
-    def default(self) -> Optional[object]:
-        """A default value.
-
-        Only used for displaying in the client, not used for parsing.
-        """
-        ...
-
-    @property
-    @abstractmethod
-    def value_type(self) -> type:
-        """The type of the value of this field."""
+    def value_type(self) -> Type:
+        """The Python type of the value of this field."""
         ...
 
     @property
@@ -54,20 +52,36 @@ class BaseField(FieldWithType, ABC):
 
     @property
     def field_info(self) -> Any:
-        """An attrs field info object."""
+        """An ``attrs`` field info object."""
         return attr.ib(
             type=self.optional_type,
             default=self.default,
             validator=self.validators,
         )
 
+    def get_schema(self, context: Context, /) -> JSONSchema:
+        schema = {
+            "x-type": self.type,
+        }
+
+        if self.label is not None:
+            schema["title"] = self.label.render(context)
+
+        if self.default is not None:
+            schema["default"] = self.default
+
+        return schema
+
     @property
     def validators(self) -> list[Callable[[Any, Attribute, Any], Any]]:
         """Validators to add to the field."""
-        v: list[Callable[[Any, Attribute, Any], Any]] = [
-            validate_optional(self.optional),
-            validators.optional([validators.instance_of((self.value_type,))]),
-        ]
+        v: list[Callable[[Any, Attribute, Any], Any]] = []
+
+        if self.optional:
+            v.append(validators.optional(validators.instance_of((self.value_type,))))
+        else:
+            v.append(validators.instance_of((self.value_type,)))
+
         return v
 
 
@@ -75,8 +89,21 @@ _B = TypeVar("_B", bound=Option)
 _B_co = TypeVar("_B_co", covariant=True, bound=Option)
 
 
-class BaseOptionsField(FieldWithOptions, Generic[_B_co], ABC):
+@frozen(kw_only=True)
+class OptionsFieldBase(Field, Generic[_B_co], ABC):
     """Base options field."""
+
+    type: str
+    """The field type."""
+
+    set: Optional[Locator] = None
+    """The variable to store the value in."""
+
+    label: Optional[Template] = None
+    """The field label."""
+
+    error_messages: Optional[Mapping[str, str]] = None
+    """Mapping to override error messages."""
 
     @property
     @abstractmethod
@@ -88,54 +115,43 @@ class BaseOptionsField(FieldWithOptions, Generic[_B_co], ABC):
     def options_by_id(self) -> Mapping[str, _B_co]:
         """A mapping of options by ID."""
         return {
-            (opt.id or str(num)): opt for num, opt in enumerate(self.options, start=1)
+            (opt.id if opt.id is not None else str(num)): opt
+            for num, opt in enumerate(self.options, start=1)
         }
 
-    def convert_options(self, __ids: Iterable[str]) -> list[Any]:
+    def convert_options(self, ids: Iterable[str]) -> tuple[Any, ...]:
         """Convert an iterable of option IDs to a list of values."""
-        if not all(isinstance(id, str) for id in __ids):
-            raise ValueError(f"Invalid options: {__ids}")
-        return [self.convert_option(id) for id in __ids]
+        if isinstance(ids, str) or not all(isinstance(id, str) for id in ids):
+            raise ValueError(f"Invalid options: {ids}")
 
-    def convert_option(self, __id: Optional[str]) -> Any:
+        # remove duplicates
+        id_set = {id: True for id in ids}
+
+        return tuple(self.convert_option(id) for id in id_set)
+
+    def convert_option(self, id: Optional[str]) -> Any:
         """Convert an option ID to its value."""
-        if __id is not None:
+        if id is None:
+            return None
+        elif not isinstance(id, str):
+            raise ValueError(f"Invalid option: {id}")
+        else:
             try:
-                opt = self.options_by_id[__id]
+                opt = self.options_by_id[id]
             except KeyError as e:
-                raise ValueError(f"Invalid option: {__id}") from e
+                raise ValueError(f"Invalid option: {id}") from e
 
             return opt.value
-        else:
-            return None
 
+    def get_schema(self, context: Context, /) -> JSONSchema:
+        schema = {
+            "x-type": self.type,
+        }
 
-def _button_id_gen(
-    i: BaseOptionsField[_B], a: Attribute, v: object
-) -> Mapping[str, _B]:
-    ct = itertools.count(1)
-    map = {}
+        if self.label is not None:
+            schema["title"] = self.label.render(context)
 
-    for opt in i.options:
-        num = next(ct)
-        if opt.id:
-            map[opt.id] = opt
-        else:
-            map[str(num)] = opt
-
-    return map
-
-
-def validate_optional(
-    optional: Optional[bool] = None,
-) -> Callable[[object, Attribute, object], None]:
-    """Get a validator to check for null values."""
-
-    def validate(i: object, a: Attribute, v: object):
-        if v is None and not optional:
-            raise ValueError("A value is required")
-
-    return validate
+        return schema
 
 
 def structure_field(converter: Converter, v: object, t: object) -> Field:
@@ -148,26 +164,23 @@ def structure_field(converter: Converter, v: object, t: object) -> Field:
         raise ValueError(f"Invalid field: {v}")
 
 
-def _get_class_for_field_type(field_type: str) -> Type[Field]:
-    path = _get_dotted_name_for_field_type(field_type)
-    return _import_type(path)
+def _get_class_for_field_type(typ: str) -> Type[Field]:
+    # eventually make this support entry points
+    from oes.interview.input.field_types.button import Button
+    from oes.interview.input.field_types.date import DateField
+    from oes.interview.input.field_types.number import NumberField
+    from oes.interview.input.field_types.select import SelectField
+    from oes.interview.input.field_types.text import TextField
 
+    types = {
+        "text": TextField,
+        "number": NumberField,
+        "date": DateField,
+        "select": SelectField,
+        "button": Button,
+    }
 
-def _get_dotted_name_for_field_type(field_type: str) -> str:
-    eps = importlib_metadata.entry_points(group="oes.interview.field")
-    for ep in eps:
-        if ep.name == field_type:
-            return ep.value
-    else:
-        raise LookupError(f"Unknown field type: {field_type}")
-
-
-def _import_type(path: str) -> Any:
-    mod_name, _, name = path.partition(":")
-    mod = importlib.import_module(mod_name)
-    parts = name.split(".")
-    cur = mod
-    for part in parts:
-        cur = getattr(cur, part)
-
-    return cur
+    try:
+        return cast(Type[Field], types[typ])
+    except KeyError as e:
+        raise ValueError(f"Unknown field type: {type}") from e

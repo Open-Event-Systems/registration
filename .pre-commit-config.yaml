@@ -81,9 +81,9 @@ repos:
           - cattrs
           - loguru
           - blacksheep
-          - ruamel.yaml
           - importlib_metadata
           - pytest
+          - pytest_asyncio
           - pyparsing
           - uvicorn
           - httpx

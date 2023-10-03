@@ -3,10 +3,9 @@ from collections.abc import Sequence
 from typing import Any, Literal, Mapping, Optional
 
 import attr
-from attrs import frozen, validators
-from oes.interview.input.field import BaseOptionsField
-from oes.interview.input.types import FieldWithType, Option
-from oes.interview.variables.locator import Locator
+from attrs import converters, frozen
+from oes.interview.input.field import OptionsFieldBase
+from oes.interview.input.types import Option
 from oes.template import Context, Template
 
 
@@ -30,7 +29,7 @@ class ButtonOption(Option):
     """The button value."""
 
     def get_schema(
-        self, context: Context, *, id: Optional[str] = None
+        self, context: Context, /, *, id: Optional[str] = None
     ) -> Mapping[str, object]:
         """Get the schema for this button."""
         schema = {
@@ -45,25 +44,24 @@ class ButtonOption(Option):
 
 
 @frozen(kw_only=True)
-class Button(BaseOptionsField[ButtonOption], FieldWithType):
+class Button(OptionsFieldBase[ButtonOption]):
     """A button."""
 
     type: Literal["button"] = "button"
-    set: Optional[Locator] = None
-
     options: Sequence[ButtonOption] = ()
 
     def get_schema(self, context: Context) -> Mapping[str, object]:
+        options = [b.get_schema(context, id=id) for id, b in self.options_by_id.items()]
+
         schema = {
-            "x-type": "button",
-            "oneOf": [
-                b.get_schema(context, id=id) for id, b in self.options_by_id.items()
-            ],
+            **super().get_schema(context),
+            "oneOf": options,
         }
 
         default = next(
             (id_ for id_, b in self.options_by_id.items() if b.default), None
         )
+
         if default is not None:
             schema["default"] = default
 
@@ -73,6 +71,10 @@ class Button(BaseOptionsField[ButtonOption], FieldWithType):
     def field_info(self) -> Any:
         return attr.ib(
             type=Any,
-            converter=self.convert_option,
-            validator=validators.not_(validators.instance_of(type(None))),
+            converter=converters.pipe(self._convert_none, self.convert_option),
         )
+
+    def _convert_none(self, v):
+        if v is None:
+            raise ValueError("Value is required")
+        return v

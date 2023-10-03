@@ -3,17 +3,20 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, Protocol, TypeVar, Union
 
 from oes.interview.variables.locator import Locator
 from oes.template import Context, ValueOrEvaluable
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import TypeAlias
 
 UserResponse: TypeAlias = Mapping[str, object]
 """A user response."""
 
 ResponseParser: TypeAlias = Callable[[UserResponse], Mapping[Locator, object]]
 """A callable that parses a response into a mapping of variable locations/values."""
+
+JSONSchema: TypeAlias = Mapping[str, object]
+"""The JSON schema type."""
 
 _T = TypeVar("_T", covariant=True)
 
@@ -42,7 +45,7 @@ class Field(_Protocol[Any], Protocol):
         ...
 
     @abstractmethod
-    def get_schema(self, __context: Context) -> Mapping[str, object]:
+    def get_schema(self, context: Context, /) -> JSONSchema:
         """Get the JSON schema representing this field.
 
         Args:
@@ -54,16 +57,6 @@ class Field(_Protocol[Any], Protocol):
     @abstractmethod
     def set(self) -> Optional[Locator]:
         """The variable location to set."""
-        ...
-
-
-class FieldWithType(Field, Protocol):
-    """A field with a ``type`` attribute."""
-
-    @property
-    @abstractmethod
-    def type(self) -> str:
-        """The field type."""
         ...
 
 
@@ -83,8 +76,8 @@ class Option(_Protocol[Any], Protocol):
         ...
 
     def get_schema(
-        self, __context: Context, *, id: Optional[str] = None
-    ) -> Mapping[str, object]:
+        self, context: Context, /, *, id: Optional[str] = None
+    ) -> JSONSchema:
         """Get the JSON schema for this option."""
         if id is None and self.id is None:
             raise ValueError("An ID must be provided")
@@ -93,16 +86,6 @@ class Option(_Protocol[Any], Protocol):
             "const": id or self.id,
         }
         return schema
-
-
-class FieldWithOptions(Field, Protocol):
-    """A field with multiple options."""
-
-    @property
-    @abstractmethod
-    def options(self) -> Sequence[Option]:
-        """The options."""
-        ...
 
 
 class Whenable(_Protocol[Any], Protocol):

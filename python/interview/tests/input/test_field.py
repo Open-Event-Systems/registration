@@ -1,8 +1,5 @@
-from unittest.mock import create_autospec, patch
-
 from cattrs.preconf.json import make_converter
-from importlib_metadata import EntryPoint
-from oes.interview.input.field import _get_class_for_field_type, structure_field
+from oes.interview.input.field import structure_field
 from oes.interview.input.field_types.text import TextField
 from oes.interview.input.types import Field
 from oes.interview.variables.locator import Locator, parse_locator
@@ -21,20 +18,6 @@ class _Nested:
     @staticmethod
     def func(self):
         pass
-
-
-@patch("oes.interview.input.field.importlib_metadata")
-def test_get_class_for_field_type(mock):
-    mock_ep = create_autospec(EntryPoint)
-    mock_ep.name = "test"
-    mock_ep.value = "tests.input.test_field:_Nested.func"
-
-    mock.entry_points.return_value = [
-        mock_ep,
-    ]
-
-    res = _get_class_for_field_type("test")
-    assert res is _Nested.func
 
 
 def test_structure_field():

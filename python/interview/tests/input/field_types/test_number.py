@@ -29,7 +29,6 @@ def test_number_field_schema():
         "minimum": 0.0,
         "maximum": 2.0,
         "default": 1.0,
-        "nullable": False,
     }
 
 
@@ -37,11 +36,10 @@ def test_number_field_schema_optional():
     schema = field2.get_schema({})
 
     assert schema == {
-        "type": "integer",
+        "type": ["integer", "null"],
         "x-type": "number",
         "minimum": 0,
         "default": 1,
-        "nullable": True,
     }
 
 

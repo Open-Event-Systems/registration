@@ -38,7 +38,6 @@ def test_text_field_schema():
         "pattern": "^[a-f]+$",
         "default": "default",
         "title": "name",
-        "nullable": False,
     }
 
 
@@ -46,14 +45,13 @@ def test_text_field_schema_optional():
     schema = field2.get_schema({"name": "name"})
 
     assert schema == {
-        "type": "string",
+        "type": ["string", "null"],
         "x-type": "text",
         "minLength": 2,
         "maxLength": 4,
         "pattern": "^[a-f]+$",
         "default": "default",
         "title": "name",
-        "nullable": True,
     }
 
 

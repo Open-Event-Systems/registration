@@ -1,14 +1,15 @@
 """Number field type."""
-from typing import Any, Literal, Mapping, Optional
+from typing import Any, Callable, Literal, Optional, Type
 
 import attr
+from attr import Attribute
 from attrs import frozen, validators
-from oes.interview.input.field import BaseField
-from oes.interview.input.types import Context
+from oes.interview.input.field import FieldBase
+from oes.interview.input.types import Context, JSONSchema
 
 
 @frozen(kw_only=True)
-class NumberField(BaseField):
+class NumberField(FieldBase):
     """A number field."""
 
     type: Literal["number"] = "number"
@@ -30,32 +31,42 @@ class NumberField(BaseField):
     """The autocomplete type for this field's input."""
 
     @property
-    def value_type(self) -> object:
+    def value_type(self) -> Type:
         return int if self.integer else float
 
     @property
-    def field_info(self) -> Any:
-        validators_ = []
+    def validators(self) -> list[Callable[[Any, Attribute, Any], Any]]:
+        validators_ = super().validators
+        extra_validators = []
 
         if self.min is not None:
-            validators_.append(validators.ge(self.min))
+            extra_validators.append(validators.ge(self.min))
 
         if self.max is not None:
-            validators_.append(validators.le(self.max))
+            extra_validators.append(validators.le(self.max))
 
+        return [*validators_, validators.optional(extra_validators)]
+
+    @property
+    def field_info(self) -> Any:
         return attr.ib(
             type=self.optional_type,
-            validator=[
-                *self.validators,
-                validators.optional(validators_),
-            ],
+            converter=self._converter,
+            validator=self.validators,
         )
 
-    def get_schema(self, context: Context) -> Mapping[str, object]:
+    def _converter(self, v):
+        if isinstance(v, (int, float)):
+            return int(v) if self.integer else float(v)
+        else:
+            return v
+
+    def get_schema(self, context: Context) -> JSONSchema:
+        num_type = "integer" if self.integer else "number"
+
         schema = {
-            "type": "integer" if self.integer else "number",
-            "x-type": "number",
-            "nullable": self.optional,
+            **super().get_schema(context),
+            "type": [num_type, "null"] if self.optional else num_type,
         }
 
         if self.min is not None:
@@ -64,10 +75,10 @@ class NumberField(BaseField):
         if self.max is not None:
             schema["maximum"] = self.max
 
-        if self.label:
-            schema["title"] = self.label.render(context)
+        if self.autocomplete:
+            schema["x-autocomplete"] = self.autocomplete
 
-        if self.default:
-            schema["default"] = self.default
+        if self.input_mode:
+            schema["x-input-mode"] = self.input_mode
 
         return schema

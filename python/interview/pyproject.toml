@@ -57,20 +57,14 @@ mypy_path = [
 module = [
     "openapidocs.v3",
     "publicsuffixlist",
+    "ruamel",
+    "ruamel.yaml",
 ]
 ignore_missing_imports = true
 
 # Console script entry point
 [tool.poetry.plugins."console_scripts"]
 oes-interview = "oes.interview.server.run:main"
-
-# Field entry points
-[tool.poetry.plugins."oes.interview.field"]
-text = "oes.interview.input.field_types.text:TextField"
-number = "oes.interview.input.field_types.number:NumberField"
-date = "oes.interview.input.field_types.date:DateField"
-button = "oes.interview.input.field_types.button:Button"
-select = "oes.interview.input.field_types.select:SelectField"
 
 [build-system]
 requires = ["poetry-core"]

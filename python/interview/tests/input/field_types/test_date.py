@@ -24,7 +24,6 @@ def test_date_field_schema():
         "x-minimum": date(2020, 1, 1),
         "x-maximum": date(2020, 2, 1),
         "default": date(2020, 1, 1),
-        "nullable": False,
     }
 
 

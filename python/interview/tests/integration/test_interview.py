@@ -25,7 +25,6 @@ async def test_interview_1(
                     "title": "Name",
                     "type": "string",
                     "x-type": "text",
-                    "nullable": False,
                 }
             },
             "required": ["field_0"],

@@ -1,15 +1,15 @@
 """Date field type."""
 from datetime import date
-from typing import Any, Literal, Mapping, Optional
+from typing import Any, Callable, Literal, Optional, Type
 
-import attr
+from attr import Attribute
 from attrs import frozen, validators
-from oes.interview.input.field import BaseField
-from oes.interview.input.types import Context
+from oes.interview.input.field import FieldBase
+from oes.interview.input.types import Context, JSONSchema
 
 
 @frozen(kw_only=True)
-class DateField(BaseField):
+class DateField(FieldBase):
     """A date field."""
 
     type: Literal["date"] = "date"
@@ -21,34 +21,33 @@ class DateField(BaseField):
     max: Optional[date] = None
     """The maximum value."""
 
+    autocomplete: Optional[str] = None
+    """The autocomplete type for this field's input."""
+
     @property
-    def value_type(self) -> object:
+    def value_type(self) -> Type:
         return date
 
     @property
-    def field_info(self) -> Any:
-        validators_ = []
+    def validators(self) -> list[Callable[[Any, Attribute, Any], Any]]:
+        extra_validators = []
 
         if self.min is not None:
-            validators_.append(validators.ge(self.min))
+            extra_validators.append(validators.ge(self.min))
 
         if self.max is not None:
-            validators_.append(validators.le(self.max))
+            extra_validators.append(validators.le(self.max))
 
-        return attr.ib(
-            type=self.optional_type,
-            validator=[
-                *self.validators,
-                validators.optional(validators_),
-            ],
-        )
+        return [
+            *super().validators,
+            validators.optional(extra_validators),
+        ]
 
-    def get_schema(self, context: Context) -> Mapping[str, object]:
+    def get_schema(self, context: Context) -> JSONSchema:
         schema = {
-            "type": "string",
+            **super().get_schema(context),
+            "type": ["string", "null"] if self.optional else "string",
             "format": "date",
-            "x-type": "date",
-            "nullable": self.optional,
         }
 
         if self.min is not None:
@@ -57,10 +56,7 @@ class DateField(BaseField):
         if self.max is not None:
             schema["x-maximum"] = self.max
 
-        if self.label:
-            schema["title"] = self.label.render(context)
-
-        if self.default:
-            schema["default"] = self.default
+        if self.autocomplete:
+            schema["x-autocomplete"] = self.autocomplete
 
         return schema
