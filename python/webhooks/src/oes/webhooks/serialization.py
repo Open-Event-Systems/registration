@@ -1,7 +1,6 @@
 """Serialization module."""
 from cattrs.gen import make_dict_structure_fn
 from cattrs.preconf.orjson import make_converter
-
 from oes.webhooks.email.types import Email, EmailHookBody
 
 converter = make_converter()

@@ -48,7 +48,7 @@ export const SigninDialog = (props: SigninDialogProps) => {
       {
         title: "Sign In",
       },
-      props
+      props,
     )
 
   const { classes, cx } = useStyles(undefined, {
@@ -126,7 +126,7 @@ SigninDialog.Manager = observer((props: SigninDialogManagerProps) => {
         state.selectedOptionRender = null
       }
     }),
-    [signInOptionID]
+    [signInOptionID],
   )
 
   // navigate back on complete

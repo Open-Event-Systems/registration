@@ -10,10 +10,9 @@ from email.utils import format_datetime
 import httpx
 from httpx import BasicAuth
 from loguru import logger
-from typing_extensions import TypeAlias
-
 from oes.webhooks.email.types import Email
 from oes.webhooks.settings import EmailSenderType, EmailSettings, SMTPSettings
+from typing_extensions import TypeAlias
 
 EmailSender: TypeAlias = Callable[[Email, EmailSettings], Awaitable]
 """A callable to send an email."""

@@ -2,9 +2,8 @@
 from typing import Optional
 
 import httpx
-from quart import Response, request
-
 from oes.webhooks.app import app
+from quart import Response, request
 
 _client = httpx.AsyncClient(app=app)
 

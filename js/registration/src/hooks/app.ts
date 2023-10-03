@@ -8,7 +8,7 @@ const defaultConfig: Config = {
 }
 
 export const AppStoreContext = createContext(
-  new AppStore(placeholderWretch, defaultConfig)
+  new AppStore(placeholderWretch, defaultConfig),
 )
 
 export const useAppStore = () => useContext(AppStoreContext)

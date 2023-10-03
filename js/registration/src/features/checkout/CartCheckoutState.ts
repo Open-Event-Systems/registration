@@ -34,7 +34,7 @@ export class CartCheckoutState {
     cartId: string,
     service: PaymentServiceID,
     method?: string,
-    onComplete?: (id: string) => void
+    onComplete?: (id: string) => void,
   ) => Promise<CheckoutState<PaymentServiceID>>
 
   /**
@@ -52,9 +52,9 @@ export class CartCheckoutState {
     createFunc: (
       cartId: string,
       service: PaymentServiceID,
-      method?: string
+      method?: string,
     ) => Promise<CheckoutState<PaymentServiceID>>,
-    onComplete?: (id: string) => void
+    onComplete?: (id: string) => void,
   ) {
     this.cartId = cartId
     this.createFunc = createFunc
@@ -63,17 +63,17 @@ export class CartCheckoutState {
   }
 
   static defaultStateFactory = (
-    wretch: Wretch
+    wretch: Wretch,
   ): ((
     cartId: string,
     service: PaymentServiceID,
-    method?: string
+    method?: string,
   ) => Promise<CheckoutState<PaymentServiceID>>) => {
     const factory = async (
       cartId: string,
       service: PaymentServiceID,
       method?: string,
-      onComplete?: (id: string) => void
+      onComplete?: (id: string) => void,
     ) => {
       const checkout = await createCheckout(wretch, cartId, service, method)
       const update = async (body?: Record<string, unknown>) => {
@@ -94,7 +94,7 @@ export class CartCheckoutState {
         () => getCheckoutComponent(service),
         update,
         cancel,
-        onComplete ? () => onComplete(checkout.id) : undefined
+        onComplete ? () => onComplete(checkout.id) : undefined,
       )
     }
 
@@ -107,7 +107,7 @@ export class CartCheckoutState {
   create(
     cartId: string,
     service: PaymentServiceID,
-    method?: string
+    method?: string,
   ): Promise<CheckoutState<PaymentServiceID>> {
     const onComplete = action((id: string) => {
       this.complete = true
@@ -115,7 +115,7 @@ export class CartCheckoutState {
     })
 
     const loader = createLoader(() =>
-      this.createFunc(cartId, service, method, onComplete)
+      this.createFunc(cartId, service, method, onComplete),
     )
     this.checkout = loader
     return loader

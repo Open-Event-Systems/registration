@@ -21,7 +21,7 @@ export class StripeCheckout {
 
   constructor(
     public checkoutState: CheckoutState<"stripe">,
-    public stripe: Stripe
+    public stripe: Stripe,
   ) {
     this.elements = stripe.elements({
       mode: "payment",
@@ -72,7 +72,7 @@ export class StripeCheckout {
       payResult.data.client_secret
     ) {
       const nextId = await this.handleNextAction(
-        payResult.data.client_secret as string
+        payResult.data.client_secret as string,
       )
       const nextPayResult = await this.checkoutState.update({
         payment_method: nextId,

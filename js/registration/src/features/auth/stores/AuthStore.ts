@@ -39,7 +39,10 @@ export class AuthStore {
   private client: oauth.Client
   private authServer: oauth.AuthorizationServer
 
-  constructor(serverBaseURL: URL, public wretch: Wretch) {
+  constructor(
+    serverBaseURL: URL,
+    public wretch: Wretch,
+  ) {
     this.authWretch = wretch.middlewares([
       getRetryMiddleware(serverBaseURL, this),
     ])
@@ -117,7 +120,7 @@ export class AuthStore {
   set authInfo(value: AuthInfo | null) {
     this._authInfo = value
     this.authInfoPromise = (this.authInfoPromise ?? Promise.resolve(null)).then(
-      () => value
+      () => value,
     )
     saveAuthInfo(value)
   }
@@ -227,13 +230,13 @@ export class AuthStore {
     const resp = await oauth.refreshTokenGrantRequest(
       this.authServer,
       this.client,
-      authToken.refreshToken
+      authToken.refreshToken,
     )
 
     const parsed = await oauth.processRefreshTokenResponse(
       this.authServer,
       this.client,
-      resp
+      resp,
     )
 
     if (oauth.isOAuth2Error(parsed)) {

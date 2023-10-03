@@ -58,10 +58,10 @@ const SelfServiceLoader = ({
   const accessCodeLoader = useLoader(() =>
     accessCode
       ? checkAccessCode(wretch, eventId, accessCode)
-      : Promise.reject(new NotFoundError())
+      : Promise.reject(new NotFoundError()),
   )
   const selfServiceLoader = useLoader(() =>
-    listSelfServiceRegistrations(wretch, eventId, accessCode)
+    listSelfServiceRegistrations(wretch, eventId, accessCode),
   )
 
   const loader = useLoader(async () => {

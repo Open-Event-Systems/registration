@@ -90,12 +90,12 @@ const Manager = observer(
     props: {
       onComplete: (
         response: Promise<WretchResponse>,
-        record: InterviewStateRecord
+        record: InterviewStateRecord,
       ) => Promise<void>
     } & Omit<
       InterviewDialogProps,
       "onSubmit" | "onClose" | "recordId" | "opened"
-    >
+    >,
   ) => {
     const { onComplete, ...other } = props
 
@@ -187,7 +187,7 @@ const Manager = observer(
         {...other}
       />
     )
-  }
+  },
 )
 
 Manager.displayName = "InterviewDialogManager"

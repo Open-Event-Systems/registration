@@ -28,7 +28,7 @@ export class SquareCheckout {
     square: Square,
     private applicationId: string,
     private locationId: string,
-    private checkoutState: CheckoutState<"square">
+    private checkoutState: CheckoutState<"square">,
   ) {
     this.payments = square.payments(this.applicationId, this.locationId)
   }
@@ -51,7 +51,7 @@ export class SquareCheckout {
   async completeCheckout(
     token: string,
     idempotencyKey: string,
-    verificationToken?: string
+    verificationToken?: string,
   ) {
     const update: Record<string, unknown> & SquareCheckoutUpdate = {
       source_id: token,
@@ -83,7 +83,7 @@ export const loadSquare = (sandbox: boolean): Promise<Square> => {
       "src",
       sandbox
         ? "https://sandbox.web.squarecdn.com/v1/square.js"
-        : "https://web.squarecdn.com/v1/square.js"
+        : "https://web.squarecdn.com/v1/square.js",
     )
 
     document.body.appendChild(el)

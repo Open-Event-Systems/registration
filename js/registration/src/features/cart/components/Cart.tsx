@@ -95,7 +95,7 @@ export const Cart = (props: CartProps) => {
 
 const CartDivider = (
   props: Omit<DividerProps, "styles"> &
-    DefaultProps<Selectors<typeof cartStyles>>
+    DefaultProps<Selectors<typeof cartStyles>>,
 ) => {
   const { className, classNames, styles, unstyled, ...other } = props
 

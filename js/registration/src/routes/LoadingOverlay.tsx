@@ -40,7 +40,7 @@ export const LoadingOverlay = observer((props: LoadingOverlayProps) => {
     useComponentDefaultProps(
       "LoadingOverlay",
       { backgroundColor: theme.white },
-      props
+      props,
     )
 
   const { classes, cx } = loadingPageStyles(undefined, {
@@ -91,7 +91,7 @@ export const ShowLoadingOverlay = () => {
         context.loading -= 1
       })
     }),
-    []
+    [],
   )
 
   return null

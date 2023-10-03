@@ -6,7 +6,7 @@ import { useState } from "react"
  */
 export const useLoader = <T>(
   loadFunc: () => Promise<T>,
-  initialValue?: T
+  initialValue?: T,
 ): Loader<T> => {
   const [loader] = useState(() => createLoader(loadFunc, initialValue))
   return loader

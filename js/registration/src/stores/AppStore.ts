@@ -8,7 +8,10 @@ import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
 export class AppStore {
   authStore: AuthStore
 
-  constructor(public wretch: Wretch, public config: Config) {
+  constructor(
+    public wretch: Wretch,
+    public config: Config,
+  ) {
     const apiUrl = new URL(config.apiUrl, window.location.href)
     this.authStore = new AuthStore(apiUrl, wretch)
 

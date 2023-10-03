@@ -76,7 +76,7 @@ export const ModalDialog = (props: ModalDialogProps) => {
 
   const { classes, cx } = useStyles(
     { noPadding },
-    { name: "ModalDialog", classNames, styles, unstyled }
+    { name: "ModalDialog", classNames, styles, unstyled },
   )
 
   const queryResult = useMediaQuery(fullScreenMediaQuery)

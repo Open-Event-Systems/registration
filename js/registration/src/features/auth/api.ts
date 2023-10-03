@@ -21,7 +21,7 @@ export const getAccountInfo = async (wretch: Wretch): Promise<AccountInfo> => {
  */
 export const sendVerificationEmail = async (
   wretch: Wretch,
-  email: string
+  email: string,
 ): Promise<void> => {
   return await wretch
     .url("/auth/email/send")
@@ -36,7 +36,7 @@ export const sendVerificationEmail = async (
 export const verifyEmail = async (
   wretch: Wretch,
   email: string,
-  code: string
+  code: string,
 ): Promise<EmailTokenResponse | null> => {
   return await wretch
     .url("/auth/email/verify")
@@ -51,7 +51,7 @@ export const verifyEmail = async (
  */
 export const createAccount = async (
   wretch: Wretch,
-  emailToken?: string | null
+  emailToken?: string | null,
 ): Promise<oauth.TokenEndpointResponse> => {
   return await wretch
     .url("/auth/account/create")
@@ -66,7 +66,7 @@ export const createAccount = async (
  * Get WebAuthn a registration challenge and options.
  */
 export const getWebAuthnRegistrationChallenge = async (
-  wretch: Wretch
+  wretch: Wretch,
 ): Promise<WebAuthnChallenge> => {
   return await wretch
     .url("/auth/webauthn/register")
@@ -79,7 +79,7 @@ export const getWebAuthnRegistrationChallenge = async (
  */
 export const completeWebAuthnRegistration = async (
   wretch: Wretch,
-  request: WebAuthnChallengeResult
+  request: WebAuthnChallengeResult,
 ): Promise<oauth.TokenEndpointResponse | null> => {
   return await wretch
     .url("/auth/webauthn/register")
@@ -94,7 +94,7 @@ export const completeWebAuthnRegistration = async (
  */
 export const getWebAuthnAuthenticationChallenge = async (
   wretch: Wretch,
-  credentialId: string
+  credentialId: string,
 ): Promise<WebAuthnChallenge> => {
   return await wretch
     .url(`/auth/webauthn/authenticate/${credentialId}`)
@@ -107,7 +107,7 @@ export const getWebAuthnAuthenticationChallenge = async (
  */
 export const completeWebAuthnAuthentication = async (
   wretch: Wretch,
-  request: WebAuthnChallengeResult
+  request: WebAuthnChallengeResult,
 ): Promise<oauth.TokenEndpointResponse | null> => {
   return await wretch
     .url("/auth/webauthn/authenticate")

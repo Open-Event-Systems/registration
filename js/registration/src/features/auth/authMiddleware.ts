@@ -38,7 +38,7 @@ export const setAuthHeader = (
   baseURL: URL,
   accessToken: string | null | undefined,
   url: string,
-  opts: RequestInit
+  opts: RequestInit,
 ): RequestInit => {
   const urlObj = new URL(url, window.location.href)
 

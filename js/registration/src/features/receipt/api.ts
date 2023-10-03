@@ -9,7 +9,7 @@ import { Config } from "#src/types/config.js"
  */
 export const fetchReceipt = async (
   config: Config,
-  receiptId: string
+  receiptId: string,
 ): Promise<PricingResult | null> => {
   const url = `${config.apiUrl}/receipts/${receiptId}`
   const res = await fetch(url)

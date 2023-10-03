@@ -6,11 +6,10 @@ from pathlib import Path
 
 import uvicorn
 from loguru import logger
-from quart import Quart
-
 from oes.webhooks.email.template import get_environment
 from oes.webhooks.log import setup_logging
 from oes.webhooks.settings import Settings, load_settings
+from quart import Quart
 
 app = Quart(__name__)
 

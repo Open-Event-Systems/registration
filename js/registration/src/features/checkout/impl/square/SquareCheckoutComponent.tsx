@@ -39,7 +39,7 @@ export const SquareCheckoutComponent = ({
       await squareVal.completeCheckout(
         res.token,
         idempotencyKey,
-        verificationToken ?? undefined
+        verificationToken ?? undefined,
       )
     }
   }
@@ -51,8 +51,8 @@ export const SquareCheckoutComponent = ({
           square,
           checkoutData.application_id,
           checkoutData.location_id,
-          state
-        )
+          state,
+        ),
       )
     })
   }, [])
@@ -96,7 +96,7 @@ export const SquareCheckoutComponent = ({
             handleSubmit().catch((e) => {
               setSubmitting(false)
               throw e
-            })
+            }),
           )
           .catch(() => void 0)
           .finally(() => {

@@ -39,12 +39,12 @@ export class NotFoundError extends Error {
 
 export type LoaderFactory<T> = (
   loadFunc: () => Promise<T>,
-  initialValue?: T
+  initialValue?: T,
 ) => Loader<T>
 
 export const createLoader = <T>(
   loadFunc: () => Promise<T>,
-  initialValue?: T
+  initialValue?: T,
 ): Loader<T> => {
   const obj = makeAutoObservable({
     state: initialValue != null ? LoadingState.ready : LoadingState.loading,
@@ -81,12 +81,18 @@ export const createLoader = <T>(
     },
     then<R1 = T, R2 = never>(
       onfulfilled?: ((v: T) => R1 | PromiseLike<R1>) | null | undefined,
-      onrejected?: ((error: unknown) => R2 | PromiseLike<R2>) | null | undefined
+      onrejected?:
+        | ((error: unknown) => R2 | PromiseLike<R2>)
+        | null
+        | undefined,
     ): Promise<R1 | R2> {
       return this.load().then(onfulfilled, onrejected)
     },
     catch<R2 = never>(
-      onrejected?: ((error: unknown) => R2 | PromiseLike<R2>) | null | undefined
+      onrejected?:
+        | ((error: unknown) => R2 | PromiseLike<R2>)
+        | null
+        | undefined,
     ): Promise<T | R2> {
       return this.load().catch(onrejected)
     },

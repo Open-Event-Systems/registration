@@ -9,7 +9,7 @@ import { StateResponse } from "@open-event-systems/interview-lib"
  */
 export const fetchEmptyCart = async (
   wretch: Wretch,
-  eventId: string
+  eventId: string,
 ): Promise<[string, Cart]> => {
   const res = await wretch
     .url("/carts/empty")
@@ -32,7 +32,7 @@ export const fetchEmptyCart = async (
  */
 export const fetchCart = async (
   wretch: Wretch,
-  cartId: string
+  cartId: string,
 ): Promise<Cart> => {
   const res = await wretch.url(`/carts/${cartId}`).get().json<Cart>()
 
@@ -44,7 +44,7 @@ export const fetchCart = async (
  */
 export const fetchCartPricingResult = async (
   wretch: Wretch,
-  cartId: string
+  cartId: string,
 ) => {
   const res = await wretch
     .url(`/carts/${cartId}/pricing-result`)
@@ -61,7 +61,7 @@ export const fetchCartInterview = async (
   cartId: string,
   interviewId: string,
   registrationId?: string,
-  accessCode?: string
+  accessCode?: string,
 ): Promise<StateResponse> => {
   let req = wretch.url(`/carts/${cartId}/new-interview`).addon(queryStringAddon)
 
@@ -91,7 +91,7 @@ export const fetchCartInterview = async (
  */
 export const fetchAvailableCheckoutMethods = async (
   wretch: Wretch,
-  cartId: string
+  cartId: string,
 ): Promise<CheckoutMethod[]> => {
   const res = await wretch
     .url(`/carts/${cartId}/checkout-methods`)
@@ -110,7 +110,7 @@ export const fetchAvailableCheckoutMethods = async (
 export const removeRegistrationFromCart = async (
   wretch: Wretch,
   cartId: string,
-  registrationId: string
+  registrationId: string,
 ): Promise<[string, Cart]> => {
   const res = await wretch
     .url(`/carts/${cartId}/registrations/${registrationId}`)

@@ -19,7 +19,7 @@ export type AccessCodeOptionsDialogProps = {
 } & Omit<ModalDialogProps, "onSelect" | "children">
 
 export const AccessCodeOptionsDialog = (
-  props: AccessCodeOptionsDialogProps
+  props: AccessCodeOptionsDialogProps,
 ) => {
   const { response, registrationId, onSelect, ...other } = props
 
@@ -50,7 +50,7 @@ export const AccessCodeOptionsDialog = (
     title = "Change Registration"
 
     const registration = response.registrations.find(
-      (r) => r.registration.id == registrationId
+      (r) => r.registration.id == registrationId,
     )
     const options = registration?.change_options ?? []
 
@@ -115,7 +115,7 @@ const AccessCodeOptionsDialogManager = observer(
                 currentCartStore,
                 interviewId,
                 registrationId,
-                accessCode
+                accessCode,
               )
 
               navigate(loc, {
@@ -136,7 +136,7 @@ const AccessCodeOptionsDialogManager = observer(
         {...other}
       />
     )
-  }
+  },
 )
 
 AccessCodeOptionsDialog.Manager = AccessCodeOptionsDialogManager

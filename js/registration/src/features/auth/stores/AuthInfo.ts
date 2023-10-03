@@ -24,7 +24,7 @@ export class AuthInfo {
     expiresAt: Date | number | null = null,
     public scope: string | null = null,
     public accountId: string | null = null,
-    public email: string | null = null
+    public email: string | null = null,
   ) {
     if (typeof expiresAt == "number") {
       this.expiresAt = new Date(expiresAt * 1000)
@@ -50,7 +50,7 @@ export class AuthInfo {
       expiresAt,
       response.scope ?? null,
       response.account_id ?? null,
-      response.email ?? null
+      response.email ?? null,
     )
   }
 
@@ -69,7 +69,7 @@ export class AuthInfo {
         parsed.expiresAt ?? null,
         parsed.scope ?? null,
         parsed.accountId ?? null,
-        parsed.email ?? null
+        parsed.email ?? null,
       )
     } catch (_) {
       return null

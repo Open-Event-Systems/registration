@@ -33,8 +33,8 @@ export const CheckoutManager = observer(
           cartId,
           CartCheckoutState.defaultStateFactory(wretch),
           // hazard: onComplete is closed over
-          onComplete
-        )
+          onComplete,
+        ),
     )
 
     const loc = useLocation()
@@ -74,7 +74,7 @@ export const CheckoutManager = observer(
         )}
       </CheckoutDialog>
     )
-  }
+  },
 )
 
 CheckoutManager.displayName = "CheckoutManager"

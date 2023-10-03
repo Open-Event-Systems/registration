@@ -20,7 +20,7 @@ export class CartStore {
 
   constructor(
     public wretch: Wretch,
-    public interviewStateStore: InterviewStateStore
+    public interviewStateStore: InterviewStateStore,
   ) {
     makeAutoObservable(this)
   }
@@ -46,17 +46,17 @@ export class CartStore {
 
   async removeRegistrationFromCart(
     cartId: string,
-    registrationId: string
+    registrationId: string,
   ): Promise<[string, Cart]> {
     const [id, cart] = await removeRegistrationFromCart(
       this.wretch,
       cartId,
-      registrationId
+      registrationId,
     )
     runInAction(() => {
       this.loaders.set(
         id,
-        createLoader(async () => cart)
+        createLoader(async () => cart),
       )
     })
     return [id, cart]
@@ -76,14 +76,14 @@ export class CartStore {
     cart: Cart,
     interviewId: string,
     registrationId?: string,
-    accessCode?: string
+    accessCode?: string,
   ): Promise<InterviewStateRecord> {
     const res = await fetchCartInterview(
       this.wretch,
       cartId,
       interviewId,
       registrationId,
-      accessCode
+      accessCode,
     )
     return await this.interviewStateStore.startInterview(res, {
       cartId: cartId,
@@ -103,7 +103,7 @@ export class CartStore {
     currentCart: CurrentCartStore,
     interviewId: string,
     registrationId?: string,
-    accessCode?: string
+    accessCode?: string,
   ): Promise<InterviewStateRecord> {
     const [cartId, cart] = await currentCart.checkAndSetCurrentCart()
     return await this.startInterviewForCart(
@@ -111,7 +111,7 @@ export class CartStore {
       cart,
       interviewId,
       registrationId,
-      accessCode
+      accessCode,
     )
   }
 }
@@ -123,7 +123,7 @@ export class CurrentCartStore {
   constructor(
     public wretch: Wretch,
     public eventId: string,
-    public cartStore: CartStore
+    public cartStore: CartStore,
   ) {
     this.currentCartId = getCurrentCartId() ?? null
     makeAutoObservable(this)
@@ -134,7 +134,7 @@ export class CurrentCartStore {
         if (cartId) {
           setCurrentCartId(cartId)
         }
-      }
+      },
     )
   }
 

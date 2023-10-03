@@ -24,7 +24,7 @@ export const Logo = (props: LogoProps) => {
         alt: "Logo",
         src: logoSrc,
       },
-      props
+      props,
     )
 
   const { classes, cx } = useStyles(undefined, {

@@ -170,7 +170,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
 
   if (localState.step == Step.complete && webAuthn) {
     const webAuthnDetails = getPlatformWebAuthnDetails(
-      window.navigator.userAgent
+      window.navigator.userAgent,
     )
 
     // show sign in options
@@ -209,7 +209,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
               performWebAuthnRegistration(
                 wretch,
                 localState.webAuthnChallenge,
-                localState.emailToken
+                localState.emailToken,
               )
                 .then((res) => {
                   if (res) {
@@ -297,7 +297,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
                     action((challenge) => {
                       localState.webAuthnChallenge = challenge
                       localState.step = Step.complete
-                    })
+                    }),
                   )
                 } else {
                   return localState.create().then((authInfo) => {

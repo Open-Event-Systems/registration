@@ -7,7 +7,6 @@ from typing import Optional, Union
 
 import jinja2.sandbox
 from jinja2 import ChainableUndefined
-
 from oes.webhooks.email.html import process_html
 from oes.webhooks.email.types import Attachment, AttachmentType
 

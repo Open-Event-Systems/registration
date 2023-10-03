@@ -53,7 +53,7 @@ class PlatformWebAuthnOption implements SignInOption {
   constructor(
     public wretch: Wretch,
     challenge: WebAuthnChallenge,
-    onError?: () => void
+    onError?: () => void,
   ) {
     this.challenge = challenge
     this.onError = onError ?? null
@@ -63,7 +63,7 @@ class PlatformWebAuthnOption implements SignInOption {
   async getRender() {
     const result = await performWebAuthnRegistration(
       this.wretch,
-      this.challenge
+      this.challenge,
     )
     if (result) {
       const [credentialId, tokenResponse] = result
@@ -81,7 +81,7 @@ class PlatformWebAuthnOption implements SignInOption {
  */
 export const getPlatformWebAuthnSignIn = async (
   wretch: Wretch,
-  state: SignInState
+  state: SignInState,
 ) => {
   const credentialId = getSavedWebAuthnCredentialId()
 
@@ -95,7 +95,7 @@ export const getPlatformWebAuthnSignIn = async (
   if (webAuthnAvailable == "platform") {
     const challenge = await getWebAuthnRegistrationChallenge(wretch)
     return new PlatformWebAuthnOption(wretch, challenge, () =>
-      state.setWebAuthnError()
+      state.setWebAuthnError(),
     )
   } else {
     return null
@@ -128,7 +128,7 @@ class WebAuthnAuthenticationOption implements SignInOption {
   constructor(
     public wretch: Wretch,
     challenge: WebAuthnChallenge,
-    onError?: () => void
+    onError?: () => void,
   ) {
     this.challenge = challenge
     this.onError = onError ?? null
@@ -138,7 +138,7 @@ class WebAuthnAuthenticationOption implements SignInOption {
   async getRender() {
     const result = await performWebAuthnAuthentication(
       this.wretch,
-      this.challenge
+      this.challenge,
     )
     if (result) {
       return result
@@ -165,7 +165,7 @@ export const getWebAuthnAuthenticationSignIn = async (wretch: Wretch) => {
   if (webAuthnAvailable) {
     const challenge = await getWebAuthnAuthenticationChallenge(
       wretch,
-      credentialId
+      credentialId,
     )
     return new WebAuthnAuthenticationOption(wretch, challenge)
   } else {
@@ -193,7 +193,7 @@ export const getWebAuthnAvailability = async (): Promise<
 export const performWebAuthnRegistration = async (
   wretch: Wretch,
   challenge: WebAuthnChallenge,
-  emailToken?: string | null
+  emailToken?: string | null,
 ): Promise<[string, AuthInfo] | null> => {
   let registration
   try {
@@ -223,7 +223,7 @@ export const performWebAuthnRegistration = async (
 
 export const performWebAuthnAuthentication = async (
   wretch: Wretch,
-  challenge: WebAuthnChallenge
+  challenge: WebAuthnChallenge,
 ): Promise<AuthInfo | null> => {
   let auth
   try {
@@ -254,7 +254,7 @@ export const performWebAuthnAuthentication = async (
  * Get names/descriptions/icons for different platforms' WebAuthn implementation.
  */
 export const getPlatformWebAuthnDetails = (
-  userAgent: string
+  userAgent: string,
 ): PlatformWebAuthnDetails => {
   if (/(iPhone|iPad)/.test(userAgent)) {
     return {
@@ -300,7 +300,7 @@ export const getPlatformWebAuthnDetails = (
  */
 export const getSavedWebAuthnCredentialId = () => {
   const id = window.localStorage.getItem(
-    WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY
+    WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY,
   )
   if (!id || typeof id !== "string") {
     return null
@@ -313,12 +313,12 @@ export const getSavedWebAuthnCredentialId = () => {
  * Save the WebAuthn credential ID.
  */
 export const saveWebAuthnCredentialId = (
-  credentialId: string | null | undefined
+  credentialId: string | null | undefined,
 ) => {
   if (credentialId) {
     window.localStorage.setItem(
       WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY,
-      credentialId
+      credentialId,
     )
   } else {
     window.localStorage.removeItem(WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY)

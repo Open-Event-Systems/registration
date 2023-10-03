@@ -31,7 +31,7 @@ export const CartPage = observer(() => {
   const currentCartStore = useCurrentCartStore()
 
   const [cartId, setCartId] = useState<string | null>(
-    currentCartStore.currentCartId
+    currentCartStore.currentCartId,
   )
   const [cart, setCart] = useState<Loader<Cart> | null>(currentCartStore.loader)
 
@@ -136,7 +136,7 @@ const CartView = observer(
                         const [newId, newCart] =
                           await currentCartStore.cartStore.removeRegistrationFromCart(
                             cartId,
-                            reg.registration_id
+                            reg.registration_id,
                           )
                         currentCartStore.setCurrentCart(newId, newCart)
                       }}
@@ -231,7 +231,7 @@ const CartView = observer(
         )}
       </loader.Component>
     )
-  }
+  },
 )
 
 CartView.displayName = "CartView"

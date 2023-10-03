@@ -11,7 +11,7 @@ import { queryStringAddon } from "wretch/addons"
 export const listSelfServiceRegistrations = async (
   wretch: Wretch,
   eventId?: string,
-  accessCode?: string
+  accessCode?: string,
 ): Promise<SelfServiceRegistrationListResponse> => {
   let req = wretch.url("/self-service/registrations").addon(queryStringAddon)
 
@@ -35,7 +35,7 @@ export const listSelfServiceRegistrations = async (
 export const checkAccessCode = async (
   wretch: Wretch,
   eventId: string,
-  accessCode: string
+  accessCode: string,
 ): Promise<true> => {
   await wretch
     .url(`/access-code/${accessCode}`)

@@ -45,7 +45,7 @@ const _ButtonList = forwardRef(
         {children}
       </Box>
     )
-  }
+  },
 )
 
 _ButtonList.displayName = "ButtonList"
@@ -99,7 +99,7 @@ const _ButtonListButton = forwardRef<HTMLButtonElement, ButtonListButtonProps>(
         {children}
       </Button>
     )
-  }
+  },
 )
 
 _ButtonListButton.displayName = "ButtonListButton"

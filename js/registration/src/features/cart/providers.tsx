@@ -30,7 +30,7 @@ export const CurrentCartStoreProvider = ({
   const wretch = useWretch()
   const cartStore = useCartStore()
   const [currentCartStore] = useState(
-    () => new CurrentCartStore(wretch, eventId, cartStore)
+    () => new CurrentCartStore(wretch, eventId, cartStore),
   )
 
   return (

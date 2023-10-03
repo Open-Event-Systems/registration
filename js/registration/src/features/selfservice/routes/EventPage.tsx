@@ -187,7 +187,7 @@ const RegistrationsView = observer(
                 if (!cartId) {
                   const [curOrEmptyCartId] = await fetchCurrentOrEmptyCart(
                     wretch,
-                    event.id
+                    event.id,
                   )
                   cartId = curOrEmptyCartId
                 }
@@ -196,7 +196,7 @@ const RegistrationsView = observer(
                   wretch,
                   cartId,
                   id,
-                  r.registration.id
+                  r.registration.id,
                 )
                 const next = await interviewState.startInterview(state, {
                   cartId: cartId,
@@ -220,7 +220,7 @@ const RegistrationsView = observer(
         </CardGrid>
       )
     }
-  }
+  },
 )
 
 RegistrationsView.displayName = "RegistrationsView"

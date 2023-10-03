@@ -75,7 +75,7 @@ export const LoaderComponent = observer(
         {childContent}
       </Loading>
     )
-  }
+  },
 )
 
 LoaderComponent.displayName = "LoaderComponent"

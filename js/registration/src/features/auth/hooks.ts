@@ -4,7 +4,7 @@ import { createContext, useContext } from "react"
 
 const defaultAuthStore = new AuthStore(
   new URL(window.location.href),
-  placeholderWretch
+  placeholderWretch,
 )
 
 export const AuthContext = createContext(defaultAuthStore)

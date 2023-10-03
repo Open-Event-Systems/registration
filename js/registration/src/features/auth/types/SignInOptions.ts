@@ -30,7 +30,7 @@ export interface SignInOption {
 
 export type SignInOptionFactory = (
   wretch: Wretch,
-  state: SignInState
+  state: SignInState,
 ) => Promise<SignInOption | null>
 
 export interface SignInOptions {

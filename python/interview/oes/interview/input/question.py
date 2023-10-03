@@ -6,7 +6,7 @@ from attrs import Factory, field, frozen
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.interview.input.response import create_response_parser, map_field_names
-from oes.interview.input.types import Field, ResponseParser, Whenable
+from oes.interview.input.types import Field, JSONSchema, ResponseParser, Whenable
 from oes.interview.util import validate_identifier
 from oes.template import Context, Template, ValueOrEvaluable
 
@@ -41,7 +41,7 @@ class Question(Whenable):
         """The user response parser function."""
         return self._response_parser
 
-    def get_schema(self, context: Context) -> Mapping[str, object]:
+    def get_schema(self, context: Context) -> JSONSchema:
         """Get the JSON schema for this question.
 
         Args:
@@ -52,9 +52,7 @@ class Question(Whenable):
         properties = {nm: field.get_schema(context) for nm, field in by_name.items()}
 
         required = [
-            nm
-            for nm, field_schema in properties.items()
-            if not _is_optional(field_schema)
+            nm for nm, field_schema in by_name.items() if not field_schema.optional
         ]
 
         schema = {
@@ -96,7 +94,3 @@ def make_question_unstructure_fn(
 
 def _make_parser(question: Question) -> ResponseParser:
     return create_response_parser(question.id, question.fields)
-
-
-def _is_optional(schema: Mapping[str, object]) -> bool:
-    return schema.get("nullable") is True

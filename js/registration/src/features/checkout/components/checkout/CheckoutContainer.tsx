@@ -95,7 +95,7 @@ export const CheckoutContainer = observer(
         <LoadingOverlay {...LoadingOverlayProps} visible={showLoading} />
       </>
     )
-  }
+  },
 )
 
 CheckoutContainer.displayName = "CheckoutContainer"

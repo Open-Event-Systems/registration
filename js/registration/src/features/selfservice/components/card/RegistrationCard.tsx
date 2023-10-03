@@ -102,13 +102,13 @@ export type RegistrationCardPlaceholderProps = DefaultProps<
   SkeletonProps
 
 export const RegistrationCardPlaceholder = (
-  props: RegistrationCardPlaceholderProps
+  props: RegistrationCardPlaceholderProps,
 ) => {
   const { className, classNames, styles, unstyled, height, ...other } =
     useComponentDefaultProps(
       "RegistrationCardPlaceholder",
       { height: 150 },
-      props
+      props,
     )
 
   const { classes, cx } = placeholderStyles(undefined, {

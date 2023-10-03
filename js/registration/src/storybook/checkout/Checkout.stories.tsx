@@ -54,7 +54,7 @@ export const Mock = () => {
         checkout.data,
         () => getCheckoutComponent("mock"),
         updateMock,
-        cancelMock
+        cancelMock,
       )
     }
 

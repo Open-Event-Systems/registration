@@ -14,7 +14,7 @@ export default {
 } as Meta<CurrencyProps & { currency: string }>
 
 export const Default: StoryFn<CurrencyProps & { currency: string }> = (
-  args
+  args,
 ) => {
   return (
     <CurrencyContext.Provider value={args.currency}>

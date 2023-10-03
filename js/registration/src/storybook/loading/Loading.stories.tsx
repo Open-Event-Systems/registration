@@ -14,7 +14,7 @@ const load =
 
 const loadNotFound = () =>
   new Promise((_, rej) =>
-    window.setTimeout(() => rej(new NotFoundError()), 2000)
+    window.setTimeout(() => rej(new NotFoundError()), 2000),
   )
 
 export const Default = () => {

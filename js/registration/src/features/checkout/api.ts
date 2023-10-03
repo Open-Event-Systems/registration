@@ -17,7 +17,7 @@ export const createCheckout = async <ID extends PaymentServiceID>(
   wretch: Wretch,
   cartId: string,
   service: ID,
-  method: string | undefined
+  method: string | undefined,
 ): Promise<CheckoutResponse<ID>> => {
   const res = await wretch
     .url(`/carts/${cartId}/checkout`)
@@ -36,7 +36,7 @@ export const createCheckout = async <ID extends PaymentServiceID>(
 export const updateCheckout = async <ID extends PaymentServiceID>(
   wretch: Wretch,
   checkoutId: string,
-  data?: Record<string, unknown>
+  data?: Record<string, unknown>,
 ): Promise<CheckoutResponse<ID> | null> => {
   let req = await wretch.url(`/checkouts/${checkoutId}/update`)
 
@@ -64,7 +64,7 @@ export const updateCheckout = async <ID extends PaymentServiceID>(
  */
 export const cancelCheckout = async (
   wretch: Wretch,
-  checkoutId: string
+  checkoutId: string,
 ): Promise<void> => {
   await wretch.url(`/checkouts/${checkoutId}/cancel`).put().res()
 }

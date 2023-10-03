@@ -14,7 +14,7 @@ const COOKIE_NAME = "oes-current-cart"
  */
 export const setCurrentCartId = (id: string) => {
   const cookieStr = `${COOKIE_NAME}=${encodeURIComponent(
-    id
+    id,
   )}; path=/; SameSite=Strict`
   document.cookie = cookieStr
 }
@@ -39,7 +39,7 @@ export const getCurrentCartId = (): string | undefined => {
  */
 export const fetchCurrentOrEmptyCart = async (
   wretch: Wretch,
-  eventId: string
+  eventId: string,
 ): Promise<readonly [string, Cart]> => {
   const currentId = getCurrentCartId()
 
@@ -61,7 +61,7 @@ export const fetchCurrentOrEmptyCart = async (
 export const fetchCartOrEmpty = async (
   wretch: Wretch,
   cartId: string,
-  eventId: string
+  eventId: string,
 ): Promise<readonly [string, Cart]> => {
   const result = await handleNotFound(fetchCart(wretch, cartId))
 

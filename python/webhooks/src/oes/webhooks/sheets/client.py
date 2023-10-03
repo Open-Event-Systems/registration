@@ -6,7 +6,6 @@ from typing import Any
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from loguru import logger
-
 from oes.webhooks.settings import GoogleSheetsHook
 
 

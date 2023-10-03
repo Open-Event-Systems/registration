@@ -4,11 +4,10 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Optional
 
-from quart import Response, request
-from werkzeug.exceptions import NotFound
-
 from oes.webhooks.app import app
 from oes.webhooks.settings import Settings
+from quart import Response, request
+from werkzeug.exceptions import NotFound
 
 if TYPE_CHECKING:
     from oes.webhooks.sheets.client import GoogleSheetsClient

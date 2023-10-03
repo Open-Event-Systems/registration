@@ -5,7 +5,7 @@ import { Wretch } from "wretch"
  * Fetch a list of events.
  */
 export const listEvents = async (
-  wretch: Wretch
+  wretch: Wretch,
 ): Promise<Map<string, Event>> => {
   const res = await wretch.url("/events").get().json<Event[]>()
   const map = new Map<string, Event>()

@@ -5,12 +5,12 @@ import { createContext, useContext } from "react"
 
 const defaultStore = new CartStore(
   placeholderWretch,
-  new InterviewStateStore(placeholderWretch)
+  new InterviewStateStore(placeholderWretch),
 )
 
 export const CartStoreContext = createContext(defaultStore)
 export const CurrentCartStoreContext = createContext(
-  new CurrentCartStore(placeholderWretch, "", defaultStore)
+  new CurrentCartStore(placeholderWretch, "", defaultStore),
 )
 
 export const useCartStore = () => useContext(CartStoreContext)

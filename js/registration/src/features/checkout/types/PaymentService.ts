@@ -34,7 +34,7 @@ export const checkoutComponents: {
 }
 
 export const getCheckoutComponent = async <ID extends PaymentServiceID>(
-  service: ID
+  service: ID,
 ): Promise<CheckoutComponent<ID>> => {
   const promise = checkoutComponents[service]
   if (!promise) {

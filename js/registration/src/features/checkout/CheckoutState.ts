@@ -43,7 +43,7 @@ export class CheckoutState<ID extends PaymentServiceID> {
    * Function to update the checkout.
    */
   updateFunc: (
-    body?: Record<string, unknown>
+    body?: Record<string, unknown>,
   ) => Promise<CheckoutResponse<ID> | null>
 
   /**
@@ -85,10 +85,10 @@ export class CheckoutState<ID extends PaymentServiceID> {
     data: PaymentServiceMap[ID],
     getComponent: () => Promise<CheckoutComponent<ID>>,
     updateFunc: (
-      body?: Record<string, unknown>
+      body?: Record<string, unknown>,
     ) => Promise<CheckoutResponse<ID> | null>,
     cancelFunc: () => Promise<void>,
-    onComplete?: () => void
+    onComplete?: () => void,
   ) {
     this.cartId = cartId
     this.service = service
@@ -166,7 +166,7 @@ export class CheckoutState<ID extends PaymentServiceID> {
       action((err) => {
         this.error = err
         throw err
-      })
+      }),
     )
   }
 
@@ -178,7 +178,7 @@ export class CheckoutState<ID extends PaymentServiceID> {
       action((res) => {
         this.setComplete()
         return res
-      })
+      }),
     )
   }
 

@@ -41,7 +41,10 @@ export class SignInStore implements SignInState {
     this.authStore.authInfo = authInfo
   }
 
-  constructor(public wretch: Wretch, private authStore: AuthStore) {
+  constructor(
+    public wretch: Wretch,
+    private authStore: AuthStore,
+  ) {
     makeAutoObservable(this)
   }
 
@@ -54,7 +57,7 @@ export class SignInStore implements SignInState {
 
   private async loadOptions() {
     const results = await Promise.all(
-      Object.values(signInOptions).map((opt) => opt(this.wretch, this))
+      Object.values(signInOptions).map((opt) => opt(this.wretch, this)),
     )
     const allowed = results.filter((opt): opt is SignInOption => !!opt)
     runInAction(() => {

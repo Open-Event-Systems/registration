@@ -7,15 +7,14 @@ from typing import Optional
 import jinja2
 from cattrs import BaseValidationError, ClassValidationError
 from loguru import logger
-from quart import Response, request
-from werkzeug.exceptions import NotFound, UnprocessableEntity
-
 from oes.webhooks.app import app
 from oes.webhooks.email.sender import get_sender
 from oes.webhooks.email.template import Attachments, Subject, render_message
 from oes.webhooks.email.types import Email, EmailHookBody
 from oes.webhooks.serialization import converter
 from oes.webhooks.settings import Settings
+from quart import Response, request
+from werkzeug.exceptions import NotFound, UnprocessableEntity
 
 
 @app.post("/email/<path:path>")

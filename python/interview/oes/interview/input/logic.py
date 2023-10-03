@@ -23,6 +23,6 @@ def structure_evaluable_or_sequence(
 ) -> Union[Sequence[ValueOrEvaluable], ValueOrEvaluable]:
     """Structure a single expression or sequence of expressions."""
     if isinstance(v, Sequence) and not isinstance(v, str):
-        return converter.structure(v, Tuple[ValueOrEvaluable, ...])
+        return converter.structure(v, Tuple[ValueOrEvaluable, ...])  # type: ignore
     else:
-        return converter.structure(v, ValueOrEvaluable)
+        return converter.structure(v, ValueOrEvaluable)  # type: ignore

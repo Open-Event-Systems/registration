@@ -54,6 +54,11 @@ class Field(_Protocol[Any], Protocol):
         ...
 
     @property
+    def optional(self) -> bool:
+        """Whether the field is optional."""
+        return False
+
+    @property
     @abstractmethod
     def set(self) -> Optional[Locator]:
         """The variable location to set."""

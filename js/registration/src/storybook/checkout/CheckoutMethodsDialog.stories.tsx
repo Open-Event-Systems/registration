@@ -27,7 +27,7 @@ export const With_Promise: StoryFn<typeof CheckoutMethodsDialog> = (args) => {
     <CheckoutMethodsDialog
       {...other}
       methods={createLoader(() =>
-        new Promise((r) => window.setTimeout(r, 1000)).then(() => methods)
+        new Promise((r) => window.setTimeout(r, 1000)).then(() => methods),
       )}
     />
   )
@@ -40,7 +40,7 @@ export const Auto_Select: StoryFn<typeof CheckoutMethodsDialog> = (args) => {
       methods={createLoader(() =>
         new Promise((r) => window.setTimeout(r, 1000)).then(() => [
           { service: "mock", name: "Default" },
-        ])
+        ]),
       )}
     />
   )

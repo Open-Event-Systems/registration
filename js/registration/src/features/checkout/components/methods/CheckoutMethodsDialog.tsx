@@ -44,7 +44,7 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
         zIndex: 1000,
       },
     },
-    props
+    props,
   )
 
   const { classes, cx } = useStyles(undefined, {
@@ -56,7 +56,7 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
 
   const [loaded, setLoaded] = useState("then" in methods ? false : true)
   const [methodsArray, setMethodsArray] = useState<CheckoutMethod[]>(
-    "then" in methods ? [] : methods
+    "then" in methods ? [] : methods,
   )
 
   const showOptions = loaded && methodsArray.length != 1

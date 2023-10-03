@@ -284,7 +284,7 @@ const ReceiptCode = (props: ReceiptCodeProps) => {
         className,
         !dataURL
           ? classes?.codeImgLoading || receiptClassNames.codeImgLoading
-          : void 0
+          : void 0,
       )}
       src={dataURL}
       alt=""
@@ -402,7 +402,7 @@ const getClasses = (
 ): string => {
   const mainName = (classes && classes[key]) || receiptClassNames[key]
   const otherNames = names.filter(
-    (v): v is string => !!v && typeof v == "string"
+    (v): v is string => !!v && typeof v == "string",
   )
   return [mainName, ...otherNames].join(" ")
 }
