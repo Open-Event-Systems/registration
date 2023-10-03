@@ -1,13 +1,16 @@
 from collections.abc import Mapping
 from typing import Optional
+from unittest.mock import create_autospec, patch
 
+import httpx
 import orjson
 import pytest
 import pytest_asyncio
 from blacksheep import Content, Response
 from blacksheep.testing import TestClient
+from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import InterviewConfig, load_interviews
-from oes.interview.serialization import converter
+from oes.interview.serialization import configure_converter, converter
 from oes.interview.server.app import make_app
 from oes.interview.server.settings import Settings
 from oes.interview.variables.env import jinja2_env
@@ -29,12 +32,28 @@ def interview_config():
         yield load_interviews(converter, "tests/test_data/interviews.yml")
 
 
+@pytest.fixture
+def mock_client():
+    return create_autospec(httpx.AsyncClient)
+
+
 @pytest_asyncio.fixture
-async def app(settings: Settings, interview_config: InterviewConfig):
-    app = make_app(settings, interview_config)
-    await app.start()
-    yield app
-    await app.stop()
+async def app(
+    settings: Settings,
+    interview_config: InterviewConfig,
+    mock_client: httpx.AsyncClient,
+):
+    converter = make_converter()
+    configure_converter(converter)
+
+    with patch("oes.interview.server.app.httpx") as httpx_mock:
+        httpx_mock.AsyncClient.return_value = mock_client
+        app = make_app(settings, interview_config)
+
+        await app.start()
+
+        yield app
+        await app.stop()
 
 
 @pytest.fixture

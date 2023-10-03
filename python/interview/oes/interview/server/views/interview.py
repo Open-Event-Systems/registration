@@ -14,6 +14,7 @@ from oes.interview.interview.error import InvalidStateError
 from oes.interview.interview.interview import Interview
 from oes.interview.interview.run import run_interview
 from oes.interview.interview.state import InterviewState
+from oes.interview.interview.types import StepConfig
 from oes.interview.serialization import converter
 from oes.interview.server.app import json_response, router
 from oes.interview.server.docs import (
@@ -194,6 +195,7 @@ async def start_interview(
     request: Request,
     interviews: InterviewConfig,
     settings: Settings,
+    step_config: StepConfig,
 ) -> Response:
     """Start an interview."""
     interview = check_404(interviews.get(interview_id))
@@ -210,7 +212,7 @@ async def start_interview(
     accept = request.get_first_header(b"accept")
 
     # get to the first content
-    state, content = await run_interview(state)
+    state, content = await run_interview(state, step_config)
 
     if accept == b"application/octet-stream":
         return make_blob_state_response(

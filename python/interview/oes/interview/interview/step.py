@@ -3,19 +3,17 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from http.cookiejar import Cookie, CookieJar
-from typing import ClassVar, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
-import httpx
+import orjson
 from attrs import frozen
 from cattrs import Converter
-from cattrs.preconf.orjson import OrjsonConverter, make_converter
 from oes.interview.input.logic import evaluate_whenable
 from oes.interview.interview.error import InterviewError
 from oes.interview.interview.interview import StepResult
 from oes.interview.interview.result import AskResult, ExitResult, ResultContent
 from oes.interview.interview.state import InterviewState
-from oes.interview.interview.types import Step
+from oes.interview.interview.types import Step, StepConfig
 from oes.interview.variables.locator import Locator, UndefinedError
 from oes.interview.variables.undefined import Undefined
 from oes.template import Context, Expression, Template, ValueOrEvaluable, evaluate
@@ -31,7 +29,7 @@ class AskStep(Step):
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """``when`` conditions."""
 
-    async def __call__(self, state: InterviewState) -> StepResult:
+    async def __call__(self, state: InterviewState, config: StepConfig) -> StepResult:
         # skip if the question was already asked
         if self.ask in state.answered_question_ids:
             return StepResult(state, changed=False)
@@ -64,7 +62,7 @@ class SetStep(Step):
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """``when`` conditions."""
 
-    async def __call__(self, state: InterviewState) -> StepResult:
+    async def __call__(self, state: InterviewState, config: StepConfig) -> StepResult:
         ctx = state.template_context
         is_set, cur_val = self._get_value(state.template_context)
 
@@ -105,7 +103,7 @@ class EvalStep(Step):
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """``when`` conditions."""
 
-    async def __call__(self, state: InterviewState) -> StepResult:
+    async def __call__(self, state: InterviewState, config: StepConfig) -> StepResult:
         ctx = state.template_context
 
         # call __bool__ just to raise an exception for undefined values
@@ -135,7 +133,7 @@ class ExitStep(Step):
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """``when`` conditions."""
 
-    async def __call__(self, state: InterviewState) -> StepResult:
+    async def __call__(self, state: InterviewState, config: StepConfig) -> StepResult:
         ctx = state.template_context
         return StepResult(
             state=state,
@@ -145,11 +143,6 @@ class ExitStep(Step):
                 description=self.description.render(ctx) if self.description else None,
             ),
         )
-
-
-class _NullCookieJar(CookieJar):
-    def set_cookie(self, cookie: Cookie):
-        return
 
 
 @frozen
@@ -170,26 +163,25 @@ class HookStep(Step):
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """``when`` conditions."""
 
-    # a hack
-    converter: ClassVar[OrjsonConverter] = make_converter()
-    json_default: ClassVar[Callable[[object], object]] = lambda x: x
-    client: ClassVar[httpx.AsyncClient] = httpx.AsyncClient(cookies=_NullCookieJar())
+    async def __call__(self, state: InterviewState, config: StepConfig) -> StepResult:
+        as_obj = config.converter.unstructure(state)
+        body = orjson.dumps(as_obj, default=config.json_default)
 
-    async def __call__(self, state: InterviewState, /) -> StepResult:
-        body = HookStep.converter.dumps(state, default=HookStep.json_default)
-        res = await HookStep.client.post(
+        res = await config.http_client.post(
             self.url,
             headers={
                 "Content-Type": "application/json",
             },
             content=body,
         )
+
         res.raise_for_status()
         if res.status_code == 204:
             return StepResult(state, False)
         else:
-            res_body = self.converter.loads(res.content, HookStepResult)
-            return StepResult(res_body.state, True, res_body.content)
+            res_obj = orjson.loads(res.content)
+            res_data = config.converter.structure(res_obj, HookStepResult)
+            return StepResult(res_data.state, True, res_data.content)
 
 
 @frozen
@@ -201,16 +193,18 @@ class Block(Step):
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """``when`` conditions."""
 
-    async def __call__(self, state: InterviewState) -> StepResult:
-        return await handle_steps(state, self.block)
+    async def __call__(self, state: InterviewState, config: StepConfig) -> StepResult:
+        return await handle_steps(state, config, self.block)
 
 
-async def handle_steps(state: InterviewState, steps: Iterable[Step]) -> StepResult:
+async def handle_steps(
+    state: InterviewState, config: StepConfig, steps: Iterable[Step]
+) -> StepResult:
     """Handle interview steps."""
     ctx = state.template_context
     for step in steps:
         if evaluate_whenable(step, ctx):
-            result = await step(state)
+            result = await step(state, config)
             if result.changed:
                 return result
 

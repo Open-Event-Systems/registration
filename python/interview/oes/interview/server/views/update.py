@@ -8,6 +8,7 @@ from loguru import logger
 from oes.interview.interview.error import InvalidInputError
 from oes.interview.interview.result import ResultContent
 from oes.interview.interview.run import run_interview
+from oes.interview.interview.types import StepConfig
 from oes.interview.server.app import json_response, router
 from oes.interview.server.docs import (
     docs,
@@ -117,6 +118,7 @@ def _set_docs(docs: OpenAPIHandler, op: Operation):
 async def update(
     request: Request,
     settings: Settings,
+    step_config: StepConfig,
 ) -> Response:
     """Submit a state and responses and receive an updated state."""
     update_request = await parse_request(request)
@@ -129,7 +131,9 @@ async def update(
     accept = request.get_first_header(b"accept")
 
     try:
-        state, content = await run_interview(state, responses=update_request.responses)
+        state, content = await run_interview(
+            state, step_config, responses=update_request.responses
+        )
     except InvalidInputError as e:
         logger.debug(f"Invalid responses: {e}")
         return get_error_response(e)

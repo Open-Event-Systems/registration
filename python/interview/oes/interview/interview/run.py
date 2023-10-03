@@ -9,17 +9,20 @@ from oes.interview.interview.resolve import _get_question_schema_for_variable
 from oes.interview.interview.result import AskResult, ResultContent
 from oes.interview.interview.state import InterviewState
 from oes.interview.interview.step import handle_steps
+from oes.interview.interview.types import StepConfig
 from oes.interview.variables.locator import UndefinedError
 
 
 async def run_interview(
     state: InterviewState,
+    config: StepConfig,
     responses: Optional[Mapping[str, object]] = None,
 ) -> tuple[InterviewState, Optional[ResultContent]]:
     """Run the interview logic.
 
     Args:
         state: The interview state.
+        config: The :class:`StepConfig` object.
         responses: The submitted responses.
 
     Returns:
@@ -29,7 +32,7 @@ async def run_interview(
         state = _apply_responses(state, responses)
 
     try:
-        return await _run_interview_steps(state)
+        return await _run_interview_steps(state, config)
     except UndefinedError as e:
         # get a question
         question_id, schema = _get_question_schema_for_variable(state, e.locator)
@@ -80,20 +83,22 @@ def _validate_and_apply_responses(
 
 async def _run_interview_steps(
     state: InterviewState,
+    config: StepConfig,
 ) -> tuple[InterviewState, Optional[ResultContent]]:
     """Run the steps, returning content or a completed interview."""
     continue_ = True
     content = None
     while continue_:
-        continue_, state, content = await _run_once(state)
+        continue_, state, content = await _run_once(state, config)
 
     return state, content
 
 
 async def _run_once(
     state: InterviewState,
+    config: StepConfig,
 ) -> tuple[bool, InterviewState, Optional[ResultContent]]:
-    result = await handle_steps(state, state.interview.steps)
+    result = await handle_steps(state, config, state.interview.steps)
     if result.changed:
         # return if there is content, otherwise just re-start with the new state
         if result.content is not None:

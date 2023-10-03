@@ -1,10 +1,13 @@
 """ASGI application module."""
 import copy
 from collections.abc import Awaitable, Callable
+from http.cookiejar import Cookie, CookieJar
 
+import httpx
 from blacksheep import Application, Request, Response, Router
+from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import InterviewConfig
-from oes.interview.interview.step import HookStep
+from oes.interview.interview.types import StepConfig
 from oes.interview.serialization import configure_converter, converter, json_default
 from oes.interview.server.auth import APIKeyHandler, authentication, authorization
 from oes.interview.server.docs import docs
@@ -34,6 +37,24 @@ async def _set_jinja2_env(
         return await handler(request)
 
 
+class _NullCookieJar(CookieJar):
+    def set_cookie(self, cookie: Cookie):
+        return
+
+
+def _make_step_config() -> StepConfig:
+    converter = make_converter()
+    configure_converter(converter)
+
+    client = httpx.AsyncClient(cookies=_NullCookieJar())
+
+    return StepConfig(
+        converter=converter,
+        json_default=json_default,
+        http_client=client,
+    )
+
+
 def make_app(settings: Settings, interview_config: InterviewConfig) -> Application:
     """Return the ASGI app."""
     import oes.interview.server.views  # noqa
@@ -56,9 +77,7 @@ def make_app(settings: Settings, interview_config: InterviewConfig) -> Applicati
 
     app.services.add_instance(settings)
     app.services.add_instance(interview_config)
-
-    configure_converter(HookStep.converter)
-    HookStep.json_default = json_default
+    app.services.add_singleton_by_factory(_make_step_config)
 
     # middlewares
     configure_cors(

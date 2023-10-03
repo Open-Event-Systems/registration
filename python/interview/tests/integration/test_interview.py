@@ -1,10 +1,9 @@
 import json
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
+import httpx
 import pytest
 from blacksheep.testing import TestClient
-from oes.interview.interview.step import HookStep
-from oes.interview.serialization import converter, json_default
 from oes.interview.server.settings import Settings
 from tests.integration.conftest import get_result, start_interview, update_interview
 
@@ -81,14 +80,9 @@ async def test_interview_2(
 
 
 @pytest.mark.asyncio
-@patch.object(HookStep, "client")
 async def test_interview_3(
-    client_mock,
-    test_client: TestClient,
-    settings: Settings,
+    test_client: TestClient, settings: Settings, mock_client: httpx.AsyncClient
 ):
-    HookStep.json_default = json_default
-    HookStep.converter = converter
     res_mock = Mock()
     res_mock.status_code = 200
     empty_res_mock = Mock()
@@ -103,7 +97,7 @@ async def test_interview_3(
             res_mock.content = json.dumps({"state": state}).encode()
             return res_mock
 
-    client_mock.post = AsyncMock(side_effect=side_effect)
+    mock_client.post = AsyncMock(side_effect=side_effect)
 
     res = await start_interview(test_client, settings, "interview3")
     state = res["state"]
