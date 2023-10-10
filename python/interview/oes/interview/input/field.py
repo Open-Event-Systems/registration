@@ -7,7 +7,7 @@ import attr
 from attrs import Attribute, frozen, validators
 from cattrs import Converter
 from oes.interview.input.types import Field, JSONSchema, Option
-from oes.interview.variables.locator import Locator
+from oes.interview.logic import ValuePointer
 from oes.template import Context, Template
 
 
@@ -18,7 +18,7 @@ class FieldBase(Field, ABC):
     type: str
     """The field type."""
 
-    set: Optional[Locator] = None
+    set: Optional[ValuePointer] = None
     """The variable to store the value in."""
 
     optional: bool = False
@@ -96,7 +96,7 @@ class OptionsFieldBase(Field, Generic[_B_co], ABC):
     type: str
     """The field type."""
 
-    set: Optional[Locator] = None
+    set: Optional[ValuePointer] = None
     """The variable to store the value in."""
 
     label: Optional[Template] = None

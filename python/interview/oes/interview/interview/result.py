@@ -1,25 +1,11 @@
-"""Specific step result content."""
-from typing import Literal, Mapping, Optional, Union
+"""Result content module."""
+from __future__ import annotations
 
-from attr import frozen
+from typing import Union
+
+from oes.interview.interview.step_types.ask import AskResult
+from oes.interview.interview.step_types.exit import ExitResult
 from typing_extensions import TypeAlias
 
-
-@frozen(kw_only=True)
-class AskResult:
-    """A result asking a question."""
-
-    type: Literal["question"] = "question"
-    schema: Mapping[str, object]
-
-
-@frozen(kw_only=True)
-class ExitResult:
-    """An exit result."""
-
-    type: Literal["exit"] = "exit"
-    title: str
-    description: Optional[str] = None
-
-
 ResultContent: TypeAlias = Union[AskResult, ExitResult]
+"""Step result content type."""

@@ -9,10 +9,10 @@ from attrs import frozen
 from blacksheep import Application
 from loguru import logger
 from oes.interview.config.interview import load_interviews
+from oes.interview.logic import default_jinja2_env
 from oes.interview.serialization import converter
 from oes.interview.server.app import make_app
 from oes.interview.server.settings import load_settings
-from oes.interview.variables.env import jinja2_env
 from oes.template import set_jinja2_env
 from oes.util.logging import InterceptHandler
 
@@ -53,7 +53,7 @@ def _get_app(args: Args) -> Application:
     _setup_logging(args.debug)
 
     settings = load_settings(Path(args.config))
-    with set_jinja2_env(jinja2_env):
+    with set_jinja2_env(default_jinja2_env):
         interview_config = load_interviews(converter, settings.interview_config)
     return make_app(settings, interview_config)
 

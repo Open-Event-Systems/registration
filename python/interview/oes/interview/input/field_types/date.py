@@ -5,14 +5,14 @@ from typing import Any, Callable, Literal, Optional, Type
 from attr import Attribute
 from attrs import frozen, validators
 from oes.interview.input.field import FieldBase
-from oes.interview.input.types import Context, JSONSchema
+from oes.interview.input.types import Context, FieldType, JSONSchema
 
 
 @frozen(kw_only=True)
 class DateField(FieldBase):
     """A date field."""
 
-    type: Literal["date"] = "date"
+    type: Literal[FieldType.date] = FieldType.date
     default: Optional[date] = None
 
     min: Optional[date] = None

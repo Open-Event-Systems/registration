@@ -5,14 +5,14 @@ import attr
 from attr import Attribute
 from attrs import frozen, validators
 from oes.interview.input.field import FieldBase
-from oes.interview.input.types import Context, JSONSchema
+from oes.interview.input.types import Context, FieldType, JSONSchema
 
 
 @frozen(kw_only=True)
 class NumberField(FieldBase):
     """A number field."""
 
-    type: Literal["number"] = "number"
+    type: Literal[FieldType.number] = FieldType.number
     default: Optional[float] = None
 
     integer: bool = False

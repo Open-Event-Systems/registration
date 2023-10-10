@@ -8,12 +8,11 @@ import pytest
 import pytest_asyncio
 from blacksheep import Content, Response
 from blacksheep.testing import TestClient
-from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import InterviewConfig, load_interviews
-from oes.interview.serialization import configure_converter, converter
+from oes.interview.logic import default_jinja2_env
+from oes.interview.serialization import converter
 from oes.interview.server.app import make_app
 from oes.interview.server.settings import Settings
-from oes.interview.variables.env import jinja2_env
 from oes.template import set_jinja2_env
 from typed_settings import Secret
 
@@ -28,7 +27,7 @@ def settings():
 
 @pytest.fixture
 def interview_config():
-    with set_jinja2_env(jinja2_env):
+    with set_jinja2_env(default_jinja2_env):
         yield load_interviews(converter, "tests/test_data/interviews.yml")
 
 
@@ -43,9 +42,6 @@ async def app(
     interview_config: InterviewConfig,
     mock_client: httpx.AsyncClient,
 ):
-    converter = make_converter()
-    configure_converter(converter)
-
     with patch("oes.interview.server.app.httpx") as httpx_mock:
         httpx_mock.AsyncClient.return_value = mock_client
         app = make_app(settings, interview_config)

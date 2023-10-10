@@ -2,11 +2,11 @@ import pytest
 from cattrs import BaseValidationError, ClassValidationError
 from oes.interview.input.field_types.text import TextField
 from oes.interview.input.response import create_response_parser
-from oes.interview.variables.locator import parse_locator
+from oes.interview.logic import parse_pointer
 from oes.template import Template
 
 field1 = TextField(
-    set=parse_locator("value"),
+    set=parse_pointer("value"),
     label=Template("{{ name }}"),
     default="default",
     min=2,
@@ -16,7 +16,7 @@ field1 = TextField(
 )
 
 field2 = TextField(
-    set=parse_locator("value"),
+    set=parse_pointer("value"),
     label=Template("{{ name }}"),
     default="default",
     optional=True,
@@ -70,7 +70,7 @@ def test_text_field_parse(val, expected):
     parser = create_response_parser("test", [field2])
 
     result = parser({"field_0": val})
-    assert result == {parse_locator("value"): expected}
+    assert result == {parse_pointer("value"): expected}
 
 
 @pytest.mark.parametrize(

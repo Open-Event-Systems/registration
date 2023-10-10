@@ -1,10 +1,13 @@
-"""Logic module."""
-from collections.abc import Sequence
-from typing import Tuple, Union
+"""Logic evaluation."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Sequence, Tuple
 
 from cattrs import Converter
-from oes.interview.input.types import Whenable
 from oes.template import Context, ValueOrEvaluable, evaluate
+
+if TYPE_CHECKING:
+    from oes.interview.logic import Whenable, WhenCondition
 
 
 def evaluate_whenable(whenable: Whenable, context: Context) -> bool:
@@ -18,9 +21,7 @@ def evaluate_whenable(whenable: Whenable, context: Context) -> bool:
     return all(evaluate(c, context) for c in conditions)
 
 
-def structure_evaluable_or_sequence(
-    converter: Converter, v: object, t: object
-) -> Union[Sequence[ValueOrEvaluable], ValueOrEvaluable]:
+def structure_evaluable_or_sequence(converter: Converter, v: object) -> WhenCondition:
     """Structure a single expression or sequence of expressions."""
     if isinstance(v, Sequence) and not isinstance(v, str):
         return converter.structure(v, Tuple[ValueOrEvaluable, ...])  # type: ignore

@@ -1,0 +1,201 @@
+"""Pointer module."""
+from __future__ import annotations
+
+import re
+from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
+from typing import Union, overload
+
+import pyparsing as pp
+from attrs import field, frozen
+from oes.interview.logic.types import ValuePointer
+
+
+class InvalidPointerError(ValueError):
+    """Raised when a :class:`ValuePointer` is not valid."""
+
+    pass
+
+
+@frozen
+class PointerSegment(ValuePointer):
+    """A single segment of a value pointer."""
+
+    value: object
+
+    def evaluate(self, context: object, /) -> object:
+        """Evaluate this segment."""
+        return _get(context, self.value)
+
+    def set(self, context: object, value: object, /):
+        """Set the value this segment points to."""
+        _set(context, self.value, value)
+
+    def __str__(self) -> str:
+        if isinstance(self.value, str):
+            if re.fullmatch(r"(?![0-9])[a-z0-9_]+", self.value, re.I):
+                return f".{self.value}"
+            else:
+                esc = self.value.replace("\\", "\\\\").replace('"', '\\"')
+                return f'["{esc}"]'
+        else:
+            return f"[{self.value}]"
+
+
+@frozen
+class PointerImpl(ValuePointer, Sequence[PointerSegment]):
+    """:class:`ValuePointer` implementation."""
+
+    segments: Sequence[PointerSegment] = field(default=(), converter=lambda v: tuple(v))
+
+    @overload
+    def __getitem__(self, index: int) -> PointerSegment:
+        ...
+
+    @overload
+    def __getitem__(self, index: slice) -> Sequence[PointerSegment]:
+        ...
+
+    def __getitem__(
+        self, index: Union[int, slice]
+    ) -> Union[PointerSegment, Sequence[PointerSegment]]:
+        if isinstance(index, slice):
+            new_segments = self.segments[index]
+            return PointerImpl(new_segments)
+        else:
+            return self.segments[index]
+
+    def __len__(self):
+        return len(self.segments)
+
+    def evaluate(self, context: object, /) -> object:
+        return _walk(context, self)
+
+    def set(self, context: object, value: object, /):
+        parent = _walk(context, self[:-1])
+        self[-1].set(parent, value)
+
+    def __str__(self) -> str:
+        if len(self) > 0:
+            return str(self.segments[0].value) + "".join(
+                str(s) for s in self.segments[1:]
+            )
+        else:
+            return "Pointer(())"
+
+
+def _walk(context: object, segments: Iterable[PointerSegment]) -> object:
+    cur = context
+    for segment in segments:
+        cur = segment.evaluate(cur)
+    return cur
+
+
+def _set(context: object, key: object, value: object):
+    if isinstance(key, str):
+        _set_obj(context, key, value)
+    elif isinstance(key, int) and not isinstance(key, bool):
+        return _set_arr(context, key, value)
+    else:
+        raise TypeError(f"Invalid index: {key}")
+
+
+def _set_arr(context: object, key: int, value: object):
+    if not isinstance(context, MutableSequence):
+        raise TypeError(f"Not an array: {context}")
+    context[key] = value
+
+
+def _set_obj(context: object, key: str, value: object):
+    if not isinstance(context, MutableMapping):
+        raise TypeError(f"Not an object: {context}")
+    context[key] = value
+
+
+def _get(context: object, key: object) -> object:
+    if isinstance(key, str):
+        return _get_obj(context, key)
+    elif isinstance(key, int) and not isinstance(key, bool):
+        return _get_arr(context, key)
+    else:
+        raise TypeError(f"Invalid index: {key}")
+
+
+def _get_arr(context: object, key: int) -> object:
+    if not isinstance(context, Sequence) or isinstance(context, str):
+        raise TypeError(f"Not an array: {context}")
+    return context[key]
+
+
+def _get_obj(context: object, key: str) -> object:
+    if not isinstance(context, Mapping):
+        raise TypeError(f"Not an object: {context}")
+    return context[key]
+
+
+class _Parsing:
+    space = pp.White(" \t")[...].suppress()
+
+    number = pp.Regex(r"(?:[1-9][0-9]*|0(?![0-9]))")
+
+    @number.set_parse_action
+    @staticmethod
+    def _parse_number(res):
+        return int(res[0])
+
+    string = pp.QuotedString(quote_char='"', esc_char="\\")
+
+    @string.set_parse_action
+    @staticmethod
+    def _parse_string(res):
+        return res[0]
+
+    constant = string | number
+
+    name = pp.Regex(r"(?![0-9])[a-z0-9_]+", re.I)
+
+    @name.set_parse_action
+    @staticmethod
+    def _parse_name(res):
+        return res[0]
+
+    property_access = "." + name
+
+    @property_access.set_parse_action
+    @staticmethod
+    def _parse_property_access(res):
+        return res[1]
+
+    index_access = "[" + space + constant + space + "]"
+
+    @index_access.set_parse_action
+    @staticmethod
+    def _parse_index_access(res):
+        return res[1]
+
+    pointer_segment = property_access | index_access
+
+    @pointer_segment.set_parse_action
+    @staticmethod
+    def _parse_pointer_segment(res):
+        return PointerSegment(res[0])
+
+    pointer = space + (name + pointer_segment[...]).leave_whitespace()
+
+    @pointer.set_parse_action
+    @staticmethod
+    def _parse_pointer(res):
+        return PointerSegment(res[0]), *res[1:]
+
+
+def parse_pointer(value: str) -> ValuePointer:
+    """Parse a value pointer."""
+    return parse_pointer_impl(value)
+
+
+def parse_pointer_impl(value: str) -> PointerImpl:
+    """Parse a value pointer."""
+    try:
+        res = _Parsing.pointer.parse_string(value, parse_all=True)
+        return PointerImpl(tuple(res[0]))
+    except pp.ParseException as e:
+        raise InvalidPointerError(value) from e

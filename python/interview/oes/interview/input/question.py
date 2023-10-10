@@ -1,14 +1,15 @@
 """Question module."""
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from attrs import Factory, field, frozen
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.interview.input.response import create_response_parser, map_field_names
-from oes.interview.input.types import Field, JSONSchema, ResponseParser, Whenable
+from oes.interview.input.types import Field, JSONSchema, ResponseParser
+from oes.interview.logic import Whenable, WhenCondition
 from oes.interview.util import validate_identifier
-from oes.template import Context, Template, ValueOrEvaluable
+from oes.template import Context, Template
 
 
 @frozen
@@ -27,7 +28,7 @@ class Question(Whenable):
     fields: Sequence[Field] = ()
     """Fields in the question."""
 
-    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
+    when: WhenCondition = ()
     """``when`` conditions"""
 
     _response_parser: ResponseParser = field(

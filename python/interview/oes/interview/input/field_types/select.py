@@ -1,12 +1,21 @@
 """Select field module."""
 from collections.abc import Callable, Sequence
+from enum import Enum
 from typing import Any, Literal, Optional
 
 import attr
 from attrs import converters, frozen, validators
 from oes.interview.input.field import OptionsFieldBase
-from oes.interview.input.types import JSONSchema, Option
+from oes.interview.input.types import FieldType, JSONSchema, Option
 from oes.template import Context, Template
+
+
+class SelectComponentType(str, Enum):
+    """Component type IDs for select fields."""
+
+    dropdown = "dropdown"
+    checkbox = "checkbox"
+    radio = "radio"
 
 
 @frozen(kw_only=True)
@@ -41,8 +50,8 @@ class SelectFieldOption(Option):
 class SelectField(OptionsFieldBase[SelectFieldOption]):
     """A select field."""
 
-    type: Literal["select"] = "select"
-    component: str = "dropdown"
+    type: Literal[FieldType.select] = FieldType.select
+    component: SelectComponentType = SelectComponentType.dropdown
     """The component type to display."""
 
     min: int = 1

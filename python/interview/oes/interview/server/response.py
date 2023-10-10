@@ -5,9 +5,7 @@ from typing import Optional
 from attrs import frozen
 from blacksheep import Content, Request, Response
 from blacksheep.messages import get_absolute_url_to_path
-from oes.interview.interview.error import InvalidInputError
-from oes.interview.interview.result import ResultContent
-from oes.interview.interview.state import InterviewState
+from oes.interview.interview import InterviewState, InvalidInputError, ResultContent
 from oes.interview.serialization import converter, json_default
 from typing_extensions import Self
 

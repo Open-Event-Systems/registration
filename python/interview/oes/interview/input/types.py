@@ -2,21 +2,33 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Optional, Protocol, TypeVar, Union
+from collections.abc import Callable, Mapping
+from enum import Enum
+from typing import Any, Optional, Protocol, TypeVar
 
-from oes.interview.variables.locator import Locator
-from oes.template import Context, ValueOrEvaluable
+from oes.interview.logic import ValuePointer
+from oes.template import Context
 from typing_extensions import TypeAlias
 
 UserResponse: TypeAlias = Mapping[str, object]
 """A user response."""
 
-ResponseParser: TypeAlias = Callable[[UserResponse], Mapping[Locator, object]]
+ResponseParser: TypeAlias = Callable[[UserResponse], Mapping[ValuePointer, object]]
 """A callable that parses a response into a mapping of variable locations/values."""
 
 JSONSchema: TypeAlias = Mapping[str, object]
 """The JSON schema type."""
+
+
+class FieldType(str, Enum):
+    """Enum of field type IDs."""
+
+    text = "text"
+    number = "number"
+    select = "select"
+    date = "date"
+    button = "button"
+
 
 _T = TypeVar("_T", covariant=True)
 
@@ -60,8 +72,8 @@ class Field(_Protocol[Any], Protocol):
 
     @property
     @abstractmethod
-    def set(self) -> Optional[Locator]:
-        """The variable location to set."""
+    def set(self) -> Optional[ValuePointer]:
+        """The value pointer to set."""
         ...
 
 
@@ -91,12 +103,3 @@ class Option(_Protocol[Any], Protocol):
             "const": id or self.id,
         }
         return schema
-
-
-class Whenable(_Protocol[Any], Protocol):
-    """An object with a ``when`` condition."""
-
-    @property
-    def when(self) -> Union[Sequence[ValueOrEvaluable], ValueOrEvaluable]:
-        """The ``when`` condition."""
-        return ()

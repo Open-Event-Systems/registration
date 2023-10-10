@@ -2,40 +2,34 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Callable
+from enum import Enum
 from typing import TYPE_CHECKING
 
-from attrs import frozen
-from oes.interview.input.types import Whenable
+from oes.interview.logic.types import Whenable
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
-    from cattrs import Converter
-    from httpx import AsyncClient
-    from oes.interview.interview.interview import StepResult
-    from oes.interview.interview.state import InterviewState
+    from oes.interview.interview.update import InterviewUpdate, StepResult
 
 
-@frozen
-class StepConfig:
-    """Step configuration object."""
+class ResultContentType(str, Enum):
+    """Enum of result content types."""
 
-    converter: Converter
-    """The :class:`Converter` to use to serialize data."""
-
-    json_default: Callable[[object], object]
-    """The JSON default function to use."""
-
-    http_client: AsyncClient
-    """The HTTP client to use."""
+    question = "question"
+    exit = "exit"
 
 
 class Step(Whenable, Protocol):
-    """A step in an interview."""
+    """An interview step."""
 
     @abstractmethod
-    async def __call__(
-        self, state: InterviewState, config: StepConfig, /
-    ) -> StepResult:
-        """Handle the step."""
+    async def __call__(self, update: InterviewUpdate, /) -> StepResult:
+        """Handle the step.
+
+        Args:
+            update: The :class:`InterviewUpdate` object.
+
+        Returns:
+            A :class:`StepResult` describing the result.
+        """
         ...

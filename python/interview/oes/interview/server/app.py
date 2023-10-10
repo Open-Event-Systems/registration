@@ -5,14 +5,12 @@ from http.cookiejar import Cookie, CookieJar
 
 import httpx
 from blacksheep import Application, Request, Response, Router
-from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import InterviewConfig
-from oes.interview.interview.types import StepConfig
-from oes.interview.serialization import configure_converter, converter, json_default
+from oes.interview.logic import default_jinja2_env
+from oes.interview.serialization import converter, json_default
 from oes.interview.server.auth import APIKeyHandler, authentication, authorization
 from oes.interview.server.docs import docs
 from oes.interview.server.settings import Settings
-from oes.interview.variables.env import jinja2_env
 from oes.template import set_jinja2_env
 from oes.util.blacksheep import (
     AttrsBinder,
@@ -33,7 +31,7 @@ AttrsBinder.cattrs_converter = converter
 async def _set_jinja2_env(
     request: Request, handler: Callable[[Request], Awaitable[Response]]
 ) -> Response:
-    with set_jinja2_env(jinja2_env):
+    with set_jinja2_env(default_jinja2_env):
         return await handler(request)
 
 
@@ -42,17 +40,8 @@ class _NullCookieJar(CookieJar):
         return
 
 
-def _make_step_config() -> StepConfig:
-    converter = make_converter()
-    configure_converter(converter)
-
-    client = httpx.AsyncClient(cookies=_NullCookieJar())
-
-    return StepConfig(
-        converter=converter,
-        json_default=json_default,
-        http_client=client,
-    )
+def _make_async_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(cookies=_NullCookieJar())
 
 
 def make_app(settings: Settings, interview_config: InterviewConfig) -> Application:
@@ -77,7 +66,7 @@ def make_app(settings: Settings, interview_config: InterviewConfig) -> Applicati
 
     app.services.add_instance(settings)
     app.services.add_instance(interview_config)
-    app.services.add_singleton_by_factory(_make_step_config)
+    app.services.add_singleton_by_factory(_make_async_client)
 
     # middlewares
     configure_cors(

@@ -5,18 +5,17 @@ import copy
 import uuid
 import zlib
 from collections.abc import Callable, Mapping, Set
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from struct import Struct
 from typing import Any, Optional, Union, cast, overload
 
 import orjson
 from attrs import Factory, evolve, field, frozen
-from cattrs import Converter, override
-from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
+from cattrs import Converter
 from nacl.secret import SecretBox
 from oes.interview.interview.error import InvalidStateError
 from oes.interview.interview.interview import Interview
-from oes.interview.variables.locator import Locator
+from oes.interview.logic import ValuePointer
 from oes.template import Context
 from oes.util import merge_dict
 from typing_extensions import Self
@@ -43,9 +42,7 @@ class InterviewState:
     submission_id: str = Factory(lambda: uuid.uuid4().hex)
     """Unique ID for this submission."""
 
-    expiration_date: datetime = field(
-        factory=_default_exp, converter=lambda v: v if v is not None else _default_exp()
-    )
+    expiration_date: datetime = field(factory=_default_exp)
     """When the interview expires."""
 
     complete: bool = False
@@ -105,15 +102,17 @@ class InterviewState:
         )
 
     @overload
-    def set_values(self, __values: Mapping[Locator, object]) -> Self:
+    def set_values(self, values: Mapping[ValuePointer, object], /) -> Self:
         ...
 
     @overload
-    def set_values(self, __loc: Locator, __value: object) -> Self:
+    def set_values(self, loc: ValuePointer, value: object, /) -> Self:
         ...
 
     def set_values(
-        self, val_or_loc: Union[Locator, Mapping[Locator, object]], *vals: object
+        self,
+        val_or_loc: Union[ValuePointer, Mapping[ValuePointer, object]],
+        *vals: object,
     ) -> Self:
         """Set values in the :attr:`data` and return the new state.
 
@@ -123,11 +122,11 @@ class InterviewState:
         if isinstance(val_or_loc, Mapping) and len(vals) == 0:
             to_set = val_or_loc
         else:
-            to_set = {cast(Locator, val_or_loc): vals[0]}
+            to_set = {cast(ValuePointer, val_or_loc): vals[0]}
 
         new_data = dict(copy.deepcopy(self.data))
         for loc, val in to_set.items():
-            loc.set(val, new_data)
+            loc.set(new_data, val)
 
         return evolve(
             self,
@@ -192,7 +191,7 @@ class InterviewState:
 
     def get_is_expired(self, *, now: Optional[datetime] = None) -> bool:
         """Return whether the state is expired."""
-        now = now if now is not None else datetime.now(tz=timezone.utc)
+        now = now if now is not None else datetime.now().astimezone()
         return now >= self.expiration_date
 
     def validate(self, *, now: Optional[datetime] = None):
@@ -206,28 +205,6 @@ class InterviewState:
         """
         if self.get_is_expired(now=now):
             raise InvalidStateError("Interview state is expired")
-
-
-def make_interview_state_structure_fn(
-    converter: Converter,
-) -> Callable[[Mapping[str, Any], Any], InterviewState]:
-    """Get a function to structure an :class:`InterviewState`."""
-    return make_dict_structure_fn(
-        InterviewState,
-        converter,
-        _template_context=override(omit=True),
-    )
-
-
-def make_interview_state_unstructure_fn(
-    converter: Converter,
-) -> Callable[[InterviewState], Mapping[str, Any]]:
-    """Get a function to unstructure an :class:`InterviewState`."""
-    return make_dict_unstructure_fn(
-        InterviewState,
-        converter,
-        _template_context=override(omit=True),
-    )
 
 
 _ver = Struct("B")

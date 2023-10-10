@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 import pytest
 from oes.interview.interview.error import InvalidStateError
 from oes.interview.interview.state import InterviewState
+from oes.interview.logic import parse_pointer
 from oes.interview.serialization import converter
-from oes.interview.variables.locator import parse_locator
 
 
 def test_template_context():
@@ -64,14 +64,14 @@ def test_set_values():
     )
 
     values = {
-        parse_locator("c"): 3,
-        parse_locator("a.b"): 2,
+        parse_pointer("c"): 3,
+        parse_pointer("a.b"): 2,
     }
 
     state = state.set_values(values)
     assert state.data == {"a": {"b": 2}, "c": 3}
 
-    state = state.set_values(parse_locator("a.d"), 4)
+    state = state.set_values(parse_pointer("a.d"), 4)
     assert state.data == {"a": {"b": 2, "d": 4}, "c": 3}
 
 

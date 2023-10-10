@@ -9,7 +9,7 @@ from attrs import AttrsInstance, asdict, make_class
 from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
 from oes.interview.input.types import Field, ResponseParser, UserResponse
-from oes.interview.variables.locator import Locator
+from oes.interview.logic import ValuePointer
 
 AttrsT = TypeVar("AttrsT", bound=AttrsInstance)
 _T = TypeVar("_T")
@@ -30,13 +30,15 @@ def create_response_parser(
     """
     by_name = map_field_names(fields, fields)
 
-    name_to_loc: dict[str, Optional[Locator]] = {n: f.set for n, f in by_name.items()}
+    name_to_loc: dict[str, Optional[ValuePointer]] = {
+        n: f.set for n, f in by_name.items()
+    }
 
     attrs_cls = _create_attrs_class(_make_class_name(name), by_name)
 
-    def parser(response: UserResponse) -> Mapping[Locator, object]:
+    def parser(response: UserResponse) -> Mapping[ValuePointer, object]:
         parsed_obj = _parse_response(response, attrs_cls, _response_converter)
-        by_loc = _map_response_values_to_locators(parsed_obj, name_to_loc)
+        by_loc = _map_response_values_to_pointers(parsed_obj, name_to_loc)
         return by_loc
 
     return parser
@@ -81,11 +83,11 @@ def _parse_response(
     return converter.structure(response, cls)
 
 
-def _map_response_values_to_locators(
+def _map_response_values_to_pointers(
     response_obj: AttrsInstance,
-    locations: Mapping[str, Optional[Locator]],
-) -> Mapping[Locator, object]:
-    """Map the attributes of a parsed user response to variable locators."""
+    locations: Mapping[str, Optional[ValuePointer]],
+) -> Mapping[ValuePointer, object]:
+    """Map the attributes of a parsed user response to value pointers."""
     as_dict = asdict(response_obj)
     mapped = {}
 

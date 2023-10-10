@@ -11,26 +11,24 @@ from cattrs.gen import make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import structure_question_or_path
 from oes.interview.input.field import structure_field
-from oes.interview.input.logic import structure_evaluable_or_sequence
 from oes.interview.input.question import (
     Question,
     make_question_structure_fn,
     make_question_unstructure_fn,
 )
 from oes.interview.input.types import Field
-from oes.interview.interview.interview import (
-    Interview,
-    make_interview_structure_fn,
-    make_interview_unstructure_fn,
-)
-from oes.interview.interview.state import (
-    InterviewState,
+from oes.interview.interview.interview import Interview
+from oes.interview.interview.serialization import (
     make_interview_state_structure_fn,
     make_interview_state_unstructure_fn,
+    make_interview_structure_fn,
+    make_interview_unstructure_fn,
+    structure_step,
 )
-from oes.interview.interview.step import structure_step
+from oes.interview.interview.state import InterviewState
 from oes.interview.interview.types import Step
-from oes.interview.variables.locator import Locator, parse_locator
+from oes.interview.logic import ValuePointer, WhenCondition, parse_pointer
+from oes.interview.logic.eval import structure_evaluable_or_sequence
 from oes.template import (
     Expression,
     Template,
@@ -79,11 +77,14 @@ def configure_converter(converter: Converter):
     )
     converter.register_structure_hook(Template, structure_template)
     converter.register_structure_hook(Expression, structure_expression)
-    converter.register_structure_hook(Locator, lambda v, t: parse_locator(v))
+    converter.register_structure_hook_func(
+        lambda cls: cls == ValuePointer,
+        lambda v, t: parse_pointer(v),
+    )
 
     converter.register_unstructure_hook(Template, lambda v: v.source)
     converter.register_unstructure_hook(Expression, lambda v: v.source)
-    converter.register_unstructure_hook(Locator, lambda v: str(v))
+    converter.register_unstructure_hook(ValuePointer, lambda v: str(v))
 
     # structure immutable sequences as tuples
     converter.register_structure_hook_func(
@@ -103,8 +104,8 @@ def configure_converter(converter: Converter):
     )
 
     converter.register_structure_hook_func(
-        lambda cls: cls == Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]],
-        lambda v, t: structure_evaluable_or_sequence(converter, v, t),
+        lambda cls: cls == WhenCondition,
+        lambda v, t: structure_evaluable_or_sequence(converter, v),
     )
 
     # question
@@ -121,7 +122,7 @@ def configure_converter(converter: Converter):
 
     # steps
     converter.register_structure_hook_func(
-        lambda cls: cls is Step, lambda v, t: structure_step(converter, v, t)
+        lambda cls: cls is Step, lambda v, t: structure_step(converter, v)
     )
 
     # interview

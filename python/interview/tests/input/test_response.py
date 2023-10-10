@@ -6,14 +6,14 @@ from attrs import frozen
 from cattrs import ClassValidationError
 from oes.interview.input.response import create_response_parser, map_field_names
 from oes.interview.input.types import Field
-from oes.interview.variables.locator import Locator, parse_locator
+from oes.interview.logic import ValuePointer, parse_pointer
 from oes.template import Context
 
 
 @frozen
 class CustomField(Field):
     field_info: object
-    set: Optional[Locator]
+    set: Optional[ValuePointer]
 
     def get_schema(self, context: Context) -> Mapping[str, object]:
         return {}
@@ -23,11 +23,11 @@ def test_create_response_parser():
     fields = [
         CustomField(
             attr.ib(type=int),
-            set=parse_locator("val1"),
+            set=parse_pointer("val1"),
         ),
         CustomField(
             attr.ib(type=str),
-            set=parse_locator("val2"),
+            set=parse_pointer("val2"),
         ),
     ]
 
@@ -40,8 +40,8 @@ def test_create_response_parser():
 
     parsed = parser(response)
     assert parsed == {
-        parse_locator("val1"): 123,
-        parse_locator("val2"): "test",
+        parse_pointer("val1"): 123,
+        parse_pointer("val2"): "test",
     }
 
 
@@ -64,11 +64,11 @@ def test_create_response_parser_error(responses):
     fields = [
         CustomField(
             attr.ib(type=int),
-            set=parse_locator("val1"),
+            set=parse_pointer("val1"),
         ),
         CustomField(
             attr.ib(type=str),
-            set=parse_locator("val2"),
+            set=parse_pointer("val2"),
         ),
     ]
 

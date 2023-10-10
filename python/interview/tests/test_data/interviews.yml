@@ -41,3 +41,6 @@
         - birth_date
         - level
     - url: http://localhost
+      result: hook_res
+    - set: extra
+      value: "true"

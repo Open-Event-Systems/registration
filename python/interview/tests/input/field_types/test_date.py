@@ -4,10 +4,10 @@ import pytest
 from cattrs import ClassValidationError
 from oes.interview.input.field_types.date import DateField
 from oes.interview.input.response import create_response_parser
-from oes.interview.variables.locator import parse_locator
+from oes.interview.logic import parse_pointer
 
 field = DateField(
-    set=parse_locator("value"),
+    set=parse_pointer("value"),
     default=date(2020, 1, 1),
     min=date(2020, 1, 1),
     max=date(2020, 2, 1),
@@ -35,7 +35,7 @@ def test_date_field_parse(val, expected):
     parser = create_response_parser("test", [field])
 
     result = parser({"field_0": val})
-    assert result == {parse_locator("value"): expected}
+    assert result == {parse_pointer("value"): expected}
 
 
 @pytest.mark.parametrize(

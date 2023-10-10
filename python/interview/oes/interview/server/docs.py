@@ -1,7 +1,7 @@
 """Docs helpers."""
 from blacksheep.server.openapi.v3 import OpenAPIHandler
-from oes.interview.input.question import Question
-from oes.interview.interview.interview import Interview
+from oes.interview.input import Question
+from oes.interview.interview import Interview
 from oes.util.blacksheep import AttrsTypeHandler, DocsHelper
 from openapidocs.v3 import (
     HTTPSecurity,

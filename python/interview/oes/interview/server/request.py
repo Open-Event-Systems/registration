@@ -9,8 +9,7 @@ from blacksheep.exceptions import BadRequest
 from cattrs import BaseValidationError
 from cattrs.preconf.orjson import make_converter
 from loguru import logger
-from oes.interview.interview.error import InvalidStateError
-from oes.interview.interview.state import InterviewState
+from oes.interview.interview import InterviewState, InvalidStateError
 from oes.interview.serialization import converter
 from oes.interview.server.settings import Settings
 

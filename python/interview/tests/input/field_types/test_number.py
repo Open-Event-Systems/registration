@@ -2,17 +2,17 @@ import pytest
 from cattrs import ClassValidationError
 from oes.interview.input.field_types.number import NumberField
 from oes.interview.input.response import create_response_parser
-from oes.interview.variables.locator import parse_locator
+from oes.interview.logic import parse_pointer
 
 field1 = NumberField(
-    set=parse_locator("value"),
+    set=parse_pointer("value"),
     default=1.0,
     min=0.0,
     max=2.0,
 )
 
 field2 = NumberField(
-    set=parse_locator("value"),
+    set=parse_pointer("value"),
     integer=True,
     default=1,
     min=0,
@@ -55,7 +55,7 @@ def test_number_field_parse(val, expected):
     parser = create_response_parser("test", [field2])
 
     result = parser({"field_0": val})
-    assert result == {parse_locator("value"): expected}
+    assert result == {parse_pointer("value"): expected}
 
 
 @pytest.mark.parametrize(

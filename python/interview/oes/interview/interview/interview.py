@@ -1,32 +1,12 @@
 """Interview module."""
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from collections.abc import Sequence
+from typing import Mapping, Optional
 
 from attrs import Factory, field, frozen
-from cattrs import Converter, override
-from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
-from oes.interview.input.question import Question
-from oes.interview.interview.result import ResultContent
+from oes.interview.input import Question
 from oes.interview.interview.types import Step
-
-if TYPE_CHECKING:
-    from oes.interview.interview.state import InterviewState
-
-
-@frozen
-class StepResult:
-    """The result of a step."""
-
-    state: InterviewState
-    """The updated :class:`InterviewState`."""
-
-    changed: bool
-    """Whether a change was made."""
-
-    content: Optional[ResultContent] = None
-    """Result content."""
 
 
 @frozen(kw_only=True)
@@ -56,27 +36,9 @@ class Interview:
         """Questions by ID."""
         return dict(self._questions_by_id)
 
-
-def make_interview_structure_fn(
-    converter: Converter,
-) -> Callable[[Mapping[str, Any], Any], Interview]:
-    """Get a function to structure a :class:`Interview`."""
-    structure = make_dict_structure_fn(
-        Interview, converter, _questions_by_id=override(omit=True)
-    )
-    return structure
-
-
-def make_interview_unstructure_fn(
-    converter: Converter,
-) -> Callable[[Interview], Mapping[str, Any]]:
-    """Get a function to unstructure a :class:`Interview`."""
-    structure = make_dict_unstructure_fn(
-        Interview,
-        converter,
-        _questions_by_id=override(omit=True),
-    )
-    return structure
+    def get_question(self, id: str, /) -> Optional[Question]:
+        """Get a question by ID."""
+        return self._questions_by_id.get(id)
 
 
 def _make_questions_by_id(interview: Interview) -> Mapping[str, Question]:

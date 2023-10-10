@@ -2,7 +2,7 @@ from cattrs.preconf.json import make_converter
 from oes.interview.input.field import structure_field
 from oes.interview.input.field_types.text import TextField
 from oes.interview.input.types import Field
-from oes.interview.variables.locator import Locator, parse_locator
+from oes.interview.logic import ValuePointer, parse_pointer
 from oes.template import Template, structure_template
 
 converter = make_converter()
@@ -11,7 +11,7 @@ converter.register_structure_hook_func(
     lambda cls: cls is Field, lambda v, t: structure_field(converter, v, t)
 )
 converter.register_structure_hook(Template, structure_template)
-converter.register_structure_hook(Locator, lambda v, t: parse_locator(v))
+converter.register_structure_hook(ValuePointer, lambda v, t: parse_pointer(v))
 
 
 class _Nested:
@@ -31,7 +31,7 @@ def test_structure_field():
 
     res = converter.structure(config, Field)
     assert res == TextField(
-        set=parse_locator("name"),
+        set=parse_pointer("name"),
         label=Template("Name"),
         min=2,
         max=20,

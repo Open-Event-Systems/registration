@@ -5,8 +5,7 @@ from oes.interview.input.question import Question
 from oes.interview.interview.interview import Interview
 from oes.interview.interview.resolve import get_ask_result_for_variable
 from oes.interview.interview.state import InterviewState
-from oes.interview.variables.env import jinja2_env
-from oes.interview.variables.locator import parse_locator
+from oes.interview.logic import default_jinja2_env, parse_pointer
 from oes.template import Expression, Template, set_jinja2_env
 
 converter = make_converter()
@@ -14,7 +13,7 @@ converter = make_converter()
 
 @pytest.fixture(autouse=True)
 def _jinja2_env():
-    with set_jinja2_env(jinja2_env):
+    with set_jinja2_env(default_jinja2_env):
         yield
 
 
@@ -26,7 +25,7 @@ def interview() -> Interview:
                 id="set-a-1",
                 fields=(
                     TextField(
-                        set=parse_locator("a"),
+                        set=parse_pointer("a"),
                     ),
                 ),
                 when=(Expression("use_a1 | default(true) is true"),),
@@ -35,16 +34,16 @@ def interview() -> Interview:
                 id="set-a-2",
                 fields=(
                     TextField(
-                        set=parse_locator("a"),
+                        set=parse_pointer("a"),
                     ),
                 ),
                 when=Expression("use_a2 | default(false) is true"),
             ),
-            Question(id="set-b", fields=(TextField(set=parse_locator("b")),)),
+            Question(id="set-b", fields=(TextField(set=parse_pointer("b")),)),
             Question(
                 id="set-c",
                 fields=(
-                    TextField(label=Template("B is: {{ b }}"), set=parse_locator("c")),
+                    TextField(label=Template("B is: {{ b }}"), set=parse_pointer("c")),
                 ),
             ),
         )
@@ -63,10 +62,10 @@ def interview() -> Interview:
     ),
 )
 def test_resolve(interview, val, expected, data):
-    loc = parse_locator(val)
+    ptr = parse_pointer(val)
 
     state = InterviewState(interview=interview, data=data)
 
-    id_, result = get_ask_result_for_variable(state, loc)
+    id_, result = get_ask_result_for_variable(state, ptr)
 
     assert id_ == expected

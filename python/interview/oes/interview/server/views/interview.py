@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Optional, Union
 
+import httpx
 from attrs import Factory, evolve, frozen
 from blacksheep import Request, Response, auth
 from blacksheep.exceptions import BadRequest
@@ -10,12 +11,14 @@ from blacksheep.messages import get_absolute_url_to_path
 from blacksheep.server.openapi.v3 import OpenAPIHandler
 from loguru import logger
 from oes.interview.config.interview import InterviewConfig
-from oes.interview.interview.error import InvalidStateError
-from oes.interview.interview.interview import Interview
-from oes.interview.interview.run import run_interview
-from oes.interview.interview.state import InterviewState
-from oes.interview.interview.types import StepConfig
-from oes.interview.serialization import converter
+from oes.interview.interview import (
+    Interview,
+    InterviewState,
+    InterviewUpdate,
+    InvalidStateError,
+    update_interview,
+)
+from oes.interview.serialization import converter, json_default
 from oes.interview.server.app import json_response, router
 from oes.interview.server.docs import (
     docs,
@@ -195,28 +198,42 @@ async def start_interview(
     request: Request,
     interviews: InterviewConfig,
     settings: Settings,
-    step_config: StepConfig,
+    client: httpx.AsyncClient,
 ) -> Response:
     """Start an interview."""
     interview = check_404(interviews.get(interview_id))
 
+    # pass as kwargs so defaults are handled correctly
+    kwargs = {}
+
+    if body.value.target_url:
+        kwargs["target_url"] = body.value.target_url
+
+    if body.value.submission_id:
+        kwargs["submission_id"] = body.value.submission_id
+
+    if body.value.expiration_date:
+        kwargs["expiration_date"] = body.value.expiration_date
+
     state = InterviewState(
-        interview=interview,
-        target_url=body.value.target_url,
-        submission_id=body.value.submission_id,
-        expiration_date=body.value.expiration_date,
-        context=body.value.context,
-        data=body.value.data,
+        interview=interview, context=body.value.context, data=body.value.data, **kwargs
     )
 
     accept = request.get_first_header(b"accept")
 
     # get to the first content
-    state, content = await run_interview(state, step_config)
+    update = InterviewUpdate(
+        state=state,
+        http_client=client,
+        converter=converter,
+        json_default=json_default,
+    )
+
+    content = await update_interview(update)
 
     if accept == b"application/octet-stream":
         return make_blob_state_response(
-            state,
+            update.state,
             content,
             request=request,
             secret=settings.encryption_key.get_secret_value(),
@@ -224,7 +241,7 @@ async def start_interview(
     else:
         return json_response(
             JSONStateResponse.create(
-                state,
+                update.state,
                 content,
                 request=request,
                 secret=settings.encryption_key.get_secret_value(),

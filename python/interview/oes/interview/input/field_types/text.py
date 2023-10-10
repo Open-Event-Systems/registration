@@ -1,25 +1,33 @@
 """Text field type."""
+from collections.abc import Sequence
+from enum import Enum
 from typing import Any, Callable, Literal, Optional, Type
 
 import attr
 from attrs import Attribute, converters, frozen, validators
 from email_validator import EmailNotValidError, validate_email
 from oes.interview.input.field import FieldBase
-from oes.interview.input.types import Context, JSONSchema
+from oes.interview.input.types import Context, FieldType, JSONSchema
 from publicsuffixlist import PublicSuffixList
 
 DEFAULT_MAX_LEN = 300
 """The default string max length."""
 
 
+class TextFormatType(str, Enum):
+    """Text format type IDs."""
+
+    email = "email"
+
+
 @frozen(kw_only=True)
 class TextField(FieldBase):
     """A text field."""
 
-    type: Literal["text"] = "text"
+    type: Literal[FieldType.text] = FieldType.text
     default: Optional[str] = None
 
-    format: Optional[str] = None
+    format: Optional[TextFormatType] = None
     """The format."""
 
     min: int = 0
@@ -55,9 +63,7 @@ class TextField(FieldBase):
         if self.regex is not None:
             extra_validators.append(validators.matches_re(self.regex))
 
-        if self.format == "email":
-            extra_validators.append(_validate_email)
-            extra_validators.append(_validate_email_domain)
+        extra_validators.extend(_get_format_validators(self.format))
 
         return [*validators_, validators.optional(extra_validators)]
 
@@ -102,6 +108,18 @@ def _strip_strings(v):
 
 def _coerce_null(v):
     return v if v else None
+
+
+def _get_format_validators(
+    type: Optional[TextFormatType],
+) -> Sequence[Callable[[Any, Attribute, Any], Any]]:
+    validators_ = []
+
+    if type == TextFormatType.email:
+        validators_.append(_validate_email)
+        validators_.append(_validate_email_domain)
+
+    return validators_
 
 
 def _validate_email(i: Any, a: Attribute, v: Any):

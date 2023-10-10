@@ -2,11 +2,11 @@ import pytest
 from cattrs import BaseValidationError
 from oes.interview.input.field_types.select import SelectField, SelectFieldOption
 from oes.interview.input.response import create_response_parser
-from oes.interview.variables.locator import parse_locator
+from oes.interview.logic import parse_pointer
 from oes.template import Template
 
 field_single = SelectField(
-    set=parse_locator("option"),
+    set=parse_pointer("option"),
     component="radio",
     options=(
         SelectFieldOption(
@@ -22,7 +22,7 @@ field_single = SelectField(
 )
 
 field_single_optional = SelectField(
-    set=parse_locator("option"),
+    set=parse_pointer("option"),
     min=0,
     component="checkbox",
     options=(
@@ -39,7 +39,7 @@ field_single_optional = SelectField(
 )
 
 field_multi = SelectField(
-    set=parse_locator("option"),
+    set=parse_pointer("option"),
     min=1,
     max=2,
     options=(
@@ -61,7 +61,7 @@ field_multi = SelectField(
 )
 
 field_multi_optional = SelectField(
-    set=parse_locator("option"),
+    set=parse_pointer("option"),
     min=0,
     max=2,
     options=(
@@ -194,7 +194,7 @@ def test_select_field(field, val, expected):
     parser = create_response_parser("test", [field])
 
     result = parser({"field_0": val})
-    assert result == {parse_locator("option"): expected}
+    assert result == {parse_pointer("option"): expected}
 
 
 @pytest.mark.parametrize(
@@ -258,7 +258,7 @@ def test_boolean(val, valid, expected):
         "test",
         [
             SelectField(
-                set=parse_locator("value"),
+                set=parse_pointer("value"),
                 min=0,
                 max=1,
                 options=[
@@ -272,7 +272,7 @@ def test_boolean(val, valid, expected):
     )
 
     if valid:
-        assert parser({"field_0": val}) == {parse_locator("value"): expected}
+        assert parser({"field_0": val}) == {parse_pointer("value"): expected}
     else:
         with pytest.raises(BaseValidationError):
             parser({"field_0": val})

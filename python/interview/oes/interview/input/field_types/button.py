@@ -5,7 +5,7 @@ from typing import Any, Literal, Mapping, Optional
 import attr
 from attrs import converters, frozen
 from oes.interview.input.field import OptionsFieldBase
-from oes.interview.input.types import Option
+from oes.interview.input.types import FieldType, Option
 from oes.template import Context, Template
 
 
@@ -47,7 +47,7 @@ class ButtonOption(Option):
 class Button(OptionsFieldBase[ButtonOption]):
     """A button."""
 
-    type: Literal["button"] = "button"
+    type: Literal[FieldType.button] = FieldType.button
     options: Sequence[ButtonOption] = ()
 
     def get_schema(self, context: Context) -> Mapping[str, object]:

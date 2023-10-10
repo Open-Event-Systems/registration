@@ -90,12 +90,9 @@ async def test_interview_3(
 
     def side_effect(*args, content, **kwargs):
         state = json.loads(content)
-        if state["data"].get("modified"):
-            return empty_res_mock
-        else:
-            state["data"]["modified"] = True
-            res_mock.content = json.dumps({"state": state}).encode()
-            return res_mock
+        state["data"]["modified"] = True
+        res_mock.content = json.dumps({"state": state}).encode()
+        return res_mock
 
     mock_client.post = AsyncMock(side_effect=side_effect)
 
@@ -129,4 +126,9 @@ async def test_interview_3(
         "birth_date": "1999-01-01",
         "level": "vip",
         "modified": True,
+        "extra": True,
+        "hook_res": {
+            "status_code": 200,
+            "success": True,
+        },
     }

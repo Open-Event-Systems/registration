@@ -2,11 +2,11 @@ import pytest
 from cattrs import BaseValidationError
 from oes.interview.input.field_types.button import Button, ButtonOption
 from oes.interview.input.response import create_response_parser
-from oes.interview.variables.locator import parse_locator
+from oes.interview.logic import parse_pointer
 from oes.template import Template
 
 field1 = Button(
-    set=parse_locator("option"),
+    set=parse_pointer("option"),
     options=(
         ButtonOption(
             label=Template("Yes"),
@@ -22,7 +22,7 @@ field1 = Button(
 )
 
 field2 = Button(
-    set=parse_locator("option"),
+    set=parse_pointer("option"),
     options=(
         ButtonOption(
             id="a",
@@ -86,7 +86,7 @@ def test_parse_button(val, expected):
     parser = create_response_parser("test", [field1])
 
     result = parser({"field_0": val})
-    assert result == {parse_locator("option"): expected}
+    assert result == {parse_pointer("option"): expected}
 
 
 @pytest.mark.parametrize(
@@ -100,7 +100,7 @@ def test_parse_button_ids(val, expected):
     parser = create_response_parser("test", [field2])
 
     result = parser({"field_0": val})
-    assert result == {parse_locator("option"): expected}
+    assert result == {parse_pointer("option"): expected}
 
 
 @pytest.mark.parametrize(
