@@ -1,7 +1,6 @@
 """Hook step."""
 from __future__ import annotations
 
-import copy
 from collections.abc import Mapping
 from typing import Optional
 
@@ -74,8 +73,7 @@ class HookStep(Step):
             "success": 200 <= res.status_code < 400,
         }
 
-        updated_data = dict(copy.deepcopy(state.data))
-        self.result.set(updated_data, info)
+        updated_data = self.result.set(state.data, info)
         return state.set_data(updated_data)
 
 

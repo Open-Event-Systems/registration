@@ -91,6 +91,8 @@ async def update_interview(
     try:
         return await _run_interview_steps(update)
     except UndefinedError as e:
+        if e.pointer is None:
+            raise e
         # look up a question to resolve the undefined variable
         question_id, ask_result = get_ask_result_for_variable(update.state, e.pointer)
         update.state = update.state.set_question(question_id)
@@ -151,7 +153,7 @@ def _validate_and_apply_response(
         return state.set_values(values)
     except UndefinedError as e:
         raise InterviewError(
-            f"Undefined variable {e.locator!r} when setting {values!r}. "
+            f"Undefined value {e.pointer!r} when setting {values!r}. "
             "Collections are not automatically created."
         )
 

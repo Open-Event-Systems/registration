@@ -13,6 +13,7 @@ import orjson
 from attrs import Factory, evolve, field, frozen
 from cattrs import Converter
 from nacl.secret import SecretBox
+from oes.interview.immutable_mapping import ImmutableMapping, make_immutable
 from oes.interview.interview.error import InvalidStateError
 from oes.interview.interview.interview import Interview
 from oes.interview.logic import ValuePointer
@@ -61,13 +62,16 @@ class InterviewState:
     """The current question ID."""
 
     data: Context = field(
-        converter=lambda v: copy.deepcopy(v),
-        factory=dict,
+        converter=lambda v: make_immutable(v),
+        factory=ImmutableMapping,
     )
     """Interview data."""
 
     _template_context: Context = field(
-        default=Factory(lambda s: merge_dict(s.data, s.context), takes_self=True),
+        # TODO: update merge_dict
+        default=Factory(
+            lambda s: make_immutable(merge_dict(s.data, s.context)), takes_self=True
+        ),
         init=False,
         eq=False,
     )
@@ -124,9 +128,9 @@ class InterviewState:
         else:
             to_set = {cast(ValuePointer, val_or_loc): vals[0]}
 
-        new_data = dict(copy.deepcopy(self.data))
+        new_data: Mapping[str, Any] = dict(copy.deepcopy(self.data))
         for loc, val in to_set.items():
-            loc.set(new_data, val)
+            new_data = loc.set(new_data, val)
 
         return evolve(
             self,

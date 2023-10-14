@@ -10,6 +10,7 @@ from cattrs import Converter, override
 from cattrs.gen import make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import structure_question_or_path
+from oes.interview.immutable_mapping import ImmutableMapping
 from oes.interview.input.field import structure_field
 from oes.interview.input.question import (
     Question,
@@ -57,6 +58,11 @@ def _(obj: datetime) -> str:
 @json_default.register
 def _(obj: date) -> str:
     return obj.isoformat()
+
+
+@json_default.register
+def _(obj: ImmutableMapping) -> dict:
+    return dict(obj)
 
 
 def configure_converter(converter: Converter):

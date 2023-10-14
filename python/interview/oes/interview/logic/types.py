@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import MutableMapping
 from typing import Any, Protocol, Sequence, TypeVar, Union
 
 from oes.template import Context, Evaluable, ValueOrEvaluable
@@ -11,10 +10,10 @@ from typing_extensions import TypeAlias
 WhenCondition: TypeAlias = Union[Sequence[ValueOrEvaluable], ValueOrEvaluable]
 """A ``when`` condition."""
 
-MutableContext: TypeAlias = MutableMapping[str, Any]
-"""A mutable version of :class:`Context`."""
-
 _T = TypeVar("_T", covariant=True)
+
+_K = TypeVar("_K")
+_V = TypeVar("_V", covariant=True)
 
 
 class _Protocol(Protocol[_T]):
@@ -45,6 +44,6 @@ class ValuePointer(Evaluable, Protocol):
         ...
 
     @abstractmethod
-    def set(self, context: MutableContext, value: object, /):
+    def set(self, context: Context, value: object, /) -> Context:
         """Set the value this object points to in the given context."""
         ...

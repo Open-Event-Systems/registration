@@ -1,4 +1,5 @@
 import pytest
+from oes.interview.immutable_mapping import make_immutable
 from oes.interview.logic.pointer import (
     InvalidPointerError,
     PointerSegment,
@@ -95,8 +96,14 @@ def test_parse_and_eval_pointer(val, expected):
 )
 def test_set(ctx, ptr, val, expected):
     parsed = parse_pointer_impl(ptr)
-    parsed.set(ctx, val)
-    assert ctx == expected
+
+    ctx = make_immutable(ctx)
+    val = make_immutable(val)
+    expected = make_immutable(expected)
+
+    updated = parsed.set(ctx, val)
+    assert updated == expected
+    assert updated != ctx
 
 
 @pytest.mark.parametrize(

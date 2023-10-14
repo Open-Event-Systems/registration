@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping, MutableMapping, MutableSequence, Sequence
-from typing import Union, overload
+from collections.abc import Mapping, Sequence
+from typing import Union, cast, overload
 
 import pyparsing as pp
 from attrs import field, frozen
+from oes.interview.immutable_mapping import ImmutableMapping, make_immutable
 from oes.interview.logic.types import ValuePointer
+from oes.template import Context
 
 
 class InvalidPointerError(ValueError):
@@ -26,9 +28,9 @@ class PointerSegment(ValuePointer):
         """Evaluate this segment."""
         return _get(context, self.value)
 
-    def set(self, context: object, value: object, /):
+    def set(self, context: object, value: object, /) -> Context:
         """Set the value this segment points to."""
-        _set(context, self.value, value)
+        return cast(Context, _set(context, self.value, value))
 
     def __str__(self) -> str:
         if isinstance(self.value, str):
@@ -68,11 +70,14 @@ class PointerImpl(ValuePointer, Sequence[PointerSegment]):
         return len(self.segments)
 
     def evaluate(self, context: object, /) -> object:
-        return _walk(context, self)
+        cur = context
+        for segment in self.segments:
+            cur = segment.evaluate(cur)
+        return cur
 
-    def set(self, context: object, value: object, /):
-        parent = _walk(context, self[:-1])
-        self[-1].set(parent, value)
+    def set(self, context: object, value: object, /) -> Context:
+        value = make_immutable(value)
+        return cast(Context, _set_recursive(context, self.segments, value))
 
     def __str__(self) -> str:
         if len(self) > 0:
@@ -81,34 +86,6 @@ class PointerImpl(ValuePointer, Sequence[PointerSegment]):
             )
         else:
             return "Pointer(())"
-
-
-def _walk(context: object, segments: Iterable[PointerSegment]) -> object:
-    cur = context
-    for segment in segments:
-        cur = segment.evaluate(cur)
-    return cur
-
-
-def _set(context: object, key: object, value: object):
-    if isinstance(key, str):
-        _set_obj(context, key, value)
-    elif isinstance(key, int) and not isinstance(key, bool):
-        return _set_arr(context, key, value)
-    else:
-        raise TypeError(f"Invalid index: {key}")
-
-
-def _set_arr(context: object, key: int, value: object):
-    if not isinstance(context, MutableSequence):
-        raise TypeError(f"Not an array: {context}")
-    context[key] = value
-
-
-def _set_obj(context: object, key: str, value: object):
-    if not isinstance(context, MutableMapping):
-        raise TypeError(f"Not an object: {context}")
-    context[key] = value
 
 
 def _get(context: object, key: object) -> object:
@@ -130,6 +107,87 @@ def _get_obj(context: object, key: str) -> object:
     if not isinstance(context, Mapping):
         raise TypeError(f"Not an object: {context}")
     return context[key]
+
+
+def _set_recursive(
+    context: object, segments: Sequence[PointerSegment], value: object
+) -> object:
+    if len(segments) == 1:
+        return segments[0].set(context, value)
+    else:
+        next_ = segments[0].evaluate(context)
+        next_ = _set_recursive(next_, segments[1:], value)
+        return segments[0].set(context, next_)
+
+
+def _set(context: object, key: object, value: object) -> object:
+    if isinstance(key, str):
+        return _set_obj(context, key, value)
+    elif isinstance(key, int) and not isinstance(key, bool):
+        return _set_arr(context, key, value)
+    else:
+        raise TypeError(f"Invalid index: {key}")
+
+
+def _set_arr(context: object, key: int, value: object) -> Sequence[object]:
+    if not isinstance(context, Sequence) or isinstance(context, str):
+        raise TypeError(f"Not an array: {context}")
+    return *context[:key], value, *context[key + 1 :]
+
+
+def _set_obj(context: object, key: str, value: object) -> Mapping[object, object]:
+    if not isinstance(context, Mapping):
+        raise TypeError(f"Not an object: {context}")
+    return ImmutableMapping(context) | {key: value}
+
+
+# def _walk(context: object, segments: Iterable[PointerSegment]) -> object:
+#     cur = context
+#     for segment in segments:
+#         cur = segment.evaluate(cur)
+#     return cur
+#
+#
+# def _set(context: object, key: object, value: object):
+#     if isinstance(key, str):
+#         _set_obj(context, key, value)
+#     elif isinstance(key, int) and not isinstance(key, bool):
+#         return _set_arr(context, key, value)
+#     else:
+#         raise TypeError(f"Invalid index: {key}")
+#
+#
+# def _set_arr(context: object, key: int, value: object):
+#     if not isinstance(context, MutableSequence):
+#         raise TypeError(f"Not an array: {context}")
+#     context[key] = value
+#
+#
+# def _set_obj(context: object, key: str, value: object):
+#     if not isinstance(context, MutableMapping):
+#         raise TypeError(f"Not an object: {context}")
+#     context[key] = value
+#
+#
+# def _get(context: object, key: object) -> object:
+#     if isinstance(key, str):
+#         return _get_obj(context, key)
+#     elif isinstance(key, int) and not isinstance(key, bool):
+#         return _get_arr(context, key)
+#     else:
+#         raise TypeError(f"Invalid index: {key}")
+#
+#
+# def _get_arr(context: object, key: int) -> object:
+#     if not isinstance(context, Sequence) or isinstance(context, str):
+#         raise TypeError(f"Not an array: {context}")
+#     return context[key]
+#
+#
+# def _get_obj(context: object, key: str) -> object:
+#     if not isinstance(context, Mapping):
+#         raise TypeError(f"Not an object: {context}")
+#     return context[key]
 
 
 class _Parsing:

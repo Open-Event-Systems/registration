@@ -64,6 +64,8 @@ def _recursive_get_question_schema_for_variable(
         schema = question.get_schema(state.template_context)
         return question.id, schema
     except UndefinedError as e:
+        if e.pointer is None:
+            raise e
         return _recursive_get_question_schema_for_variable(questions, state, e.pointer)
 
 

@@ -1,7 +1,6 @@
 """Set step."""
 from __future__ import annotations
 
-import copy
 from typing import Literal, Union
 
 from attr import frozen
@@ -35,8 +34,7 @@ class SetStep(Step):
         bool(val)
 
         if not is_set or val != cur_val:
-            new_data = dict(copy.deepcopy(update.state.data))
-            self.set.set(new_data, val)
+            new_data = self.set.set(update.state.data, val)
 
             changed = True
             updated_state = update.state.set_data(new_data)
