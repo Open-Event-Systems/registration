@@ -4,9 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./",
     "paths": {
-      "#src/*.js": ["./dist/src/*.js"]
+      "#src/*": ["./src/*"]
     }
   },
-  "include": ["./src/**/*"],
-  "exclude": ["./src/test/**/*"]
+  "include": ["./src/**/*"]
 }

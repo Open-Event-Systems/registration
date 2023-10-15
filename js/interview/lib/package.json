@@ -6,7 +6,7 @@
   "author": "Wes <wes@anthronewengland.com>",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/src/index.js"
   },
   "imports": {
     "#src/*.js": {

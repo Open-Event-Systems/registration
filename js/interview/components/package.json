@@ -6,14 +6,14 @@
   "author": "Wes <wes@anthronewengland.com>",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/src/index.js"
   },
   "imports": {
-    "#src/*.js": "./dist/*.js"
+    "#src/*": "./dist/src/*"
   },
   "files": [
-    "dist/**/*",
-    "dist/*"
+    "dist/src/**/*",
+    "dist/src/*"
   ],
   "devDependencies": {
     "@babel/core": "^7.20.12",
@@ -42,6 +42,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc --build",
+    "clean": "tsc --build --clean",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

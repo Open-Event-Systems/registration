@@ -1,14 +1,13 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../configs/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "./dist",
     "paths": {
-      "#src/*.js": ["./src/*.js"]
+      "#src/*": ["./src/*"]
     }
   },
   "include": ["./src/**/*"],
-  "exclude": ["./src/stories/**/*"],
   "references": [{ "path": "../lib" }]
 }

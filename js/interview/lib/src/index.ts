@@ -5,4 +5,6 @@ export {
   ScalarFieldState,
   createState,
 } from "#src/field/state.js"
+
 export * from "#src/types.js"
+export { FormValues } from "#src/types.js"
