@@ -27,13 +27,13 @@ from oes.interview.server.docs import (
     interview_state_result_schema,
 )
 from oes.interview.server.request import parse_request
-from oes.interview.server.response import JSONStateResponse, make_blob_state_response
+from oes.interview.server.response import JSONStateResponse
 from oes.interview.server.settings import Settings
 from oes.template import Context
 from oes.util.blacksheep import FromAttrs, check_404
-from openapidocs.v3 import Encoding, MediaType, Operation, RequestBody
+from openapidocs.v3 import MediaType, Operation, RequestBody
 from openapidocs.v3 import Response as OpenAPIResponse
-from openapidocs.v3 import Schema, ValueFormat, ValueType
+from openapidocs.v3 import Schema, ValueType
 
 
 @frozen
@@ -173,13 +173,7 @@ def _set_start_interview_docs(docs: OpenAPIHandler, op: Operation):
                         "update_url": "http://localhost/update",
                         "state": "Wq4t2aBO8Db97;JWd",
                     },
-                ),
-                "application/octet-stream": MediaType(
-                    schema=Schema(
-                        type=ValueType.STRING,
-                        format=ValueFormat.BINARY,
-                    ),
-                ),
+                )
             }
         )
     }
@@ -204,7 +198,7 @@ async def start_interview(
     interview = check_404(interviews.get(interview_id))
 
     # pass as kwargs so defaults are handled correctly
-    kwargs = {}
+    kwargs: dict = {}
 
     if body.value.target_url:
         kwargs["target_url"] = body.value.target_url
@@ -219,8 +213,6 @@ async def start_interview(
         interview=interview, context=body.value.context, data=body.value.data, **kwargs
     )
 
-    accept = request.get_first_header(b"accept")
-
     # get to the first content
     update = InterviewUpdate(
         state=state,
@@ -231,22 +223,14 @@ async def start_interview(
 
     content = await update_interview(update)
 
-    if accept == b"application/octet-stream":
-        return make_blob_state_response(
+    return json_response(
+        JSONStateResponse.create(
             update.state,
             content,
             request=request,
             secret=settings.encryption_key.get_secret_value(),
         )
-    else:
-        return json_response(
-            JSONStateResponse.create(
-                update.state,
-                content,
-                request=request,
-                secret=settings.encryption_key.get_secret_value(),
-            )
-        )
+    )
 
 
 def _set_get_result_docs(docs: OpenAPIHandler, op: Operation):
@@ -258,20 +242,6 @@ def _set_get_result_docs(docs: OpenAPIHandler, op: Operation):
                     properties={"state": Schema(type=ValueType.STRING)},
                     required=["state"],
                 ),
-            ),
-            "multipart/form-data": MediaType(
-                schema=Schema(
-                    type=ValueType.OBJECT,
-                    properties={
-                        "state": Schema(
-                            type=ValueType.STRING, format=ValueFormat.BINARY
-                        )
-                    },
-                    required=["state"],
-                ),
-                encoding={
-                    "state": Encoding("application/octet-stream"),
-                },
             ),
         }
     )

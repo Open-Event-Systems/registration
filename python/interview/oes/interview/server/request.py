@@ -1,6 +1,6 @@
 """Request parsing methods."""
 import base64
-from typing import Any, Mapping, Optional
+from typing import Any, Optional
 
 import orjson
 from attrs import field, frozen, validators
@@ -12,14 +12,6 @@ from loguru import logger
 from oes.interview.interview import InterviewState, InvalidStateError
 from oes.interview.serialization import converter
 from oes.interview.server.settings import Settings
-
-
-@frozen(kw_only=True)
-class UpdateRequest:
-    """An update request body."""
-
-    state: bytes
-    responses: Optional[dict[str, Any]] = None
 
 
 def _from_b85(v: object) -> bytes:
@@ -39,31 +31,12 @@ def _load_json(v: object) -> object:
 
 
 @frozen(kw_only=True)
-class JSONRequest(UpdateRequest):
-    """JSON request object."""
+class UpdateRequest:
+    """Update request object."""
 
     state: bytes = field(converter=_from_b85)
     responses: Optional[dict[str, Any]] = field(
         default=None,
-        validator=validators.optional(
-            [
-                validators.deep_mapping(
-                    key_validator=validators.instance_of(str),
-                    value_validator=validators.instance_of(object),
-                    mapping_validator=validators.instance_of(dict),
-                )
-            ]
-        ),
-    )
-
-
-@frozen(kw_only=True)
-class MultipartRequest(UpdateRequest):
-    """Multipart request object."""
-
-    responses: Optional[dict[str, Any]] = field(
-        default=None,
-        converter=_load_json,
         validator=validators.optional(
             [
                 validators.deep_mapping(
@@ -89,8 +62,6 @@ async def parse_request(request: Request) -> UpdateRequest:
     """Parse a request body."""
     if request.declares_content_type(b"application/json"):
         return await _parse_json_request(request)
-    elif request.declares_content_type(b"multipart/form-data"):
-        return await _parse_multipart_request(request)
     else:
         raise BadRequest
 
@@ -112,39 +83,14 @@ def validate_state(state: bytes, settings: Settings) -> InterviewState:
         raise BadRequest
 
 
-async def _parse_json_request(request: Request) -> JSONRequest:
+async def _parse_json_request(request: Request) -> UpdateRequest:
     """Parse a normal JSON request."""
     body = await _read_request(request)
     try:
-        data = request_converter.loads(body, JSONRequest)
+        data = request_converter.loads(body, UpdateRequest)
         return data
     except (ValueError, BaseValidationError):
         raise BadRequest
-
-
-async def _parse_multipart_request(request: Request) -> MultipartRequest:
-    """Parse a ``multipart/form-data`` request."""
-    parts = dict(await _get_multipart(request))
-    if "state" in parts:
-        parts["state"] = _strip_state(parts["state"])
-
-    return request_converter.structure(parts, MultipartRequest)
-
-
-async def _get_multipart(request: Request) -> Mapping[str, bytes]:
-    parts = {}
-    multipart_parts = await request.multipart()
-    for part in multipart_parts or []:
-        if part.name in parts or part.name not in (b"state", b"responses"):
-            raise BadRequest
-        parts[part.name] = part.data
-
-    return {n.decode(): d for n, d in parts.items()}
-
-
-def _strip_state(s: bytes) -> bytes:
-    _, _, res = s.partition(b"\r\n\r\n")
-    return res
 
 
 async def _read_request(request: Request) -> bytes:

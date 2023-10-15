@@ -17,19 +17,13 @@ from oes.interview.server.app import json_response, router
 from oes.interview.server.docs import (
     docs,
     interview_state_json_schema,
-    update_form_data_schema,
     update_json_schema,
 )
 from oes.interview.server.request import parse_request, validate_state
-from oes.interview.server.response import (
-    JSONStateResponse,
-    get_error_response,
-    make_blob_state_response,
-)
+from oes.interview.server.response import JSONStateResponse, get_error_response
 from oes.interview.server.settings import Settings
-from openapidocs.v3 import Encoding, Example, MediaType, Operation, RequestBody
+from openapidocs.v3 import Example, MediaType, Operation, RequestBody
 from openapidocs.v3 import Response as OpenAPIResponse
-from openapidocs.v3 import Schema, ValueFormat, ValueType
 
 
 @frozen
@@ -59,17 +53,6 @@ def _set_docs(docs: OpenAPIHandler, op: Operation):
         content={
             "application/json": MediaType(
                 schema=update_json_schema,
-            ),
-            "multipart/form-data": MediaType(
-                schema=update_form_data_schema,
-                encoding={
-                    "responses": Encoding(
-                        content_type="application/json",
-                    ),
-                    "state": Encoding(
-                        content_type="application/octet-stream",
-                    ),
-                },
             ),
         }
     )
@@ -102,9 +85,6 @@ def _set_docs(docs: OpenAPIHandler, op: Operation):
                         ),
                     },
                 ),
-                "application/octet-stream": MediaType(
-                    schema=Schema(type=ValueType.STRING, format=ValueFormat.BINARY),
-                ),
             }
         )
     }
@@ -132,8 +112,6 @@ async def update(
         logger.debug("Interview is already complete")
         raise HTTPException(422, "Interview is already complete")
 
-    accept = request.get_first_header(b"accept")
-
     try:
         update = InterviewUpdate(
             state=state,
@@ -148,19 +126,11 @@ async def update(
         logger.debug(f"Invalid responses: {e}")
         return get_error_response(e)
 
-    if accept == b"application/octet-stream":
-        return make_blob_state_response(
+    return json_response(
+        JSONStateResponse.create(
             update.state,
             content,
             request=request,
             secret=settings.encryption_key.get_secret_value(),
         )
-    else:
-        return json_response(
-            JSONStateResponse.create(
-                update.state,
-                content,
-                request=request,
-                secret=settings.encryption_key.get_secret_value(),
-            )
-        )
+    )

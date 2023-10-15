@@ -50,8 +50,8 @@ class InterviewState:
     """Whether the state is complete."""
 
     context: Context = field(
-        converter=lambda v: copy.deepcopy(v),
-        factory=dict,
+        converter=lambda v: make_immutable(v),
+        factory=ImmutableMapping,
     )
     """Context data."""
 

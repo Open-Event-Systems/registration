@@ -40,18 +40,6 @@ responses_schema = Schema(
     nullable=True,
 )
 
-update_form_data_schema = Schema(
-    type=ValueType.OBJECT,
-    properties={
-        "responses": responses_schema,
-        "state": Schema(
-            type=ValueType.STRING,
-            format=ValueFormat.BINARY,
-        ),
-    },
-    required=["state"],
-)
-
 update_json_schema = Schema(
     type=ValueType.OBJECT,
     properties={
