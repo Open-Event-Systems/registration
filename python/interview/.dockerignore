@@ -1,5 +1,7 @@
 **/*
-!src
+!oes
 !pyproject.toml
 !poetry.lock
+!config.example.yml
+!interviews.example.yml
 !README.md
