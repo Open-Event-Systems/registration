@@ -12,17 +12,18 @@
     "#src/*.js": {
       "test": [
         "./src/*.ts",
-        "./dist/*.js"
+        "./dist/src/*.js"
       ],
-      "default": "./dist/*.js"
+      "default": "./dist/src/*.js"
     }
   },
   "files": [
-    "dist/**/*",
-    "dist/*"
+    "dist/src/**/*",
+    "dist/src/*"
   ],
   "scripts": {
     "build": "tsc --build",
+    "clean": "tsc --build --clean",
     "test": "jest"
   },
   "devDependencies": {
