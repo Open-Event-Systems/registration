@@ -3,5 +3,9 @@
     "interview/lib",
     "interview/components",
     "registration"
-  ]
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  }
 }

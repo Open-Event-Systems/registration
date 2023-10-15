@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./interview/lib" },
+    { "path": "./interview/components" }
+  ]
+}
