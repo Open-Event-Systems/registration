@@ -1,6 +1,6 @@
-# OES Interview Library - Python
+# OES Interview Server - Python
 
-Python libraries and server.
+Python server for the interview service.
 
 ## Development Setup
 
