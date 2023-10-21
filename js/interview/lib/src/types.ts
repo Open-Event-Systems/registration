@@ -1,11 +1,27 @@
+import { JSONSchema7 } from "json-schema"
+
 /**
  * Form values type.
  */
 export type FormValues = Record<string, unknown>
 
+export type JSONSchema = JSONSchema7
+
+// extend schema
+declare module "json-schema" {
+  interface JSONSchema7 {
+    "x-type"?: string
+    "x-component"?: string
+    "x-input-mode"?: string
+    "x-autocomplete"?: string
+    "x-minimum"?: string
+    "x-maximum"?: string
+  }
+}
+
 export interface AskResult {
   type: "question"
-  schema: Record<string, unknown>
+  schema: JSONSchema
 }
 
 export interface ExitResult {
@@ -52,87 +68,17 @@ export interface InterviewStateMetadata {
   [key: string]: unknown
 }
 
-/** Schema types. */
+export type ValidationResult<T> =
+  | {
+      success: true
+      value: T
+    }
+  | {
+      success: false
+      error: string
+    }
 
-/**
- * Base schema properties.
- */
-export interface SchemaBase {
-  type?: SchemaTypeKeys | SchemaTypeKeys[]
-  "x-type"?: string
-  title?: string
-  description?: string
-  const?: unknown
-  oneOf?: Schema[]
-  "x-input-mode": string
-  "x-autocomplete": string
-}
-
-export interface StringSchema extends SchemaBase {
-  type: "string" | SchemaTypeKeys[]
-  default?: string
-  minLength?: number
-  maxLength?: number
-  pattern?: string
-  format?: string
-  "x-minimum"?: string
-  "x-maximum"?: string
-}
-
-export interface NumberSchema extends SchemaBase {
-  type: "number" | SchemaTypeKeys[]
-  default?: number
-  minimum?: number
-  maximum?: number
-}
-
-export interface IntegerSchema extends SchemaBase {
-  type: "integer" | SchemaTypeKeys[]
-  default?: number
-  minimum?: number
-  maximum?: number
-}
-
-export interface ObjectSchema extends SchemaBase {
-  type: "object" | SchemaTypeKeys[]
-  default?: Record<string, unknown>
-  properties?: {
-    [name: string]: Schema
-  }
-  required?: string[]
-}
-
-export interface ArraySchema extends SchemaBase {
-  type: "array" | SchemaTypeKeys[]
-  default?: unknown[]
-  minItems?: number
-  maxItems?: number
-  uniqueItems?: boolean
-  items?: Schema
-}
-
-export interface BooleanSchema extends SchemaBase {
-  type: "boolean" | SchemaTypeKeys[]
-  default?: boolean
-}
-
-export interface NullSchema extends SchemaBase {
-  type: "null" | SchemaTypeKeys[]
-}
-
-export interface SchemaTypeMap {
-  string: StringSchema
-  number: NumberSchema
-  integer: IntegerSchema
-  object: ObjectSchema
-  array: ArraySchema
-  boolean: BooleanSchema
-  null: NullSchema
-}
-
-export type SchemaTypeKeys = keyof SchemaTypeMap
-
-export type Schema = SchemaBase | SchemaTypeMap[SchemaTypeKeys]
+export type Validator<T> = (value: unknown) => ValidationResult<T>
 
 /**
  * Field state interface.
@@ -141,7 +87,7 @@ export interface FieldState<T = unknown> {
   /**
    * The schema.
    */
-  get schema(): unknown // TODO
+  get schema(): JSONSchema
 
   /**
    * The stored value type.
