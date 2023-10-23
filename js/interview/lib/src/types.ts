@@ -68,51 +68,39 @@ export interface InterviewStateMetadata {
   [key: string]: unknown
 }
 
-export type ValidationResult<T> =
-  | {
-      success: true
-      value: T
-    }
-  | {
-      success: false
-      error: string
-    }
+export interface ErrorObj {
+  [key: string]: ErrorObj | string[] | undefined
+  _errors?: string[]
+}
 
-export type Validator<T> = (value: unknown) => ValidationResult<T>
+export type FormPath = (string | number)[]
 
 /**
- * Field state interface.
+ * Stores state for a form schema.
  */
-export interface FieldState<T = unknown> {
+export interface FormState {
   /**
-   * The schema.
+   * The {@link JSONSchema} describing the form.
    */
-  get schema(): JSONSchema
+  get schema(): JSONSchema | boolean
 
   /**
-   * The stored value type.
+   * Get a value in the state.
    */
-  get value(): unknown
-  set value(v: unknown)
+  getValue(path?: FormPath): unknown
 
   /**
-   * The validated/cast value type.
+   * Set a value in the state.
    */
-  get validValue(): T | null | undefined
+  setValue(path: FormPath, value: unknown): void
 
   /**
-   * The error message, or undefined if valid.
+   * Get an error object in the state.
    */
-  get error(): string | undefined
+  getError(path?: FormPath): ErrorObj | undefined
 
   /**
-   * Whether the field has been interacted with.
-   */
-  get touched(): boolean
-  set touched(v: boolean)
-
-  /**
-   * Reset to the initial state.
+   * Reset the state to its initial value.
    */
   reset(): void
 }

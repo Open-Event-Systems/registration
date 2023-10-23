@@ -237,7 +237,7 @@ const handleNull = (schema: JSONSchema): z.ZodNull => {
 /**
  * Return whether the schema includes a given type.
  */
-const isType = <T extends SchemaTypeName>(
+export const isType = <T extends SchemaTypeName>(
   t: T,
   schema: JSONSchema,
 ): schema is JSONSchema & { type: T } => {
