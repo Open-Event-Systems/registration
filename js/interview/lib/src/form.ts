@@ -100,9 +100,9 @@ const getDefault = (
 
 /**
  * Create a {@link FormState} for a schema.
- * @param schema - The schema.
- * @param initialValue - The initial value.
- * @returns The state.
+ * @param schema - the schema
+ * @param initialValue - the initial value
+ * @returns the state
  */
 export const createFormState = (
   schema: JSONSchema | boolean,

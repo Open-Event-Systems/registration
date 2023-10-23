@@ -54,6 +54,33 @@ export interface CompleteStateResponse {
 export type StateResponse = IncompleteStateResponse | CompleteStateResponse
 
 /**
+ * A saved interview state.
+ */
+export interface InterviewStateRecord {
+  /**
+   * The record ID.
+   */
+  get id(): string
+
+  /**
+   * The {@link StateResponse}
+   */
+  get stateResponse(): StateResponse
+
+  /**
+   * The responses.
+   */
+  get fieldValues(): FormValues
+  set fieldValues(values: FormValues)
+
+  /**
+   * The associated metadata.
+   */
+  get metadata(): InterviewStateMetadata
+  set metadata(values: InterviewStateMetadata)
+}
+
+/**
  * Request body for updating an interview state.
  */
 export interface StateRequest {

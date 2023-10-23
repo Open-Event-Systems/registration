@@ -1,4 +1,4 @@
-import { InterviewStateRecord, InterviewStateStore } from "#src/store.js"
+import { InterviewStateRecordImpl, InterviewStateStore } from "#src/store.js"
 import { IncompleteStateResponse } from "#src/types.js"
 
 const response1: IncompleteStateResponse = {
@@ -16,8 +16,8 @@ const response2: IncompleteStateResponse = {
 }
 
 test("interview state generates IDs", () => {
-  const s1 = new InterviewStateRecord(response1, {}, {})
-  const s2 = new InterviewStateRecord(response2, {}, {})
+  const s1 = new InterviewStateRecordImpl(response1, {}, {})
+  const s2 = new InterviewStateRecordImpl(response2, {}, {})
   expect(s1.id).toBe("foo")
   expect(s2.id).toBe("bar")
 })
@@ -41,7 +41,11 @@ test("state store loads records", () => {
 
 test("state store saves records", () => {
   const store = new InterviewStateStore()
-  const record = new InterviewStateRecord(response2, { foo: "bar" }, { x: 1 })
+  const record = new InterviewStateRecordImpl(
+    response2,
+    { foo: "bar" },
+    { x: 1 },
+  )
   store.saveRecord(record)
 
   const loadedStore = new InterviewStateStore()

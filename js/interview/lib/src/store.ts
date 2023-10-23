@@ -1,9 +1,9 @@
-import { makeAutoObservable } from "mobx"
 import { Wretch } from "wretch"
 import wretch from "wretch"
 import {
   FormValues,
   InterviewStateMetadata,
+  InterviewStateRecord,
   StateResponse,
 } from "#src/types.js"
 
@@ -18,7 +18,7 @@ export class InterviewStateError extends Error {}
 /**
  * Used to store interview states.
  */
-export class InterviewStateRecord {
+export class InterviewStateRecordImpl {
   constructor(
     public stateResponse: StateResponse,
     public fieldValues: FormValues,
@@ -28,11 +28,11 @@ export class InterviewStateRecord {
   /**
    * An identifier for this state record.
    *
-   * We just take the first 64 characters of the state string, which should be unique
+   * We just take the first 32 characters of the state string, which should be unique
    * enough.
    */
   get id(): string {
-    return this.stateResponse.state.substring(0, 64)
+    return this.stateResponse.state.substring(0, 32)
   }
 }
 
@@ -41,11 +41,11 @@ export class InterviewStateRecord {
  */
 export class InterviewStateStore {
   private wretch: Wretch
-  records = new Map<string, InterviewStateRecord>()
+  private records = new Map<string, InterviewStateRecordImpl>()
 
   /**
    * Construct a new interview state store.
-   * @param wretchInst - The {Wretch} instance.
+   * @param wretchInst - the {@link Wretch} instance
    */
   constructor(wretchInst?: Wretch) {
     if (wretchInst != null) {
@@ -55,7 +55,6 @@ export class InterviewStateStore {
     }
 
     this.load()
-    makeAutoObservable(this)
   }
 
   /**
@@ -86,7 +85,7 @@ export class InterviewStateStore {
         }[] = JSON.parse(objStr)
         this.records.clear()
         obj.forEach((recordData) => {
-          const record = new InterviewStateRecord(
+          const record = new InterviewStateRecordImpl(
             recordData.r,
             recordData.v,
             recordData.m,
@@ -122,7 +121,7 @@ export class InterviewStateStore {
 
   /**
    * Save a state record.
-   * @param record - The record to save.
+   * @param record - the record to save
    */
   saveRecord(record: InterviewStateRecord) {
     this.records.set(record.id, record)
@@ -132,8 +131,8 @@ export class InterviewStateStore {
 
   /**
    * Get a state record by ID.
-   * @param id - The state ID.
-   * @returns The record, or undefined.
+   * @param id - the state ID
+   * @returns the record, or undefined
    */
   getRecord(id: string): InterviewStateRecord | undefined {
     return this.records.get(id)
@@ -141,15 +140,14 @@ export class InterviewStateStore {
 
   /**
    * Get an updated interview state.
-   * @param record - The current record.
-   * @param responses - The form responses.
-   * @param buttonId - The button ID.
-   * @returns A new interview state record.
+   * @param record - the current record
+   * @param responses - the form responses
+   * @returns a new interview state record
    */
   private async updateState(
-    record: InterviewStateRecord,
-    responses?: Record<string, unknown>,
-  ): Promise<InterviewStateRecord> {
+    record: InterviewStateRecordImpl,
+    responses?: FormValues,
+  ): Promise<InterviewStateRecordImpl> {
     const curStateResponse = record.stateResponse
 
     if (!("update_url" in curStateResponse)) {
@@ -174,10 +172,10 @@ export class InterviewStateStore {
       })
       .json<StateResponse>()
 
-    const newRecord = new InterviewStateRecord(
+    const newRecord = new InterviewStateRecordImpl(
       res,
       {},
-      Object.assign({}, record.metadata),
+      { ...record.metadata },
     )
     this.saveRecord(newRecord)
     return newRecord
@@ -186,14 +184,14 @@ export class InterviewStateStore {
   /**
    * Keep updating the interview state until it returns a result or is complete.
    *
-   * This basically just handles the initial, empty state with no content.
+   * This basically just handles an initial, empty state with no content.
    *
-   * @param record - The state record.
-   * @returns A state record that is complete, or has content.
+   * @param record - the state record
+   * @returns a state record that is complete, or has content
    */
   private async advanceState(
-    record: InterviewStateRecord,
-  ): Promise<InterviewStateRecord> {
+    record: InterviewStateRecordImpl,
+  ): Promise<InterviewStateRecordImpl> {
     let curRecord = record
     while (
       "update_url" in curRecord.stateResponse &&
@@ -207,18 +205,14 @@ export class InterviewStateStore {
 
   /**
    * Start an interview from the initially received state.
-   * @param response - The initial state response.
-   * @returns The next state record.
+   * @param response - the initial state response
+   * @returns the next state record
    */
   async startInterview(
     response: StateResponse,
     metadata?: InterviewStateMetadata,
   ): Promise<InterviewStateRecord> {
-    const record = new InterviewStateRecord(
-      response,
-      {},
-      Object.assign({}, metadata),
-    )
+    const record = new InterviewStateRecordImpl(response, {}, { ...metadata })
     this.saveRecord(record)
 
     const updated = await this.advanceState(record)
@@ -228,13 +222,13 @@ export class InterviewStateStore {
 
   /**
    * Update the interview process.
-   * @param record - The current interview state.
-   * @param responses - The user's responses.
-   * @returns The next state record.
+   * @param record - the current interview state
+   * @param responses - the user's responses
+   * @returns the next state record
    */
   async updateInterview(
     record: InterviewStateRecord,
-    responses?: Record<string, unknown>,
+    responses?: FormValues,
   ): Promise<InterviewStateRecord> {
     const updated = await this.updateState(record, responses)
     const withContent = await this.advanceState(updated)
