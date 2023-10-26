@@ -1,3 +1,4 @@
+import { useValue } from "#src/components/util.js"
 import { FieldProps } from "#src/types.js"
 import {
   createStyles,
@@ -7,9 +8,6 @@ import {
   TextInputProps,
   useComponentDefaultProps,
 } from "@mantine/core"
-import { ScalarFieldState } from "@open-event-systems/interview-lib"
-import { action } from "mobx"
-import { observer } from "mobx-react-lite"
 
 const useStyles = createStyles(() => ({ root: {} }))
 
@@ -23,9 +21,17 @@ export type TextFieldProps = FieldProps &
 /**
  * Component for a text field.
  */
-export const TextField = observer((props: TextFieldProps) => {
-  const { className, classNames, styles, unstyled, required, ...other } =
-    useComponentDefaultProps("OESITextField", {}, props)
+export const TextField = (props: TextFieldProps) => {
+  const {
+    className,
+    classNames,
+    styles,
+    unstyled,
+    state,
+    path,
+    required,
+    ...other
+  } = useComponentDefaultProps("OESITextField", {}, props)
   const { cx, classes } = useStyles(undefined, {
     name: "OESITextField",
     classNames,
@@ -33,13 +39,11 @@ export const TextField = observer((props: TextFieldProps) => {
     unstyled,
   })
 
-  const state = props.state as ScalarFieldState
-
-  const value = state.value != null ? state.value.toString() : ""
-  const error = !state.isValid && state.touched
-  const errorMessage = error ? state.errors[0].message : undefined
-  const autoComplete = state.schema["x-autocomplete"] ?? undefined
-  const inputMode = state.schema["x-input-mode"] ?? undefined
+  const [value, setValue] = useValue<string>(state, path)
+  const error = state.getError(path)
+  const errorMessage = error?._errors ? error._errors[0] : undefined
+  const autoComplete = state.schema["x-autocomplete"]
+  const inputMode = state.schema["x-input-mode"]
 
   return (
     <TextInput
@@ -51,15 +55,13 @@ export const TextField = observer((props: TextFieldProps) => {
       inputMode={inputMode as TextFieldProps["inputMode"]}
       {...other}
       error={errorMessage}
-      value={value}
-      onChange={action((e) => {
-        state.value = e.target.value
-      })}
-      onBlur={action(() => {
-        state.touched = true
-      })}
+      value={value || ""}
+      onChange={(e) => {
+        setValue(e.target.value)
+      }}
+      // onBlur={action(() => {
+      //   state.touched = true
+      // })}
     />
   )
-})
-
-TextField.displayName = "TextField"
+}

@@ -5,10 +5,11 @@ import { z } from "zod"
 class FormStateImpl implements FormState {
   private zodSchema: z.ZodType<unknown>
   private _value: unknown
+  private _touched: unknown
   private _error: ErrorObj | null = null
 
-  get schema(): JSONSchema | boolean {
-    return this._schema
+  get schema(): JSONSchema {
+    return typeof this._schema == "object" ? this._schema : {}
   }
 
   constructor(

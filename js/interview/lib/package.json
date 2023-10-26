@@ -47,5 +47,8 @@
     "wretch": "^2.4.1",
     "zod": "^3.22.4",
     "zod-validation-error": "^2.0.0"
+  },
+  "peerDependencies": {
+    "mobx": "^6.10.2"
   }
 }

@@ -95,10 +95,9 @@ export interface InterviewStateMetadata {
   [key: string]: unknown
 }
 
-export interface ErrorObj {
-  [key: string]: ErrorObj | string[] | undefined
-  _errors?: string[]
-}
+export type ErrorObj = {
+  [key in string]?: ErrorObj
+} & { _errors?: string[] }
 
 export type FormPath = (string | number)[]
 
@@ -109,7 +108,7 @@ export interface FormState {
   /**
    * The {@link JSONSchema} describing the form.
    */
-  get schema(): JSONSchema | boolean
+  get schema(): JSONSchema
 
   /**
    * Get a value in the state.

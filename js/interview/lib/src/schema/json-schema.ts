@@ -72,6 +72,10 @@ export const createSchema = (
     zs = zs.and(subschemas)
   }
 
+  if (schema.title) {
+    zs = zs.describe(schema.title)
+  }
+
   return zs
 }
 
