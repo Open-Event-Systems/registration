@@ -1,11 +1,18 @@
-import { JSONSchema7 } from "json-schema"
+import {
+  JSONSchema7,
+  JSONSchema7Definition,
+  JSONSchema7TypeName,
+} from "json-schema"
 
 /**
  * Form values type.
  */
 export type FormValues = Record<string, unknown>
 
-export type JSONSchema = JSONSchema7
+export type JSONSchema = JSONSchema7Definition
+export type JSONSchemaOf<T extends JSONSchema7TypeName> = JSONSchema7 & {
+  type: T | JSONSchema7TypeName[]
+}
 
 // extend schema
 declare module "json-schema" {
@@ -95,38 +102,54 @@ export interface InterviewStateMetadata {
   [key: string]: unknown
 }
 
-export type ErrorObj = {
-  [key in string]?: ErrorObj
-} & { _errors?: string[] }
-
-export type FormPath = (string | number)[]
-
 /**
- * Stores state for a form schema.
+ * Holds the state for a form field.
  */
-export interface FormState {
+export interface FieldState<T> {
   /**
-   * The {@link JSONSchema} describing the form.
+   * The {@link JSONSchema7Definition} for this field.
    */
   get schema(): JSONSchema
 
   /**
-   * Get a value in the state.
+   * The current value of the field.
    */
-  getValue(path?: FormPath): unknown
+  get value(): T | null
 
   /**
-   * Set a value in the state.
+   * Set the current value.
    */
-  setValue(path: FormPath, value: unknown): void
+  setValue(v: T | null): void
 
   /**
-   * Get an error object in the state.
+   * The error message for the current value, or undefined if valid.
    */
-  getError(path?: FormPath): ErrorObj | undefined
+  get error(): string | undefined
 
   /**
-   * Reset the state to its initial value.
+   * Whether the current value is valid.
+   */
+  get isValid(): boolean
+
+  /**
+   * Whether the field has been interacted with.
+   */
+  get touched(): boolean
+
+  /**
+   * Mark the field as having been interacted with.
+   */
+  setTouched(): void
+
+  /**
+   * Reset the field to its initial state.
    */
   reset(): void
+}
+
+/**
+ * A {@link FieldState} for an object.
+ */
+export interface ObjectFieldState extends FieldState<Record<string, unknown>> {
+  readonly properties: Record<string, FieldState<unknown> | undefined> | null
 }

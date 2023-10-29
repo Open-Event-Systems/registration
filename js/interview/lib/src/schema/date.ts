@@ -3,7 +3,7 @@
  * @module
  */
 
-import { JSONSchema } from "#src/types.js"
+import { JSONSchemaOf } from "#src/types.js"
 import dayjs, { Dayjs, isDayjs } from "dayjs"
 import { z } from "zod"
 
@@ -12,7 +12,7 @@ import { z } from "zod"
  */
 export const handleDate = (
   zodSchema: z.ZodType<string>,
-  schema: JSONSchema,
+  schema: JSONSchemaOf<"string">,
 ): z.ZodType<string> => {
   let zs = zodSchema
   zs = zs.transform((v, ctx) => {

@@ -5,17 +5,14 @@
  */
 
 import { handleDate } from "#src/schema/date.js"
-import { JSONSchema } from "#src/types.js"
+import { JSONSchema, JSONSchemaOf } from "#src/types.js"
+import { JSONSchema7TypeName } from "json-schema"
 import { z } from "zod"
-
-type SchemaTypeName = Extract<JSONSchema["type"], string>
 
 /**
  * Create a Zod schema from a JSON schema.
  */
-export const createSchema = (
-  schema: JSONSchema | boolean,
-): z.ZodType<unknown> => {
+export const createSchema = (schema: JSONSchema): z.ZodType<unknown> => {
   if (typeof schema == "boolean") {
     return schema ? z.unknown() : z.never()
   }
@@ -82,7 +79,7 @@ export const createSchema = (
 /**
  * Array schema.
  */
-const handleArray = (schema: JSONSchema): z.ZodType<unknown[]> => {
+const handleArray = (schema: JSONSchemaOf<"array">): z.ZodType<unknown[]> => {
   let itemsSchema: z.ZodType<unknown>
 
   if (schema.items != null) {
@@ -128,7 +125,7 @@ const handleArray = (schema: JSONSchema): z.ZodType<unknown[]> => {
  * @returns
  */
 const handleObject = (
-  schema: JSONSchema,
+  schema: JSONSchemaOf<"object">,
 ): z.ZodType<Record<string, unknown>> => {
   if (schema.properties == null) {
     return z.record(z.string(), z.unknown())
@@ -154,7 +151,7 @@ const handleObject = (
 /**
  * String schema.
  */
-const handleString = (schema: JSONSchema): z.ZodType<string> => {
+const handleString = (schema: JSONSchemaOf<"string">): z.ZodType<string> => {
   let zs = z.string()
 
   if (schema.minLength != null) {
@@ -206,7 +203,9 @@ const coerceEmptyStrings = (v: unknown): unknown => {
 /**
  * Number schema.
  */
-const handleNumber = (schema: JSONSchema): z.ZodNumber => {
+const handleNumber = (
+  schema: JSONSchemaOf<"integer" | "number">,
+): z.ZodNumber => {
   let zs = z.number()
 
   if (schema.minimum != null) {
@@ -227,25 +226,26 @@ const handleNumber = (schema: JSONSchema): z.ZodNumber => {
 /**
  * Boolean schema.
  */
-const handleBoolean = (schema: JSONSchema): z.ZodBoolean => {
+const handleBoolean = (schema: JSONSchemaOf<"boolean">): z.ZodBoolean => {
   return z.boolean()
 }
 
 /**
  * Null schema.
  */
-const handleNull = (schema: JSONSchema): z.ZodNull => {
+const handleNull = (schema: JSONSchemaOf<"null">): z.ZodNull => {
   return z.null()
 }
 
 /**
  * Return whether the schema includes a given type.
  */
-export const isType = <T extends SchemaTypeName>(
+export const isType = <T extends JSONSchema7TypeName>(
   t: T,
   schema: JSONSchema,
-): schema is JSONSchema & { type: T } => {
+): schema is JSONSchemaOf<T> => {
   return (
+    typeof schema == "object" &&
     !!schema.type &&
     (schema.type === t ||
       (Array.isArray(schema.type) && schema.type.includes(t)))

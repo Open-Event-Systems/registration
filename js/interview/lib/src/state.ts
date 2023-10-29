@@ -1,30 +1,23 @@
 import { createSchema, isType } from "#src/schema/json-schema.js"
-import { ErrorObj, JSONSchema } from "#src/types.js"
-import { computed, makeAutoObservable, observable } from "mobx"
+import {
+  FieldState,
+  JSONSchema,
+  JSONSchemaOf,
+  ObjectFieldState,
+} from "#src/types.js"
+import { computed, flow, makeAutoObservable, observable } from "mobx"
 
-interface FieldState<T> {
-  get schema(): JSONSchema
-
-  get value(): T | null | undefined
-  setValue(v: T | null | undefined): void
-
-  get error(): string | undefined
-  get isValid(): boolean
-
-  get touched(): boolean
-  setTouched(): void
-
-  reset(): void
-}
-
-export interface ObjectFieldState extends FieldState<Record<string, unknown>> {
-  readonly properties: Record<string, FieldState<unknown>> | null | undefined
-}
+type ErrorObj = {
+  [key in string]?: ErrorObj
+} & { _errors?: string[] }
 
 type GetErrors = () => ErrorObj | undefined
 
+/**
+ * Normal field state.
+ */
 class ScalarFieldState<T> implements FieldState<T> {
-  value: T | null | undefined
+  value: T | null
   touched = false
 
   get error() {
@@ -43,13 +36,16 @@ class ScalarFieldState<T> implements FieldState<T> {
   constructor(
     public schema: JSONSchema,
     private getErrors: GetErrors,
-    private initialValue?: T | null | undefined,
+    private initialValue?: T | null,
   ) {
-    this.value = initialValue
+    const defaultValue =
+      typeof schema != "boolean" ? (schema.default as T) : undefined
+    this.value =
+      initialValue !== undefined ? initialValue : defaultValue ?? null
     makeAutoObservable(this)
   }
 
-  setValue(v: T | null | undefined) {
+  setValue(v: T | null) {
     this.value = v
   }
 
@@ -58,14 +54,24 @@ class ScalarFieldState<T> implements FieldState<T> {
   }
 
   reset() {
-    this.value = this.initialValue
+    const defaultValue =
+      typeof this.schema != "boolean" ? (this.schema.default as T) : undefined
+    this.value =
+      this.initialValue !== undefined ? this.initialValue : defaultValue ?? null
     this.touched = false
   }
 }
 
-class ObjectFieldStateImpl implements FieldState<Record<string, unknown>> {
-  public properties: Record<string, FieldState<unknown>> | null | undefined
+/**
+ * Field state for an object. Maps property names to sub-{@link FieldState} instances.
+ */
+class ObjectFieldStateImpl implements ObjectFieldState {
+  public properties: Record<string, FieldState<unknown> | undefined> | null =
+    null
 
+  /**
+   * Map property names to the values of the sub-fields.
+   */
   get value() {
     if (this.properties == null) {
       return this.properties
@@ -74,7 +80,7 @@ class ObjectFieldStateImpl implements FieldState<Record<string, unknown>> {
     const obj: Record<string, unknown> = {}
 
     for (const [prop, state] of Object.entries(this.properties)) {
-      if (state.value !== undefined) {
+      if (state && state.value !== undefined) {
         obj[prop] = state.value
       }
     }
@@ -83,7 +89,7 @@ class ObjectFieldStateImpl implements FieldState<Record<string, unknown>> {
   }
 
   get touched() {
-    return Object.values(this.properties || {}).some((s) => s.touched)
+    return Object.values(this.properties ?? {}).some((s) => !!s && s.touched)
   }
 
   get error() {
@@ -100,104 +106,135 @@ class ObjectFieldStateImpl implements FieldState<Record<string, unknown>> {
   }
 
   constructor(
-    public schema: JSONSchema,
+    public schema: JSONSchemaOf<"object">,
     private getErrors: GetErrors,
-    private initialValue?: Record<string, unknown> | null | undefined,
+    private initialValue?: Record<string, unknown> | null,
   ) {
-    this.setValue(initialValue)
+    this.setValue(initialValue !== undefined ? initialValue : {})
+
     makeAutoObservable(this)
   }
 
-  setValue(v: Record<string, unknown> | null | undefined) {
+  setValue(v: Record<string, unknown> | null) {
     if (v == null) {
       this.properties = v
       return
     }
 
-    const properties = this.createProperties()
+    const properties = this.createObject(this.schema, this.initialValue)
 
     for (const [prop, value] of Object.entries(v)) {
-      properties[prop].setValue(value)
+      this.setPropertyValue(
+        this.schema,
+        this.initialValue,
+        properties,
+        prop,
+        value,
+      )
     }
+
+    this.properties = properties
   }
 
   setTouched() {
     for (const state of Object.values(this.properties ?? {})) {
-      state.setTouched()
+      if (state) {
+        state.setTouched()
+      }
     }
   }
 
-  private createProperties() {
-    this.properties = {}
+  /**
+   * Create the properties object and populate fields with initial values.
+   */
+  private createObject(
+    schema: JSONSchemaOf<"object">,
+    initialValue: Record<string, unknown> | null | undefined,
+  ) {
+    const properties: Record<string, FieldState<unknown>> = {}
 
-    for (const [prop, schema] of Object.entries(this.schema.properties || {})) {
-      const getErrors = () => {
-        const parentErr = this.getErrors()
+    for (const [prop, propSchema] of Object.entries(schema.properties ?? {})) {
+      const isRequired = !!schema.required && schema.required.includes(prop)
+      const propValue = this.getPropertyInitialValue(schema, initialValue, prop)
 
-        if (!parentErr) {
-          return undefined
-        }
-
-        return parentErr[prop]
+      if (isRequired || propValue !== undefined) {
+        properties[prop] = this.createPropertyState(prop, propSchema, propValue)
       }
-
-      const initialValue = (this.initialValue ?? {})[prop]
-
-      const state = _createState(
-        schema,
-        getErrors,
-        getDefault(schema, initialValue),
-      )
-      this.properties[prop] = state
     }
 
+    this.properties = properties
     return this.properties
   }
 
+  private setPropertyValue(
+    objSchema: JSONSchemaOf<"object">,
+    objInitialValue: Record<string, unknown> | null | undefined,
+    properties: Record<string, FieldState<unknown> | undefined>,
+    prop: string,
+    value: unknown,
+  ) {
+    let state = properties[prop]
+
+    if (!state) {
+      const initialValue = this.getPropertyInitialValue(
+        objSchema,
+        objInitialValue,
+        prop,
+      )
+      const schema = objSchema.properties ? objSchema.properties[prop] : {}
+      state = this.createPropertyState(prop, schema, initialValue)
+      properties[prop] = state
+    }
+
+    state.setValue(value)
+  }
+
+  private createPropertyState(
+    prop: string,
+    schema: JSONSchema,
+    initialValue: unknown | null,
+  ) {
+    const getErrors = () => {
+      const parentErr = this.getErrors()
+      return parentErr ? parentErr[prop] : undefined
+    }
+
+    return _createState(schema, getErrors, initialValue ?? null)
+  }
+
+  private getPropertyInitialValue(
+    objSchema: JSONSchemaOf<"object">,
+    objInitialValue: Record<string, unknown> | null | undefined,
+    prop: string,
+  ) {
+    const propSchema = objSchema.properties ? objSchema.properties[prop] : {}
+    const propDefault =
+      typeof propSchema == "object" ? propSchema.default : undefined
+    const propInitial = objInitialValue ? objInitialValue[prop] : undefined
+    return propInitial !== undefined ? propInitial : propDefault
+  }
+
   reset() {
-    this.setValue(this.initialValue)
+    this.setValue(this.initialValue !== undefined ? this.initialValue : {})
   }
 }
 
 const _createState = (
-  schema: JSONSchema | boolean,
+  schema: JSONSchema,
   getErrors: GetErrors,
-  initialValue?: unknown,
+  initialValue: unknown | null | undefined,
 ): FieldState<unknown> => {
   if (typeof schema == "boolean") {
+    // not a supported case...
     return new ScalarFieldState({}, () => undefined)
   } else if (isType("object", schema)) {
     return new ObjectFieldStateImpl(
       schema,
       getErrors,
-      getDefault(schema, initialValue) as Record<string, unknown>,
+      initialValue as Record<string, unknown> | null,
     )
   } else {
-    return new ScalarFieldState(
-      schema,
-      getErrors,
-      getDefault(schema, initialValue),
-    )
-  }
-}
-
-const getDefault = (schema: JSONSchema | boolean, initialValue?: unknown) => {
-  if (typeof schema == "boolean") {
-    return undefined
-  } else if (isType("object", schema)) {
-    const obj: Record<string, unknown> = {}
-    const initObj: Record<string, unknown> = (initialValue ?? {}) as Record<
-      string,
-      unknown
-    >
-
-    for (const [prop, subschema] of Object.entries(schema.properties ?? {})) {
-      obj[prop] = getDefault(subschema, initObj[prop])
-    }
-
-    return obj
-  } else {
-    return initialValue ?? schema.default
+    return new ScalarFieldState(schema, getErrors, initialValue)
   }
 }
 
@@ -209,7 +246,7 @@ const getDefault = (schema: JSONSchema | boolean, initialValue?: unknown) => {
  */
 export const createState = (
   schema: JSONSchema,
-  initialValue?: unknown,
+  initialValue?: unknown | null,
 ): FieldState<unknown> => {
   const zodSchema = createSchema(schema)
 
