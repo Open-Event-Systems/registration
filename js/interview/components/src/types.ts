@@ -1,7 +1,6 @@
-import { FormPath, FormState } from "@open-event-systems/interview-lib"
+import { FieldState } from "@open-event-systems/interview-lib"
 
-export type FieldProps = {
-  state: FormState
-  path: FormPath
+export type FieldProps<T> = {
+  state: FieldState<T>
   required?: boolean
 }

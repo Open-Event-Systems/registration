@@ -5,6 +5,7 @@ import {
   JSONSchemaOf,
   ObjectFieldState,
 } from "#src/types.js"
+import { JSONSchema7 } from "json-schema"
 import { computed, flow, makeAutoObservable, observable } from "mobx"
 
 type ErrorObj = {
@@ -34,7 +35,7 @@ class ScalarFieldState<T> implements FieldState<T> {
   }
 
   constructor(
-    public schema: JSONSchema,
+    public schema: JSONSchema7,
     private getErrors: GetErrors,
     private initialValue?: T | null,
   ) {

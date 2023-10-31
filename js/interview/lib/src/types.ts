@@ -107,9 +107,9 @@ export interface InterviewStateMetadata {
  */
 export interface FieldState<T> {
   /**
-   * The {@link JSONSchema7Definition} for this field.
+   * The {@link JSONSchema7} for this field.
    */
-  get schema(): JSONSchema
+  get schema(): JSONSchema7
 
   /**
    * The current value of the field.

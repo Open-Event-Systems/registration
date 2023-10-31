@@ -1,10 +1,8 @@
 import type { Preview } from "@storybook/react"
 import React from "react"
-import {
-  DEFAULT_THEME,
-  MantineProvider,
-  TypographyStylesProvider,
-} from "@mantine/core"
+import { MantineProvider } from "@mantine/core"
+
+import "@mantine/core/styles.css"
 
 const preview: Preview = {
   parameters: {
@@ -12,16 +10,14 @@ const preview: Preview = {
     controls: {
       matchers: {
         color: /(background|color)$/i,
-        date: /Date$/,
+        date: /Date$/i,
       },
     },
   },
   decorators: [
     (Story) => (
-      <MantineProvider theme={DEFAULT_THEME} withGlobalStyles withNormalizeCSS>
-        <TypographyStylesProvider>
-          <Story />
-        </TypographyStylesProvider>
+      <MantineProvider>
+        <Story />
       </MantineProvider>
     ),
   ],
