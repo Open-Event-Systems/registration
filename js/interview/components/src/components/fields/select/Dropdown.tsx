@@ -1,4 +1,4 @@
-import { getOptions } from "#src/components/fields/select/util.js"
+import { getOptions, isNullable } from "#src/components/fields/select/util.js"
 import { FieldProps } from "#src/types.js"
 import { Select, SelectProps, useProps } from "@mantine/core"
 import { observer } from "mobx-react-lite"
@@ -8,14 +8,11 @@ export type DropdownSelectFieldProps = FieldProps<string | string[]> &
 
 export const DropdownSelectField = observer(
   (props: DropdownSelectFieldProps) => {
-    const { state, required, ...other } = useProps(
-      "OESIDropdownSelectField",
-      {},
-      props,
-    )
+    const { state, ...other } = useProps("OESIDropdownSelectField", {}, props)
 
     const options = getOptions(state.schema)
     const hasError = !state.isValid && state.touched
+    const nullable = isNullable(state.schema)
 
     const value = Array.isArray(state.value) ? state.value[0] : state.value
 
@@ -25,8 +22,8 @@ export const DropdownSelectField = observer(
           root: "OESIDropdownSelectField-root",
         }}
         label={state.schema.title}
-        required={required}
-        withAsterisk={required}
+        required={!nullable}
+        withAsterisk={!nullable}
         clearable
         {...other}
         data={options}

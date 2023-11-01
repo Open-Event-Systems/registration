@@ -2,14 +2,15 @@ import { FieldProps } from "#src/types.js"
 import { NumberInput, NumberInputProps, useProps } from "@mantine/core"
 import { observer } from "mobx-react-lite"
 
-export type NumberFieldProps = FieldProps<string> &
+export type NumberFieldProps = FieldProps<string | number> &
   Omit<NumberInputProps, "value" | "error" | "onChange" | "onBlur">
 
 export const NumberField = observer((props: NumberFieldProps) => {
-  const { state, required, ...other } = useProps("OESINumberField", {}, props)
+  const { state, ...other } = useProps("OESINumberField", {}, props)
 
   const error = state.error
   const hasError = !state.isValid && state.touched
+  const nullable = !!state.schema.type?.includes("null")
 
   let value
   if (typeof state.value == "number") {
@@ -36,8 +37,8 @@ export const NumberField = observer((props: NumberFieldProps) => {
         root: "OESINumberField-root",
       }}
       label={state.schema.title || undefined}
-      required={required}
-      withAsterisk={required}
+      required={!nullable}
+      withAsterisk={!nullable}
       autoComplete={state.schema["x-autocomplete"]}
       inputMode={state.schema["x-input-mode"] as NumberInputProps["inputMode"]}
       min={state.schema.minimum}
@@ -47,7 +48,19 @@ export const NumberField = observer((props: NumberFieldProps) => {
       value={value}
       error={hasError ? error : undefined}
       onChange={(e) => {
-        state.setValue(String(e))
+        if (typeof e == "string") {
+          const trimmed = e.trim()
+          if (trimmed == "") {
+            state.setValue(null)
+          } else {
+            state.setValue(trimmed)
+          }
+        } else {
+          state.setValue(e)
+        }
+      }}
+      onBlur={() => {
+        state.setTouched()
       }}
     />
   )

@@ -28,6 +28,6 @@ export const Default: StoryObj<typeof TextField> = {
       }),
     )
 
-    return <TextField required state={state as FieldState<string>} />
+    return <TextField state={state as FieldState<string>} />
   },
 }

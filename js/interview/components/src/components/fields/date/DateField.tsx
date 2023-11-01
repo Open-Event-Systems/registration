@@ -8,9 +8,10 @@ export type DateFieldProps = FieldProps<string> &
   Omit<DateInputProps, "value" | "onChange" | "error">
 
 export const DateField = observer((props: DateFieldProps) => {
-  const { state, required, ...other } = useProps("OESIDateField", {}, props)
+  const { state, ...other } = useProps("OESIDateField", {}, props)
 
   const hasError = !state.isValid && state.touched
+  const nullable = !!state.schema.type?.includes("null")
 
   let value = null
 
@@ -27,8 +28,8 @@ export const DateField = observer((props: DateFieldProps) => {
         root: "OESIDateField-root",
       }}
       label={state.schema.title}
-      required={required}
-      withAsterisk={required}
+      required={!nullable}
+      withAsterisk={!nullable}
       inputMode={state.schema["x-input-mode"] as DateFieldProps["inputMode"]}
       autoComplete={state.schema["x-autocomplete"]}
       {...other}

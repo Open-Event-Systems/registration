@@ -1,4 +1,4 @@
-import { getOptions } from "#src/components/fields/select/util.js"
+import { getOptions, isNullable } from "#src/components/fields/select/util.js"
 import { FieldProps } from "#src/types.js"
 import { observer } from "mobx-react-lite"
 
@@ -18,7 +18,7 @@ export type CheckboxSelectFieldProps = FieldProps<string | string[]> &
 
 export const CheckboxSelectField = observer(
   (props: CheckboxSelectFieldProps) => {
-    const { state, required, CheckboxProps, ...other } = useProps(
+    const { state, CheckboxProps, ...other } = useProps(
       "OESICheckboxSelectField",
       {},
       props,
@@ -26,6 +26,7 @@ export const CheckboxSelectField = observer(
 
     const options = getOptions(state.schema)
     const hasError = !state.isValid && state.touched
+    const nullable = isNullable(state.schema)
 
     const value = (
       Array.isArray(state.value) ? state.value : [state.value]
@@ -36,8 +37,8 @@ export const CheckboxSelectField = observer(
         classNames={{
           root: "OESICheckboxSelectField-root",
         }}
-        required={required}
-        withAsterisk={required}
+        required={!nullable}
+        withAsterisk={!nullable}
         label={state.schema.title}
         {...other}
         error={hasError ? state.error : undefined}

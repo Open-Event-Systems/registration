@@ -31,6 +31,6 @@ export const Default: StoryObj<typeof DateField> = {
       }),
     )
 
-    return <DateField state={state as FieldState<string>} required />
+    return <DateField state={state as FieldState<string>} />
   },
 }

@@ -33,3 +33,15 @@ export const getOptions = (
     return options
   }
 }
+
+export const isNullable = (schema: JSONSchema): boolean => {
+  if (typeof schema != "object") {
+    return false
+  } else if (schema.items) {
+    return schema.minItems == undefined || schema.minItems == 0
+  } else if (schema.oneOf) {
+    return !!schema.oneOf.find((o) => typeof o == "object" && o.type == "null")
+  } else {
+    return false
+  }
+}

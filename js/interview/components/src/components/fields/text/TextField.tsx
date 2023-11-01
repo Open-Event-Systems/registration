@@ -9,11 +9,12 @@ export type TextFieldProps = FieldProps<string> &
  * Component for a text field.
  */
 export const TextField = observer((props: TextFieldProps) => {
-  const { state, required, ...other } = useProps("OESITextField", {}, props)
+  const { state, ...other } = useProps("OESITextField", {}, props)
 
   const value = state.value
   const error = state.error
   const hasError = !state.isValid && state.touched
+  const nullable = !!state.schema.type?.includes("null")
 
   return (
     <TextInput
@@ -21,8 +22,8 @@ export const TextField = observer((props: TextFieldProps) => {
         root: "OESITextField-root",
       }}
       label={state.schema.title || undefined}
-      required={required}
-      withAsterisk={required}
+      required={!nullable}
+      withAsterisk={!nullable}
       autoComplete={
         state.schema["x-autocomplete"] as TextFieldProps["autoComplete"]
       }

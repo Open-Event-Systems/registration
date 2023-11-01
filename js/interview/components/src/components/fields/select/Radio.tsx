@@ -1,4 +1,4 @@
-import { getOptions } from "#src/components/fields/select/util.js"
+import { getOptions, isNullable } from "#src/components/fields/select/util.js"
 import { FieldProps } from "#src/types.js"
 import {
   Radio,
@@ -17,7 +17,7 @@ export type RadioSelectFieldProps = FieldProps<string | string[]> &
   }
 
 export const RadioSelectField = observer((props: RadioSelectFieldProps) => {
-  const { state, required, RadioProps, ...other } = useProps(
+  const { state, RadioProps, ...other } = useProps(
     "OESIRadioSelectField",
     {},
     props,
@@ -25,6 +25,7 @@ export const RadioSelectField = observer((props: RadioSelectFieldProps) => {
 
   const options = getOptions(state.schema)
   const hasError = !state.isValid && state.touched
+  const nullable = isNullable(state.schema)
 
   const value = Array.isArray(state.value) ? state.value[0] : state.value
 
@@ -33,8 +34,8 @@ export const RadioSelectField = observer((props: RadioSelectFieldProps) => {
       classNames={{
         root: "OESIRadioSelectField-root",
       }}
-      required={required}
-      withAsterisk={required}
+      required={!nullable}
+      withAsterisk={!nullable}
       label={state.schema.title}
       {...other}
       error={hasError ? state.error : undefined}

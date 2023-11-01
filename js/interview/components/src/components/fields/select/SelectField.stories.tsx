@@ -40,9 +40,7 @@ export const Dropdown: StoryObj<typeof SelectField> = {
       }),
     )
 
-    return (
-      <SelectField state={state as FieldState<string | string[]>} required />
-    )
+    return <SelectField state={state as FieldState<string | string[]>} />
   },
 }
 
@@ -69,9 +67,7 @@ export const Radio: StoryObj<typeof SelectField> = {
       }),
     )
 
-    return (
-      <SelectField state={state as FieldState<string | string[]>} required />
-    )
+    return <SelectField state={state as FieldState<string | string[]>} />
   },
 }
 
@@ -104,8 +100,6 @@ export const Checkbox: StoryObj<typeof SelectField> = {
       }),
     )
 
-    return (
-      <SelectField state={state as FieldState<string | string[]>} required />
-    )
+    return <SelectField state={state as FieldState<string | string[]>} />
   },
 }
