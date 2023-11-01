@@ -8,6 +8,7 @@ import {
   CheckboxGroupProps,
   CheckboxProps,
   Stack,
+  useProps,
 } from "@mantine/core"
 
 export type CheckboxSelectFieldProps = FieldProps<string | string[]> &
@@ -17,7 +18,11 @@ export type CheckboxSelectFieldProps = FieldProps<string | string[]> &
 
 export const CheckboxSelectField = observer(
   (props: CheckboxSelectFieldProps) => {
-    const { state, required, CheckboxProps, ...other } = props
+    const { state, required, CheckboxProps, ...other } = useProps(
+      "OESICheckboxSelectField",
+      {},
+      props,
+    )
 
     const options = getOptions(state.schema)
     const hasError = !state.isValid && state.touched

@@ -1,6 +1,12 @@
 import { getOptions } from "#src/components/fields/select/util.js"
 import { FieldProps } from "#src/types.js"
-import { Radio, RadioGroupProps, RadioProps, Stack } from "@mantine/core"
+import {
+  Radio,
+  RadioGroupProps,
+  RadioProps,
+  Stack,
+  useProps,
+} from "@mantine/core"
 import { observer } from "mobx-react-lite"
 
 import "./Radio.module.css"
@@ -11,7 +17,11 @@ export type RadioSelectFieldProps = FieldProps<string | string[]> &
   }
 
 export const RadioSelectField = observer((props: RadioSelectFieldProps) => {
-  const { state, required, RadioProps, ...other } = props
+  const { state, required, RadioProps, ...other } = useProps(
+    "OESIRadioSelectField",
+    {},
+    props,
+  )
 
   const options = getOptions(state.schema)
   const hasError = !state.isValid && state.touched
