@@ -23,6 +23,7 @@ declare module "json-schema" {
     "x-autocomplete"?: string
     "x-minimum"?: string
     "x-maximum"?: string
+    "x-primary"?: boolean
   }
 }
 
