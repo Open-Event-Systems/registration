@@ -4,13 +4,13 @@ import {
   TypographyStylesProvider,
   useProps,
 } from "@mantine/core"
-import { createContext, useContext } from "react"
+import { ComponentPropsWithoutRef, createContext, useContext } from "react"
 import markdown from "markdown-it"
 import clsx from "clsx"
 
 export type MarkdownProps = {
   content?: string
-} & Omit<BoxProps, "children">
+} & Omit<BoxProps & ComponentPropsWithoutRef<"div">, "children">
 
 /**
  * Component that renders markdown formatted text.

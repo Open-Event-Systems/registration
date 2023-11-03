@@ -1,0 +1,14 @@
+:global .OESIExit-root {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mantine-spacing-xs);
+}
+
+:global .OESIExit-text {
+    flex: auto;
+}
+
+:global .OESIExit-button {
+    align-self: flex-end;
+}

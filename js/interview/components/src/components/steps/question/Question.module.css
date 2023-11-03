@@ -1,0 +1,18 @@
+:global .OESIQuestion-root {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--mantine-spacing-xs);
+}
+
+:global .OESIQuestion-fields {
+    flex: auto;
+}
+
+:global .OESIQuestion-defaultButton {
+    align-self: flex-end;
+}
+
+:global .OESIQuestion-buttons {
+    align-self: flex-end;
+}

@@ -7,41 +7,47 @@ import {
   ObjectFieldProps,
 } from "#src/components/fields/object/ObjectField.js"
 import { Markdown, MarkdownProps } from "#src/components/markdown/Markdown.js"
-import { useProps } from "@mantine/core"
+import { Button, ButtonProps, useProps } from "@mantine/core"
 import { FieldState, ObjectFieldState } from "@open-event-systems/interview-lib"
 import clsx from "clsx"
+import { ComponentPropsWithoutRef } from "react"
 
 export type QuestionProps = {
   fieldsState: ObjectFieldState
-  buttonsState: FieldState<string>
+  buttonsState?: FieldState<string>
   classNames?: {
     root?: string
     text?: string
     fields?: string
+    defaultButton?: string
     buttons?: string
   }
 } & Omit<QuestionRootProps, "children">
 
 export const Question = (props: QuestionProps) => {
-  const { fieldsState, buttonsState, classNames, ...other } = useProps(
-    "OESIQuestion",
-    {},
-    props,
-  )
+  const { fieldsState, buttonsState, className, classNames, ...other } =
+    useProps("OESIQuestion", {}, props)
 
   return (
-    <Question.Root className={classNames?.root} {...other}>
+    <Question.Root className={clsx(classNames?.root, className)} {...other}>
       <Question.Text
         className={classNames?.text}
         content={fieldsState.schema.description}
       />
       <Question.Fields className={classNames?.fields} state={fieldsState} />
-      <Question.Buttons className={classNames?.buttons} state={buttonsState} />
+      {buttonsState ? (
+        <Question.Buttons
+          className={classNames?.buttons}
+          state={buttonsState}
+        />
+      ) : (
+        <Question.DefaultButton className={classNames?.defaultButton} />
+      )}
     </Question.Root>
   )
 }
 
-export type QuestionRootProps = JSX.IntrinsicElements["form"]
+export type QuestionRootProps = ComponentPropsWithoutRef<"form">
 
 const QuestionRoot = (props: QuestionRootProps) => {
   const { className, children, ...other } = useProps(
@@ -79,6 +85,28 @@ export const QuestionFields = (props: QuestionFieldsProps) => {
   )
 }
 
+export type QuestionDefaultButtonProps = ButtonProps &
+  ComponentPropsWithoutRef<"button">
+
+const QuestionDefaultButton = (props: QuestionDefaultButtonProps) => {
+  const { className, ...other } = useProps(
+    "OESIQuestionDefaultButton",
+    {},
+    props,
+  )
+
+  return (
+    <Button
+      className={clsx(className, "OESIQuestion-defaultButton")}
+      type="submit"
+      variant="filled"
+      {...other}
+    >
+      Next
+    </Button>
+  )
+}
+
 export type QuestionButtonsProps = ButtonFieldProps
 
 const QuestionButtons = (props: ButtonFieldProps) => {
@@ -87,6 +115,7 @@ const QuestionButtons = (props: ButtonFieldProps) => {
   return (
     <ButtonField
       className={clsx(className, "OESIQuestion-buttons")}
+      justify="flex-end"
       {...other}
     />
   )
@@ -95,4 +124,5 @@ const QuestionButtons = (props: ButtonFieldProps) => {
 Question.Root = QuestionRoot
 Question.Text = QuestionText
 Question.Fields = QuestionFields
+Question.DefaultButton = QuestionDefaultButton
 Question.Buttons = QuestionButtons
