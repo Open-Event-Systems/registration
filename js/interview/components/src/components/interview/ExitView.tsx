@@ -9,7 +9,7 @@ import {
   useComponentDefaultProps,
 } from "@mantine/core"
 import { ExitResult } from "@open-event-systems/interview-lib"
-import { Markdown } from "#src/components/Markdown.js"
+import { Markdown } from "#src/components/markdown/Markdown.js"
 
 const exitStyles = createStyles((theme) => ({
   root: {

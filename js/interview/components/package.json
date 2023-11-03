@@ -47,6 +47,7 @@
     "@mantine/core": "^7.1.6",
     "@mantine/dates": "^7.1.6",
     "@mantine/hooks": "^7.1.6",
+    "clsx": "^2.0.0",
     "dayjs": "^1.11.8",
     "markdown-it": "^13.0.1"
   },

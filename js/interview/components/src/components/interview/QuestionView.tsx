@@ -20,7 +20,7 @@ import {
   QuestionFields,
   QuestionFieldsProps,
 } from "#src/components/form/QuestionFields.js"
-import { Markdown } from "#src/components/Markdown.js"
+import { Markdown } from "#src/components/markdown/Markdown.js"
 
 const questionStyles = createStyles((theme) => ({
   root: {
