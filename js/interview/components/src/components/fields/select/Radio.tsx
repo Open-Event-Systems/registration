@@ -9,8 +9,6 @@ import {
 } from "@mantine/core"
 import { observer } from "mobx-react-lite"
 
-import "./Radio.module.css"
-
 export type RadioSelectFieldProps = FieldProps<string | string[]> &
   Omit<RadioGroupProps, "error" | "value" | "onChange" | "children"> & {
     RadioProps?: Partial<RadioProps>

@@ -16,7 +16,8 @@
   },
   "files": [
     "dist/src/",
-    "!*.stories.*"
+    "!*.stories.*",
+    "src/**/*.css"
   ],
   "devDependencies": {
     "@storybook/addon-essentials": "^7.5.1",

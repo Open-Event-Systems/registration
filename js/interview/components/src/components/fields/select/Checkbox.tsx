@@ -2,7 +2,6 @@ import { getOptions, isNullable } from "#src/components/fields/select/util.js"
 import { FieldProps } from "#src/types.js"
 import { observer } from "mobx-react-lite"
 
-import "./Checkbox.module.css"
 import {
   Checkbox,
   CheckboxGroupProps,
