@@ -17,7 +17,7 @@ export const createSchema = (schema: JSONSchema): z.ZodType<unknown> => {
     return schema ? z.unknown() : z.never()
   }
 
-  let schemas: z.ZodType<unknown>[] = []
+  const schemas: z.ZodType<unknown>[] = []
 
   if (isType("string", schema)) {
     schemas.push(handleString(schema))
@@ -131,7 +131,7 @@ const handleObject = (
     return z.record(z.string(), z.unknown())
   }
 
-  let obj: Record<string, z.ZodType<unknown>> = {}
+  const obj: Record<string, z.ZodType<unknown>> = {}
   const requiredProps = schema.required || []
 
   for (const [prop, subschema] of Object.entries(schema.properties)) {
@@ -144,7 +144,7 @@ const handleObject = (
     }
   }
 
-  let zs = z.object(obj)
+  const zs = z.object(obj)
 
   return zs
 }
@@ -227,14 +227,14 @@ const handleNumber = (
 /**
  * Boolean schema.
  */
-const handleBoolean = (schema: JSONSchemaOf<"boolean">): z.ZodBoolean => {
+const handleBoolean = (_schema: JSONSchemaOf<"boolean">): z.ZodBoolean => {
   return z.boolean()
 }
 
 /**
  * Null schema.
  */
-const handleNull = (schema: JSONSchemaOf<"null">): z.ZodNull => {
+const handleNull = (_schema: JSONSchemaOf<"null">): z.ZodNull => {
   return z.null()
 }
 

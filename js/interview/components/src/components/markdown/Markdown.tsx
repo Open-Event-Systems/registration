@@ -1,9 +1,4 @@
-import {
-  Box,
-  BoxProps,
-  TypographyStylesProvider,
-  useProps,
-} from "@mantine/core"
+import { Box, BoxProps, useProps } from "@mantine/core"
 import { ComponentPropsWithoutRef, createContext, useContext } from "react"
 import markdown from "markdown-it"
 import clsx from "clsx"
