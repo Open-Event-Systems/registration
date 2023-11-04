@@ -243,12 +243,12 @@ const _createState = (
  * Create a {@link FieldState} for a schema.
  * @param schema - the schema
  * @param initialValue - the initial value
- * @returns the field state
+ * @returns a pair of the field state and a function to get the validated value
  */
 export const createState = (
   schema: JSONSchema,
   initialValue?: unknown | null,
-): FieldState<unknown> => {
+): [FieldState<unknown>, () => unknown] => {
   const zodSchema = createSchema(schema)
 
   const stateBox = observable.box<FieldState<unknown> | null>(null)
@@ -262,7 +262,7 @@ export const createState = (
     return zodSchema.safeParse(state.value)
   })
 
-  const getErrors = computed(() => {
+  const errors = computed(() => {
     const res = validationResult.get()
     if (!res || res.success) {
       return undefined
@@ -271,7 +271,15 @@ export const createState = (
     }
   })
 
-  const state = _createState(schema, () => getErrors.get(), initialValue)
+  const validValue = computed(() => {
+    const res = validationResult.get()
+
+    if (res?.success) {
+      return res.data
+    }
+  })
+
+  const state = _createState(schema, () => errors.get(), initialValue)
   stateBox.set(state)
-  return state
+  return [state, () => validValue.get()]
 }

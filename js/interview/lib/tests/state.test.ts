@@ -51,22 +51,22 @@ const schema4: JSONSchema = {
 }
 
 test("state creation works", () => {
-  const state = createState(schema1)
+  const [state] = createState(schema1)
   expect(state.value).toBe("test")
 })
 
 test("state creation with no default value works", () => {
-  const state = createState(schema3)
+  const [state] = createState(schema3)
   expect(state.value).toBe(null)
 })
 
 test("state creation sets initial value", () => {
-  const state = createState(schema1, "other")
+  const [state] = createState(schema1, "other")
   expect(state.value).toBe("other")
 })
 
 test("state creation validates", () => {
-  const state = createState(schema1)
+  const [state] = createState(schema1)
 
   state.setValue("other")
   expect(state.value).toBe("other")
@@ -79,8 +79,17 @@ test("state creation validates", () => {
   expect(typeof state.error).toBe("string")
 })
 
+test("state provides validated values", () => {
+  const [state, getValue] = createState(schema1)
+
+  state.setValue(" other ")
+  expect(state.isValid).toBe(true)
+  const value = getValue()
+  expect(value).toBe("other")
+})
+
 test("nested schemas work", () => {
-  const state = createState(schema2)
+  const [state] = createState(schema2)
 
   expect(state.value).toStrictEqual({ field_0: null })
 
@@ -92,7 +101,7 @@ test("nested schemas work", () => {
 })
 
 test("values in subschemas work", () => {
-  const state = createState(schema2) as ObjectFieldState
+  const [state] = createState(schema2) as [ObjectFieldState, () => unknown]
   const field_0 = state.properties?.field_0
 
   expect(field_0).toBeDefined()
@@ -106,9 +115,29 @@ test("values in subschemas work", () => {
   })
 })
 
+test("can get validated values from subschemas", () => {
+  const [state, getValue] = createState(schema2) as [
+    ObjectFieldState,
+    () => unknown,
+  ]
+  const field_0 = state.properties?.field_0
+
+  expect(field_0).toBeDefined()
+
+  if (!field_0) return
+
+  field_0.setValue(" value ")
+
+  expect(state.isValid).toBe(true)
+  const value = getValue()
+  expect(value).toStrictEqual({
+    field_0: "value",
+  })
+})
+
 test("object creates default/required values", () => {
-  const schema = createState(schema4)
-  expect(schema.value).toStrictEqual({
+  const [state] = createState(schema4)
+  expect(state.value).toStrictEqual({
     field_0: null,
     field_1: "test",
     field_2: "test",

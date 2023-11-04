@@ -132,10 +132,11 @@ const handleObject = (
   }
 
   let obj: Record<string, z.ZodType<unknown>> = {}
-  const required = schema.required || []
+  const requiredProps = schema.required || []
 
   for (const [prop, subschema] of Object.entries(schema.properties)) {
     const subz = createSchema(subschema)
+    const required = requiredProps.includes(prop)
     if (required) {
       obj[prop] = subz
     } else {
