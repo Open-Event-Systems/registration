@@ -22,7 +22,7 @@ export default meta
 
 export const Default: StoryObj<typeof ObjectField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         type: "object",
         properties: {

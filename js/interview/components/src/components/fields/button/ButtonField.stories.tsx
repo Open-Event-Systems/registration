@@ -19,7 +19,7 @@ export default meta
 
 export const Default: StoryObj<typeof ButtonField> = {
   render(args) {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         "x-type": "button",
         oneOf: [

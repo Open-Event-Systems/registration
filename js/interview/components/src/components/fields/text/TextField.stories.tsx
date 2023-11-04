@@ -19,7 +19,7 @@ export default meta
 
 export const Default: StoryObj<typeof TextField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         type: "string",
         title: "Name",

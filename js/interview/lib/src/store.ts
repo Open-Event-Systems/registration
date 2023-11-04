@@ -1,23 +1,15 @@
-import { Wretch } from "wretch"
-import wretch from "wretch"
 import {
   FormValues,
+  InterviewRecordStore,
   InterviewStateMetadata,
   InterviewStateRecord,
   StateResponse,
 } from "#src/types.js"
+import { makeAutoObservable } from "mobx"
 
 const SESSION_STORAGE_KEY = "interview-state-v1"
 const MAX_RECORDS = 50
 
-/**
- * Indicates an error with the interview state.
- */
-export class InterviewStateError extends Error {}
-
-/**
- * Used to store interview states.
- */
 export class InterviewStateRecordImpl {
   constructor(
     public stateResponse: StateResponse,
@@ -36,30 +28,30 @@ export class InterviewStateRecordImpl {
   }
 }
 
-/**
- * Manages interview state storage.
- */
-export class InterviewStateStore {
-  private wretch: Wretch
-  private records = new Map<string, InterviewStateRecordImpl>()
-
-  /**
-   * Construct a new interview state store.
-   * @param wretchInst - the {@link Wretch} instance
-   */
-  constructor(wretchInst?: Wretch) {
-    if (wretchInst != null) {
-      this.wretch = wretchInst
-    } else {
-      this.wretch = wretch()
-    }
-
-    this.load()
-  }
-
+interface DefaultInterviewRecordStore extends InterviewRecordStore {
   /**
    * Save the state records to session storage.
    */
+  save(): void
+
+  /**
+   * Load the state records from the session store.
+   */
+  load(): void
+}
+
+class InterviewRecordStoreImpl implements DefaultInterviewRecordStore {
+  private records = new Map<string, InterviewStateRecordImpl>()
+  constructor(
+    private sessionStorageKey: string,
+    private maxRecords: number,
+  ) {
+    makeAutoObservable<this, "sessionStorageKey" | "maxRecords">(this, {
+      sessionStorageKey: false,
+      maxRecords: false,
+    })
+  }
+
   save() {
     const obj = Array.from(this.records.values(), (record) => ({
       r: record.stateResponse,
@@ -68,14 +60,11 @@ export class InterviewStateStore {
     }))
 
     const objStr = JSON.stringify(obj)
-    window.sessionStorage.setItem(SESSION_STORAGE_KEY, objStr)
+    window.sessionStorage.setItem(this.sessionStorageKey, objStr)
   }
 
-  /**
-   * Load the state records from the session store.
-   */
   load() {
-    const objStr = window.sessionStorage.getItem(SESSION_STORAGE_KEY)
+    const objStr = window.sessionStorage.getItem(this.sessionStorageKey)
     if (objStr) {
       try {
         const obj: {
@@ -101,9 +90,9 @@ export class InterviewStateStore {
   /**
    * Trim the number of saved state records.
    */
-  trim() {
-    if (this.records.size > MAX_RECORDS) {
-      const numToRemove = this.records.size - MAX_RECORDS
+  private trim() {
+    if (this.records.size > this.maxRecords) {
+      const numToRemove = this.records.size - this.maxRecords
       const removeIDs = []
 
       for (const id of this.records.keys()) {
@@ -119,119 +108,28 @@ export class InterviewStateStore {
     }
   }
 
-  /**
-   * Save a state record.
-   * @param record - the record to save
-   */
-  saveRecord(record: InterviewStateRecord) {
-    this.records.set(record.id, record)
-    this.trim()
-    this.save()
-  }
-
-  /**
-   * Get a state record by ID.
-   * @param id - the state ID
-   * @returns the record, or undefined
-   */
   getRecord(id: string): InterviewStateRecord | undefined {
     return this.records.get(id)
   }
 
-  /**
-   * Get an updated interview state.
-   * @param record - the current record
-   * @param responses - the form responses
-   * @returns a new interview state record
-   */
-  private async updateState(
-    record: InterviewStateRecordImpl,
-    responses?: FormValues,
-  ): Promise<InterviewStateRecordImpl> {
-    const curStateResponse = record.stateResponse
-
-    if (!("update_url" in curStateResponse)) {
-      throw new Error("Interview state must be updatable")
-    }
-
-    const body = {
-      state: record.stateResponse.state,
-      responses: responses,
-    }
-
-    // TODO: better error handling
-    const res = await this.wretch
-      .url(curStateResponse.update_url, true)
-      .json(body)
-      .post()
-      .badRequest(() => {
-        throw new InterviewStateError()
-      })
-      .error(422, () => {
-        throw new InterviewStateError()
-      })
-      .json<StateResponse>()
-
-    const newRecord = new InterviewStateRecordImpl(
-      res,
-      {},
-      { ...record.metadata },
-    )
-    this.saveRecord(newRecord)
-    return newRecord
+  saveRecord(record: InterviewStateRecord): void {
+    this.records.set(record.id, record)
+    this.trim()
+    this.save()
   }
+}
 
-  /**
-   * Keep updating the interview state until it returns a result or is complete.
-   *
-   * This basically just handles an initial, empty state with no content.
-   *
-   * @param record - the state record
-   * @returns a state record that is complete, or has content
-   */
-  private async advanceState(
-    record: InterviewStateRecordImpl,
-  ): Promise<InterviewStateRecordImpl> {
-    let curRecord = record
-    while (
-      "update_url" in curRecord.stateResponse &&
-      curRecord.stateResponse.content == null
-    ) {
-      const updated = await this.updateState(curRecord)
-      curRecord = updated
-    }
-    return curRecord
-  }
-
-  /**
-   * Start an interview from the initially received state.
-   * @param response - the initial state response
-   * @returns the next state record
-   */
-  async startInterview(
-    response: StateResponse,
-    metadata?: InterviewStateMetadata,
-  ): Promise<InterviewStateRecord> {
-    const record = new InterviewStateRecordImpl(response, {}, { ...metadata })
-    this.saveRecord(record)
-
-    const updated = await this.advanceState(record)
-
-    return updated
-  }
-
-  /**
-   * Update the interview process.
-   * @param record - the current interview state
-   * @param responses - the user's responses
-   * @returns the next state record
-   */
-  async updateInterview(
-    record: InterviewStateRecord,
-    responses?: FormValues,
-  ): Promise<InterviewStateRecord> {
-    const updated = await this.updateState(record, responses)
-    const withContent = await this.advanceState(updated)
-    return withContent
-  }
+/**
+ * Create a {@link DefaultInterviewRecordStore}.
+ * @param options - the options
+ * @returns the store
+ */
+export const makeInterviewRecordStore = (options?: {
+  sessionStorageKey?: string
+  maxRecords?: number
+}): DefaultInterviewRecordStore => {
+  return new InterviewRecordStoreImpl(
+    options?.sessionStorageKey ?? SESSION_STORAGE_KEY,
+    options?.maxRecords ?? MAX_RECORDS,
+  )
 }

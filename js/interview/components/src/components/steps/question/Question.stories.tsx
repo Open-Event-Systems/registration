@@ -25,7 +25,7 @@ export const Default: StoryObj<typeof Question> = {
     ),
   ],
   render(args) {
-    const [fieldState] = useState(() =>
+    const [[fieldState]] = useState(() =>
       createState({
         type: "object",
         title: "Example Question",
@@ -80,7 +80,7 @@ export const With_Buttons: StoryObj<typeof Question> = {
     ),
   ],
   render(args) {
-    const [fieldState] = useState(() =>
+    const [[fieldState]] = useState(() =>
       createState({
         type: "object",
         title: "Example Question",
@@ -122,7 +122,7 @@ export const With_Buttons: StoryObj<typeof Question> = {
       }),
     )
 
-    const [buttonState] = useState(() =>
+    const [[buttonState]] = useState(() =>
       createState({
         "x-type": "button",
         oneOf: [

@@ -1,4 +1,5 @@
-export { InterviewStateError, InterviewStateStore } from "#src/store.js"
-export { createState } from "#src/state.js"
-
 export * from "#src/types.js"
+export { createState } from "#src/state.js"
+export { makeInterviewRecordStore } from "#src/store.js"
+export { defaultAPI } from "#src/api.js"
+export { startInterview, updateInterview } from "#src/interview.js"

@@ -4,8 +4,6 @@ import {
   AskResult,
   FieldState,
   FormValues,
-  InterviewStateRecord,
-  InterviewStateStore,
   ObjectFieldState,
   Result,
   createState,
@@ -13,36 +11,40 @@ import {
 import { useState } from "react"
 
 export type StepProps = {
-  store: InterviewStateStore
-  record: InterviewStateRecord
+  content?: Result | null
+  onSubmit?: (values: FormValues) => void
 }
 
 export const Step = (props: StepProps) => {
-  const { store, record } = props
-  const content = !record.stateResponse.complete
-    ? record.stateResponse.content
-    : undefined
+  const { content, onSubmit } = props
 
   switch (content?.type) {
     case "question":
-      return <StepQuestion store={store} content={content} />
+      return <StepQuestion onSubmit={onSubmit} content={content} />
     case "exit":
       return <Exit content={content.description ?? undefined} />
+    default:
+      return null
   }
 }
 
 const StepQuestion = ({
-  store,
-  record,
   content,
+  onSubmit,
 }: {
-  store: InterviewStateStore
-  record: InterviewStateRecord
   content: AskResult
+  onSubmit?: (values: FormValues) => void
 }) => {
-  const [[fieldsState, buttonsState]] = useState(
-    (): [ObjectFieldState, FieldState<string> | undefined] => {
-      const state = createState(content.schema) as ObjectFieldState
+  const [[fieldsState, getValidValue, buttonsState]] = useState(
+    (): [
+      ObjectFieldState,
+      () => Record<string, unknown>,
+      FieldState<string> | undefined,
+    ] => {
+      const [state, getValidValue] = createState(content.schema) as [
+        ObjectFieldState,
+        () => Record<string, unknown>,
+      ]
       let buttonsState
 
       // hacky, find/extract a button field state if there is one
@@ -53,24 +55,18 @@ const StepQuestion = ({
         }
       }
 
-      return [state, buttonsState]
+      return [state, getValidValue, buttonsState]
     },
   )
 
-  const [submitting, setSubmitting] = useState(false)
-
   const handleSubmit = () => {
-    if (!fieldsState.isValid || submitting) {
+    fieldsState.setTouched()
+
+    if (!fieldsState.isValid) {
       return
     }
 
-    setSubmitting(true)
-    try {
-      // TODO: use validated values
-      store.updateInterview(record, fieldsState.value as FormValues)
-    } finally {
-      setSubmitting(false)
-    }
+    onSubmit && onSubmit(getValidValue())
   }
 
   return (

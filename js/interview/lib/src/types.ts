@@ -35,19 +35,27 @@ export interface AskResult {
 export interface ExitResult {
   type: "exit"
   title: string
-  description?: string | null
+  description?: string
+}
+
+/**
+ * Not returned by the server, but substituted when handling errors.
+ */
+export interface ErrorResult {
+  type: "error"
+  description?: string
 }
 
 /**
  * Interview update result content.
  */
-export type Result = AskResult | ExitResult
+export type Result = AskResult | ExitResult | ErrorResult
 
 export interface IncompleteStateResponse {
   state: string
   complete?: false
   content: Result | null
-  update_url: string
+  update_url?: string
 }
 
 export interface CompleteStateResponse {
@@ -66,7 +74,7 @@ export type StateResponse = IncompleteStateResponse | CompleteStateResponse
  */
 export interface InterviewStateRecord {
   /**
-   * The record ID.
+   * The record ID, derived from the state data.
    */
   get id(): string
 
@@ -86,6 +94,33 @@ export interface InterviewStateRecord {
    */
   get metadata(): InterviewStateMetadata
   set metadata(values: InterviewStateMetadata)
+}
+
+/**
+ * The interview service API interface.
+ */
+export interface InterviewAPI {
+  updateState(
+    record: InterviewStateRecord,
+    responses?: FormValues,
+  ): Promise<InterviewStateRecord>
+}
+
+/**
+ * Interview record storage.
+ */
+export interface InterviewRecordStore {
+  /**
+   * Get an {@link InterviewStateRecord}.
+   * @param id - the record ID
+   */
+  getRecord(id: string): InterviewStateRecord | undefined
+
+  /**
+   * Save the state record.
+   * @param record - the state record
+   */
+  saveRecord(record: InterviewStateRecord): void
 }
 
 /**

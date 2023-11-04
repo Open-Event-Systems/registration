@@ -19,7 +19,7 @@ export default meta
 
 export const Default: StoryObj<typeof NumberField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         type: "number",
         title: "Number",

@@ -6,7 +6,7 @@ import {
   ObjectFieldState,
 } from "#src/types.js"
 import { JSONSchema7 } from "json-schema"
-import { computed, flow, makeAutoObservable, observable } from "mobx"
+import { computed, makeAutoObservable, observable, toJS } from "mobx"
 
 type ErrorObj = {
   [key in string]?: ErrorObj
@@ -275,7 +275,7 @@ export const createState = (
     const res = validationResult.get()
 
     if (res?.success) {
-      return res.data
+      return toJS(res.data)
     }
   })
 

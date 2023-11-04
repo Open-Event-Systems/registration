@@ -1,4 +1,7 @@
-import { InterviewStateRecordImpl, InterviewStateStore } from "#src/store.js"
+import {
+  InterviewStateRecordImpl,
+  makeInterviewRecordStore,
+} from "#src/store.js"
 import { IncompleteStateResponse } from "#src/types.js"
 
 const response1: IncompleteStateResponse = {
@@ -27,7 +30,9 @@ test("state store loads records", () => {
     "interview-state-v1",
     '[{"r": {"content": null, "state": "foo", "update_url": "x"}, "v": {"a": "b"}, "m": {"x": 1}}]',
   )
-  const store = new InterviewStateStore()
+  const store = makeInterviewRecordStore()
+  store.load()
+
   const record = store.getRecord("foo")
   expect(record?.id).toBe("foo")
   expect(record?.fieldValues).toStrictEqual({ a: "b" })
@@ -40,7 +45,7 @@ test("state store loads records", () => {
 })
 
 test("state store saves records", () => {
-  const store = new InterviewStateStore()
+  const store = makeInterviewRecordStore()
   const record = new InterviewStateRecordImpl(
     response2,
     { foo: "bar" },
@@ -48,7 +53,9 @@ test("state store saves records", () => {
   )
   store.saveRecord(record)
 
-  const loadedStore = new InterviewStateStore()
+  const loadedStore = makeInterviewRecordStore()
+  loadedStore.load()
+
   const loadedRecord = loadedStore.getRecord("bar")
   expect(loadedRecord?.fieldValues).toStrictEqual({ foo: "bar" })
   expect(loadedRecord?.metadata).toStrictEqual({ x: 1 })

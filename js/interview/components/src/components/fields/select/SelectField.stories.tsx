@@ -19,7 +19,7 @@ export default meta
 
 export const Dropdown: StoryObj<typeof SelectField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         title: "Select",
         "x-component": "dropdown",
@@ -46,7 +46,7 @@ export const Dropdown: StoryObj<typeof SelectField> = {
 
 export const Radio: StoryObj<typeof SelectField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         title: "Select",
         "x-component": "radio",
@@ -73,7 +73,7 @@ export const Radio: StoryObj<typeof SelectField> = {
 
 export const Checkbox: StoryObj<typeof SelectField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         type: "array",
         title: "Select",

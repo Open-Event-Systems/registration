@@ -21,7 +21,7 @@ export default meta
 
 export const Default: StoryObj<typeof DateField> = {
   render() {
-    const [state] = useState(() =>
+    const [[state]] = useState(() =>
       createState({
         type: "string",
         title: "Date",
