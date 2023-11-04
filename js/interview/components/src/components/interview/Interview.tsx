@@ -1,24 +1,24 @@
 import {
   FormValues,
+  InterviewAPI,
+  InterviewRecordStore,
   InterviewStateRecord,
-  InterviewStateStore,
+  defaultAPI,
+  updateInterview,
 } from "@open-event-systems/interview-lib"
 import { observer } from "mobx-react-lite"
 import { ReactNode, useState } from "react"
 
 export type InterviewProps = {
-  store: InterviewStateStore
+  store: InterviewRecordStore
+  api?: InterviewAPI
   recordId?: string | null
   onNewRecord?: (record: InterviewStateRecord) => void
-  onUpdate?: (
-    store: InterviewStateStore,
-    record: InterviewStateRecord,
-    responses?: FormValues,
-  ) => Promise<InterviewStateRecord>
+  onClose?: () => void
   render: (renderProps: {
-    store: InterviewStateStore
     submitting: boolean
     record?: InterviewStateRecord
+    onClose?: () => void
     onSubmit: (values: FormValues) => void
   }) => ReactNode
 }
@@ -29,9 +29,10 @@ export type InterviewProps = {
 export const Interview = observer((props: InterviewProps) => {
   const {
     store,
+    api = defaultAPI,
     recordId,
     onNewRecord,
-    onUpdate = defaultHandleUpdate,
+    onClose,
     render,
   } = props
 
@@ -43,31 +44,23 @@ export const Interview = observer((props: InterviewProps) => {
     }
 
     setSubmitting(true)
-    onUpdate(store, record, values)
+    updateInterview(store, api, record, values)
       .then((newRecord) => {
         onNewRecord && onNewRecord(newRecord)
         setSubmitting(false)
       })
-      .catch(() => {
-        // TODO: error handling here
+      .catch((e) => {
         setSubmitting(false)
+        throw e
       })
   }
 
   return render({
-    store,
     submitting,
     record: record,
+    onClose: onClose,
     onSubmit: handleSubmit,
   })
 })
 
 Interview.displayName = "Interview"
-
-const defaultHandleUpdate = async (
-  store: InterviewStateStore,
-  record: InterviewStateRecord,
-  responses?: FormValues,
-): Promise<InterviewStateRecord> => {
-  return await store.updateInterview(record, responses)
-}

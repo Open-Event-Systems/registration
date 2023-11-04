@@ -103,7 +103,12 @@ class ObjectFieldStateImpl implements ObjectFieldState {
   }
 
   get isValid() {
-    return this.error == null
+    const errors = this.getErrors()
+
+    return (
+      (!errors?._errors || errors._errors.length == 0) &&
+      Object.entries(errors ?? {}).filter(([p]) => p != "_errors").length == 0
+    )
   }
 
   constructor(
