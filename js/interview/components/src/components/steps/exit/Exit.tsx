@@ -11,7 +11,7 @@ export type ExitProps = {
     button?: string
   }
   onClose?: () => void
-} & ExitRootProps
+} & Omit<ExitRootProps, "children">
 
 export const Exit = (props: ExitProps) => {
   const { className, classNames, content, onClose, ...other } = useProps(
