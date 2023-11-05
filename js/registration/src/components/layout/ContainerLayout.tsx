@@ -1,37 +1,21 @@
-import {
-  Container,
-  ContainerProps,
-  DefaultProps,
-  Selectors,
-  createStyles,
-  useComponentDefaultProps,
-} from "@mantine/core"
+import { Container, ContainerProps, useProps } from "@mantine/core"
+import clsx from "clsx"
 
-const useStyles = createStyles(() => ({
-  root: {
-    padding: "1rem",
-    flex: "auto",
-    display: "flex",
-    alignItems: "stretch",
-  },
-}))
-
-export type ContainerLayoutProps = Omit<ContainerProps, "styles"> &
-  DefaultProps<Selectors<typeof useStyles>>
+export type ContainerLayoutProps = ContainerProps
 
 export const ContainerLayout = (props: ContainerLayoutProps) => {
-  const { className, classNames, styles, unstyled, children, ...other } =
-    useComponentDefaultProps("ContainerLayout", {}, props)
-
-  const { classes, cx } = useStyles(undefined, {
-    name: "ContainerLayout",
-    classNames,
-    styles,
-    unstyled,
-  })
+  const { className, children, ...other } = useProps(
+    "ContainerLayout",
+    {},
+    props,
+  )
 
   return (
-    <Container className={cx(className, classes.root)} size="lg" {...other}>
+    <Container
+      className={clsx("ContainerLayout-root", className)}
+      size="lg"
+      {...other}
+    >
       {children}
     </Container>
   )

@@ -45,10 +45,12 @@ export const ModalDialog = (props: ModalDialogProps) => {
   const queryResult = useMediaQuery(fullScreenMediaQuery)
   const fullScreen = propFullScreen ?? queryResult
 
+  const show = fullScreen !== undefined && opened
+
   return (
     <Modal.Root
       className={clsx(className, "ModalDialog-root")}
-      opened={opened}
+      opened={show}
       onClose={onClose}
       fullScreen={fullScreen}
       centered
@@ -56,9 +58,12 @@ export const ModalDialog = (props: ModalDialogProps) => {
     >
       <Modal.Overlay className="ModalDialog-overlay" />
       <Modal.Content
-        className={clsx("ModalDialog-content", {
-          "ModalDialog-fullscreenContent": fullScreen,
-        })}
+        classNames={{
+          inner: "ModalDialog-inner",
+          content: clsx("ModalDialog-content", {
+            "ModalDialog-fullscreenContent": fullScreen,
+          }),
+        }}
       >
         <Modal.Header className="ModalDialog-header">
           <Modal.Title className="ModalDialog-title">{title}</Modal.Title>

@@ -5,8 +5,6 @@ import {
 import { RegistrationCard } from "#src/features/selfservice/components/card/RegistrationCard.js"
 import { Meta, StoryObj } from "@storybook/react"
 
-import "./RegistrationCard.module.css"
-
 const meta: Meta<typeof CardGrid> = {
   component: CardGrid,
 }

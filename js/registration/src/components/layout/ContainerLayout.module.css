@@ -1,0 +1,6 @@
+:global .ContainerLayout-root {
+    padding: var(--mantine-spacing-md);
+    flex: auto;
+    display: flex;
+    align-items: stretch;
+}

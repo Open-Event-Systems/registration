@@ -1,4 +1,4 @@
-import { UserMenu } from "#src/components/layout/UserMenu.js"
+import { UserMenu } from "#src/components/layout/user-menu/UserMenu.js"
 import { Meta, StoryFn } from "@storybook/react"
 
 export default {

@@ -1,0 +1,30 @@
+:global .TitleArea-root {
+    background-color: var(--mantine-primary-color-filled);
+    color: var(--mantine-color-white);
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+}
+
+:global .TitleArea-container {
+    flex: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: var(--mantine-spacing-md);
+}
+
+:global .TitleArea-logo {
+    flex: 0 0 0;
+    margin-bottom: var(--mantine-spacing-md);
+}
+
+:global .TitleArea-title {
+    font-size: 1.25rem;
+    line-height: 2rem;
+}
+
+:global .TitleArea-subtitle {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}

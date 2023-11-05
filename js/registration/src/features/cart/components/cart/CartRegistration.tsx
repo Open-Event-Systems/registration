@@ -28,8 +28,8 @@ export const CartRegistration = (props: CartRegistrationProps) => {
       onClick={() => {
         onRemove && onRemove()
       }}
-      variant="subtle"
-      color="gray"
+      variant="transparent"
+      c="dimmed"
     >
       <IconTrash />
     </ActionIcon>

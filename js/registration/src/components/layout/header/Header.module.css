@@ -1,0 +1,17 @@
+:global .Header-root {
+    display: flex;
+    align-items: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    background-color: var(--mantine-primary-color-filled);
+    border-bottom: var(--mantine-primary-color-filled-hover) solid 1px;
+    color: var(--mantine-color-white);
+}
+
+:global .Header-homeIcon {
+    color: inherit;
+}
+
+:global .Header-content {
+    flex: auto;
+}

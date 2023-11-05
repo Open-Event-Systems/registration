@@ -1,0 +1,16 @@
+
+:global .AppShell-root {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 100%;
+}
+
+:global .AppShell-main {
+    padding-top: 3rem;
+    padding-right: 0;
+    padding-left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+}

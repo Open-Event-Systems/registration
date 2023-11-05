@@ -1,34 +1,13 @@
-import {
-  DefaultProps,
-  Selectors,
-  Stack,
-  StackProps,
-  createStyles,
-  useComponentDefaultProps,
-} from "@mantine/core"
+import { Stack, StackProps, useProps } from "@mantine/core"
+import clsx from "clsx"
 
-const useStyles = createStyles(() => ({
-  root: {
-    flex: "auto",
-  },
-}))
-
-export type StackLayoutProps = Omit<StackProps, "styles"> &
-  DefaultProps<Selectors<typeof useStyles>>
+export type StackLayoutProps = StackProps
 
 export const StackLayout = (props: StackLayoutProps) => {
-  const { className, classNames, styles, unstyled, children, ...other } =
-    useComponentDefaultProps("StackLayout", {}, props)
-
-  const { classes, cx } = useStyles(undefined, {
-    name: "StackLayout",
-    classNames,
-    styles,
-    unstyled,
-  })
+  const { className, children, ...other } = useProps("StackLayout", {}, props)
 
   return (
-    <Stack className={cx(className, classes.root)} {...other}>
+    <Stack className={clsx("StackLayout-root", className)} {...other}>
       {children}
     </Stack>
   )
