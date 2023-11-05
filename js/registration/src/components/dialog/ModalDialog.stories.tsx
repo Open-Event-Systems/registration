@@ -3,7 +3,9 @@ import { ModalDialog } from "#src/components/dialog/ModalDialog.js"
 import { Text } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 
-export default {
+import "./ModalDialog.module.css"
+
+const meta: Meta<typeof ModalDialog> = {
   component: ModalDialog,
   parameters: {
     layout: "fullscreen",
@@ -15,7 +17,9 @@ export default {
     hideCloseButton: false,
     noPadding: false,
   },
-} as Meta<typeof ModalDialog>
+}
+
+export default meta
 
 export const Default: StoryObj<typeof ModalDialog> = {
   render: (args) => <ModalDialog {...args}>Dialog content.</ModalDialog>,

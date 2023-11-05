@@ -1,14 +1,12 @@
 import {
-  DefaultProps,
   LoadingOverlay,
   Modal,
-  Selectors,
-  createStyles,
-  useComponentDefaultProps,
+  ModalRootProps,
   useMantineTheme,
+  useProps,
 } from "@mantine/core"
-import { ModalRootProps } from "@mantine/core/lib/Modal/ModalRoot/ModalRoot.js"
 import { useMediaQuery } from "@mantine/hooks"
+import clsx from "clsx"
 import { ReactNode } from "react"
 
 export type ModalDialogParams = {
@@ -25,43 +23,13 @@ export type ModalDialogProps = {
   fullScreen?: boolean
   fullScreenMediaQuery?: string
 } & ModalDialogParams &
-  Omit<ModalRootProps, "title" | "opened" | "onClose" | "styles"> &
-  DefaultProps<Selectors<typeof useStyles>, ModalDialogParams>
-
-const useStyles = createStyles((_theme, params: ModalDialogParams) => ({
-  root: {},
-  inner: {},
-  content: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  fullscreenContent: {
-    // avoid issue w/ app shell cutting off the header
-    height: "100%",
-  },
-  header: {
-    zIndex: "initial",
-  },
-  overlay: {},
-  title: {
-    fontWeight: "bold",
-  },
-  body: {
-    flex: "auto",
-    padding: params.noPadding ? 0 : undefined,
-  },
-  close: {},
-  loading: {},
-}))
+  Omit<ModalRootProps, "title" | "opened" | "onClose">
 
 export const ModalDialog = (props: ModalDialogProps) => {
   const theme = useMantineTheme()
 
   const {
     className,
-    classNames,
-    styles,
-    unstyled,
     opened = false,
     onClose = () => void 0,
     title,
@@ -72,35 +40,43 @@ export const ModalDialog = (props: ModalDialogProps) => {
     fullScreenMediaQuery = `(max-width: ${theme.breakpoints.sm})`,
     children,
     ...other
-  } = useComponentDefaultProps("ModalDialog", {}, props)
-
-  const { classes, cx } = useStyles(
-    { noPadding },
-    { name: "ModalDialog", classNames, styles, unstyled },
-  )
+  } = useProps("ModalDialog", {}, props)
 
   const queryResult = useMediaQuery(fullScreenMediaQuery)
   const fullScreen = propFullScreen ?? queryResult
 
   return (
     <Modal.Root
-      className={cx(classes.root, className)}
+      className={clsx(className, "ModalDialog-root")}
       opened={opened}
       onClose={onClose}
       fullScreen={fullScreen}
       centered
       {...other}
     >
-      <Modal.Overlay className={classes.overlay} />
+      <Modal.Overlay className="ModalDialog-overlay" />
       <Modal.Content
-        className={cx(classes.content, fullScreen && classes.fullscreenContent)}
+        className={clsx("ModalDialog-content", {
+          "ModalDialog-fullscreenContent": fullScreen,
+        })}
       >
-        <Modal.Header className={classes.header}>
-          <Modal.Title className={classes.title}>{title}</Modal.Title>
-          {!hideCloseButton && <Modal.CloseButton className={classes.close} />}
+        <Modal.Header className="ModalDialog-header">
+          <Modal.Title className="ModalDialog-title">{title}</Modal.Title>
+          {!hideCloseButton && (
+            <Modal.CloseButton className="ModalDialog-close" />
+          )}
         </Modal.Header>
-        <Modal.Body className={classes.body}>{children}</Modal.Body>
-        <LoadingOverlay className={classes.loading} visible={!!loading} />
+        <Modal.Body
+          className={clsx("ModalDialog-body", {
+            "ModalDialog-bodyNoPadding": noPadding,
+          })}
+        >
+          {children}
+        </Modal.Body>
+        <LoadingOverlay
+          className="ModalDialog-loadingOverlay"
+          visible={!!loading}
+        />
       </Modal.Content>
     </Modal.Root>
   )

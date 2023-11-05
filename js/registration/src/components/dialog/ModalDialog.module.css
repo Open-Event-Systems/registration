@@ -1,0 +1,27 @@
+:global .ModalDialog-content {
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+:global .ModalDialog-fullscreenContent {
+    /* Avoid issue w/ app shell cuttong off the header */
+    height: 100%;
+    min-width: initial;
+}
+
+:global .ModalDialog-header {
+    z-index: initial;
+}
+
+:global .ModalDialog-title {
+    font-weight: bold;
+}
+
+:global .ModalDialog-body {
+    flex: auto;
+}
+
+:global .ModalDialog-bodyNoPadding {
+    padding: 0;
+}
