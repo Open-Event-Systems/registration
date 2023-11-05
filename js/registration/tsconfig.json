@@ -5,7 +5,8 @@
     "outDir": "./dist",
     "rootDir": "./",
     "paths": {
-      "#src/*": ["./src/*"]
+      "#src/*": ["./src/*"],
+      "@mantine-v7/core": ["../node_modules/@mantine-v7/core/lib/index.d.ts"]
     },
     "composite": false,
     "noEmit": true,

@@ -4,14 +4,16 @@ import {
   useCartStore,
 } from "#src/features/cart/hooks.js"
 import { CartStore, CurrentCartStore } from "#src/features/cart/stores.js"
-import { useInterviewState } from "#src/features/interview/hooks.js"
+import { useInterviewRecordStore } from "#src/features/interview/hooks.js"
 import { useWretch } from "#src/hooks/api.js"
 import { ReactNode, useState } from "react"
 
 export const CartStoreProvider = ({ children }: { children?: ReactNode }) => {
   const wretch = useWretch()
-  const interviewStateStore = useInterviewState()
-  const [cartStore] = useState(() => new CartStore(wretch, interviewStateStore))
+  const interviewRecordStore = useInterviewRecordStore()
+  const [cartStore] = useState(
+    () => new CartStore(wretch, interviewRecordStore),
+  )
 
   return (
     <CartStoreContext.Provider value={cartStore}>

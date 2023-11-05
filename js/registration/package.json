@@ -64,6 +64,7 @@
     "@emotion/react": "^11.10.6",
     "@mantine/core": "^6.0.7",
     "@mantine/hooks": "^6.0.7",
+    "@mantine-v7/core": "npm:@mantine/core@^7",
     "@open-event-systems/interview-components": "^0.2.0",
     "@open-event-systems/interview-lib": "^0.2.0",
     "@simplewebauthn/browser": "^7.2.0",

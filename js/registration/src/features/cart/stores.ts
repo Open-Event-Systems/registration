@@ -9,8 +9,10 @@ import { getCurrentCartId, setCurrentCartId } from "#src/features/cart/utils.js"
 import { isNotFoundError } from "#src/util/api.js"
 import { Loader, createLoader } from "#src/util/loader.js"
 import {
+  InterviewRecordStore,
   InterviewStateRecord,
-  InterviewStateStore,
+  defaultAPI,
+  startInterview,
 } from "@open-event-systems/interview-lib"
 import { makeAutoObservable, reaction, runInAction } from "mobx"
 import { Wretch } from "wretch"
@@ -20,7 +22,7 @@ export class CartStore {
 
   constructor(
     public wretch: Wretch,
-    public interviewStateStore: InterviewStateStore,
+    public interviewRecordStore: InterviewRecordStore,
   ) {
     makeAutoObservable(this)
   }
@@ -85,7 +87,8 @@ export class CartStore {
       registrationId,
       accessCode,
     )
-    return await this.interviewStateStore.startInterview(res, {
+
+    return await startInterview(this.interviewRecordStore, defaultAPI, res, {
       cartId: cartId,
       eventId: cart.event_id,
     })

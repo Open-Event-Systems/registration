@@ -20,7 +20,6 @@ import { Event } from "#src/features/event/types.js"
 import { SelfServiceRegistrationResponse } from "#src/features/selfservice/types.js"
 import { fetchCartInterview } from "#src/features/cart/api.js"
 import { useWretch } from "#src/hooks/api.js"
-import { useInterviewState } from "#src/features/interview/hooks.js"
 import {
   fetchCurrentOrEmptyCart,
   getCurrentCartId,
@@ -33,6 +32,8 @@ import { InterviewDialog } from "#src/features/interview/components/InterviewDia
 import { Cart } from "#src/features/cart/types.js"
 import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/access-code/AccessCodeOptionsDialog.js"
 import { Markdown } from "@open-event-systems/interview-components"
+import { useInterviewRecordStore } from "#src/features/interview/hooks.js"
+import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 
 export const EventPage = () => {
   const { eventId = "", accessCode = "" } = useParams()
@@ -158,7 +159,7 @@ const RegistrationsView = observer(
     const navigate = useNavigate()
     const loc = useLocation()
     const wretch = useWretch()
-    const interviewState = useInterviewState()
+    const interviewRecordStore = useInterviewRecordStore()
 
     if (registrations.length == 0) {
       return (
@@ -198,10 +199,17 @@ const RegistrationsView = observer(
                   id,
                   r.registration.id,
                 )
-                const next = await interviewState.startInterview(state, {
-                  cartId: cartId,
-                  eventId: event.id,
-                })
+
+                const next = await startInterview(
+                  interviewRecordStore,
+                  defaultAPI,
+                  state,
+                  {
+                    cartId: cartId,
+                    eventId: event.id,
+                  },
+                )
+
                 // show dialog
                 navigate(loc, {
                   state: {
@@ -214,7 +222,7 @@ const RegistrationsView = observer(
                 })
               }}
             >
-              <Markdown>{r.registration.description}</Markdown>
+              <Markdown content={r.registration.description} />
             </RegistrationCard>
           ))}
         </CardGrid>

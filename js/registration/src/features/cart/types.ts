@@ -57,7 +57,7 @@ declare module "@open-event-systems/interview-lib" {
 declare module "#src/hooks/location.js" {
   interface LocationState {
     showInterviewDialog?: {
-      eventId: string
+      eventId?: string
       recordId: string
     }
   }

@@ -9,7 +9,7 @@ import {
 } from "#src/features/cart/providers.js"
 import { useEvents } from "#src/features/event/hooks.js"
 import { EventStoreProvider } from "#src/features/event/providers.js"
-import { InterviewStateStoreProvider } from "#src/features/interview/routes.js"
+import { InterviewRecordStoreProvider } from "#src/features/interview/providers.js"
 import {
   checkAccessCode,
   listSelfServiceRegistrations,
@@ -92,7 +92,7 @@ const SelfServiceAppRoute = () => {
   const authStore = useAuth()
   return (
     <SigninDialog.Manager wretch={authStore.wretch} authStore={authStore}>
-      <InterviewStateStoreProvider>
+      <InterviewRecordStoreProvider>
         <EventStoreProvider>
           <CartStoreProvider>
             <Fragment key={eventId}>
@@ -106,7 +106,7 @@ const SelfServiceAppRoute = () => {
             </Fragment>
           </CartStoreProvider>
         </EventStoreProvider>
-      </InterviewStateStoreProvider>
+      </InterviewRecordStoreProvider>
     </SigninDialog.Manager>
   )
 }

@@ -1,31 +1,60 @@
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
-import { InterviewStateStoreContext } from "#src/features/interview/hooks.js"
-import { InterviewStateStore } from "@open-event-systems/interview-lib"
+import {
+  InterviewRecordStoreContext,
+  useInterviewRecordStore,
+} from "#src/features/interview/hooks.js"
+import { MantineProvider } from "@mantine-v7/core"
+import {
+  InterviewRecordStore,
+  InterviewStateRecord,
+} from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"
+import { makeAutoObservable, observable } from "mobx"
 import { useState } from "react"
 
-export default {
+const meta: Meta<typeof InterviewDialog> = {
   component: InterviewDialog,
-} as Meta<typeof InterviewDialog>
+  decorators: [
+    (Story) => (
+      <MantineProvider>
+        <Story />
+      </MantineProvider>
+    ),
+  ],
+}
+
+export default meta
 
 export const Empty: StoryObj<typeof InterviewDialog> = {
-  args: {
-    opened: true,
-  },
+  args: {},
   render: (args) => <InterviewDialog {...args} />,
 }
 
+class MockStore implements InterviewRecordStore {
+  records = new Map<string, InterviewStateRecord>()
+
+  constructor() {
+    makeAutoObservable(this, {
+      records: observable.ref,
+    })
+  }
+
+  getRecord(id: string): InterviewStateRecord | undefined {
+    return this.records.get(id)
+  }
+
+  saveRecord(record: InterviewStateRecord): void {
+    this.records.set(record.id, record)
+  }
+}
+
 export const Question: StoryObj<typeof InterviewDialog> = {
-  args: {
-    opened: true,
-    recordId: "0000",
-  },
   decorators: [
     (Story) => {
       const [state] = useState(() => {
-        const store = new InterviewStateStore()
+        const store = new MockStore()
 
-        store.records.set("0000", {
+        store.saveRecord({
           id: "0000",
           stateResponse: {
             complete: false,
@@ -59,36 +88,25 @@ export const Question: StoryObj<typeof InterviewDialog> = {
         return store
       })
       return (
-        <InterviewStateStoreContext.Provider value={state}>
+        <InterviewRecordStoreContext.Provider value={state}>
           <Story />
-        </InterviewStateStoreContext.Provider>
+        </InterviewRecordStoreContext.Provider>
       )
     },
   ],
   render(args) {
-    return (
-      <InterviewDialog
-        {...args}
-        onSubmit={async (v) => {
-          await new Promise((r) => window.setTimeout(r, 1000))
-          await args.onSubmit(v)
-        }}
-      />
-    )
+    const store = useInterviewRecordStore()
+    return <InterviewDialog {...args} record={store.getRecord("0000")} />
   },
 }
 
 export const Exit: StoryObj<typeof InterviewDialog> = {
-  args: {
-    opened: true,
-    recordId: "0001",
-  },
   decorators: [
     (Story) => {
       const [state] = useState(() => {
-        const store = new InterviewStateStore()
+        const store = new MockStore()
 
-        store.records.set("0001", {
+        store.saveRecord({
           id: "0001",
           stateResponse: {
             complete: false,
@@ -109,13 +127,14 @@ export const Exit: StoryObj<typeof InterviewDialog> = {
         return store
       })
       return (
-        <InterviewStateStoreContext.Provider value={state}>
+        <InterviewRecordStoreContext.Provider value={state}>
           <Story />
-        </InterviewStateStoreContext.Provider>
+        </InterviewRecordStoreContext.Provider>
       )
     },
   ],
   render(args) {
-    return <InterviewDialog {...args} />
+    const store = useInterviewRecordStore()
+    return <InterviewDialog {...args} record={store.getRecord("0001")} />
   },
 }
