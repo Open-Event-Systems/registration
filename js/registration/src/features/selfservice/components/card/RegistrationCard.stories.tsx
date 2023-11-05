@@ -2,19 +2,24 @@ import {
   RegistrationCard,
   RegistrationCardPlaceholder,
 } from "#src/features/selfservice/components/card/RegistrationCard.js"
-import { Meta, StoryFn } from "@storybook/react"
+import { Meta, StoryObj } from "@storybook/react"
 
-export default {
+import "./RegistrationCard.module.css"
+
+const meta: Meta<typeof RegistrationCard> = {
   component: RegistrationCard,
   args: {
     title: "Person 1",
     subtitle: "Standard",
+    maw: 300,
   },
-} as Meta<typeof RegistrationCard>
+}
 
-export const Default: StoryFn<typeof RegistrationCard> = (args) => {
-  return (
-    <>
+export default meta
+
+export const Default: StoryObj<typeof RegistrationCard> = {
+  render(args) {
+    return (
       <RegistrationCard
         menuOptions={[
           { id: "1", label: "Upgrade" },
@@ -25,8 +30,12 @@ export const Default: StoryFn<typeof RegistrationCard> = (args) => {
       >
         Content
       </RegistrationCard>
-    </>
-  )
+    )
+  },
 }
 
-export const Placeholder = () => <RegistrationCardPlaceholder />
+export const Placeholder: StoryObj<typeof RegistrationCardPlaceholder> = {
+  render() {
+    return <RegistrationCardPlaceholder maw={300} />
+  },
+}

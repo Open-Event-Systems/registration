@@ -1,14 +1,16 @@
-import { LineItem } from "#src/features/cart/components/LineItem.js"
-import { Modifier } from "#src/features/cart/components/Modifier.js"
+import { LineItem } from "#src/features/cart/components/cart/LineItem.js"
+import { Modifier } from "#src/features/cart/components/cart/Modifier.js"
 import { Box } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 
-export default {
+import "./Cart.module.css"
+
+const meta: Meta<typeof LineItem> = {
   component: LineItem,
   decorators: [
     (Story) => (
       <Box
-        sx={{
+        style={{
           maxWidth: 800,
           border: "#ccc dashed 1px",
           padding: 16,
@@ -24,7 +26,9 @@ export default {
       </Box>
     ),
   ],
-} as Meta<typeof LineItem>
+}
+
+export default meta
 
 export const Default: StoryObj<typeof LineItem> = {
   args: {

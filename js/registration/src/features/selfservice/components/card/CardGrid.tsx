@@ -1,49 +1,30 @@
 import {
-  DefaultProps,
   Group,
-  Selectors,
   SimpleGrid,
+  SimpleGridProps,
   Text,
   TextProps,
-  createStyles,
-  useComponentDefaultProps,
+  useProps,
 } from "@mantine/core"
 import { IconAlertCircle } from "@tabler/icons-react"
-import { ReactNode } from "react"
+import clsx from "clsx"
 
-const gridStyles = createStyles({
-  root: {},
-})
-
-export type CardGridProps = {
-  children?: ReactNode[]
-} & DefaultProps<Selectors<typeof gridStyles>>
+export type CardGridProps = SimpleGridProps
 
 export const CardGrid = (props: CardGridProps) => {
-  const { className, classNames, styles, unstyled, children, ...other } =
-    useComponentDefaultProps("CardGrid", { children: [] }, props)
-
-  const { classes, cx } = gridStyles(undefined, {
-    name: "CardGrid",
-    classNames,
-    styles,
-    unstyled,
-  })
+  const { className, children, ...other } = useProps("CardGrid", {}, props)
 
   return (
     <SimpleGrid
-      className={cx(classes.root, className)}
+      className={clsx("CardGrid-root", className)}
       spacing="sm"
-      cols={1}
-      breakpoints={
-        children.length > 0
-          ? [
-              { minWidth: "xs", cols: 1 },
-              { minWidth: "sm", cols: 2 },
-              { minWidth: "md", cols: 3 },
-            ]
-          : undefined
-      }
+      cols={{
+        base: 1,
+        xs: 2,
+        md: 3,
+        lg: 4,
+        xl: 5,
+      }}
       {...other}
     >
       {children}
@@ -52,7 +33,7 @@ export const CardGrid = (props: CardGridProps) => {
 }
 
 export const NoRegistrationsMessage = (props: TextProps) => (
-  <Text color="dimmed" {...props}>
+  <Text c="gray" {...props}>
     <Group align="center">
       <IconAlertCircle />
       <Text span inline>

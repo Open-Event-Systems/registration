@@ -6,8 +6,8 @@ import {
 } from "@mantine/core"
 
 import { CartProps } from "#src/features/cart/components/Cart.js"
-import { LineItemProps } from "#src/features/cart/components/LineItem.js"
-import { ModifierProps } from "#src/features/cart/components/Modifier.js"
+import { LineItemProps } from "#src/features/cart/components/cart/LineItem.js"
+import { ModifierProps } from "#src/features/cart/components/cart/Modifier.js"
 import { CardGridProps } from "#src/features/selfservice/components/card/CardGrid.js"
 import { RegistrationCardProps } from "#src/features/selfservice/components/card/RegistrationCard.js"
 import { LoadingOverlayProps } from "#src/routes/LoadingOverlay.js"

@@ -1,15 +1,17 @@
-import { CartRegistration } from "#src/features/cart/components/CartRegistration.js"
-import { LineItem } from "#src/features/cart/components/LineItem.js"
-import { Modifier } from "#src/features/cart/components/Modifier.js"
+import { CartRegistration } from "#src/features/cart/components/cart/CartRegistration.js"
+import { LineItem } from "#src/features/cart/components/cart/LineItem.js"
+import { Modifier } from "#src/features/cart/components/cart/Modifier.js"
 import { Box } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 
-export default {
+import "./Cart.module.css"
+
+const meta: Meta<typeof CartRegistration> = {
   component: CartRegistration,
   decorators: [
     (Story) => (
       <Box
-        sx={{
+        style={{
           maxWidth: 800,
           border: "#ccc dashed 1px",
           padding: 16,
@@ -25,7 +27,9 @@ export default {
       </Box>
     ),
   ],
-} as Meta<typeof CartRegistration>
+}
+
+export default meta
 
 export const Default: StoryObj<typeof CartRegistration> = {
   args: {

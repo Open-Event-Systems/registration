@@ -2,23 +2,17 @@ import {
   ActionIcon,
   Card,
   CardProps,
-  DefaultProps,
   Grid,
   Menu,
-  Selectors,
   Skeleton,
   SkeletonProps,
   Text,
   Title,
-  createStyles,
-  useComponentDefaultProps,
+  useProps,
 } from "@mantine/core"
 import { IconDotsVertical } from "@tabler/icons-react"
+import clsx from "clsx"
 import { ReactNode } from "react"
-
-const cardStyles = createStyles({
-  root: {},
-})
 
 export type RegistrationCardProps = {
   title?: ReactNode
@@ -26,49 +20,44 @@ export type RegistrationCardProps = {
   menuOptions?: { id: string; label: string }[]
   onMenuSelect?: (id: string) => void
   children?: ReactNode
-} & DefaultProps<Selectors<typeof cardStyles>> &
-  Omit<CardProps, "styles">
+} & CardProps
 
 export const RegistrationCard = (props: RegistrationCardProps) => {
   const {
     className,
-    classNames,
-    styles,
-    unstyled,
     title,
     subtitle,
     menuOptions,
     onMenuSelect,
     children,
     ...other
-  } = useComponentDefaultProps("RegistrationCard", { menuOptions: [] }, props)
-
-  const { classes, cx } = cardStyles(undefined, {
-    name: "RegistrationCard",
-    classNames,
-    styles,
-    unstyled,
-  })
+  } = useProps("RegistrationCard", { menuOptions: [] }, props)
 
   return (
     <Card
-      className={cx(classes.root, className)}
+      className={clsx("RegistrationCard-root", className)}
       padding="xs"
       shadow="xs"
       {...other}
     >
       <Grid justify="flex-end" align="flex-start">
-        <Grid.Col span="auto" sx={{ minWidth: 0 }}>
-          <Title order={3} truncate>
+        <Grid.Col span="auto" style={{ minWidth: 0 }}>
+          <Title order={3} className="RegistrationCard-title">
             {title}
           </Title>
-          <Text truncate>{subtitle}</Text>
+          <Text className="RegistrationCard-subtitle" c="gray">
+            {subtitle}
+          </Text>
         </Grid.Col>
         {menuOptions.length > 0 && (
           <Grid.Col span="content">
             <Menu withinPortal>
               <Menu.Target>
-                <ActionIcon title="Show registration options">
+                <ActionIcon
+                  title="Show registration options"
+                  color="gray"
+                  variant="subtle"
+                >
                   <IconDotsVertical />
                 </ActionIcon>
               </Menu.Target>
@@ -92,35 +81,20 @@ export const RegistrationCard = (props: RegistrationCardProps) => {
   )
 }
 
-const placeholderStyles = createStyles({
-  root: {},
-})
-
-export type RegistrationCardPlaceholderProps = DefaultProps<
-  Selectors<typeof placeholderStyles>
-> &
-  SkeletonProps
+export type RegistrationCardPlaceholderProps = SkeletonProps
 
 export const RegistrationCardPlaceholder = (
   props: RegistrationCardPlaceholderProps,
 ) => {
-  const { className, classNames, styles, unstyled, height, ...other } =
-    useComponentDefaultProps(
-      "RegistrationCardPlaceholder",
-      { height: 150 },
-      props,
-    )
-
-  const { classes, cx } = placeholderStyles(undefined, {
-    name: "RegistrationCardPlaceholder",
-    classNames,
-    styles,
-    unstyled,
-  })
+  const { className, height, ...other } = useProps(
+    "RegistrationCardPlaceholder",
+    { height: 150 },
+    props,
+  )
 
   return (
     <Skeleton
-      className={cx(classes.root, className)}
+      className={clsx("RegistrationCardPlaceholder-root", className)}
       height={height}
       {...other}
     />

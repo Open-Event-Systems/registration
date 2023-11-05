@@ -4,8 +4,8 @@ import { useCurrentCartStore } from "#src/features/cart/hooks.js"
 import { Cart } from "#src/features/cart/types.js"
 import { Cart as CartComponent } from "#src/features/cart/components/Cart.js"
 import { useWretch } from "#src/hooks/api.js"
-import { LineItem as LineItemComponent } from "#src/features/cart/components/LineItem.js"
-import { Modifier as ModifierComponent } from "#src/features/cart/components/Modifier.js"
+import { LineItem as LineItemComponent } from "#src/features/cart/components/cart/LineItem.js"
+import { Modifier as ModifierComponent } from "#src/features/cart/components/cart/Modifier.js"
 import { Anchor, Box, Button, Grid, Group, Stack, Text } from "@mantine/core"
 import {
   IconAlertCircle,

@@ -2,16 +2,18 @@ import {
   Currency,
   CurrencyContext,
   CurrencyProps,
-} from "#src/features/cart/components/Currency.js"
+} from "#src/features/cart/components/cart/Currency.js"
 import { Meta, StoryFn } from "@storybook/react"
 
-export default {
+const meta: Meta<CurrencyProps & { currency: string }> = {
   component: Currency,
   args: {
     amount: 1000,
     currency: "USD",
   },
-} as Meta<CurrencyProps & { currency: string }>
+}
+
+export default meta
 
 export const Default: StoryFn<CurrencyProps & { currency: string }> = (
   args,
