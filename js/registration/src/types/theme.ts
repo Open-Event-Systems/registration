@@ -24,7 +24,7 @@ import {
   ButtonListDividerProps,
   ButtonListLabelProps,
   ButtonListProps,
-} from "#src/components/button_list/ButtonList.js"
+} from "#src/components/button-list/ButtonList.js"
 import { ModalDialogProps } from "#src/components/dialog/ModalDialog.js"
 import { EmailAuthProps } from "#src/features/auth/components/signin/EmailAuth.js"
 

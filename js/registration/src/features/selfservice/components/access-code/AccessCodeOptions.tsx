@@ -1,4 +1,4 @@
-import { ButtonList } from "#src/components/button_list/ButtonList.js"
+import { ButtonList } from "#src/components/button-list/ButtonList.js"
 import { InterviewOption } from "#src/features/cart/types.js"
 import { SelfServiceRegistration } from "#src/features/selfservice/types.js"
 

@@ -1,4 +1,4 @@
-import { ButtonList } from "#src/components/button_list/ButtonList.js"
+import { ButtonList } from "#src/components/button-list/ButtonList.js"
 import {
   ModalDialog,
   ModalDialogProps,

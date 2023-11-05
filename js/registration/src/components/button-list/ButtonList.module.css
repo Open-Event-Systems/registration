@@ -1,0 +1,18 @@
+:global .ButtonListButton-root {
+    display: block;
+    padding: 0 var(--mantine-spacing-xs);
+}
+
+:global .ButtonListButton-inner {
+    justify-content: flex-start;
+}
+
+:global .ButtonListLabel-root {
+    display: block;
+    padding: 0.25rem var(--mantine-spacing-xs);
+    cursor: default;
+}
+
+:global .ButtonListDivider-root {
+    margin: 0.25rem 0;
+}

@@ -2,6 +2,8 @@ import React from "react"
 import type { Preview } from "@storybook/react"
 import { ThemeProvider } from "../src/storybook/Utils"
 
+import "@mantine/core/styles.css"
+
 const preview: Preview = {
   parameters: {
     actions: { argTypesRegex: "^on[A-Z].*" },

@@ -1,11 +1,15 @@
-import { ButtonList } from "#src/components/button_list/ButtonList.js"
+import { ButtonList } from "#src/components/button-list/ButtonList.js"
 import { Box } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 import { IconUserPlus, IconZoomExclamation } from "@tabler/icons-react"
 
-export default {
+import "./ButtonList.module.css"
+
+const meta: Meta<typeof ButtonList> = {
   component: ButtonList,
-} as Meta<typeof ButtonList>
+}
+
+export default meta
 
 export const Default: StoryObj<typeof ButtonList> = {
   decorators: [
@@ -18,13 +22,13 @@ export const Default: StoryObj<typeof ButtonList> = {
   render: (args) => (
     <ButtonList {...args}>
       <ButtonList.Label>Stuff</ButtonList.Label>
-      <ButtonList.Button leftIcon={<IconUserPlus />}>
+      <ButtonList.Button leftSection={<IconUserPlus />}>
         Option 1
       </ButtonList.Button>
       <ButtonList.Button>Option 2</ButtonList.Button>
       <ButtonList.Divider />
       <ButtonList.Label>More Stuff</ButtonList.Label>
-      <ButtonList.Button leftIcon={<IconZoomExclamation />}>
+      <ButtonList.Button leftSection={<IconZoomExclamation />}>
         Option 3
       </ButtonList.Button>
     </ButtonList>

@@ -3,7 +3,7 @@ import {
   InterviewRecordStoreContext,
   useInterviewRecordStore,
 } from "#src/features/interview/hooks.js"
-import { MantineProvider } from "@mantine-v7/core"
+import { MantineProvider } from "@mantine/core"
 import {
   InterviewRecordStore,
   InterviewStateRecord,
