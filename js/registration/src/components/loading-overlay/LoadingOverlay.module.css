@@ -1,0 +1,8 @@
+:global .LoadingOverlay-root {
+    display: flex;
+    align-items: stretch;
+}
+
+:global .LoadingOverlay-center {
+    flex: auto;
+}

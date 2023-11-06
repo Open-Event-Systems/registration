@@ -60,6 +60,9 @@ const config: StorybookConfig = {
       },
       resolve: {
         ...config.resolve,
+        extensionAlias: {
+          ".js": [".tsx", ".ts", ".jsx", ".js"],
+        },
         alias: {
           ...config.resolve?.alias,
 

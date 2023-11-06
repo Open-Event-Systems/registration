@@ -8,12 +8,10 @@
     "./*": "./src/*"
   },
   "imports": {
-    "#src/*.js": [
-      "./src/*.tsx",
-      "./src/*.ts",
-      "./src/*.js"
+    "#src/*": [
+      "./src/*",
+      "./src/*/index.js"
     ],
-    "#src/*.css": "./src/*.css",
     "#resources/*": [
       "./resources/*"
     ]
