@@ -1,10 +1,14 @@
-import { SigninDialog } from "#src/features/auth/components/SigninDialog.js"
-import { SigninOptionsMenu } from "#src/features/auth/components/SigninOptionsMenu.js"
+import { SignInDialog } from "#src/features/auth/components/dialog/SigninDialog"
+import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
 import { getPlatformWebAuthnDetails } from "#src/features/auth/components/signin/WebAuthn.js"
 import { Meta, StoryObj } from "@storybook/react"
 import { IconUserOff } from "@tabler/icons-react"
 import { IconAt } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
+
+import "../options/SignInOptionsMenu.module.css"
+import "../signin/EmailAuth.module.css"
+import "./SigninDialog.module.css"
 
 const webAuthnDetails = getPlatformWebAuthnDetails("")
 const iOSWebAuthnDetails = getPlatformWebAuthnDetails("iPhone")
@@ -12,16 +16,16 @@ const androidWebAuthnDetails = getPlatformWebAuthnDetails("Android")
 const windowsWebAuthnDetails = getPlatformWebAuthnDetails("Windows NT")
 
 export default {
-  component: SigninDialog,
+  component: SignInDialog,
   args: {
     opened: true,
   },
   parameters: {
     layout: "fullscreen",
   },
-} as Meta<typeof SigninDialog>
+} as Meta<typeof SignInDialog>
 
-export const Default: StoryObj<typeof SigninDialog> = {
+export const Default: StoryObj<typeof SignInDialog> = {
   render(args) {
     const [loading, setLoading] = useState(true)
 
@@ -41,8 +45,8 @@ export const Default: StoryObj<typeof SigninDialog> = {
     }
 
     return (
-      <SigninDialog {...args} loading={loading}>
-        <SigninOptionsMenu
+      <SignInDialog {...args} loading={loading}>
+        <SignInOptionsMenu
           options={[
             {
               id: "email",
@@ -68,12 +72,12 @@ export const Default: StoryObj<typeof SigninDialog> = {
           ]}
           onSelect={onSelect}
         />
-      </SigninDialog>
+      </SignInDialog>
     )
   },
 }
 
-export const iOSWebAuthn: StoryObj<typeof SigninDialog> = {
+export const iOSWebAuthn: StoryObj<typeof SignInDialog> = {
   ...Default,
   name: "iOS Web Authn",
   render(args) {
@@ -95,8 +99,8 @@ export const iOSWebAuthn: StoryObj<typeof SigninDialog> = {
     }
 
     return (
-      <SigninDialog {...args} loading={loading}>
-        <SigninOptionsMenu
+      <SignInDialog {...args} loading={loading}>
+        <SignInOptionsMenu
           options={[
             {
               id: "email",
@@ -122,12 +126,12 @@ export const iOSWebAuthn: StoryObj<typeof SigninDialog> = {
           ]}
           onSelect={onSelect}
         />
-      </SigninDialog>
+      </SignInDialog>
     )
   },
 }
 
-export const AndroidWebAuthn: StoryObj<typeof SigninDialog> = {
+export const AndroidWebAuthn: StoryObj<typeof SignInDialog> = {
   ...Default,
   render(args) {
     const [loading, setLoading] = useState(true)
@@ -148,8 +152,8 @@ export const AndroidWebAuthn: StoryObj<typeof SigninDialog> = {
     }
 
     return (
-      <SigninDialog {...args} loading={loading}>
-        <SigninOptionsMenu
+      <SignInDialog {...args} loading={loading}>
+        <SignInOptionsMenu
           options={[
             {
               id: "email",
@@ -175,12 +179,12 @@ export const AndroidWebAuthn: StoryObj<typeof SigninDialog> = {
           ]}
           onSelect={onSelect}
         />
-      </SigninDialog>
+      </SignInDialog>
     )
   },
 }
 
-export const WindowsWebAuthn: StoryObj<typeof SigninDialog> = {
+export const WindowsWebAuthn: StoryObj<typeof SignInDialog> = {
   ...Default,
   render(args) {
     const [loading, setLoading] = useState(true)
@@ -201,8 +205,8 @@ export const WindowsWebAuthn: StoryObj<typeof SigninDialog> = {
     }
 
     return (
-      <SigninDialog {...args} loading={loading}>
-        <SigninOptionsMenu
+      <SignInDialog {...args} loading={loading}>
+        <SignInOptionsMenu
           options={[
             {
               id: "email",
@@ -228,7 +232,7 @@ export const WindowsWebAuthn: StoryObj<typeof SigninDialog> = {
           ]}
           onSelect={onSelect}
         />
-      </SigninDialog>
+      </SignInDialog>
     )
   },
 }

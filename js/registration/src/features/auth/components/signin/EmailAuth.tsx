@@ -4,7 +4,7 @@ import {
   sendVerificationEmail,
   verifyEmail,
 } from "#src/features/auth/api.js"
-import { SigninOptionsMenu } from "#src/features/auth/components/SigninOptionsMenu.js"
+import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
 import {
   getPlatformWebAuthnDetails,
   getWebAuthnAvailability,
@@ -17,17 +17,9 @@ import {
   SignInOption,
 } from "#src/features/auth/types/SignInOptions.js"
 import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"
-import {
-  Button,
-  DefaultProps,
-  Selectors,
-  Stack,
-  Text,
-  TextInput,
-  createStyles,
-  useComponentDefaultProps,
-} from "@mantine/core"
+import { Button, Stack, Text, TextInput, useProps } from "@mantine/core"
 import { IconAt, IconUserOff } from "@tabler/icons-react"
+import clsx from "clsx"
 import { action, makeAutoObservable, runInAction } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { ComponentPropsWithRef } from "react"
@@ -124,20 +116,12 @@ class EmailSignInState {
   }
 }
 
-const useStyles = createStyles({
-  root: {
-    padding: "1rem",
-  },
-  stack: {},
-})
-
 export type EmailAuthProps = {
   state: EmailSignIn
   wretch: Wretch
   webAuthn: boolean
 } & SignInOptionComponentProps &
-  Omit<ComponentPropsWithRef<"form">, "onSubmit"> &
-  DefaultProps<Selectors<typeof useStyles>>
+  Omit<ComponentPropsWithRef<"form">, "onSubmit">
 
 /**
  * Email auth.
@@ -145,9 +129,6 @@ export type EmailAuthProps = {
 const EmailAuth = observer((props: EmailAuthProps) => {
   const {
     className,
-    classNames,
-    styles,
-    unstyled,
     state: _state,
     webAuthn,
     wretch,
@@ -155,14 +136,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
     onComplete,
     setLoading,
     ...other
-  } = useComponentDefaultProps("EmailAuth", {}, props)
-
-  const { classes, cx } = useStyles(undefined, {
-    name: "EmailAuth",
-    classNames,
-    styles,
-    unstyled,
-  })
+  } = useProps("EmailAuth", {}, props)
 
   const localState = useLocalObservable(() => new EmailSignInState(wretch))
 
@@ -175,9 +149,9 @@ const EmailAuth = observer((props: EmailAuthProps) => {
 
     // show sign in options
     content = (
-      <Stack className={classes.stack}>
+      <Stack className={clsx("EmailAuth-stack")}>
         <Text>You&apos;ve successfully verified your email.</Text>
-        <SigninOptionsMenu
+        <SignInOptionsMenu
           options={[
             {
               id: "platformWebAuthn",
@@ -242,7 +216,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
   ) {
     // ask for code
     content = (
-      <Stack className={classes.stack}>
+      <Stack className={clsx("EmailAuth-stack")}>
         <Text>
           We&apos;ve sent a code to your email address. Enter the code below.
         </Text>
@@ -260,7 +234,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
   } else if (localState.step == Step.send) {
     // ask for email
     content = (
-      <Stack className={classes.stack}>
+      <Stack className={clsx("EmailAuth-stack")}>
         <Text>Enter your email address.</Text>
         <TextInput
           key="email"
@@ -278,7 +252,7 @@ const EmailAuth = observer((props: EmailAuthProps) => {
 
   return (
     <form
-      className={cx(classes.root, className)}
+      className={clsx("EmailAuth-root", className)}
       {...other}
       onSubmit={(e) => {
         e.preventDefault()

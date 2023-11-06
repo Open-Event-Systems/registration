@@ -2,17 +2,13 @@ import {
   ModalDialog,
   ModalDialogProps,
 } from "#src/components/dialog/ModalDialog.js"
-import { SigninOptionsMenu } from "#src/features/auth/components/SigninOptionsMenu.js"
+import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
 import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
 import { SignInStore } from "#src/features/auth/stores/SignInStore.js"
 import { SignInOptions } from "#src/features/auth/types/SignInOptions.js"
 import { useLocation, useNavigate } from "#src/hooks/location.js"
-import {
-  DefaultProps,
-  Selectors,
-  createStyles,
-  useComponentDefaultProps,
-} from "@mantine/core"
+import { useProps } from "@mantine/core"
+import clsx from "clsx"
 import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"
@@ -24,47 +20,31 @@ declare module "#src/hooks/location.js" {
   }
 }
 
-const useStyles = createStyles({
-  root: {},
-  body: {
-    padding: "0 0 8px 0",
-  },
-  content: {},
-})
-
-export type SigninDialogProps = Omit<
+export type SignInDialogProps = Omit<
   ModalDialogProps,
-  "styles" | "fullScreen" | "onClose" | "onSelect"
-> &
-  DefaultProps<Selectors<typeof useStyles>>
+  "fullScreen" | "onClose" | "onSelect"
+>
 
 /**
  * Sign in dialog component.
  */
-export const SigninDialog = (props: SigninDialogProps) => {
-  const { className, classNames, styles, unstyled, title, children, ...other } =
-    useComponentDefaultProps(
-      "SigninDialog",
-      {
-        title: "Sign In",
-      },
-      props,
-    )
-
-  const { classes, cx } = useStyles(undefined, {
-    name: "SigninDialog",
-    classNames,
-    styles,
-    unstyled,
-  })
+export const SignInDialog = (props: SignInDialogProps) => {
+  const { className, classNames, title, children, ...other } = useProps(
+    "SignInDialog",
+    {
+      title: "Sign In",
+    },
+    props,
+  )
 
   return (
     <ModalDialog
-      className={cx(classes.root, className)}
+      className={clsx("SignInDialog-root", className)}
       title={title}
       classNames={{
-        content: classes.content,
-        body: classes.body,
+        ...classNames,
+        content: clsx("SignInDialog-content", classNames?.content),
+        body: clsx("SignInDialog-body", classNames?.body),
       }}
       closeOnClickOutside={false}
       hideCloseButton
@@ -77,13 +57,13 @@ export const SigninDialog = (props: SigninDialogProps) => {
   )
 }
 
-export type SigninDialogManagerProps = {
+export type SignInDialogManagerProps = {
   authStore: AuthStore
   wretch: Wretch
   children?: ReactNode
 }
 
-SigninDialog.Manager = observer((props: SigninDialogManagerProps) => {
+SignInDialog.Manager = observer((props: SignInDialogManagerProps) => {
   const { authStore, wretch, children } = props
   const navigate = useNavigate()
   const loc = useLocation()
@@ -146,7 +126,7 @@ SigninDialog.Manager = observer((props: SigninDialogManagerProps) => {
     })
   } else {
     content = (
-      <SigninOptionsMenu
+      <SignInOptionsMenu
         options={state.options}
         onSelect={(id) => {
           navigate(loc, { state: { ...loc.state, signInOption: id } })
@@ -158,11 +138,11 @@ SigninDialog.Manager = observer((props: SigninDialogManagerProps) => {
   return (
     <>
       {children}
-      <SigninDialog opened={show} loading={loading && show}>
+      <SignInDialog opened={show} loading={loading && show}>
         {content}
-      </SigninDialog>
+      </SignInDialog>
     </>
   )
 })
 
-SigninDialog.Manager.displayName = "SigninDialog.Manager"
+SignInDialog.Manager.displayName = "SigninDialog.Manager"
