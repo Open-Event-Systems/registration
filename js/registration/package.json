@@ -8,9 +8,16 @@
     "./*": "./src/*"
   },
   "imports": {
+    "#src/*.js": [
+      "./src/*.tsx",
+      "./src/*.ts"
+    ],
     "#src/*": [
       "./src/*",
-      "./src/*/index.js"
+      "./src/*.tsx",
+      "./src/*.ts",
+      "./src/*/index.tsx",
+      "./src/*/index.ts"
     ],
     "#resources/*": [
       "./resources/*"
@@ -42,6 +49,7 @@
     "@types/qrcode": "^1.5.1",
     "@types/react": "^18.0.35",
     "@types/react-dom": "^18.0.11",
+    "@types/webpack": "^5.28.4",
     "@typescript-eslint/eslint-plugin": "^5.58.0",
     "@typescript-eslint/parser": "^5.58.0",
     "babel-loader": "^9.1.2",

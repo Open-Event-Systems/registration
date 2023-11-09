@@ -1,9 +1,10 @@
-const path = require("path")
-const HtmlWebpackPlugin = require("html-webpack-plugin")
-const { DefinePlugin } = require("webpack")
-const MiniCssExtractPlugin = require("mini-css-extract-plugin")
+import path from "path"
+import HtmlWebpackPlugin from "html-webpack-plugin"
+import { Configuration, DefinePlugin } from "webpack"
+import MiniCssExtractPlugin from "mini-css-extract-plugin"
+import "webpack-dev-server"
 
-module.exports = (env, argv) => {
+const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Configuration => {
   const prod = argv.mode !== "development"
 
   return {
@@ -77,6 +78,9 @@ module.exports = (env, argv) => {
       ],
     },
     resolve: {
+      extensionAlias: {
+        ".js": [".tsx", ".ts", ".jsx", ".js"],
+      },
       alias: {
         // overridable theme file
         "#src/config/theme.js$": [
@@ -140,3 +144,5 @@ module.exports = (env, argv) => {
     },
   }
 }
+
+export default config

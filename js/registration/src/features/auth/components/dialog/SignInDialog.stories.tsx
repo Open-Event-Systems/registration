@@ -1,4 +1,4 @@
-import { SignInDialog } from "#src/features/auth/components/dialog/SigninDialog"
+import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
 import { getPlatformWebAuthnDetails } from "#src/features/auth/components/signin/WebAuthn.js"
 import { Meta, StoryObj } from "@storybook/react"
@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 
 import "../options/SignInOptionsMenu.module.css"
 import "../signin/EmailAuth.module.css"
-import "./SigninDialog.module.css"
+import "./SignInDialog.module.css"
 
 const webAuthnDetails = getPlatformWebAuthnDetails("")
 const iOSWebAuthnDetails = getPlatformWebAuthnDetails("iPhone")

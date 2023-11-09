@@ -1,6 +1,7 @@
+import { LoadingOverlay, ShowLoadingOverlay } from "#src/components"
 import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
 import { Title } from "#src/components/title/Title.js"
-import { SigninDialog } from "#src/features/auth/components/SigninDialog.js"
+import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { useAuth } from "#src/features/auth/hooks.js"
 import { useCurrentCartStore } from "#src/features/cart/hooks.js"
 import {
@@ -24,10 +25,6 @@ import { EventPage } from "#src/features/selfservice/routes/EventPage.js"
 import { useWretch } from "#src/hooks/api.js"
 import { useLoader } from "#src/hooks/loader.js"
 import { AppRoute } from "#src/routes/AppRoute.js"
-import {
-  LoadingOverlay,
-  ShowLoadingOverlay,
-} from "#src/routes/LoadingOverlay.js"
 import { NotFoundPage } from "#src/routes/NotFoundPage.js"
 import { NotFoundError } from "#src/util/loader.js"
 import { Text } from "@mantine/core"
@@ -91,7 +88,7 @@ const SelfServiceAppRoute = () => {
   const { eventId = "", accessCode = "" } = useParams()
   const authStore = useAuth()
   return (
-    <SigninDialog.Manager wretch={authStore.wretch} authStore={authStore}>
+    <SignInDialog.Manager wretch={authStore.wretch} authStore={authStore}>
       <InterviewRecordStoreProvider>
         <EventStoreProvider>
           <CartStoreProvider>
@@ -107,7 +104,7 @@ const SelfServiceAppRoute = () => {
           </CartStoreProvider>
         </EventStoreProvider>
       </InterviewRecordStoreProvider>
-    </SigninDialog.Manager>
+    </SignInDialog.Manager>
   )
 }
 

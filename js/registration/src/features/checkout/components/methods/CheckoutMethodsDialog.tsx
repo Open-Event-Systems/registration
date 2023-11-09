@@ -1,43 +1,33 @@
 import { CheckoutMethod } from "#src/features/checkout/types/Checkout.js"
 import {
   Button,
-  DefaultProps,
   LoadingOverlay,
   LoadingOverlayProps,
   Modal,
   ModalProps,
-  Selectors,
-  createStyles,
-  useComponentDefaultProps,
+  useProps,
 } from "@mantine/core"
 import { useEffect, useState } from "react"
 
-const useStyles = createStyles({
-  root: {},
-  body: {
-    minHeight: 100,
-  },
-})
+import "./CheckoutMethods.module.css"
+import clsx from "clsx"
 
 export type CheckoutMethodsDialogProps = {
   methods: CheckoutMethod[] | Promise<CheckoutMethod[]>
   onSelect?: (service: string, method?: string) => void
   LoadingOverlayProps?: Partial<LoadingOverlayProps>
-} & DefaultProps<Selectors<typeof useStyles>> &
-  Omit<ModalProps, "styles" | "children" | "onSelect">
+} & Omit<ModalProps, "children" | "onSelect">
 
 export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
   const {
     className,
     classNames,
-    styles,
-    unstyled,
     methods,
     onSelect,
     opened,
     LoadingOverlayProps,
     ...other
-  } = useComponentDefaultProps(
+  } = useProps(
     "CheckoutMethodsDialog",
     {
       LoadingOverlayProps: {
@@ -46,13 +36,6 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
     },
     props,
   )
-
-  const { classes, cx } = useStyles(undefined, {
-    name: "CheckoutMethodsDialog",
-    classNames,
-    styles,
-    unstyled,
-  })
 
   const [loaded, setLoaded] = useState("then" in methods ? false : true)
   const [methodsArray, setMethodsArray] = useState<CheckoutMethod[]>(
@@ -82,9 +65,10 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
     <Modal
       title="Payment Method"
       centered
-      className={cx(classes.root, className)}
+      className={clsx("CheckoutMethodsDialog-root", className)}
       classNames={{
-        body: classes.body,
+        ...classNames,
+        body: clsx("CheckoutMethodsDialog-body", classNames?.body),
       }}
       opened={opened}
       {...other}

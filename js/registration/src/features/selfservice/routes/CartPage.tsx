@@ -2,7 +2,7 @@ import { Subtitle, Title } from "#src/components/title/Title.js"
 import { fetchCartPricingResult } from "#src/features/cart/api.js"
 import { useCurrentCartStore } from "#src/features/cart/hooks.js"
 import { Cart } from "#src/features/cart/types.js"
-import { Cart as CartComponent } from "#src/features/cart/components/Cart.js"
+import { Cart as CartComponent } from "#src/features/cart/components/cart/Cart"
 import { useWretch } from "#src/hooks/api.js"
 import { LineItem as LineItemComponent } from "#src/features/cart/components/cart/LineItem.js"
 import { Modifier as ModifierComponent } from "#src/features/cart/components/cart/Modifier.js"
@@ -22,9 +22,9 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useSelfServiceLoader } from "#src/features/selfservice/hooks.js"
 import { Link as RLink } from "react-router-dom"
-import { CartRegistration } from "#src/features/cart/components/CartRegistration.js"
 import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog.js"
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
+import { CartRegistration } from "#src/features/cart/components/cart/CartRegistration"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -165,10 +165,10 @@ const CartView = observer(
             )}
             <Grid>
               {selfServiceResults.add_options.length > 0 && (
-                <Grid.Col xs={12} sm="content">
+                <Grid.Col span={{ base: 12, sm: "content" }}>
                   <Button
                     variant="outline"
-                    leftIcon={<IconPlus />}
+                    leftSection={<IconPlus />}
                     fullWidth
                     onClick={() => {
                       // show dialog
@@ -185,10 +185,10 @@ const CartView = observer(
                 </Grid.Col>
               )}
               {checkoutAvailable && (
-                <Grid.Col xs={12} sm="content">
+                <Grid.Col span={{ base: 12, sm: "content" }}>
                   <Button
                     variant="filled"
-                    leftIcon={<IconShoppingCart />}
+                    leftSection={<IconShoppingCart />}
                     fullWidth
                     onClick={() => showOptions()}
                   >
@@ -238,7 +238,7 @@ CartView.displayName = "CartView"
 
 const EmptyCartView = () => (
   <Box
-    sx={{
+    style={{
       minHeight: 200,
       display: "flex",
       alignItems: "center",
