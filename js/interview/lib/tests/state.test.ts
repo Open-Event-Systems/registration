@@ -1,5 +1,5 @@
-import { createState } from "#src/state.js"
-import { JSONSchema, ObjectFieldState } from "#src/types.js"
+import { createState } from "#src/state"
+import { JSONSchema, ObjectFieldState } from "#src/types"
 
 const schema1: JSONSchema = {
   type: "string",

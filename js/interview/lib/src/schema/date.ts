@@ -3,7 +3,7 @@
  * @module
  */
 
-import { JSONSchemaOf } from "#src/types.js"
+import { JSONSchemaOf } from "#src/types"
 import dayjs, { Dayjs, isDayjs } from "dayjs"
 import { z } from "zod"
 

@@ -1,5 +1,5 @@
-import { createSchema } from "#src/schema/json-schema.js"
-import { JSONSchema } from "#src/types.js"
+import { createSchema } from "#src/schema/json-schema"
+import { JSONSchema } from "#src/types"
 
 const schema1: JSONSchema = {
   type: "string",

@@ -1,8 +1,5 @@
-import {
-  InterviewStateRecordImpl,
-  makeInterviewRecordStore,
-} from "#src/store.js"
-import { IncompleteStateResponse } from "#src/types.js"
+import { InterviewStateRecordImpl, makeInterviewRecordStore } from "#src/store"
+import { IncompleteStateResponse } from "#src/types"
 
 const response1: IncompleteStateResponse = {
   complete: false,

@@ -1,11 +1,11 @@
-import { InterviewStateRecordImpl } from "#src/store.js"
+import { InterviewStateRecordImpl } from "#src/store"
 import {
   ErrorResult,
   InterviewAPI,
   InterviewStateRecord,
   StateRequest,
   StateResponse,
-} from "#src/types.js"
+} from "#src/types"
 
 /**
  * Default API implementation.

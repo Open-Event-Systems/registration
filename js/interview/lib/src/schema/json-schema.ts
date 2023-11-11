@@ -4,8 +4,8 @@
  * @module
  */
 
-import { handleDate } from "#src/schema/date.js"
-import { JSONSchema, JSONSchemaOf } from "#src/types.js"
+import { handleDate } from "#src/schema/date"
+import { JSONSchema, JSONSchemaOf } from "#src/types"
 import { JSONSchema7TypeName } from "json-schema"
 import { z } from "zod"
 

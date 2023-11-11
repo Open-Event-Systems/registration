@@ -4,7 +4,7 @@ import {
   InterviewStateMetadata,
   InterviewStateRecord,
   StateResponse,
-} from "#src/types.js"
+} from "#src/types"
 import { makeAutoObservable } from "mobx"
 
 const SESSION_STORAGE_KEY = "interview-state-v1"

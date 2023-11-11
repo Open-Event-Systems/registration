@@ -1,10 +1,10 @@
-import { createSchema, isType } from "#src/schema/json-schema.js"
+import { createSchema, isType } from "#src/schema/json-schema"
 import {
   FieldState,
   JSONSchema,
   JSONSchemaOf,
   ObjectFieldState,
-} from "#src/types.js"
+} from "#src/types"
 import { JSONSchema7 } from "json-schema"
 import { computed, makeAutoObservable, observable, toJS } from "mobx"
 

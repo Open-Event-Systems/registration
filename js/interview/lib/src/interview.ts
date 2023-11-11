@@ -1,4 +1,4 @@
-import { InterviewStateRecordImpl } from "#src/store.js"
+import { InterviewStateRecordImpl } from "#src/store"
 import {
   FormValues,
   InterviewAPI,
@@ -6,7 +6,7 @@ import {
   InterviewStateMetadata,
   InterviewStateRecord,
   StateResponse,
-} from "#src/types.js"
+} from "#src/types"
 
 /**
  * Keep updating the interview state until it returns a result or is complete.
