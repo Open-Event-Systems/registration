@@ -40,7 +40,7 @@ class AskStep(Step):
 
         updated = update.state.set_question(question.id)
 
-        return StepResult(
+        return oes.interview.interview.update.StepResult(
             state=updated,
             changed=True,
             content=AskResult(schema=schema),
