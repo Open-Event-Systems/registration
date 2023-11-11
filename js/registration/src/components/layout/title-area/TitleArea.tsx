@@ -1,8 +1,8 @@
-import { Logo, LogoProps } from "#src/components/layout/logo/Logo.js"
+import { Logo, LogoProps } from "#src/components/layout/logo/Logo"
 import {
   SubtitlePlaceholder,
   TitlePlaceholder,
-} from "#src/components/title/Title.js"
+} from "#src/components/title/Title"
 import {
   Box,
   BoxProps,

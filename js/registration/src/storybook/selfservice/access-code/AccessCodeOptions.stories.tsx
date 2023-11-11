@@ -1,4 +1,4 @@
-import { AccessCodeOptions } from "#src/features/selfservice/components/access-code/AccessCodeOptions.js"
+import { AccessCodeOptions } from "#src/features/selfservice/components/access-code/AccessCodeOptions"
 import { Meta, StoryObj } from "@storybook/react"
 
 export default {

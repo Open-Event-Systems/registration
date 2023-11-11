@@ -1,5 +1,5 @@
-import { placeholderWretch } from "#src/config/api.js"
-import { EventStore } from "#src/features/event/stores.js"
+import { placeholderWretch } from "#src/config/api"
+import { EventStore } from "#src/features/event/stores"
 import { createContext, useContext } from "react"
 
 export const EventStoreContext = createContext(

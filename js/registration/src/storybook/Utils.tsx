@@ -1,5 +1,5 @@
 import { MantineProvider } from "@mantine/core"
-import theme from "#src/config/theme.js"
+import theme from "#src/config/theme"
 import { ReactNode } from "react"
 
 /**

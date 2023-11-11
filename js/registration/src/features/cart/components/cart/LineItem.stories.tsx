@@ -1,5 +1,5 @@
-import { LineItem } from "#src/features/cart/components/cart/LineItem.js"
-import { Modifier } from "#src/features/cart/components/cart/Modifier.js"
+import { LineItem } from "#src/features/cart/components/cart/LineItem"
+import { Modifier } from "#src/features/cart/components/cart/Modifier"
 import { Box } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 

@@ -1,6 +1,6 @@
-import { placeholderWretch } from "#src/config/api.js"
-import { AppStore } from "#src/stores/AppStore.js"
-import { Config } from "#src/types/config.js"
+import { placeholderWretch } from "#src/config/api"
+import { AppStore } from "#src/stores/AppStore"
+import { Config } from "#src/types/config"
 import { createContext, useContext } from "react"
 
 const defaultConfig: Config = {

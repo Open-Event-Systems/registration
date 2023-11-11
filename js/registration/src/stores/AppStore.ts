@@ -1,9 +1,9 @@
-import { Config } from "#src/types/config.js"
-import { defaultWretch } from "#src/config/api.js"
+import { Config } from "#src/types/config"
+import { defaultWretch } from "#src/config/api"
 import { makeAutoObservable } from "mobx"
 import { Wretch } from "wretch"
-import { fetchConfig } from "#src/config/config.js"
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
+import { fetchConfig } from "#src/config/config"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
 
 export class AppStore {
   authStore: AuthStore

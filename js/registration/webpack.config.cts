@@ -78,8 +78,9 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       ],
     },
     resolve: {
+      extensions: [".tsx", ".ts", "..."],
       extensionAlias: {
-        ".js": [".tsx", ".ts", ".jsx", ".js"],
+        ".js": [".tsx", ".ts", ".js"],
       },
       alias: {
         // overridable theme file

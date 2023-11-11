@@ -1,9 +1,9 @@
-import { placeholderWretch } from "#src/config/api.js"
+import { placeholderWretch } from "#src/config/api"
 import {
   checkAccessCode,
   listSelfServiceRegistrations,
-} from "#src/features/selfservice/api.js"
-import { createLoader } from "#src/util/loader.js"
+} from "#src/features/selfservice/api"
+import { createLoader } from "#src/util/loader"
 import { createContext, useContext } from "react"
 
 export const SelfServiceLoaderContext = createContext(

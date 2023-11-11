@@ -1,4 +1,4 @@
-import { CheckoutMethod } from "#src/features/checkout/types/Checkout.js"
+import { CheckoutMethod } from "#src/features/checkout/types/Checkout"
 import {
   Button,
   LoadingOverlay,

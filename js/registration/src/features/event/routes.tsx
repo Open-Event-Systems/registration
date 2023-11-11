@@ -1,4 +1,4 @@
-import { EventStoreProvider } from "#src/features/event/providers.js"
+import { EventStoreProvider } from "#src/features/event/providers"
 import { Outlet } from "react-router-dom"
 
 export const EventStoreRoute = () => {

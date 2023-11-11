@@ -1,4 +1,4 @@
-import { Currency } from "#src/features/cart/components/cart/Currency.js"
+import { Currency } from "#src/features/cart/components/cart/Currency"
 import {
   ComponentPropsWithoutRef,
   ElementType,

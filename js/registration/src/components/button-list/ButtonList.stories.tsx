@@ -1,4 +1,4 @@
-import { ButtonList } from "#src/components/button-list/ButtonList.js"
+import { ButtonList } from "#src/components/button-list/ButtonList"
 import { Box } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 import { IconUserPlus, IconZoomExclamation } from "@tabler/icons-react"

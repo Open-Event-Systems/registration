@@ -1,10 +1,10 @@
-import { getEmailSignIn } from "#src/features/auth/components/signin/EmailAuth.js"
-import { getGuestSignIn } from "#src/features/auth/components/signin/Guest.js"
+import { getEmailSignIn } from "#src/features/auth/components/signin/EmailAuth"
+import { getGuestSignIn } from "#src/features/auth/components/signin/Guest"
 import {
   getPlatformWebAuthnSignIn,
   getWebAuthnAuthenticationSignIn,
-} from "#src/features/auth/components/signin/WebAuthn.js"
-import { SignInOptions } from "#src/features/auth/types/SignInOptions.js"
+} from "#src/features/auth/components/signin/WebAuthn"
+import { SignInOptions } from "#src/features/auth/types/SignInOptions"
 
 export const signInOptions: SignInOptions = {
   webAuthnAuthentication: getWebAuthnAuthenticationSignIn,

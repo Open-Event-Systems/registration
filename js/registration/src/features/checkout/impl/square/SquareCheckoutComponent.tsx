@@ -1,8 +1,8 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import {
   SquareCheckout,
   loadSquare,
-} from "#src/features/checkout/impl/square/SquareCheckout.js"
+} from "#src/features/checkout/impl/square/SquareCheckout"
 import { Box, Button, Stack } from "@mantine/core"
 import type { Card } from "@square/web-payments-sdk-types"
 import { useCallback, useEffect, useState } from "react"

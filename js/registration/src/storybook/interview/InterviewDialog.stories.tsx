@@ -1,8 +1,8 @@
-import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
+import { InterviewDialog } from "#src/features/interview/components/InterviewDialog"
 import {
   InterviewRecordStoreContext,
   useInterviewRecordStore,
-} from "#src/features/interview/hooks.js"
+} from "#src/features/interview/hooks"
 import { MantineProvider } from "@mantine/core"
 import {
   InterviewRecordStore,

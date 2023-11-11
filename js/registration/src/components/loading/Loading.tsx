@@ -1,5 +1,5 @@
-import { isNotFoundError } from "#src/util/api.js"
-import { Loader, LoadingState } from "#src/util/loader.js"
+import { isNotFoundError } from "#src/util/api"
+import { Loader, LoadingState } from "#src/util/loader"
 import { observer } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"
 

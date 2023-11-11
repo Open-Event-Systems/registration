@@ -1,7 +1,7 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import { Card, Payments, Square } from "@square/web-payments-sdk-types"
 
-declare module "#src/features/checkout/types/Checkout.js" {
+declare module "#src/features/checkout/types/Checkout" {
   interface PaymentServiceMap {
     square: SquareCheckoutData
   }

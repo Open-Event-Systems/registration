@@ -1,8 +1,8 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import { Button, Stack, Text } from "@mantine/core"
 import { useEffect } from "react"
 
-declare module "#src/features/checkout/types/Checkout.js" {
+declare module "#src/features/checkout/types/Checkout" {
   interface PaymentServiceMap {
     system: Record<string, never>
   }

@@ -1,5 +1,5 @@
-import { AuthContext } from "#src/features/auth/hooks.js"
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
+import { AuthContext } from "#src/features/auth/hooks"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
 import { ReactNode } from "react"
 
 export const AuthStoreProvider = ({

@@ -1,4 +1,4 @@
-import { SelfServiceRegistrationListResponse } from "#src/features/selfservice/types.js"
+import { SelfServiceRegistrationListResponse } from "#src/features/selfservice/types"
 import { Wretch, WretchResponse } from "wretch"
 import { queryStringAddon } from "wretch/addons"
 

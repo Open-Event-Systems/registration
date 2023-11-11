@@ -1,8 +1,8 @@
-import { fetchConfig } from "#src/config/config.js"
-import { PricingResult } from "#src/features/cart/types.js"
-import { fetchReceipt } from "#src/features/receipt/api.js"
-import { Receipt } from "#src/features/receipt/components/Receipt.js"
-import { Config } from "#src/types/config.js"
+import { fetchConfig } from "#src/config/config"
+import { PricingResult } from "#src/features/cart/types"
+import { fetchReceipt } from "#src/features/receipt/api"
+import { Receipt } from "#src/features/receipt/components/Receipt"
+import { Config } from "#src/types/config"
 import { Fragment, useEffect, useState } from "react"
 
 export const ReceiptPage = () => {

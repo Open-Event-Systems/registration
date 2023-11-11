@@ -1,6 +1,6 @@
-import { LoaderComponent } from "#src/components/loading/Loading.js"
-import { useLoader } from "#src/hooks/loader.js"
-import { NotFoundError } from "#src/util/loader.js"
+import { LoaderComponent } from "#src/components/loading/Loading"
+import { useLoader } from "#src/hooks/loader"
+import { NotFoundError } from "#src/util/loader"
 import { Skeleton } from "@mantine/core"
 
 export default {

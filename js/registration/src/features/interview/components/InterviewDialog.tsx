@@ -1,9 +1,9 @@
 import {
   ModalDialog,
   ModalDialogProps,
-} from "#src/components/dialog/ModalDialog.js"
-import { useInterviewRecordStore } from "#src/features/interview/hooks.js"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+} from "#src/components/dialog/ModalDialog"
+import { useInterviewRecordStore } from "#src/features/interview/hooks"
+import { useLocation, useNavigate } from "#src/hooks/location"
 import { Interview, Step } from "@open-event-systems/interview-components"
 import {
   InterviewAPI,

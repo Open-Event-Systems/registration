@@ -1,5 +1,5 @@
-import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
-import { Subtitle, Title } from "#src/components/title/Title.js"
+import { SimpleLayout } from "#src/components/layout/SimpleLayout"
+import { Subtitle, Title } from "#src/components/title/Title"
 import { Meta, StoryFn } from "@storybook/react"
 
 type Args = {

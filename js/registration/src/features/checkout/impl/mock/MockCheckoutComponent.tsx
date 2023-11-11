@@ -1,10 +1,10 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import { Button, Stack, TextInput } from "@mantine/core"
 import { useEffect, useState } from "react"
 
 export type MockCheckoutData = Record<string, unknown>
 
-declare module "#src/features/checkout/types/Checkout.js" {
+declare module "#src/features/checkout/types/Checkout" {
   interface PaymentServiceMap {
     mock: MockCheckoutData
   }

@@ -1,11 +1,11 @@
-import { signInOptions } from "#src/features/auth/signInOptions.js"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
+import { signInOptions } from "#src/features/auth/signInOptions"
+import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
 import {
   SignInOptionComponentProps,
   SignInOption,
   SignInState,
-} from "#src/features/auth/types/SignInOptions.js"
+} from "#src/features/auth/types/SignInOptions"
 import { makeAutoObservable, runInAction } from "mobx"
 import { ReactNode } from "react"
 import { Wretch } from "wretch"

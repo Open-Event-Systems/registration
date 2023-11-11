@@ -2,10 +2,10 @@ import {
   CartStoreContext,
   CurrentCartStoreContext,
   useCartStore,
-} from "#src/features/cart/hooks.js"
-import { CartStore, CurrentCartStore } from "#src/features/cart/stores.js"
-import { useInterviewRecordStore } from "#src/features/interview/hooks.js"
-import { useWretch } from "#src/hooks/api.js"
+} from "#src/features/cart/hooks"
+import { CartStore, CurrentCartStore } from "#src/features/cart/stores"
+import { useInterviewRecordStore } from "#src/features/interview/hooks"
+import { useWretch } from "#src/hooks/api"
 import { ReactNode, useState } from "react"
 
 export const CartStoreProvider = ({ children }: { children?: ReactNode }) => {

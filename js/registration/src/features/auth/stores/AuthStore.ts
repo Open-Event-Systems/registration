@@ -1,8 +1,8 @@
 import { makeAutoObservable, runInAction, when } from "mobx"
 import * as oauth from "oauth4webapi"
 import { Wretch } from "wretch"
-import { getRetryMiddleware } from "#src/features/auth/authMiddleware.js"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
+import { getRetryMiddleware } from "#src/features/auth/authMiddleware"
+import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 
 /**
  * The client ID of the main JS app.

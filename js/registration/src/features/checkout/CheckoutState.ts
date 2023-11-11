@@ -1,8 +1,8 @@
-import { PaymentServiceMap } from "#src/features/checkout/types/Checkout.js"
-import { CheckoutResponse } from "#src/features/checkout/types/Checkout.js"
-import { PaymentServiceID } from "#src/features/checkout/types/Checkout.js"
-import { CheckoutComponent } from "#src/features/checkout/types/CheckoutComponent.js"
-import { Loader, createLoader } from "#src/util/loader.js"
+import { PaymentServiceMap } from "#src/features/checkout/types/Checkout"
+import { CheckoutResponse } from "#src/features/checkout/types/Checkout"
+import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
+import { CheckoutComponent } from "#src/features/checkout/types/CheckoutComponent"
+import { Loader, createLoader } from "#src/util/loader"
 import { action, makeAutoObservable } from "mobx"
 
 /**

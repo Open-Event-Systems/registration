@@ -5,28 +5,28 @@ import {
   Styles,
 } from "@mantine/core"
 
-import { CartProps } from "#src/features/cart/components/Cart.js"
-import { LineItemProps } from "#src/features/cart/components/cart/LineItem.js"
-import { ModifierProps } from "#src/features/cart/components/cart/Modifier.js"
-import { CardGridProps } from "#src/features/selfservice/components/card/CardGrid.js"
-import { RegistrationCardProps } from "#src/features/selfservice/components/card/RegistrationCard.js"
-import { LoadingOverlayProps } from "#src/routes/LoadingOverlay.js"
-import { AppShellLayoutProps } from "#src/components/layout/AppShellLayout.js"
-import { ContainerLayoutProps } from "#src/components/layout/ContainerLayout.js"
-import { HeaderProps } from "#src/components/layout/Header.js"
-import { StackLayoutProps } from "#src/components/layout/StackLayout.js"
-import { TitleAreaProps } from "#src/components/layout/TitleArea.js"
-import { SigninDialogProps } from "#src/features/auth/components/SigninDialog.js"
-import { CheckoutDialogProps } from "#src/features/checkout/components/checkout/CheckoutDialog.js"
-import { LogoProps } from "#src/components/layout/Logo.js"
+import { CartProps } from "#src/features/cart/components/Cart"
+import { LineItemProps } from "#src/features/cart/components/cart/LineItem"
+import { ModifierProps } from "#src/features/cart/components/cart/Modifier"
+import { CardGridProps } from "#src/features/selfservice/components/card/CardGrid"
+import { RegistrationCardProps } from "#src/features/selfservice/components/card/RegistrationCard"
+import { LoadingOverlayProps } from "#src/routes/LoadingOverlay"
+import { AppShellLayoutProps } from "#src/components/layout/AppShellLayout"
+import { ContainerLayoutProps } from "#src/components/layout/ContainerLayout"
+import { HeaderProps } from "#src/components/layout/Header"
+import { StackLayoutProps } from "#src/components/layout/StackLayout"
+import { TitleAreaProps } from "#src/components/layout/TitleArea"
+import { SigninDialogProps } from "#src/features/auth/components/SigninDialog"
+import { CheckoutDialogProps } from "#src/features/checkout/components/checkout/CheckoutDialog"
+import { LogoProps } from "#src/components/layout/Logo"
 import {
   ButtonListButtonProps,
   ButtonListDividerProps,
   ButtonListLabelProps,
   ButtonListProps,
-} from "#src/components/button-list/ButtonList.js"
-import { ModalDialogProps } from "#src/components/dialog/ModalDialog.js"
-import { EmailAuthProps } from "#src/features/auth/components/signin/EmailAuth.js"
+} from "#src/components/button-list/ButtonList"
+import { ModalDialogProps } from "#src/components/dialog/ModalDialog"
+import { EmailAuthProps } from "#src/features/auth/components/signin/EmailAuth"
 
 interface Components {
   // src/components

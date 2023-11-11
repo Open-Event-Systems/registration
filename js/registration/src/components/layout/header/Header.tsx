@@ -1,5 +1,5 @@
-import { UserMenu } from "#src/components/layout/user-menu/UserMenu.js"
-import { useAuth } from "#src/features/auth/hooks.js"
+import { UserMenu } from "#src/components/layout/user-menu/UserMenu"
+import { useAuth } from "#src/features/auth/hooks"
 import {
   ActionIcon,
   ActionIconProps,

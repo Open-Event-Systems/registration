@@ -3,11 +3,11 @@ import {
   fetchCartInterview,
   fetchEmptyCart,
   removeRegistrationFromCart,
-} from "#src/features/cart/api.js"
-import { Cart } from "#src/features/cart/types.js"
-import { getCurrentCartId, setCurrentCartId } from "#src/features/cart/utils.js"
-import { isNotFoundError } from "#src/util/api.js"
-import { Loader, createLoader } from "#src/util/loader.js"
+} from "#src/features/cart/api"
+import { Cart } from "#src/features/cart/types"
+import { getCurrentCartId, setCurrentCartId } from "#src/features/cart/utils"
+import { isNotFoundError } from "#src/util/api"
+import { Loader, createLoader } from "#src/util/loader"
 import {
   InterviewRecordStore,
   InterviewStateRecord,

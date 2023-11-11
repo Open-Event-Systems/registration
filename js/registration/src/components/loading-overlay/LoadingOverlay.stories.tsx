@@ -1,5 +1,5 @@
 import { LoadingOverlay } from "#src/components"
-import { useShowLoading } from "#src/hooks/loader.js"
+import { useShowLoading } from "#src/hooks/loader"
 import { Box, Button } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 

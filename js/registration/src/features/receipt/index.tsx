@@ -1,4 +1,4 @@
-import { ReceiptPage } from "#src/features/receipt/routes.js"
+import { ReceiptPage } from "#src/features/receipt/routes"
 import { createRoot } from "react-dom/client"
 
 import "#src/features/receipt/styles.css"

@@ -1,7 +1,7 @@
 import {
   CheckoutResponse,
   PaymentServiceID,
-} from "#src/features/checkout/types/Checkout.js"
+} from "#src/features/checkout/types/Checkout"
 import { Wretch } from "wretch"
 import { queryStringAddon } from "wretch/addons"
 

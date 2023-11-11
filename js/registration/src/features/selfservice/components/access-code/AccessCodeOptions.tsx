@@ -1,6 +1,6 @@
-import { ButtonList } from "#src/components/button-list/ButtonList.js"
-import { InterviewOption } from "#src/features/cart/types.js"
-import { SelfServiceRegistration } from "#src/features/selfservice/types.js"
+import { ButtonList } from "#src/components/button-list/ButtonList"
+import { InterviewOption } from "#src/features/cart/types"
+import { SelfServiceRegistration } from "#src/features/selfservice/types"
 
 export type AccessCodeOptionsProps = {
   registrations: SelfServiceRegistration[]

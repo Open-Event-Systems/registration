@@ -1,5 +1,5 @@
 import { Container } from "@mantine/core"
-import { Title as PageTitle, Subtitle } from "#src/components/title/Title.js"
+import { Title as PageTitle, Subtitle } from "#src/components/title/Title"
 
 export const NotFoundPage = () => {
   return (

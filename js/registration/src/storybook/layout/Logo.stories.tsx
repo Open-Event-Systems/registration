@@ -1,4 +1,4 @@
-import { Logo } from "#src/components/layout/logo/Logo.js"
+import { Logo } from "#src/components/layout/logo/Logo"
 import { Box } from "@mantine/core"
 import { Meta, StoryFn } from "@storybook/react"
 

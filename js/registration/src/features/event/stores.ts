@@ -1,6 +1,6 @@
-import { listEvents } from "#src/features/event/api.js"
-import { Event } from "#src/features/event/types.js"
-import { Loader, NotFoundError, createLoader } from "#src/util/loader.js"
+import { listEvents } from "#src/features/event/api"
+import { Event } from "#src/features/event/types"
+import { Loader, NotFoundError, createLoader } from "#src/util/loader"
 import { Wretch } from "wretch"
 
 export class EventStore {

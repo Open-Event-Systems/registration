@@ -1,12 +1,12 @@
-import { ButtonList } from "#src/components/button-list/ButtonList.js"
+import { ButtonList } from "#src/components/button-list/ButtonList"
 import {
   ModalDialog,
   ModalDialogProps,
-} from "#src/components/dialog/ModalDialog.js"
-import { useCartStore, useCurrentCartStore } from "#src/features/cart/hooks.js"
-import { AccessCodeOptions } from "#src/features/selfservice/components/access-code/AccessCodeOptions.js"
-import { SelfServiceRegistrationListResponse } from "#src/features/selfservice/types.js"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+} from "#src/components/dialog/ModalDialog"
+import { useCartStore, useCurrentCartStore } from "#src/features/cart/hooks"
+import { AccessCodeOptions } from "#src/features/selfservice/components/access-code/AccessCodeOptions"
+import { SelfServiceRegistrationListResponse } from "#src/features/selfservice/types"
+import { useLocation, useNavigate } from "#src/hooks/location"
 import { Text } from "@mantine/core"
 import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"

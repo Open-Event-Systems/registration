@@ -1,4 +1,4 @@
-import { placeholderWretch } from "#src/config/api.js"
+import { placeholderWretch } from "#src/config/api"
 import { createContext, useContext } from "react"
 
 export const WretchContext = createContext(placeholderWretch)

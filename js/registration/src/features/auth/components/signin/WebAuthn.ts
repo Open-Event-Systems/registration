@@ -3,16 +3,16 @@ import {
   completeWebAuthnRegistration,
   getWebAuthnAuthenticationChallenge,
   getWebAuthnRegistrationChallenge,
-} from "#src/features/auth/api.js"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
+} from "#src/features/auth/api"
+import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 import {
   SignInOption,
   SignInState,
-} from "#src/features/auth/types/SignInOptions.js"
+} from "#src/features/auth/types/SignInOptions"
 import {
   PlatformWebAuthnDetails,
   WebAuthnChallenge,
-} from "#src/features/auth/types/WebAuthn.js"
+} from "#src/features/auth/types/WebAuthn"
 import {
   browserSupportsWebAuthn,
   platformAuthenticatorIsAvailable,

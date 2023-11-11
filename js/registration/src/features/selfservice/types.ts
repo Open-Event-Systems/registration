@@ -20,7 +20,7 @@ export interface SelfServiceRegistrationListResponse {
   add_options: InterviewOption[]
 }
 
-declare module "#src/hooks/location.js" {
+declare module "#src/hooks/location" {
   interface LocationState {
     accessCodeDialogRegistrationId?: string
   }

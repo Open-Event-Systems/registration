@@ -1,4 +1,4 @@
-import { Config } from "#src/types/config.js"
+import { Config } from "#src/types/config"
 
 const configUrl = new URL("config.json", import.meta.url)
 

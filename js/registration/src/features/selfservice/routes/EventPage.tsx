@@ -1,38 +1,38 @@
-import { Title as PageTitle, Subtitle } from "#src/components/title/Title.js"
+import { Title as PageTitle, Subtitle } from "#src/components/title/Title"
 import { useParams } from "react-router-dom"
 import {
   CardGrid,
   NoRegistrationsMessage,
-} from "#src/features/selfservice/components/card/CardGrid.js"
+} from "#src/features/selfservice/components/card/CardGrid"
 import { Anchor, Box, Button, Grid } from "@mantine/core"
 import { IconPlus } from "@tabler/icons-react"
 import {
   RegistrationCard,
   RegistrationCardPlaceholder,
-} from "#src/features/selfservice/components/card/RegistrationCard.js"
+} from "#src/features/selfservice/components/card/RegistrationCard"
 import { observer } from "mobx-react-lite"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+import { useLocation, useNavigate } from "#src/hooks/location"
 import {
   useAccessCodeLoader,
   useSelfServiceLoader,
-} from "#src/features/selfservice/hooks.js"
-import { Event } from "#src/features/event/types.js"
-import { SelfServiceRegistrationResponse } from "#src/features/selfservice/types.js"
-import { fetchCartInterview } from "#src/features/cart/api.js"
-import { useWretch } from "#src/hooks/api.js"
+} from "#src/features/selfservice/hooks"
+import { Event } from "#src/features/event/types"
+import { SelfServiceRegistrationResponse } from "#src/features/selfservice/types"
+import { fetchCartInterview } from "#src/features/cart/api"
+import { useWretch } from "#src/hooks/api"
 import {
   fetchCurrentOrEmptyCart,
   getCurrentCartId,
-} from "#src/features/cart/utils.js"
-import { useEvents } from "#src/features/event/hooks.js"
-import { useCurrentCartStore } from "#src/features/cart/hooks.js"
+} from "#src/features/cart/utils"
+import { useEvents } from "#src/features/event/hooks"
+import { useCurrentCartStore } from "#src/features/cart/hooks"
 import { Link as RLink } from "react-router-dom"
-import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog.js"
-import { InterviewDialog } from "#src/features/interview/components/InterviewDialog.js"
-import { Cart } from "#src/features/cart/types.js"
-import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/access-code/AccessCodeOptionsDialog.js"
+import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog"
+import { InterviewDialog } from "#src/features/interview/components/InterviewDialog"
+import { Cart } from "#src/features/cart/types"
+import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/access-code/AccessCodeOptionsDialog"
 import { Markdown } from "@open-event-systems/interview-components"
-import { useInterviewRecordStore } from "#src/features/interview/hooks.js"
+import { useInterviewRecordStore } from "#src/features/interview/hooks"
 import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 
 export const EventPage = () => {

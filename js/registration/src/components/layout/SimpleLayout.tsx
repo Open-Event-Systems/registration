@@ -1,9 +1,9 @@
-import { ContainerLayout } from "#src/components/layout/ContainerLayout.js"
-import { StackLayout } from "#src/components/layout/StackLayout.js"
+import { ContainerLayout } from "#src/components/layout/ContainerLayout"
+import { StackLayout } from "#src/components/layout/StackLayout"
 import {
   AppShellLayout,
   AppShellLayoutProps,
-} from "#src/components/layout/app-shell/AppShellLayout.js"
+} from "#src/components/layout/app-shell/AppShellLayout"
 import { ReactNode } from "react"
 
 export const SimpleLayout = ({

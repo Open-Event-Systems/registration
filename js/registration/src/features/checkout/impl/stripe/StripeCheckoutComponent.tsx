@@ -1,5 +1,5 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
-import { StripeCheckout } from "#src/features/checkout/impl/stripe/StripeCheckout.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
+import { StripeCheckout } from "#src/features/checkout/impl/stripe/StripeCheckout"
 import { Box, Button, Stack } from "@mantine/core"
 import { loadStripe } from "@stripe/stripe-js"
 import { useEffect, useState } from "react"

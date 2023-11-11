@@ -1,4 +1,4 @@
-import { Currency } from "#src/features/cart/components/cart/Currency.js"
+import { Currency } from "#src/features/cart/components/cart/Currency"
 import { Text, Title, useProps } from "@mantine/core"
 import clsx from "clsx"
 import { ReactNode } from "react"

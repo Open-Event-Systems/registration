@@ -1,11 +1,11 @@
 import {
   AccountInfo,
   EmailTokenResponse,
-} from "#src/features/auth/types/AccountInfo.js"
+} from "#src/features/auth/types/AccountInfo"
 import {
   WebAuthnChallenge,
   WebAuthnChallengeResult,
-} from "#src/features/auth/types/WebAuthn.js"
+} from "#src/features/auth/types/WebAuthn"
 import * as oauth from "oauth4webapi"
 import { Wretch } from "wretch"
 

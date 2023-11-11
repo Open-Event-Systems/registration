@@ -1,5 +1,5 @@
-import { LoaderComponent } from "#src/components/loading/Loading.js"
-import { isNotFoundError } from "#src/util/api.js"
+import { LoaderComponent } from "#src/components/loading/Loading"
+import { isNotFoundError } from "#src/util/api"
 import { makeAutoObservable, runInAction } from "mobx"
 import { createElement, ComponentType, ReactNode } from "react"
 

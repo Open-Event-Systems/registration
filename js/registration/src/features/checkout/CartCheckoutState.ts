@@ -1,12 +1,12 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import {
   cancelCheckout,
   createCheckout,
   updateCheckout,
-} from "#src/features/checkout/api.js"
-import { PaymentServiceID } from "#src/features/checkout/types/Checkout.js"
-import { getCheckoutComponent } from "#src/features/checkout/types/PaymentService.js"
-import { Loader, createLoader } from "#src/util/loader.js"
+} from "#src/features/checkout/api"
+import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
+import { getCheckoutComponent } from "#src/features/checkout/types/PaymentService"
+import { Loader, createLoader } from "#src/util/loader"
 import { action, makeAutoObservable } from "mobx"
 import { Wretch } from "wretch"
 

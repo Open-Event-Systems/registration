@@ -1,11 +1,11 @@
 import { ShowLoadingOverlay } from "#src/components"
-import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
-import { AuthStoreProvider } from "#src/features/auth/providers.js"
-import { WretchContext } from "#src/hooks/api.js"
-import { AppStoreContext } from "#src/hooks/app.js"
-import { useLoader } from "#src/hooks/loader.js"
-import { NotFoundPage } from "#src/routes/NotFoundPage.js"
-import { AppStore } from "#src/stores/AppStore.js"
+import { SimpleLayout } from "#src/components/layout/SimpleLayout"
+import { AuthStoreProvider } from "#src/features/auth/providers"
+import { WretchContext } from "#src/hooks/api"
+import { AppStoreContext } from "#src/hooks/app"
+import { useLoader } from "#src/hooks/loader"
+import { NotFoundPage } from "#src/routes/NotFoundPage"
+import { AppStore } from "#src/stores/AppStore"
 import { ReactNode } from "react"
 
 export const AppProvider = ({ children }: { children?: ReactNode }) => {

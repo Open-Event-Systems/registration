@@ -1,9 +1,9 @@
 import { Meta, StoryObj } from "@storybook/react"
 
-import { AuthStoreProvider } from "#src/features/auth/providers.js"
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
-import { Subtitle, Title } from "#src/components/title/Title.js"
-import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
+import { AuthStoreProvider } from "#src/features/auth/providers"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
+import { Subtitle, Title } from "#src/components/title/Title"
+import { SimpleLayout } from "#src/components/layout/SimpleLayout"
 
 import { Text } from "@mantine/core"
 

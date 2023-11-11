@@ -1,4 +1,4 @@
-import { InterviewRecordStoreContext } from "#src/features/interview/hooks.js"
+import { InterviewRecordStoreContext } from "#src/features/interview/hooks"
 import { makeInterviewRecordStore } from "@open-event-systems/interview-lib"
 import { ReactNode, useState } from "react"
 

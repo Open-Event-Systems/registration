@@ -1,5 +1,5 @@
-import { ButtonList } from "#src/components/button-list/ButtonList.js"
-import { ModalDialog } from "#src/components/dialog/ModalDialog.js"
+import { ButtonList } from "#src/components/button-list/ButtonList"
+import { ModalDialog } from "#src/components/dialog/ModalDialog"
 import { Text } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 

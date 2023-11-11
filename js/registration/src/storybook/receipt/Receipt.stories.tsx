@@ -1,7 +1,7 @@
 import {
   Receipt,
   receiptStyles,
-} from "#src/features/receipt/components/Receipt.js"
+} from "#src/features/receipt/components/Receipt"
 import { Box, Global } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 

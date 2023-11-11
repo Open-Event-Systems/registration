@@ -1,8 +1,8 @@
-import { Header } from "#src/components/layout/header/Header.js"
+import { Header } from "#src/components/layout/header/Header"
 import {
   TitleArea,
   TitleAreaProps,
-} from "#src/components/layout/title-area/TitleArea.js"
+} from "#src/components/layout/title-area/TitleArea"
 import { AppShell, AppShellProps, Box, useProps } from "@mantine/core"
 import clsx from "clsx"
 import { ReactNode } from "react"

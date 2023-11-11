@@ -1,5 +1,5 @@
-import { PricingResult } from "#src/features/cart/types.js"
-import { Config } from "#src/types/config.js"
+import { PricingResult } from "#src/features/cart/types"
+import { Config } from "#src/types/config"
 
 /**
  * Fetch a receipt from the server.

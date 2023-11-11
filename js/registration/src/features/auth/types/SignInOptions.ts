@@ -1,4 +1,4 @@
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
+import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 import { ComponentType, ReactNode } from "react"
 import { Wretch } from "wretch"
 

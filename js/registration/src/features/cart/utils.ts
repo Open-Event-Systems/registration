@@ -1,7 +1,7 @@
-import { fetchCart, fetchEmptyCart } from "#src/features/cart/api.js"
+import { fetchCart, fetchEmptyCart } from "#src/features/cart/api"
 import { Wretch } from "wretch"
-import { handleNotFound } from "#src/util/api.js"
-import { Cart } from "#src/features/cart/types.js"
+import { handleNotFound } from "#src/util/api"
+import { Cart } from "#src/features/cart/types"
 
 const COOKIE_NAME = "oes-current-cart"
 

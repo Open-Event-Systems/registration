@@ -3,20 +3,20 @@ import {
   getWebAuthnRegistrationChallenge,
   sendVerificationEmail,
   verifyEmail,
-} from "#src/features/auth/api.js"
+} from "#src/features/auth/api"
 import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
 import {
   getPlatformWebAuthnDetails,
   getWebAuthnAvailability,
   performWebAuthnRegistration,
   saveWebAuthnCredentialId,
-} from "#src/features/auth/components/signin/WebAuthn.js"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
+} from "#src/features/auth/components/signin/WebAuthn"
+import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 import {
   SignInOptionComponentProps,
   SignInOption,
-} from "#src/features/auth/types/SignInOptions.js"
-import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn.js"
+} from "#src/features/auth/types/SignInOptions"
+import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn"
 import { Button, Stack, Text, TextInput, useProps } from "@mantine/core"
 import { IconAt, IconUserOff } from "@tabler/icons-react"
 import clsx from "clsx"
@@ -25,7 +25,7 @@ import { observer, useLocalObservable } from "mobx-react-lite"
 import { ComponentPropsWithRef } from "react"
 import { Wretch } from "wretch"
 
-declare module "#src/hooks/location.js" {
+declare module "#src/hooks/location" {
   interface LocationState {
     emailAuthEmail?: string
   }

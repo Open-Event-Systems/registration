@@ -2,7 +2,7 @@ import {
   Currency,
   CurrencyContext,
   CurrencyProps,
-} from "#src/features/cart/components/cart/Currency.js"
+} from "#src/features/cart/components/cart/Currency"
 import { Meta, StoryFn } from "@storybook/react"
 
 const meta: Meta<CurrencyProps & { currency: string }> = {

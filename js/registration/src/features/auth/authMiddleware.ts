@@ -1,4 +1,4 @@
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
 import { ConfiguredMiddleware } from "wretch"
 
 /**

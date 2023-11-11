@@ -1,7 +1,7 @@
 import {
   SignInOption,
   SignInOptions,
-} from "#src/features/auth/types/SignInOptions.js"
+} from "#src/features/auth/types/SignInOptions"
 import {
   Box,
   BoxProps,

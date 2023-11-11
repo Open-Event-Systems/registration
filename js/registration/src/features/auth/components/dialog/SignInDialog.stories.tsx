@@ -1,6 +1,6 @@
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
-import { getPlatformWebAuthnDetails } from "#src/features/auth/components/signin/WebAuthn.js"
+import { getPlatformWebAuthnDetails } from "#src/features/auth/components/signin/WebAuthn"
 import { Meta, StoryObj } from "@storybook/react"
 import { IconUserOff } from "@tabler/icons-react"
 import { IconAt } from "@tabler/icons-react"

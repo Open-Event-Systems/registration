@@ -1,8 +1,8 @@
 import {
   CardGrid,
   NoRegistrationsMessage,
-} from "#src/features/selfservice/components/card/CardGrid.js"
-import { RegistrationCard } from "#src/features/selfservice/components/card/RegistrationCard.js"
+} from "#src/features/selfservice/components/card/CardGrid"
+import { RegistrationCard } from "#src/features/selfservice/components/card/RegistrationCard"
 import { Meta, StoryObj } from "@storybook/react"
 
 const meta: Meta<typeof CardGrid> = {

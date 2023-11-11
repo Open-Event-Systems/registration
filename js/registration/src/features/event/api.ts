@@ -1,4 +1,4 @@
-import { Event } from "#src/features/event/types.js"
+import { Event } from "#src/features/event/types"
 import { Wretch } from "wretch"
 
 /**

@@ -1,7 +1,7 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import { Stripe, StripeElements, StripePaymentElement } from "@stripe/stripe-js"
 
-declare module "#src/features/checkout/types/Checkout.js" {
+declare module "#src/features/checkout/types/Checkout" {
   interface PaymentServiceMap {
     stripe: StripeCheckoutData
   }

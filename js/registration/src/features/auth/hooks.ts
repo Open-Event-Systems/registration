@@ -1,5 +1,5 @@
-import { placeholderWretch } from "#src/config/api.js"
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
+import { placeholderWretch } from "#src/config/api"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
 import { createContext, useContext } from "react"
 
 const defaultAuthStore = new AuthStore(

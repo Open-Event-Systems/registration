@@ -1,10 +1,10 @@
-import { createAccount } from "#src/features/auth/api.js"
-import { getWebAuthnAvailability } from "#src/features/auth/components/signin/WebAuthn.js"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo.js"
+import { createAccount } from "#src/features/auth/api"
+import { getWebAuthnAvailability } from "#src/features/auth/components/signin/WebAuthn"
+import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 import {
   SignInOption,
   SignInState,
-} from "#src/features/auth/types/SignInOptions.js"
+} from "#src/features/auth/types/SignInOptions"
 import { IconUserOff } from "@tabler/icons-react"
 import { Wretch } from "wretch"
 

@@ -1,12 +1,12 @@
 import {
   ModalDialog,
   ModalDialogProps,
-} from "#src/components/dialog/ModalDialog.js"
+} from "#src/components/dialog/ModalDialog"
 import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
-import { AuthStore } from "#src/features/auth/stores/AuthStore.js"
-import { SignInStore } from "#src/features/auth/stores/SignInStore.js"
-import { SignInOptions } from "#src/features/auth/types/SignInOptions.js"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+import { AuthStore } from "#src/features/auth/stores/AuthStore"
+import { SignInStore } from "#src/features/auth/stores/SignInStore"
+import { SignInOptions } from "#src/features/auth/types/SignInOptions"
+import { useLocation, useNavigate } from "#src/hooks/location"
 import { useProps } from "@mantine/core"
 import clsx from "clsx"
 import { action } from "mobx"
@@ -14,7 +14,7 @@ import { observer, useLocalObservable } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"
 import { Wretch } from "wretch"
 
-declare module "#src/hooks/location.js" {
+declare module "#src/hooks/location" {
   interface LocationState {
     signInOption?: keyof SignInOptions
   }

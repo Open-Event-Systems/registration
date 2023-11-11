@@ -1,14 +1,14 @@
-import { ButtonList } from "#src/components/button-list/ButtonList.js"
+import { ButtonList } from "#src/components/button-list/ButtonList"
 import {
   ModalDialog,
   ModalDialogProps,
-} from "#src/components/dialog/ModalDialog.js"
-import { useCartStore, useCurrentCartStore } from "#src/features/cart/hooks.js"
-import { InterviewOption } from "#src/features/cart/types.js"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+} from "#src/components/dialog/ModalDialog"
+import { useCartStore, useCurrentCartStore } from "#src/features/cart/hooks"
+import { InterviewOption } from "#src/features/cart/types"
+import { useLocation, useNavigate } from "#src/hooks/location"
 import { useEffect, useLayoutEffect, useState } from "react"
 
-declare module "#src/hooks/location.js" {
+declare module "#src/hooks/location" {
   interface LocationState {
     showInterviewOptionsDialog?: string
   }

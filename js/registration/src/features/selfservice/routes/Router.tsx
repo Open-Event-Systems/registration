@@ -1,32 +1,32 @@
 import { LoadingOverlay, ShowLoadingOverlay } from "#src/components"
-import { SimpleLayout } from "#src/components/layout/SimpleLayout.js"
-import { Title } from "#src/components/title/Title.js"
+import { SimpleLayout } from "#src/components/layout/SimpleLayout"
+import { Title } from "#src/components/title/Title"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
-import { useAuth } from "#src/features/auth/hooks.js"
-import { useCurrentCartStore } from "#src/features/cart/hooks.js"
+import { useAuth } from "#src/features/auth/hooks"
+import { useCurrentCartStore } from "#src/features/cart/hooks"
 import {
   CartStoreProvider,
   CurrentCartStoreProvider,
-} from "#src/features/cart/providers.js"
-import { useEvents } from "#src/features/event/hooks.js"
-import { EventStoreProvider } from "#src/features/event/providers.js"
-import { InterviewRecordStoreProvider } from "#src/features/interview/providers.js"
+} from "#src/features/cart/providers"
+import { useEvents } from "#src/features/event/hooks"
+import { EventStoreProvider } from "#src/features/event/providers"
+import { InterviewRecordStoreProvider } from "#src/features/interview/providers"
 import {
   checkAccessCode,
   listSelfServiceRegistrations,
-} from "#src/features/selfservice/api.js"
+} from "#src/features/selfservice/api"
 import {
   AccessCodeLoaderContext,
   SelfServiceLoaderContext,
   useAccessCodeLoader,
-} from "#src/features/selfservice/hooks.js"
-import { CartPage } from "#src/features/selfservice/routes/CartPage.js"
-import { EventPage } from "#src/features/selfservice/routes/EventPage.js"
-import { useWretch } from "#src/hooks/api.js"
-import { useLoader } from "#src/hooks/loader.js"
-import { AppRoute } from "#src/routes/AppRoute.js"
-import { NotFoundPage } from "#src/routes/NotFoundPage.js"
-import { NotFoundError } from "#src/util/loader.js"
+} from "#src/features/selfservice/hooks"
+import { CartPage } from "#src/features/selfservice/routes/CartPage"
+import { EventPage } from "#src/features/selfservice/routes/EventPage"
+import { useWretch } from "#src/hooks/api"
+import { useLoader } from "#src/hooks/loader"
+import { AppRoute } from "#src/routes/AppRoute"
+import { NotFoundPage } from "#src/routes/NotFoundPage"
+import { NotFoundError } from "#src/util/loader"
 import { Text } from "@mantine/core"
 import { Fragment, ReactNode } from "react"
 import { Outlet, createBrowserRouter, useParams } from "react-router-dom"

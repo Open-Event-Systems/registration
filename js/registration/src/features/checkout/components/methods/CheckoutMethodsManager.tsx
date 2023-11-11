@@ -1,11 +1,11 @@
-import { fetchAvailableCheckoutMethods } from "#src/features/cart/api.js"
-import { CheckoutMethodsDialog } from "#src/features/checkout/components/methods/CheckoutMethodsDialog.js"
-import { PaymentServiceID } from "#src/features/checkout/types/Checkout.js"
-import { useWretch } from "#src/hooks/api.js"
-import { useLoader } from "#src/hooks/loader.js"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+import { fetchAvailableCheckoutMethods } from "#src/features/cart/api"
+import { CheckoutMethodsDialog } from "#src/features/checkout/components/methods/CheckoutMethodsDialog"
+import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
+import { useWretch } from "#src/hooks/api"
+import { useLoader } from "#src/hooks/loader"
+import { useLocation, useNavigate } from "#src/hooks/location"
 
-declare module "#src/hooks/location.js" {
+declare module "#src/hooks/location" {
   interface LocationState {
     showCheckoutMethodsDialog?: string
   }

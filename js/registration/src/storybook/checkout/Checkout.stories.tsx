@@ -1,9 +1,9 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState.js"
-import { CheckoutContainer } from "#src/features/checkout/components/checkout/CheckoutContainer.js"
-import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog.js"
-import { CheckoutResponse } from "#src/features/checkout/types/Checkout.js"
-import { getCheckoutComponent } from "#src/features/checkout/types/PaymentService.js"
-import { Loader, createLoader } from "#src/util/loader.js"
+import { CheckoutState } from "#src/features/checkout/CheckoutState"
+import { CheckoutContainer } from "#src/features/checkout/components/checkout/CheckoutContainer"
+import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
+import { CheckoutResponse } from "#src/features/checkout/types/Checkout"
+import { getCheckoutComponent } from "#src/features/checkout/types/PaymentService"
+import { Loader, createLoader } from "#src/util/loader"
 import { useEffect, useState } from "react"
 
 export default {

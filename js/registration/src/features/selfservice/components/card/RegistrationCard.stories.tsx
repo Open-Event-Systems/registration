@@ -1,7 +1,7 @@
 import {
   RegistrationCard,
   RegistrationCardPlaceholder,
-} from "#src/features/selfservice/components/card/RegistrationCard.js"
+} from "#src/features/selfservice/components/card/RegistrationCard"
 import { Meta, StoryObj } from "@storybook/react"
 
 const meta: Meta<typeof RegistrationCard> = {

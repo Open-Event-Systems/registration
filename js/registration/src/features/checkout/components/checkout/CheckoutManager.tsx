@@ -1,13 +1,13 @@
-import { CartCheckoutState } from "#src/features/checkout/CartCheckoutState.js"
-import { CheckoutContainer } from "#src/features/checkout/components/checkout/CheckoutContainer.js"
-import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog.js"
-import { PaymentServiceID } from "#src/features/checkout/types/Checkout.js"
-import { useWretch } from "#src/hooks/api.js"
-import { useLocation, useNavigate } from "#src/hooks/location.js"
+import { CartCheckoutState } from "#src/features/checkout/CartCheckoutState"
+import { CheckoutContainer } from "#src/features/checkout/components/checkout/CheckoutContainer"
+import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
+import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
+import { useWretch } from "#src/hooks/api"
+import { useLocation, useNavigate } from "#src/hooks/location"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { useEffect } from "react"
 
-declare module "#src/hooks/location.js" {
+declare module "#src/hooks/location" {
   interface LocationState {
     showCheckoutDialog?: {
       cartId: string

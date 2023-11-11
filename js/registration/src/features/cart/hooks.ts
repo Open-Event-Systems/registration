@@ -1,5 +1,5 @@
-import { placeholderWretch } from "#src/config/api.js"
-import { CartStore, CurrentCartStore } from "#src/features/cart/stores.js"
+import { placeholderWretch } from "#src/config/api"
+import { CartStore, CurrentCartStore } from "#src/features/cart/stores"
 import { makeInterviewRecordStore } from "@open-event-systems/interview-lib"
 import { createContext, useContext } from "react"
 

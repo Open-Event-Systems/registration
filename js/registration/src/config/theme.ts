@@ -1,4 +1,4 @@
-import { ThemeOverride } from "#src/types/theme.js"
+import { ThemeOverride } from "#src/types/theme"
 
 /**
  * The default theme settings.

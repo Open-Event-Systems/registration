@@ -1,4 +1,4 @@
-import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog.js"
+import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog"
 import { Meta, StoryObj } from "@storybook/react"
 
 export default {
