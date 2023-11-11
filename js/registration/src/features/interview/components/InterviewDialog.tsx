@@ -78,10 +78,7 @@ export const InterviewDialog = (props: InterviewDialogProps) => {
 const Manager = (
   props: {
     api?: InterviewAPI
-    onComplete: (
-      response: Promise<WretchResponse>,
-      record: InterviewStateRecord,
-    ) => Promise<void>
+    onComplete: (record: InterviewStateRecord) => Promise<void>
   } & Omit<
     InterviewDialogProps,
     "onSubmit" | "onClose" | "submitting" | "record"
@@ -96,16 +93,20 @@ const Manager = (
   const locState = loc.state?.showInterviewDialog
   const recordId = locState?.recordId
 
-  const handleNewRecord = (record: InterviewStateRecord) => {
-    navigate(loc, {
-      state: {
-        ...loc.state,
-        showInterviewDialog: {
-          eventId: record.metadata.eventId,
-          recordId: record.id,
+  const handleNewRecord = async (record: InterviewStateRecord) => {
+    if (record.stateResponse.complete) {
+      await (onComplete && onComplete(record))
+    } else {
+      navigate(loc, {
+        state: {
+          ...loc.state,
+          showInterviewDialog: {
+            eventId: record.metadata.eventId,
+            recordId: record.id,
+          },
         },
-      },
-    })
+      })
+    }
   }
 
   const handleClose = () => {

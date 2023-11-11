@@ -13,7 +13,7 @@ export type InterviewProps = {
   store: InterviewRecordStore
   api?: InterviewAPI
   recordId?: string | null
-  onNewRecord?: (record: InterviewStateRecord) => void
+  onNewRecord?: (record: InterviewStateRecord) => Promise<void> | void
   onClose?: () => void
   render: (renderProps: {
     submitting: boolean
@@ -46,7 +46,9 @@ export const Interview = observer((props: InterviewProps) => {
     setSubmitting(true)
     updateInterview(store, api, record, values)
       .then((newRecord) => {
-        onNewRecord && onNewRecord(newRecord)
+        return onNewRecord && onNewRecord(newRecord)
+      })
+      .then(() => {
         setSubmitting(false)
       })
       .catch((e) => {

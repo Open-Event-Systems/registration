@@ -1,0 +1,24 @@
+.spacer {
+    display: none;
+}
+
+.noRegMessage {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+}
+
+.cardGrid {
+    min-height: 200px;
+}
+
+@media (max-width: 48em) {
+    .spacer {
+        display: block;
+        flex: auto;
+    }
+
+    .grid {
+        justify-content: center;
+    }
+}

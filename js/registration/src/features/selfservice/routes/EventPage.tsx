@@ -35,6 +35,8 @@ import { Markdown } from "@open-event-systems/interview-components"
 import { useInterviewRecordStore } from "#src/features/interview/hooks"
 import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 
+import classes from "./EventPage.module.css"
+
 export const EventPage = () => {
   const { eventId = "", accessCode = "" } = useParams()
   const events = useEvents()
@@ -43,6 +45,7 @@ export const EventPage = () => {
   const currentCartStore = useCurrentCartStore()
   const accessCodeLoader = useAccessCodeLoader()
 
+  const wretch = useWretch()
   const loc = useLocation()
   const navigate = useNavigate()
 
@@ -66,25 +69,15 @@ export const EventPage = () => {
                   registrations={results.registrations}
                 />
                 {/* Spacer only for small screens */}
-                <Box
-                  sx={(theme) => ({
-                    display: "none",
-                    [`@media (max-width: ${theme.breakpoints.sm})`]: {
-                      display: "block",
-                      flex: "auto",
-                    },
-                  })}
-                />
+                <Box className={classes.spacer} />
                 {results.add_options.length > 0 && (
-                  <Grid
-                    align="center"
-                    sx={(theme) => ({
-                      [`@media (max-width: ${theme.breakpoints.sm})`]: {
-                        justifyContent: "center",
-                      },
-                    })}
-                  >
-                    <Grid.Col span={12} sm="content">
+                  <Grid align="center" className={classes.grid}>
+                    <Grid.Col
+                      span={{
+                        base: 12,
+                        sm: "content",
+                      }}
+                    >
                       <Button
                         variant="filled"
                         leftSection={<IconPlus />}
@@ -125,17 +118,33 @@ export const EventPage = () => {
                   response={results}
                 />
                 <InterviewDialog.Manager
-                  onComplete={async (response, record) => {
-                    if (record.metadata.cartId && record.metadata.eventId) {
-                      const res = await response
-                      const body: Cart = await res.json()
+                  onComplete={async (record) => {
+                    const response = record.stateResponse
+                    const metadata = record.metadata
 
-                      // kind of hacky
+                    if (
+                      metadata.cartId &&
+                      metadata.eventId &&
+                      response.complete &&
+                      response.target_url
+                    ) {
+                      const res = await wretch
+                        .url(response.target_url, true)
+                        .json({ state: response.state })
+                        .post()
+                        .res()
+
+                      const cart: Cart = await res.json()
+
                       const url = new URL(res.url)
                       const parts = url.pathname.split("/")
                       const newCartId = parts[parts.length - 1]
-                      currentCartStore.setCurrentCart(newCartId, body)
-                      navigate(`/events/${record.metadata.eventId}/cart`)
+                      currentCartStore.setCurrentCart(newCartId, cart)
+                      navigate(loc, {
+                        state: { ...loc.state, showInterviewDialog: undefined },
+                        replace: true,
+                      })
+                      navigate(`/events/${metadata.eventId}/cart`)
                     }
                   }}
                 />
@@ -162,18 +171,10 @@ const RegistrationsView = observer(
     const interviewRecordStore = useInterviewRecordStore()
 
     if (registrations.length == 0) {
-      return (
-        <NoRegistrationsMessage
-          sx={{
-            minHeight: 200,
-            display: "flex",
-            alignItems: "center",
-          }}
-        />
-      )
+      return <NoRegistrationsMessage className={classes.noRegMessage} />
     } else {
       return (
-        <CardGrid sx={{ minHeight: 200 }}>
+        <CardGrid className={classes.cardGrid}>
           {registrations.map((r) => (
             <RegistrationCard
               key={r.registration.id}
