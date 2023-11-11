@@ -1,4 +1,4 @@
-import { NumberField } from "#src/components/fields/number/NumberField.js"
+import { NumberField } from "#src/components/fields/number/NumberField"
 import { Box } from "@mantine/core"
 import { FieldState, createState } from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"

@@ -1,4 +1,4 @@
-import { FieldProps } from "#src/types.js"
+import { FieldProps } from "#src/types"
 import { useProps } from "@mantine/core"
 import { DateInput, DateInputProps } from "@mantine/dates"
 import dayjs from "dayjs"

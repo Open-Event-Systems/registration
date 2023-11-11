@@ -1,7 +1,7 @@
-import { CheckboxSelectField } from "#src/components/fields/select/Checkbox.js"
-import { DropdownSelectField } from "#src/components/fields/select/Dropdown.js"
-import { RadioSelectField } from "#src/components/fields/select/Radio.js"
-import { FieldProps } from "#src/types.js"
+import { CheckboxSelectField } from "#src/components/fields/select/Checkbox"
+import { DropdownSelectField } from "#src/components/fields/select/Dropdown"
+import { RadioSelectField } from "#src/components/fields/select/Radio"
+import { FieldProps } from "#src/types"
 
 export type SelectFieldProps = FieldProps<string | string[]>
 

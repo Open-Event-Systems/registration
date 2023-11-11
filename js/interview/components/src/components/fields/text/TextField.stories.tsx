@@ -1,4 +1,4 @@
-import { TextField } from "#src/components/fields/text/TextField.js"
+import { TextField } from "#src/components/fields/text/TextField"
 import { Box } from "@mantine/core"
 import { FieldState, createState } from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"

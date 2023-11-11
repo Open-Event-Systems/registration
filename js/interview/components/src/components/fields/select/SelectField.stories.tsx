@@ -1,4 +1,4 @@
-import { SelectField } from "#src/components/fields/select/SelectField.js"
+import { SelectField } from "#src/components/fields/select/SelectField"
 import { Box } from "@mantine/core"
 import { FieldState, createState } from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"

@@ -1,5 +1,5 @@
-import { Interview } from "#src/components/interview/Interview.js"
-import { Step } from "#src/components/interview/Step.js"
+import { Interview } from "#src/components/interview/Interview"
+import { Step } from "#src/components/interview/Step"
 import { Box, LoadingOverlay } from "@mantine/core"
 import {
   InterviewAPI,

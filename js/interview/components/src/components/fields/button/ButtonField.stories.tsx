@@ -1,4 +1,4 @@
-import { ButtonField } from "#src/components/fields/button/ButtonField.js"
+import { ButtonField } from "#src/components/fields/button/ButtonField"
 import { Box } from "@mantine/core"
 import { FieldState, createState } from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"

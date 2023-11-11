@@ -1,4 +1,4 @@
-import { Markdown, MarkdownProps } from "#src/components/markdown/Markdown.js"
+import { Markdown, MarkdownProps } from "#src/components/markdown/Markdown"
 import { Box, BoxProps, Button, ButtonProps, useProps } from "@mantine/core"
 import clsx from "clsx"
 import { ComponentPropsWithoutRef } from "react"

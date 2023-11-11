@@ -1,4 +1,4 @@
-import { ObjectField } from "#src/components/fields/object/ObjectField.js"
+import { ObjectField } from "#src/components/fields/object/ObjectField"
 import { Box } from "@mantine/core"
 import {
   ObjectFieldState,

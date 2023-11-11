@@ -24,16 +24,5 @@ const config: StorybookConfig = {
   docs: {
     autodocs: "tag",
   },
-  webpackFinal(config, options) {
-    return {
-      ...config,
-      resolve: {
-        ...config.resolve,
-        extensionAlias: {
-          ".js": [".tsx", ".ts", ".jsx", ".js"],
-        },
-      },
-    }
-  },
 }
 export default config

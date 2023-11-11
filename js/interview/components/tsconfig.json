@@ -5,10 +5,10 @@
     "rootDir": "./",
     "outDir": "./dist",
     "paths": {
-      "@mantine/core": ["./node_modules/@mantine/core/lib/index.d.ts"],
-      "@mantine/hooks": ["./node_modules/@mantine/hooks/lib/index.d.ts"],
+      "@mantine/core": ["../../node_modules/@mantine/core/lib/index.d.ts"],
+      "@mantine/hooks": ["../../node_modules/@mantine/hooks/lib/index.d.ts"],
       "@mantine/dates": ["./node_modules/@mantine/dates/lib/index.d.ts"],
-      "#src/*": ["./src/*"]
+      "#src/*": ["./src/*.js"]
     }
   },
   "include": ["./src/**/*"],

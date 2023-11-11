@@ -1,8 +1,8 @@
-import { DateField } from "#src/components/fields/date/DateField.js"
-import { NumberField } from "#src/components/fields/number/NumberField.js"
-import { SelectField } from "#src/components/fields/select/SelectField.js"
-import { TextField } from "#src/components/fields/text/TextField.js"
-import { FieldProps } from "#src/types.js"
+import { DateField } from "#src/components/fields/date/DateField"
+import { NumberField } from "#src/components/fields/number/NumberField"
+import { SelectField } from "#src/components/fields/select/SelectField"
+import { TextField } from "#src/components/fields/text/TextField"
+import { FieldProps } from "#src/types"
 import { JSONSchema } from "@open-event-systems/interview-lib"
 import { ElementType } from "react"
 

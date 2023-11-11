@@ -1,4 +1,4 @@
-import { DateField } from "#src/components/fields/date/DateField.js"
+import { DateField } from "#src/components/fields/date/DateField"
 import { Box } from "@mantine/core"
 import { FieldState, createState } from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"

@@ -11,8 +11,9 @@
   },
   "imports": {
     "#src/*": [
-      "./src/*",
-      "./dist/src/*"
+      "./src/*.tsx",
+      "./src/*.ts",
+      "./dist/src/*.js"
     ]
   },
   "files": [

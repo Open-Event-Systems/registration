@@ -1,12 +1,12 @@
 import {
   ButtonField,
   ButtonFieldProps,
-} from "#src/components/fields/button/ButtonField.js"
+} from "#src/components/fields/button/ButtonField"
 import {
   ObjectField,
   ObjectFieldProps,
-} from "#src/components/fields/object/ObjectField.js"
-import { Markdown, MarkdownProps } from "#src/components/markdown/Markdown.js"
+} from "#src/components/fields/object/ObjectField"
+import { Markdown, MarkdownProps } from "#src/components/markdown/Markdown"
 import { Button, ButtonProps, useProps } from "@mantine/core"
 import { FieldState, ObjectFieldState } from "@open-event-systems/interview-lib"
 import clsx from "clsx"

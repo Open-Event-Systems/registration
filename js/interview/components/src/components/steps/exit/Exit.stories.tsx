@@ -1,4 +1,4 @@
-import { Exit } from "#src/components/steps/exit/Exit.js"
+import { Exit } from "#src/components/steps/exit/Exit"
 import { Meta, StoryObj } from "@storybook/react"
 
 import "./Exit.module.css"

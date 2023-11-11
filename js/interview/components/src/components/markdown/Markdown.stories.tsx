@@ -1,4 +1,4 @@
-import { Markdown } from "#src/components/markdown/Markdown.js"
+import { Markdown } from "#src/components/markdown/Markdown"
 import { Meta, StoryObj } from "@storybook/react"
 
 const meta: Meta<typeof Markdown> = {

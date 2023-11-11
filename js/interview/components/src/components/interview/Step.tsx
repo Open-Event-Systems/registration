@@ -1,5 +1,5 @@
-import { Exit } from "#src/components/steps/exit/Exit.js"
-import { Question } from "#src/components/steps/question/Question.js"
+import { Exit } from "#src/components/steps/exit/Exit"
+import { Question } from "#src/components/steps/question/Question"
 import {
   AskResult,
   FieldState,

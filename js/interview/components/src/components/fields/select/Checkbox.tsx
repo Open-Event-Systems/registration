@@ -1,5 +1,5 @@
-import { getOptions, isNullable } from "#src/components/fields/select/util.js"
-import { FieldProps } from "#src/types.js"
+import { getOptions, isNullable } from "#src/components/fields/select/util"
+import { FieldProps } from "#src/types"
 import { observer } from "mobx-react-lite"
 
 import {

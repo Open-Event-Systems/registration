@@ -1,4 +1,4 @@
-import { FieldProps } from "#src/types.js"
+import { FieldProps } from "#src/types"
 import { NumberInput, NumberInputProps, useProps } from "@mantine/core"
 import { observer } from "mobx-react-lite"
 

@@ -1,4 +1,4 @@
-import { getOptions } from "#src/components/fields/select/util.js"
+import { getOptions } from "#src/components/fields/select/util"
 import { Button, ButtonProps, Group, GroupProps, useProps } from "@mantine/core"
 import { FieldState } from "@open-event-systems/interview-lib"
 import { observer } from "mobx-react-lite"

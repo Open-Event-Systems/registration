@@ -1,4 +1,4 @@
-import { Question } from "#src/components/steps/question/Question.js"
+import { Question } from "#src/components/steps/question/Question"
 import { Box } from "@mantine/core"
 import {
   FieldState,

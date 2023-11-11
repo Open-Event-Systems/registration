@@ -1,4 +1,4 @@
-import { Field } from "#src/components/fields/Field.js"
+import { Field } from "#src/components/fields/Field"
 import { Stack, StackProps, useProps } from "@mantine/core"
 import { FieldState, ObjectFieldState } from "@open-event-systems/interview-lib"
 import { observer } from "mobx-react-lite"
