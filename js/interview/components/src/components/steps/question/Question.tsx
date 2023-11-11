@@ -15,6 +15,7 @@ import { ComponentPropsWithoutRef } from "react"
 export type QuestionProps = {
   fieldsState: ObjectFieldState
   buttonsState?: FieldState<string>
+  onSubmit?: () => void
   classNames?: {
     root?: string
     text?: string
@@ -22,14 +23,27 @@ export type QuestionProps = {
     defaultButton?: string
     buttons?: string
   }
-} & Omit<QuestionRootProps, "children">
+} & Omit<QuestionRootProps, "children" | "onSubmit">
 
 export const Question = (props: QuestionProps) => {
-  const { fieldsState, buttonsState, className, classNames, ...other } =
-    useProps("OESIQuestion", {}, props)
+  const {
+    fieldsState,
+    buttonsState,
+    className,
+    classNames,
+    onSubmit,
+    ...other
+  } = useProps("OESIQuestion", {}, props)
 
   return (
-    <Question.Root className={clsx(classNames?.root, className)} {...other}>
+    <Question.Root
+      className={clsx(classNames?.root, className)}
+      {...other}
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit && onSubmit()
+      }}
+    >
       <Question.Text
         className={classNames?.text}
         content={fieldsState.schema.description}
@@ -39,6 +53,9 @@ export const Question = (props: QuestionProps) => {
         <Question.Buttons
           className={classNames?.buttons}
           state={buttonsState}
+          onClick={() => {
+            onSubmit && onSubmit()
+          }}
         />
       ) : (
         <Question.DefaultButton className={classNames?.defaultButton} />

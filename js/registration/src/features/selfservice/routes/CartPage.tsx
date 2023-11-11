@@ -18,13 +18,15 @@ import { useLoader } from "#src/hooks/loader"
 import { Loader } from "#src/util/loader"
 import { CheckoutMethodsManager } from "#src/features/checkout/components/methods/CheckoutMethodsManager"
 import { CheckoutManager } from "#src/features/checkout/components/checkout/CheckoutManager"
-import { useEffect, useState } from "react"
+import { Fragment, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import { useSelfServiceLoader } from "#src/features/selfservice/hooks"
 import { Link as RLink } from "react-router-dom"
 import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog"
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog"
 import { CartRegistration } from "#src/features/cart/components/cart/CartRegistration"
+
+import classes from "./CartPage.module.css"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -127,10 +129,9 @@ const CartView = observer(
             {result.registrations.length > 0 ? (
               <CartComponent totalPrice={result.total_price}>
                 {result.registrations.map((reg, i) => (
-                  <>
+                  <Fragment key={reg.registration_id}>
                     {i != 0 && <CartComponent.Divider />}
                     <CartRegistration
-                      key={reg.registration_id}
                       name={reg.name ?? void 0}
                       onRemove={async () => {
                         const [newId, newCart] =
@@ -157,7 +158,7 @@ const CartView = observer(
                         />
                       ))}
                     </CartRegistration>
-                  </>
+                  </Fragment>
                 ))}
               </CartComponent>
             ) : (
@@ -211,19 +212,33 @@ const CartView = observer(
               options={selfServiceResults.add_options}
             />
             <InterviewDialog.Manager
-              onComplete={async (response, record) => {
-                if (record.metadata.cartId && record.metadata.eventId) {
-                  const res = await response
-                  const body: Cart = await res.json()
+              onComplete={async (record) => {
+                const response = record.stateResponse
+                const metadata = record.metadata
 
-                  // kind of hacky
+                if (
+                  metadata.cartId &&
+                  metadata.eventId &&
+                  response.complete &&
+                  response.target_url
+                ) {
+                  const res = await wretch
+                    .url(response.target_url, true)
+                    .json({ state: response.state })
+                    .post()
+                    .res()
+
+                  const cart: Cart = await res.json()
+
                   const url = new URL(res.url)
                   const parts = url.pathname.split("/")
                   const newCartId = parts[parts.length - 1]
-                  currentCartStore.setCurrentCart(newCartId, body)
-                  navigate(`/events/${record.metadata.eventId}/cart`, {
+                  currentCartStore.setCurrentCart(newCartId, cart)
+                  navigate(loc, {
+                    state: { ...loc.state, showInterviewDialog: undefined },
                     replace: true,
                   })
+                  navigate(`/events/${metadata.eventId}/cart`)
                 }
               }}
             />
@@ -237,14 +252,8 @@ const CartView = observer(
 CartView.displayName = "CartView"
 
 const EmptyCartView = () => (
-  <Box
-    style={{
-      minHeight: 200,
-      display: "flex",
-      alignItems: "center",
-    }}
-  >
-    <Text color="dimmed">
+  <Box className={classes.emptyCart}>
+    <Text c="dimmed" component="div">
       <Group align="center">
         <IconAlertCircle />
         <Text span inline>

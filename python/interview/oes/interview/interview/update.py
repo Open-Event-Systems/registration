@@ -168,7 +168,7 @@ async def _run_interview_steps(
     changed = True
     content = None
 
-    while content is not None or changed:
+    while content is None and changed:
         if update.step_count >= MAX_UPDATE_COUNT:
             raise InterviewError("Too many state updates")
         changed, content = await _run_once(update)

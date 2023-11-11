@@ -33,7 +33,7 @@ export const CardGrid = (props: CardGridProps) => {
 }
 
 export const NoRegistrationsMessage = (props: TextProps) => (
-  <Text c="dimmed" {...props}>
+  <Text c="dimmed" component="div" {...props}>
     <Group align="center">
       <IconAlertCircle />
       <Text span inline>

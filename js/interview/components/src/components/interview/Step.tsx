@@ -86,8 +86,7 @@ const StepQuestion = ({
 
   return (
     <Question
-      onSubmit={(e) => {
-        e.preventDefault()
+      onSubmit={() => {
         handleSubmit()
       }}
       content={fieldsState.schema.description}

@@ -8,6 +8,7 @@ from oes.registration.app import app
 from oes.registration.auth.handlers import RequireSelfService
 from oes.registration.auth.user import User
 from oes.registration.docs import docs_helper
+from oes.registration.interview.service import InterviewService
 from oes.registration.models.event import EventConfig
 from oes.registration.services.registration import (
     RegistrationService,
@@ -36,6 +37,7 @@ async def list_self_service_registration(
     service: RegistrationService,
     event_config: EventConfig,
     user: User,
+    interview_service: InterviewService,
     access_code_service: AccessCodeService,
 ) -> SelfServiceRegistrationListResponse:
     """List self-service registrations."""
@@ -63,6 +65,7 @@ async def list_self_service_registration(
     )
 
     results = []
+    titles = await _get_interview_titles(interview_service)
 
     for reg in registrations:
         event = event_config.get_event(reg.event_id)
@@ -73,13 +76,33 @@ async def list_self_service_registration(
             model = render_self_service_registration(event, reg)
             results.append(
                 SelfServiceRegistrationResponse(
-                    model, [InterviewOption(o.id, o.name) for o in change_options]
+                    model,
+                    [
+                        InterviewOption(o.id, _get_interview_title(titles, o.id))
+                        for o in change_options
+                    ],
                 )
             )
 
     return SelfServiceRegistrationListResponse(
-        results, [InterviewOption(o.id, o.name) for o in add_options]
+        results,
+        [
+            InterviewOption(o.id, _get_interview_title(titles, o.id))
+            for o in add_options
+        ],
     )
+
+
+async def _get_interview_titles(service: InterviewService) -> dict[str, Optional[str]]:
+    interviews = await service.get_interviews()
+    return {i.id: i.title for i in interviews}
+
+
+def _get_interview_title(titles: dict[str, Optional[str]], id: str) -> str:
+    title = titles.get(id)
+    if not title:
+        _, _, title = id.rpartition("/")
+    return title
 
 
 async def _get_access_code(

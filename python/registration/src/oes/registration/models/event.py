@@ -113,9 +113,6 @@ class EventInterviewOption(Whenable):
     id: str
     """The interview ID."""
 
-    name: str
-    """The interview name."""
-
     when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
     """The condition."""
 

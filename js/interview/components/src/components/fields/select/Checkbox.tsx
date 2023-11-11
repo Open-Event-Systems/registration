@@ -27,6 +27,10 @@ export const CheckboxSelectField = observer(
     const hasError = !state.isValid && state.touched
     const nullable = isNullable(state.schema)
 
+    const arrayValue =
+      state.schema.type == "array" ||
+      (Array.isArray(state.schema.type) && state.schema.type.includes("array"))
+
     const value = (
       Array.isArray(state.value) ? state.value : [state.value]
     ).filter((v): v is string => !!v)
@@ -43,7 +47,11 @@ export const CheckboxSelectField = observer(
         error={hasError ? state.error : undefined}
         value={value || []}
         onChange={(e) => {
-          state.setValue(e)
+          if (arrayValue) {
+            state.setValue(e)
+          } else {
+            state.setValue(e[0] ?? null)
+          }
           state.setTouched()
         }}
       >
