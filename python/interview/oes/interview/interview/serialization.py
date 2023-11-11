@@ -34,9 +34,6 @@ def structure_step(converter: Converter, v: object) -> Step:
     raise TypeError(f"Invalid step: {v}")
 
 
-# def structure_step_result
-
-
 _step_map = {
     "ask": AskStep,
     "block": Block,

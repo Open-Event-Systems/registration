@@ -46,6 +46,10 @@ def interview() -> Interview:
                     TextField(label=Template("B is: {{ b }}"), set=parse_pointer("c")),
                 ),
             ),
+            Question(
+                id="set-d",
+                fields=(TextField(label=Template("Set D"), set=parse_pointer("d.a")),),
+            ),
         )
     )
 
@@ -59,6 +63,8 @@ def interview() -> Interview:
         ("b", "set-b", {}),
         ("c", "set-b", {}),
         ("c", "set-c", {"b": "x"}),
+        ("c", "set-c", {"b": "x"}),
+        ("d.a", "set-d", {"d": {}}),
     ),
 )
 def test_resolve(interview, val, expected, data):

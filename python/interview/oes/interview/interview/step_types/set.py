@@ -8,7 +8,7 @@ from jinja2 import Undefined
 from oes.interview.interview.types import Step
 from oes.interview.interview.update import InterviewUpdate, StepResult
 from oes.interview.logic import ValuePointer, WhenCondition
-from oes.template import Context, Expression
+from oes.template import Context, Evaluable, ValueOrEvaluable
 
 
 @frozen
@@ -18,7 +18,7 @@ class SetStep(Step):
     set: ValuePointer
     """The value to set."""
 
-    value: Expression
+    value: ValueOrEvaluable
     """The value to set."""
 
     when: WhenCondition = ()
@@ -28,7 +28,10 @@ class SetStep(Step):
         ctx = update.state.template_context
         is_set, cur_val = self._get_value(update.state.template_context)
 
-        val = self.value.evaluate(ctx)
+        if isinstance(self.value, Evaluable):
+            val = self.value.evaluate(ctx)
+        else:
+            val = self.value
 
         # call __bool__ just to trigger undefined errors
         bool(val)

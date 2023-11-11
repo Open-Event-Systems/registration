@@ -1,4 +1,10 @@
 ---
+- id: interview-parse-test
+  questions: {}
+  steps:
+    - set: test
+      value: {}
+
 - id: interview1
   questions:
     - id: question1

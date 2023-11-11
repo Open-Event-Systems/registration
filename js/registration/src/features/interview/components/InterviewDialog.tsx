@@ -10,6 +10,7 @@ import {
   InterviewStateRecord,
 } from "@open-event-systems/interview-lib"
 import { FormValues } from "@open-event-systems/interview-lib"
+import clsx from "clsx"
 import { useRef } from "react"
 import { WretchResponse } from "wretch"
 
@@ -21,7 +22,7 @@ export type InterviewDialogProps = {
 } & Omit<ModalDialogProps, "children" | "opened" | "onClose" | "onSubmit">
 
 export const InterviewDialog = (props: InterviewDialogProps) => {
-  const { onClose, onSubmit, submitting, record, ...other } = props
+  const { onClose, onSubmit, submitting, record, classNames, ...other } = props
 
   const prevRecord = useRef(record)
 
@@ -54,16 +55,9 @@ export const InterviewDialog = (props: InterviewDialogProps) => {
     <ModalDialog
       opened={opened}
       onClose={onClose}
-      styles={{
-        body: {
-          minHeight: 400,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "stretch",
-          "& > *": {
-            flex: "auto",
-          },
-        },
+      classNames={{
+        ...classNames,
+        body: clsx("InterviewDialog-body", classNames?.body),
       }}
       title={title}
       {...other}

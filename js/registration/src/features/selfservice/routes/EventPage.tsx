@@ -87,7 +87,7 @@ export const EventPage = () => {
                     <Grid.Col span={12} sm="content">
                       <Button
                         variant="filled"
-                        leftIcon={<IconPlus />}
+                        leftSection={<IconPlus />}
                         fullWidth
                         onClick={() => {
                           // show dialog
