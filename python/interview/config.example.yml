@@ -9,4 +9,6 @@ api_key: changeit
 
 # The allowed origins
 allowed_origins:
+  - http://localhost
   - http://localhost:8001
+  - http://localhost:9000

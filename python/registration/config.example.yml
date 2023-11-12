@@ -13,13 +13,15 @@ auth:
 
   # Origins that are allowed to access API endpoints
   allowed_origins:
-    - http://localhost:9000
+    - http://localhost
     - http://localhost:8000
+    - http://localhost:9000
 
   # Origins that are allowed to use first-party auth endpoints
   allowed_auth_origins:
-    - http://localhost:9000
+    - http://localhost
     - http://localhost:8000
+    - http://localhost:9000
 
   # The name of this service
   name: Registration
@@ -34,6 +36,7 @@ payment:
 
   # Payment service configuration
   services:
+    mock: {}
 
     # Square configuration
     # square:
@@ -67,9 +70,11 @@ payment:
 
 # Interview config
 interview:
+  api_key: changeit
   encryption_key: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
   # The URL of the interview service's update endpoint
+  url: http://localhost:8001
   update_url: http://localhost:8001/update
 
 # Hook configuration

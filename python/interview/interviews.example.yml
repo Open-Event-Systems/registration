@@ -1,13 +1,125 @@
 ---
-- id: interview-1
-  title: Interview 1
+- id: new-registration
+  title: New Registration
   questions:
-    - id: question-1
-      title: Question 1
-      description: Enter your name.
+    - id: name
+      title: Name
+      description: |
+        Enter your first and last name.
       fields:
-        - set: name
-          label: Name
+        - set: registration.first_name
           type: text
+          autocomplete: given-name
+          label: First Name
+        - set: registration.last_name
+          type: text
+          autocomplete: family-name
+          label: Last Name
+
+    - id: option-id
+      title: Option
+      description: |
+        Choose a registration option.
+      fields:
+        - set: selected_option_id
+          type: select
+          component: dropdown
+          label: Option
+          options:
+            - label: Standard
+              value: standard
+              default: true
+            - label: VIP
+              value: vip
+
+    - id: email
+      title: Email
+      description: |
+        Enter your email address.
+      fields:
+        - set: registration.email
+          type: text
+          label: Email
+          format: email
+          input_mode: email
+          autocomplete: email
+
+    - id: accept-terms
+      title: Terms and Conditions
+      description: |
+        Please read and accept the terms and conditions.
+      fields:
+        - set: accept_terms
+          type: select
+          component: checkbox
+          options:
+            - label: I accept the Terms and Conditions
+              value: true
+        - type: button
+          options:
+            - label: Complete
+              default: true
+              primary: true
+
   steps:
-    - ask: question-1
+    # Collect information
+    - eval:
+        - registration.first_name
+        - registration.last_name
+        - registration.email
+
+    # Set option_ids list
+    - set: registration.option_ids
+      value: registration.option_ids + ["standard"]
+      when: "'standard' not in registration.option_ids"
+
+    - set: registration.option_ids
+      value: registration.option_ids + ["vip"]
+      when:
+        - "'vip' not in registration.option_ids"
+        - selected_option_id == "vip"
+
+    - ask: accept-terms
+
+- id: update-name
+  title: Update Name
+  questions:
+    - id: update-name
+      title: Name
+      description: |
+        Choose your updated name.
+      fields:
+        - set: registration.first_name
+          type: text
+          label: First Name
+        - set: registration.last_name
+          type: text
+          label: Last Name
+
+  steps:
+    - ask: update-name
+
+- id: upgrade
+  title: Upgrade
+  questions:
+    - id: upgrade
+      title: Upgrade
+      description: |
+        Choose the new option.
+      fields:
+        - set: selected_option_id
+          type: select
+          component: dropdown
+          label: Option
+          options:
+            - label: VIP
+              value: vip
+              default: true
+      when: "'vip' not in registration.option_ids"
+
+  steps:
+    - set: registration.option_ids
+      value: registration.option_ids + ["vip"]
+      when:
+        - "'vip' not in registration.option_ids"
+        - selected_option_id == "vip"

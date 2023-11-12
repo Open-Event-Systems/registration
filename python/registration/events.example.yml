@@ -13,41 +13,45 @@
   registration_options:
     - id: standard
       name: Standard
-      description: Standard registration level
+      description: Standard registration.
+
     - id: vip
       name: VIP
-      description: VIP upgrade
+      description: VIP level.
 
   # Interviews available for adding a registration
   add_interviews:
-    - id: new-registration
-      name: New Registration
-      when: true
+    - id: http://localhost:8001/interviews/new-registration
 
   # Interviews available for changing a registration
   change_interviews:
-    - id: update-registration
-      name: Update Registration
-      when: true
+    - id: http://localhost:8001/interviews/update-name
+    - id: http://localhost:8001/interviews/upgrade
+      when: "'vip' not in registration.option_ids"
 
   # Basic pricing rules
   pricing_rules:
-    - name: Standard Registration
-      description: Standard registration level.
+    - type_id: standard
+      name: Standard
+      description: Standard registration.
       price: 5000
-      modifiers:
-        - type_id: early-bird
-          name: Early Bird Discount
-          amount: -500
-          when: true
-      when:
-        - "'standard' in added_option_ids"
+      when: "'standard' in added_option_ids"
 
-    - name: VIP Upgrade
-      description: VIP upgrade.
+    - type_id: vip
+      name: VIP Upgrade
+      description: VIP level upgrade.
       price: 2500
+      when: "'vip' in added_option_ids"
+
+    - type_id: name-change
+      name: Name Change
+      description: Registration name change/transfer.
+      price: 0
       when:
-        - "'vip' in added_option_ids"
+        - registration.old_data.first_name
+        - registration.old_data.last_name
+        - registration.old_data.first_name != registration.new_data.first_name
+        - registration.old_data.last_name != registration.new_data.last_name
 
   # Display options
   display_options:
@@ -55,10 +59,14 @@
     registration:
       title: "{{ registration.display_name }}"
       subtitle: >-
-        {% if "vip" in registration.option_ids %}
-          VIP
-        {% else %}
-          Standard
-        {% endif %}
+        {% if "vip" in registration.option_ids -%}
+        VIP
+        {%- else -%}
+        Standard
+        {%- endif %}
       description: |
-        Example registration.
+        {% if "vip" in registration.option_ids -%}
+        VIP level registration.
+        {%- else -%}
+        Standard registration.
+        {%- endif %}
