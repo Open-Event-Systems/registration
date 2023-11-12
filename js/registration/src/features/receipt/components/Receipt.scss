@@ -1,0 +1,131 @@
+.Receipt-root {
+    display: grid;
+
+    grid-template-columns:
+        [name-start code-start] auto [code-end item-name-start item-description-start] 1fr [item-name-end item-description-end item-amount-start] auto [item-amount-end name-end];
+
+    column-gap: 8px;
+
+    @media (max-width: 48em) {
+        grid-template-columns:
+            [name-start code-start] auto [item-name-start item-description-start] 1fr [item-name-end item-description-end item-amount-start] auto [item-amount-end name-end code-end];
+    }
+}
+
+.Receipt-header, .Receipt-headerRow {
+    display: contents;
+}
+
+.Receipt-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    grid-column: name;
+    text-align: left;
+}
+
+.Receipt-id {
+    font-size: 1.5rem;
+    font-family: monospace;
+    font-weight: normal;
+}
+
+.Receipt-date {
+    font-weight: normal;
+    grid-column: name;
+    text-align: left;
+}
+
+.ReceiptRegistration-root, .ReceiptRegistration-row {
+    display: contents;
+}
+
+.ReceiptRegistration-name {
+    grid-column: name;
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-top: 16px;
+    margin-bottom: 8px;
+}
+
+.ReceiptRegistration-code {
+    grid-column: code;
+    grid-row: span 10;
+    justify-self: center;
+}
+
+.ReceiptCode-root {
+    width: 150px;
+    height: 150px;
+}
+
+.ReceiptCode-loading {
+    visibility: hidden;
+}
+
+.ReceiptLineItem-root, .ReceiptLineItem-nameRow, .ReceiptLineItem-descriptionRow {
+    display: contents;
+}
+
+.ReceiptLineItem-name {
+    grid-column: item-name;
+    font-weight: bold;
+    text-align: right;
+}
+
+.ReceiptLineItem-amount {
+    grid-column: item-amount;
+    font-weight: bold;
+    text-align: right;
+}
+
+.ReceiptLineItem-description {
+    grid-column: item-description;
+    text-align: right;
+    font-size: 0.75rem;
+}
+
+.ReceiptLineItem-spacer {
+    grid-column: item-amount;
+}
+
+.ReceiptModifier-root {
+    display: contents;
+}
+
+.ReceiptModifier-name {
+    grid-column: item-name;
+    text-align: right;
+    font-size: 0.75rem;
+}
+
+.ReceiptModifier-amount {
+    grid-column: item-amount;
+    text-align: right;
+    font-size: 0.75rem;
+}
+
+.Receipt-divider {
+    border-bottom: #ccc solid 1px;
+    grid-column: name;
+    height: 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.Receipt-footer, .Receipt-footerRow {
+    display: contents;
+}
+
+.Receipt-totalName {
+    grid-column: item-name;
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: right;
+}
+
+.Receipt-totalAmount {
+    grid-column: item-amount;
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-align: right;
+}
