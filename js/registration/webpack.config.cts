@@ -88,7 +88,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       },
       alias: {
         // overridable theme file
-        "#src/config/theme.js$": [
+        "#src/config/theme$": [
           path.resolve("./theme.ts"),
           path.resolve("./src/config/theme.ts"),
         ],

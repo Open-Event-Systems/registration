@@ -71,7 +71,7 @@ const config: StorybookConfig = {
         alias: {
           ...config.resolve?.alias,
 
-          "#src/config/theme.js$": [
+          "#src/config/theme$": [
             path.resolve("./theme.ts"),
             path.resolve("./src/config/theme.ts"),
           ],

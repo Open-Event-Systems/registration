@@ -22,8 +22,6 @@ export const CardGrid = (props: CardGridProps) => {
         base: 1,
         xs: 2,
         md: 3,
-        lg: 4,
-        xl: 5,
       }}
       {...other}
     >

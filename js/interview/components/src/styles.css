@@ -1,3 +1,4 @@
+@import "@mantine/dates/styles.css";
 @import "./components/fields/select/Checkbox.module.css";
 @import "./components/fields/select/Radio.module.css";
 @import "./components/steps/exit/Exit.module.css";
