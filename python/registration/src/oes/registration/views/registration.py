@@ -274,7 +274,7 @@ async def cancel_registration(
 
 def check_etag(request: Request, reg: Union[Registration, RegistrationEntity]):
     """Check that the ETag matches, or raise :class:`HTTPException`."""
-    header = request.headers.get_first(b"ETag")
+    header = request.headers.get_first(b"If-Match")
     if not header:
         raise HTTPException(428)  # precondition required
 
