@@ -81,7 +81,3 @@ class ProxyContextEnvironment(ImmutableSandboxedEnvironment):
     """Custom :class:`jinja2.Environment` to use the custom :class:`ProxyContext`."""
 
     context_class = ProxyContext
-
-
-default_jinja2_env = ProxyContextEnvironment(undefined=Undefined)
-"""The default :class:`jinja2.Environment` to use with interview logic."""
