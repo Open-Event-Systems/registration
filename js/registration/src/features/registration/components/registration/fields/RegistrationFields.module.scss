@@ -1,0 +1,15 @@
+:global .RegistrationFields-root {
+    display: grid;
+    grid-template-columns: [name-start] auto [name-end value-start] minmax(1rem, 1fr) [value-end];
+    column-gap: var(--mantine-spacing-sm);
+    align-items: baseline;
+
+    @media (max-width: 36rem) {
+        grid-template-columns:
+            [name-start value-start] minmax(1rem, 1fr) [name-end value-end];
+    }
+}
+
+:global .RegistrationFields-name {
+    font-weight: bold;
+}

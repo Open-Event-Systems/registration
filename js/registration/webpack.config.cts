@@ -56,6 +56,10 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
           test: /\.css$/,
           use: [MiniCssExtractPlugin.loader, "css-loader"],
         },
+        {
+          test: /\.s[ca]ss$/,
+          use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+        },
 
         // config.json
         {

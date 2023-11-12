@@ -26,6 +26,11 @@ const config: StorybookConfig = {
         rules: [
           ...(config.module?.rules ?? []),
           {
+            test: /\.s[ac]ss$/,
+            use: ["style-loader", "css-loader", "sass-loader"],
+          },
+
+          {
             test: /\.svg$/,
             exclude: /node_modules/,
             use: "svgo-loader",

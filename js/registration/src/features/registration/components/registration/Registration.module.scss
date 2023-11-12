@@ -1,0 +1,30 @@
+:global .Registration-root {
+    & > * {
+        margin: var(--mantine-spacing-xs) 0;
+    }
+}
+
+:global .Registration-rowName {
+    font-weight: bold;
+}
+
+:global .Registration-fields {
+    display: grid;
+    column-gap: var(--mantine-spacing-sm);
+    row-gap: var(--mantine-spacing-xs);
+    grid-template-columns:
+        [name-start] auto [name-end value-start] minmax(1rem, 1fr) [value-end];
+
+    @media (max-width: 36rem) {
+        grid-template-columns:
+            [name-start value-start] minmax(1rem, 1fr) [name-end value-end];
+    }
+}
+
+:global .Registration-placeholder {
+    .mantine-Skeleton-root {
+        height: 1em;
+        margin: 0.25em 0;
+        width: 8em;
+    }
+}
