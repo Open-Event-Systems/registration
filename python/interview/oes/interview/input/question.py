@@ -52,9 +52,7 @@ class Question(Whenable):
 
         properties = {nm: field.get_schema(context) for nm, field in by_name.items()}
 
-        required = [
-            nm for nm, field_schema in by_name.items() if not field_schema.optional
-        ]
+        required = list(by_name.keys())
 
         schema = {
             "type": "object",
