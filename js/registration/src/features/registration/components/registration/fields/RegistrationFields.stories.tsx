@@ -1,7 +1,7 @@
 import { RegistrationFields } from "#src/features/registration/components/registration/fields/RegistrationFields"
 import { Meta, StoryObj } from "@storybook/react"
 
-import "./RegistrationFields.module.scss"
+import "./RegistrationFields.scss"
 import { OptionsField } from "#src/features/registration/components/registration/options/OptionsField"
 import { Note } from "#src/features/registration/components/registration/note/Note"
 

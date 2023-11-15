@@ -1,4 +1,4 @@
-:global .RegistrationFields-root {
+.RegistrationFields-root {
     display: grid;
     grid-template-columns: [name-start] auto [name-end value-start] minmax(1rem, 1fr) [value-end];
     column-gap: var(--mantine-spacing-sm);
@@ -10,6 +10,6 @@
     }
 }
 
-:global .RegistrationFields-name {
+.RegistrationFields-name {
     font-weight: bold;
 }
