@@ -14,16 +14,12 @@ export const createRegistrationAPI = (baseWretch: Wretch): RegistrationAPI => {
     async search(query, options) {
       let req = wretch.addon(queryString)
 
-      if (options?.page) {
-        req = req.query({ page: options.page })
-      }
-
-      if (options?.per_page) {
-        req = req.query({ per_page: options.per_page })
-      }
-
       if (query) {
         req = req.query({ q: query })
+      }
+
+      if (options?.after) {
+        req = req.query({ after: options.after })
       }
 
       return await req.get().json<RegistrationSearchResult[]>()

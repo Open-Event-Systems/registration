@@ -114,6 +114,7 @@ class Loader<T> implements ILoader<T> {
 }
 
 export function createLoader<T>(loadFunc: () => T | Promise<T>): LoaderType<T>
+export function createLoader<T>(value: Promise<T>): LoaderType<T>
 export function createLoader<T>(value: T): LoadedLoader<T>
 export function createLoader<T>(
   loadFunc: (() => T | Promise<T>) | Promise<T> | T,

@@ -12,6 +12,7 @@ export interface RegistrationSearchResult {
   last_name?: string
   preferred_name?: string
   email?: string
+  number?: number
 }
 
 export interface Registration {
@@ -49,7 +50,7 @@ export interface CreateRegistration {
 export interface RegistrationAPI {
   search(
     query: string,
-    options?: { page?: number; per_page?: number },
+    options?: { after?: string },
   ): Promise<RegistrationSearchResult[]>
   create(registration: CreateRegistration): Promise<Registration>
   fromResponse(response: Response): Promise<Registration>
