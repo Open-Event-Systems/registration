@@ -1,6 +1,6 @@
-.RegistrationSearchResults-root tbody tr {
-    cursor: pointer;
-}
+// .RegistrationSearchResults-root tbody tr {
+//     cursor: pointer;
+// }
 
 .RegistrationSearchResults-root td a {
     color: inherit;
@@ -16,4 +16,9 @@
 
 .RegistrationSearchResults-root tfoot tr td .mantine-Loader-root {
     margin: auto;
+}
+
+.RegistrationSearchResults-noResults {
+    margin: var(--mantine-spacing-sm);
+    text-align: center;
 }

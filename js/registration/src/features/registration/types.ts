@@ -48,14 +48,14 @@ export interface CreateRegistration {
 }
 
 export type NextFunc = () => Promise<
-  [RegistrationSearchResult[], NextFunc | undefined]
+  [RegistrationSearchResult[], NextFunc | null]
 >
 
 export interface RegistrationAPI {
   search(
     query: string,
     options?: { event_id?: string; after?: string; all?: boolean },
-  ): Promise<[RegistrationSearchResult[], NextFunc | undefined]>
+  ): Promise<[RegistrationSearchResult[], NextFunc | null]>
   create(registration: CreateRegistration): Promise<Registration>
   fromResponse(response: Response): Promise<Registration>
   read(id: string): Promise<Registration | undefined>

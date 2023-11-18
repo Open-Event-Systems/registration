@@ -67,7 +67,7 @@ export const useRegistrationAPI = () => useContext(RegistrationAPIContext)
 
 const getSearchResults = async (
   wretch: Wretch,
-): Promise<[RegistrationSearchResult[], NextFunc | undefined]> => {
+): Promise<[RegistrationSearchResult[], NextFunc | null]> => {
   const res = await wretch.get().res()
   const body = await res.json()
 
@@ -77,7 +77,7 @@ const getSearchResults = async (
     : []
   const nextUrl = nextMatch[1]
 
-  let next
+  let next = null
   if (nextUrl) {
     next = () => getSearchResults(wretch.url(nextUrl, true))
   }

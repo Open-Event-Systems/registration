@@ -80,7 +80,7 @@ async def list_registrations(
     all: bool = False,
 ) -> Response:
     """Search registrations."""
-    results = await reg.list_registrations(q, after=after, all=all)
+    results = await reg.list_registrations(q, event_id=event_id, after=after, all=all)
 
     converter = get_converter()
     response = json(

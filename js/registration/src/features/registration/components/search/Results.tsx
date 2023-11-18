@@ -1,6 +1,6 @@
 import { RegistrationSearchResult } from "#src/features/registration"
-import { SearchContext } from "#src/features/registration/stores/search2"
-import { Button, Loader, Table, TableTdProps } from "@mantine/core"
+import { SearchContext } from "#src/features/registration/stores/search"
+import { Button, Loader, Table, TableTdProps, Text } from "@mantine/core"
 import { observer } from "mobx-react-lite"
 import { createContext, useContext, useState } from "react"
 
@@ -18,11 +18,12 @@ export const Results = observer((props: ResultsProps) => {
 
   const [loading, setLoading] = useState(false)
 
-  return (
-    <Table.ScrollContainer
-      className="RegistrationSearchResults-root"
-      minWidth={500}
-    >
+  const onMoreFunc = onMore ?? ctx?.handleMore
+
+  let content
+
+  if ((registrations ?? ctx?.results ?? []).length > 0) {
+    content = (
       <Table highlightOnHover striped>
         <Table.Thead>
           <Table.Tr>
@@ -37,7 +38,7 @@ export const Results = observer((props: ResultsProps) => {
           getLink={getLink}
           registrations={registrations ?? ctx?.results}
         />
-        {onMore && (
+        {onMoreFunc && (
           <Table.Tfoot>
             <Table.Tr>
               <Table.Td colSpan={5}>
@@ -48,7 +49,7 @@ export const Results = observer((props: ResultsProps) => {
                     variant="transparent"
                     onClick={() => {
                       setLoading(true)
-                      onMore()
+                      onMoreFunc()
                         .then(() => setLoading(false))
                         .catch((e) => {
                           setLoading(false)
@@ -64,11 +65,28 @@ export const Results = observer((props: ResultsProps) => {
           </Table.Tfoot>
         )}
       </Table>
+    )
+  } else {
+    content = <NoResults />
+  }
+
+  return (
+    <Table.ScrollContainer
+      className="RegistrationSearchResults-root"
+      minWidth={500}
+    >
+      {content}
     </Table.ScrollContainer>
   )
 })
 
 Results.displayName = "RegistrationSearchResults"
+
+const NoResults = () => (
+  <Text className="RegistrationSearchResults-noResults" c="dimmed">
+    No results
+  </Text>
+)
 
 type ResultRowsProps = {
   getLink?: (

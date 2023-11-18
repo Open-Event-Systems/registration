@@ -1,4 +1,4 @@
-import { SearchContext } from "#src/features/registration/stores/search2"
+import { SearchContext } from "#src/features/registration/stores/search"
 import {
   Checkbox,
   CheckboxProps,

@@ -9,6 +9,7 @@
   },
   "imports": {
     "#src/*.css": "./src/*.css",
+    "#src/*.scss": "./src/*.scss",
     "#src/*": [
       "./src/*.tsx",
       "./src/*.ts",

@@ -1,61 +1,76 @@
-import { Loader, createLoader } from "#src/features/loader"
 import {
-  RegistrationAPI,
-  RegistrationSearchResult as IRegistrationSearchResult,
   NextFunc,
+  RegistrationAPI,
+  RegistrationSearchResult,
 } from "#src/features/registration"
-import { action, makeAutoObservable, observable } from "mobx"
+import { makeAutoObservable, reaction, runInAction } from "mobx"
+import { createContext } from "react"
 
-export class ResultStore {
-  next: Loader<ResultStore> | undefined = undefined
+export class Search {
+  query = ""
+  showAll = false
+  results: RegistrationSearchResult[] = []
+  private next: NextFunc | null = null
 
-  constructor(
-    public registrations: IRegistrationSearchResult[],
-    next?: NextFunc,
-    public prev?: ResultStore,
-  ) {
-    if (next) {
-      this.next = createLoader(() =>
-        next().then(([items, next]) => new ResultStore(items, next, this)),
-      )
-    }
+  get handleMore(): (() => Promise<void>) | undefined {
+    return this.next ? () => this.more() : undefined
   }
-}
-
-export class SearchStore {
-  curResults: Loader<ResultStore> | undefined = undefined
-  private query = ""
 
   constructor(
     private api: RegistrationAPI,
-    private eventId?: string,
+    public eventId: string | null = null,
   ) {
-    makeAutoObservable<this, "eventId">(this, {
-      curResults: observable.ref,
-      eventId: false,
+    makeAutoObservable(this)
+
+    reaction(
+      () => [this.query, this.eventId, this.showAll],
+      () => this.search(),
+      {
+        delay: 500,
+      },
+    )
+  }
+
+  private async search() {
+    const query = this.query
+    const eventId = this.eventId
+    const showAll = this.showAll
+    const [items, next] = await this.api.search(query, {
+      event_id: eventId ?? undefined,
+      all: showAll || undefined,
+    })
+
+    if (
+      this.query != query ||
+      this.eventId != eventId ||
+      this.showAll != showAll
+    ) {
+      return
+    }
+
+    runInAction(() => {
+      this.next = next
+      this.results = items
     })
   }
 
-  async search(query: string): Promise<ResultStore> {
-    this.query = query
-    const loader = createLoader(
-      this.api
-        .search(query, { event_id: this.eventId })
-        .then(([items, next]) => new ResultStore(items, next)),
-    )
-
-    if (!this.curResults) {
-      this.curResults = loader
-      return loader
-    } else {
-      return loader.then(
-        action((res) => {
-          if (this.query == query) {
-            this.curResults = loader
-          }
-          return res
-        }),
-      )
+  private async more() {
+    const next = this.next
+    if (!next) {
+      return
     }
+
+    const [items, newNext] = await next()
+
+    if (this.next != next) {
+      return
+    }
+
+    runInAction(() => {
+      this.next = newNext
+      this.results.push(...items)
+    })
   }
 }
+
+export const SearchContext = createContext<Search | undefined>(undefined)

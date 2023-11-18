@@ -270,6 +270,16 @@ def app_factory():
             "Authorization",
             "Content-Type",
         ),
+        expose_headers=(
+            "Transfer-Encoding",
+            "Content-Encoding",
+            "Vary",
+            "Request-Context",
+            "Set-Cookie",
+            "Server",
+            "Date",
+            "Link",
+        ),
     )
 
     if cmd_config.insecure:

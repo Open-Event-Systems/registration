@@ -1,85 +1,53 @@
 import { Subtitle, Title } from "#src/components"
-import {
-  RegistrationSearchResult,
-  useRegistrationAPI,
-} from "#src/features/registration"
-import { Input } from "#src/features/registration/components/search/Input"
-import { Results } from "#src/features/registration/components/search/Results"
-import {
-  ResultStore,
-  SearchStore,
-} from "#src/features/registration/stores/search"
-import { Group, Skeleton, Text } from "@mantine/core"
-import { action, observable, reaction } from "mobx"
+import { useRegistrationAPI } from "#src/features/registration"
 import { observer, useLocalObservable } from "mobx-react-lite"
-import { ChangeEvent, useCallback, useEffect, useState } from "react"
+import {
+  SearchContext,
+  Search as SearchStore,
+} from "#src/features/registration/stores/search"
+import { Search } from "#src/features/registration/components/search/Search"
+import { useEvents } from "#src/features/event/hooks"
+import { Event } from "#src/features/event/types"
 
 export const SearchPage = () => {
+  const events = useEvents()
   return (
     <Title title="Registrations">
       <Subtitle subtitle="Search registrations">
-        <Search eventId="test" />
+        <events.loader.Component>
+          {(events) => <SearchPageContent events={events} />}
+        </events.loader.Component>
       </Subtitle>
     </Title>
   )
 }
 
-const Search = observer(({ eventId }: { eventId: string }) => {
-  const api = useRegistrationAPI()
-  const state = useLocalObservable(() => new SearchStore(api, eventId))
-  const query = useLocalObservable(() => observable.box(""))
-
-  const handleChange = useCallback(
-    action((e: ChangeEvent<HTMLInputElement>) => {
-      query.set(e.target.value)
-    }),
-    [],
-  )
-
-  useEffect(() => {
-    return reaction(
-      () => query.get(),
-      (query) => state.search(query),
-      {
-        delay: 500,
-      },
+const SearchPageContent = observer(
+  ({ events }: { events: Map<string, Event> }) => {
+    const api = useRegistrationAPI()
+    const state = useLocalObservable(
+      () => new SearchStore(api, Array.from(events.keys())[0] ?? null),
     )
-  }, [])
 
-  let content
+    return (
+      <SearchContext.Provider value={state}>
+        <Search
+          events={Array.from(events.values(), (e) => ({
+            id: e.id,
+            name: e.name,
+          }))}
+          getLink={(r) => {
+            let url = window.location.href
+            if (!url.endsWith("/")) {
+              url = url + "/"
+            }
 
-  if (state.curResults) {
-    if (state.curResults.ready) {
-      content = <Results results={getResults(state.curResults.value)} />
-    } else {
-      content = <Placeholder />
-    }
-  } else {
-    content = <NoResults />
-  }
+            url += r.id
 
-  return (
-    <>
-      <Input value={query.get()} onChange={handleChange} />
-      {content}
-    </>
-  )
-})
-
-const getResults = (results: ResultStore): RegistrationSearchResult[][] => {
-  const res = []
-  let cur: ResultStore | undefined = results
-  while (cur) {
-    res.push(cur.registrations)
-    cur = cur.next?.ready ? cur.next.value : undefined
-  }
-  return res
-}
-
-const NoResults = () => (
-  <Text display="block" m="auto" c="dimmed" fz="small">
-    No results
-  </Text>
+            return [url, r.id]
+          }}
+        />
+      </SearchContext.Provider>
+    )
+  },
 )
-
-const Placeholder = () => <Skeleton h="20rem" />

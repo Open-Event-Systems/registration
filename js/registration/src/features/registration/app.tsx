@@ -10,6 +10,7 @@ import "#src/components/styles.css"
 import "#src/features/auth/styles.css"
 import "#src/features/interview/styles.css"
 import "#src/features/cart/styles.css"
+import "#src/features/registration/components/search/Results.scss"
 
 makeApp(() => (
   <MantineProvider theme={theme}>

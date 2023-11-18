@@ -72,3 +72,5 @@ export const Default: StoryObj<typeof Search> = {
     },
   },
 }
+
+export const No_Results: StoryObj<typeof Search> = {}
