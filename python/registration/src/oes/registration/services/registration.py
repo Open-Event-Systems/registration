@@ -1,5 +1,5 @@
 """Registration service."""
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Optional, Union
 from uuid import UUID
 
@@ -18,10 +18,9 @@ from oes.registration.models.registration import (
     SelfServiceRegistration,
 )
 from oes.registration.serialization import get_converter
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager, selectinload
-from sqlalchemy.sql.operators import or_
 
 
 class RegistrationService:
@@ -103,15 +102,30 @@ class RegistrationService:
         return res.scalars().all()
 
     async def list_registrations(
-        self, *, page: int = 0, per_page: int = 50
+        self,
+        query: Optional[str] = None,
+        /,
+        *,
+        event_id: Optional[str] = None,
+        after: Optional[UUID] = None,
+        all: bool = False,
     ) -> Sequence[RegistrationEntity]:
         """Search for :class:`RegistrationEntity`."""
-        q = (
-            select(RegistrationEntity)
-            .order_by(RegistrationEntity.date_created.desc())
-            .offset(page * per_page)
-            .limit(per_page)
-        )
+        q = select(RegistrationEntity)
+
+        if query:
+            q = q.where(or_(*_build_search_params(query.strip())))
+
+        if event_id:
+            q = q.where(RegistrationEntity.event_id == event_id)
+
+        if not all:
+            q = q.where(RegistrationEntity.state == RegistrationState.created)
+
+        if after is not None:
+            q = q.where(RegistrationEntity.id > after)
+
+        q = q.order_by(RegistrationEntity.id).limit(50)
 
         res = await self.db.execute(q)
         return res.scalars().all()
@@ -280,3 +294,50 @@ async def add_account_to_registration(
     account = await account_service.get_account(account_id)
     if account:
         registration.accounts.append(account)
+
+
+def _build_search_params(q: str) -> Iterator[ColumnElement]:
+    yield from _get_name_search_clause(q)
+    yield from _get_email_search_clause(q)
+    yield from _get_number_search_clause(q)
+
+
+def _get_name_search_clause(q: str) -> Iterator[ColumnElement]:
+    fname, _, lname = q.lower().partition(" ")
+    fname = fname.strip()
+    lname = lname.strip()
+    name = fname or lname
+
+    if fname and lname:
+        # "first last" or "last first"
+        yield and_(
+            or_(
+                func.lower(RegistrationEntity.preferred_name).startswith(fname),
+                func.lower(RegistrationEntity.first_name).startswith(fname),
+            ),
+            func.lower(RegistrationEntity.last_name).startswith(lname),
+        )
+        yield and_(
+            or_(
+                func.lower(RegistrationEntity.preferred_name).startswith(lname),
+                func.lower(RegistrationEntity.first_name).startswith(lname),
+            ),
+            func.lower(RegistrationEntity.last_name).startswith(fname),
+        )
+    elif name:
+        yield func.lower(RegistrationEntity.preferred_name).startswith(name)
+        yield func.lower(RegistrationEntity.first_name).startswith(name)
+        yield func.lower(RegistrationEntity.last_name).startswith(name)
+
+
+def _get_email_search_clause(q: str) -> Iterator[ColumnElement]:
+    if " " not in q:
+        yield func.lower(RegistrationEntity.email).startswith(q.lower())
+
+
+def _get_number_search_clause(q: str) -> Iterator[ColumnElement]:
+    try:
+        num = int(q)
+        yield RegistrationEntity.number == num
+    except ValueError:
+        return

@@ -1,8 +1,9 @@
 import { placeholderWretch } from "#src/config/api"
+import { RegistrationSearchResult } from "#src/features/registration"
 import {
+  NextFunc,
   Registration,
   RegistrationAPI,
-  RegistrationSearchResult,
 } from "#src/features/registration/types"
 import { createContext, useContext } from "react"
 import { Wretch } from "wretch"
@@ -11,18 +12,20 @@ import queryString from "wretch/addons/queryString"
 export const createRegistrationAPI = (baseWretch: Wretch): RegistrationAPI => {
   const wretch = baseWretch.url("/registrations")
   return {
-    async search(query, options) {
+    async search(query, options = {}) {
       let req = wretch.addon(queryString)
 
       if (query) {
         req = req.query({ q: query })
       }
 
-      if (options?.after) {
-        req = req.query({ after: options.after })
+      for (const [opt, val] of Object.entries(options)) {
+        if (val) {
+          req = req.query({ [opt]: val })
+        }
       }
 
-      return await req.get().json<RegistrationSearchResult[]>()
+      return await getSearchResults(req as Wretch)
     },
     async create(registration) {
       return await wretch.json(registration).post().json<Registration>()
@@ -61,3 +64,23 @@ export const RegistrationAPIContext = createContext(
 )
 
 export const useRegistrationAPI = () => useContext(RegistrationAPIContext)
+
+const getSearchResults = async (
+  wretch: Wretch,
+): Promise<[RegistrationSearchResult[], NextFunc | undefined]> => {
+  const res = await wretch.get().res()
+  const body = await res.json()
+
+  const linkHeader = res.headers.get("Link")
+  const nextMatch = linkHeader
+    ? /<(.*?)>; rel="next"/.exec(linkHeader) ?? []
+    : []
+  const nextUrl = nextMatch[1]
+
+  let next
+  if (nextUrl) {
+    next = () => getSearchResults(wretch.url(nextUrl, true))
+  }
+
+  return [body, next]
+}

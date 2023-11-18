@@ -6,7 +6,7 @@ from datetime import date, datetime  # noqa
 from typing import Any, Optional
 from uuid import UUID
 
-from attrs import Factory, frozen
+from attrs import Factory, field, frozen
 from cattrs import BaseValidationError
 from oes.registration.access_code.entities import AccessCodeEntity
 from oes.registration.access_code.models import AccessCodeSettings
@@ -17,6 +17,7 @@ from oes.registration.cart.models import (
     PricingResultRegistration,
 )
 from oes.registration.models.registration import (
+    Registration,
     RegistrationState,
     SelfServiceRegistration,
 )
@@ -82,19 +83,32 @@ class EventResponse:
 
 @frozen
 class RegistrationListResponse:
-    """A partial registration."""
+    """Registration search result response."""
 
     id: UUID
     state: RegistrationState
     event_id: str
-    version: int
-    date_created: datetime
-    number: Optional[int]
-    option_ids: list[str]
-    email: Optional[str]
-    first_name: Optional[str]
-    last_name: Optional[str]
-    preferred_name: Optional[str]
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    preferred_name: Optional[str] = None
+    number: Optional[int] = None
+    email: Optional[str] = None
+    option_ids: list[str] = field(factory=list)
+
+    @classmethod
+    def from_registration(cls, reg: Registration, /) -> RegistrationListResponse:
+        """Create from a :class:`Registration`."""
+        return cls(
+            id=reg.id,
+            state=reg.state,
+            event_id=reg.event_id,
+            first_name=reg.first_name,
+            last_name=reg.last_name,
+            preferred_name=reg.preferred_name,
+            number=reg.number,
+            email=reg.email,
+            option_ids=sorted(reg.option_ids),
+        )
 
 
 @frozen

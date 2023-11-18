@@ -47,11 +47,15 @@ export interface CreateRegistration {
   [prop: string]: unknown
 }
 
+export type NextFunc = () => Promise<
+  [RegistrationSearchResult[], NextFunc | undefined]
+>
+
 export interface RegistrationAPI {
   search(
     query: string,
-    options?: { after?: string },
-  ): Promise<RegistrationSearchResult[]>
+    options?: { event_id?: string; after?: string; all?: boolean },
+  ): Promise<[RegistrationSearchResult[], NextFunc | undefined]>
   create(registration: CreateRegistration): Promise<Registration>
   fromResponse(response: Response): Promise<Registration>
   read(id: string): Promise<Registration | undefined>

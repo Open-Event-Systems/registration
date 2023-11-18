@@ -17,62 +17,60 @@ export default meta
 
 export const Default: StoryObj<typeof Results> = {
   args: {
-    results: [
-      [
-        {
-          id: "1",
-          event_id: "1",
-          state: RegistrationState.created,
-          first_name: "John",
-          last_name: "Example",
-          email: "john@example.net",
-          number: 101,
-        },
-        {
-          id: "2",
-          event_id: "1",
-          state: RegistrationState.created,
-          first_name: "John",
-          last_name: "Example",
-          email: "john@example.net",
-          number: 102,
-        },
-        {
-          id: "3",
-          event_id: "1",
-          state: RegistrationState.created,
-          preferred_name: "John",
-          first_name: "Johnathan",
-          last_name: "Example",
-          email: "john@example.net",
-          number: 103,
-        },
-        {
-          id: "4",
-          event_id: "1",
-          state: RegistrationState.created,
-          first_name: "John",
-          last_name: "Example",
-          email: "john@example.net",
-          number: 104,
-        },
-        {
-          id: "5",
-          event_id: "1",
-          state: RegistrationState.created,
-          first_name: "John",
-          last_name: "Example",
-          email: "john@example.net",
-          number: 105,
-        },
-      ],
+    registrations: [
+      {
+        id: "1",
+        event_id: "1",
+        state: RegistrationState.created,
+        first_name: "John",
+        last_name: "Example",
+        email: "john@example.net",
+        number: 101,
+      },
+      {
+        id: "2",
+        event_id: "1",
+        state: RegistrationState.created,
+        first_name: "John",
+        last_name: "Example",
+        email: "john@example.net",
+        number: 102,
+      },
+      {
+        id: "3",
+        event_id: "1",
+        state: RegistrationState.created,
+        preferred_name: "John",
+        first_name: "Johnathan",
+        last_name: "Example",
+        email: "john@example.net",
+        number: 103,
+      },
+      {
+        id: "4",
+        event_id: "1",
+        state: RegistrationState.created,
+        first_name: "John",
+        last_name: "Example",
+        email: "john@example.net",
+        number: 104,
+      },
+      {
+        id: "5",
+        event_id: "1",
+        state: RegistrationState.created,
+        first_name: "John",
+        last_name: "Example",
+        email: "john@example.net",
+        number: 105,
+      },
     ],
     getLink(r) {
       return [`#${r.id}`, r.id]
     },
   },
   render(args) {
-    const { results, onMore, ...other } = args
+    const { registrations, onMore, ...other } = args
     const [more, setMore] = useState<RegistrationSearchResult[] | undefined>(
       undefined,
     )
@@ -117,7 +115,7 @@ export const Default: StoryObj<typeof Results> = {
 
     return (
       <Results
-        results={[...results, ...(more ? [more] : [])]}
+        registrations={[...(registrations ?? []), ...(more ?? [])]}
         onMore={allowMore ? handleMore : undefined}
         {...other}
       />

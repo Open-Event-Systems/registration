@@ -1,77 +1,84 @@
 import { RegistrationSearchResult } from "#src/features/registration"
+import { SearchContext } from "#src/features/registration/stores/search2"
 import { Button, Loader, Table, TableTdProps } from "@mantine/core"
+import { observer } from "mobx-react-lite"
 import { createContext, useContext, useState } from "react"
 
 export type ResultsProps = {
-  results: RegistrationSearchResult[][]
+  registrations?: RegistrationSearchResult[]
   getLink?: (
     registration: RegistrationSearchResult,
   ) => [string | undefined, string | undefined] | undefined
   onMore?: () => Promise<void>
 }
 
-export const Results = (props: ResultsProps) => {
-  const { results, getLink, onMore } = props
+export const Results = observer((props: ResultsProps) => {
+  const { registrations, getLink, onMore } = props
+  const ctx = useContext(SearchContext)
 
   const [loading, setLoading] = useState(false)
 
   return (
-    <Table highlightOnHover striped className="RegistrationSearchResults-root">
-      <Table.Thead>
-        <Table.Tr>
-          <Table.Th>No.</Table.Th>
-          <Table.Th>Pref</Table.Th>
-          <Table.Th>First</Table.Th>
-          <Table.Th>Last</Table.Th>
-          <Table.Th>Email</Table.Th>
-        </Table.Tr>
-      </Table.Thead>
-      {results.map((registrations, i) => (
-        <ResultSet
-          key={registrations[0]?.id ?? i}
-          registrations={registrations}
-          getLink={getLink}
-        />
-      ))}
-      {onMore && (
-        <Table.Tfoot>
+    <Table.ScrollContainer
+      className="RegistrationSearchResults-root"
+      minWidth={500}
+    >
+      <Table highlightOnHover striped>
+        <Table.Thead>
           <Table.Tr>
-            <Table.Td colSpan={5}>
-              {loading ? (
-                <Loader type="dots" />
-              ) : (
-                <Button
-                  variant="transparent"
-                  onClick={() => {
-                    setLoading(true)
-                    onMore()
-                      .then(() => setLoading(false))
-                      .catch((e) => {
-                        setLoading(false)
-                        throw e
-                      })
-                  }}
-                >
-                  More
-                </Button>
-              )}
-            </Table.Td>
+            <Table.Th>No.</Table.Th>
+            <Table.Th>Pref</Table.Th>
+            <Table.Th>First</Table.Th>
+            <Table.Th>Last</Table.Th>
+            <Table.Th>Email</Table.Th>
           </Table.Tr>
-        </Table.Tfoot>
-      )}
-    </Table>
+        </Table.Thead>
+        <ResultRows
+          getLink={getLink}
+          registrations={registrations ?? ctx?.results}
+        />
+        {onMore && (
+          <Table.Tfoot>
+            <Table.Tr>
+              <Table.Td colSpan={5}>
+                {loading ? (
+                  <Loader type="dots" />
+                ) : (
+                  <Button
+                    variant="transparent"
+                    onClick={() => {
+                      setLoading(true)
+                      onMore()
+                        .then(() => setLoading(false))
+                        .catch((e) => {
+                          setLoading(false)
+                          throw e
+                        })
+                    }}
+                  >
+                    More
+                  </Button>
+                )}
+              </Table.Td>
+            </Table.Tr>
+          </Table.Tfoot>
+        )}
+      </Table>
+    </Table.ScrollContainer>
   )
-}
+})
 
-type ResultSetProps = {
+Results.displayName = "RegistrationSearchResults"
+
+type ResultRowsProps = {
   getLink?: (
     registration: RegistrationSearchResult,
   ) => [string | undefined, string | undefined] | undefined
-  registrations: RegistrationSearchResult[]
+  registrations?: RegistrationSearchResult[]
 }
 
-const ResultSet = (props: ResultSetProps) => {
-  const { registrations, getLink } = props
+const ResultRows = (props: ResultRowsProps) => {
+  const { registrations = [], getLink } = props
   return (
     <Table.Tbody>
       {registrations.map((r) => (

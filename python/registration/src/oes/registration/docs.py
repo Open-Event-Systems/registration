@@ -166,6 +166,7 @@ def docs_helper(
     response_type: Optional[object] = None,
     response_summary: Optional[str] = None,
     tags: Optional[Sequence[str]] = None,
+    skip_serialize: bool = False,
     auth: bool = True,
 ) -> Callable[[T], T]:
     """Decorate view handlers with documentation."""
@@ -192,7 +193,8 @@ def docs_helper(
     )
 
     def decorator(fn):
-        fn = serialize_decorator(fn)
+        if not skip_serialize:
+            fn = serialize_decorator(fn)
         fn = docs_decorator(fn)
         return fn
 

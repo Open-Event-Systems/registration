@@ -3,7 +3,8 @@ from typing import Optional, Union
 from uuid import UUID
 
 from attrs import Factory, field, frozen
-from blacksheep import Content, HTTPException, Request, Response, auth
+from blacksheep import Content, HTTPException, Request, Response, auth, json
+from blacksheep.messages import get_request_absolute_url
 from blacksheep.server.openapi.common import (
     ContentInfo,
     ParameterInfo,
@@ -32,6 +33,7 @@ from oes.registration.services.registration import RegistrationService
 from oes.registration.util import check_not_found
 from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import RegistrationListResponse
+from yarl import URL
 
 
 @frozen(kw_only=True)
@@ -66,16 +68,46 @@ class UpdateRegistrationRequest:
     response_type=list[RegistrationListResponse],
     response_summary="The list of registrations",
     tags=["Registration"],
+    skip_serialize=True,
 )
 @transaction
 async def list_registrations(
     reg: RegistrationService,
-    page: int,
-    per_page: int,
-) -> list[Registration]:
+    request: Request,
+    q: Optional[str] = None,
+    event_id: Optional[str] = None,
+    after: Optional[UUID] = None,
+    all: bool = False,
+) -> Response:
     """Search registrations."""
-    results = await reg.list_registrations(page=page, per_page=per_page)
-    return [r.get_model() for r in results]
+    results = await reg.list_registrations(q, after=after, all=all)
+
+    converter = get_converter()
+    response = json(
+        [
+            converter.unstructure(
+                RegistrationListResponse.from_registration(r.get_model())
+            )
+            for r in results
+        ]
+    )
+
+    if len(results) > 0:
+        after_id = results[-1].id
+        params = {
+            "q": q or "",
+            "after": str(after_id),
+        }
+
+        if all:
+            params["all"] = "true"
+
+        next_url = URL(str(get_request_absolute_url(request))).with_query(params)
+
+        next_ = f'<{str(next_url)}>; rel="next"'
+        response.add_header(b"Link", next_.encode())
+
+    return response
 
 
 @auth(RequireAdmin)

@@ -12,6 +12,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
     entry: {
       selfservice: "./src/features/selfservice/index.tsx",
       receipt: "./src/features/receipt/index.tsx",
+      registration: "./src/features/registration/app.tsx"
     },
     output: {
       publicPath: "/", // TODO: make configurable
@@ -120,6 +121,12 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         filename: "index.html",
       }),
       new HtmlWebpackPlugin({
+        title: "Registration",
+        template: "./src/index.html",
+        chunks: ["registration"],
+        filename: "registrations/index.html",
+      }),
+      new HtmlWebpackPlugin({
         title: "Receipt",
         template: "./src/index.html",
         chunks: ["receipt"],
@@ -132,6 +139,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       historyApiFallback: {
         rewrites: [
           { from: /^\/receipt(\/|$)/, to: "/receipt/index.html" },
+          { from: /^\/registrations(\/|$)/, to: "/registrations/index.html" },
           { from: /^\//, to: "/index.html" },
         ],
       },

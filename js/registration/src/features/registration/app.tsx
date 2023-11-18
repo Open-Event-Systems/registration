@@ -1,7 +1,7 @@
-import { makeApp } from "#src/util/react"
-import { RouterProvider } from "react-router-dom"
-import { router } from "#src/features/selfservice/routes/Router"
 import { MantineProvider } from "@mantine/core"
+import { RouterProvider } from "react-router-dom"
+import { makeApp } from "#src/util/react"
+import { router } from "#src/features/registration/routes/Router"
 import theme from "#src/config/theme"
 
 import "@mantine/core/styles.css"
