@@ -29,6 +29,9 @@ export interface Registration {
   first_name?: string
   last_name?: string
   preferred_name?: string
+  birth_date?: string
+
+  note?: string
 
   [prop: string]: unknown
 }
@@ -58,7 +61,7 @@ export interface RegistrationAPI {
   ): Promise<[RegistrationSearchResult[], NextFunc | null]>
   create(registration: CreateRegistration): Promise<Registration>
   fromResponse(response: Response): Promise<Registration>
-  read(id: string): Promise<Registration | undefined>
+  read(id: string): Promise<Registration | null>
   update(registration: Registration): Promise<Registration>
   delete(id: string): Promise<void>
 }

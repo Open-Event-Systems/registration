@@ -38,9 +38,9 @@ export const createRegistrationAPI = (baseWretch: Wretch): RegistrationAPI => {
         .url(`/${id}`)
         .get()
         .notFound(() => {
-          return undefined
+          return null
         })
-        .json<Registration | undefined>()
+        .json<Registration | null>()
     },
     async update(registration) {
       const headers = {

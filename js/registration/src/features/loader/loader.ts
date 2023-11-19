@@ -9,7 +9,7 @@ import {
   LoadingState,
 } from "#src/features/loader/types"
 import { action, makeObservable, observable, runInAction } from "mobx"
-import { ElementType } from "react"
+import { DependencyList, ElementType, useMemo } from "react"
 
 class _NotFoundError extends Error {
   constructor(message = "Not found") {
@@ -23,7 +23,7 @@ export const NotFoundError: {
 
 class Loader<T> implements ILoader<T> {
   state = LoadingState.notLoading
-  value: T | undefined = undefined
+  value: T | null = null
   get ready() {
     return this.state == LoadingState.ready
   }
@@ -120,6 +120,22 @@ export function createLoader<T>(
   loadFunc: (() => T | Promise<T>) | Promise<T> | T,
 ): ILoader<T> {
   return new Loader(loadFunc)
+}
+
+export function useLoader<T>(
+  loadFunc: () => T | Promise<T>,
+  deps: DependencyList,
+): LoaderType<T>
+export function useLoader<T>(
+  value: Promise<T>,
+  deps: DependencyList,
+): LoaderType<T>
+export function useLoader<T>(value: T, deps: DependencyList): LoadedLoader<T>
+export function useLoader<T>(
+  loadFunc: (() => T | Promise<T>) | Promise<T> | T,
+  deps: DependencyList,
+): ILoader<T> {
+  return useMemo(() => new Loader(loadFunc), deps)
 }
 
 const isPromise = <T>(obj: unknown): obj is PromiseLike<T> =>

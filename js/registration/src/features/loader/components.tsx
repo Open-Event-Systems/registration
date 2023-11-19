@@ -1,4 +1,4 @@
-import { ILoader, LoadingState } from "#src/features/loader"
+import { ILoader, LoadingState, NotFoundError } from "#src/features/loader"
 import { observer } from "mobx-react-lite"
 import { ElementType, ReactNode, useLayoutEffect } from "react"
 
@@ -48,7 +48,13 @@ export const createLoaderComponent = <T,>(
     }: ManagedLoaderComponentProps<T>) => {
       useLayoutEffect(() => {
         if (!lazy) {
-          loader.load()
+          loader.load().catch((e) => {
+            if (e instanceof NotFoundError) {
+              return
+            } else {
+              throw e
+            }
+          })
         }
       }, [])
 

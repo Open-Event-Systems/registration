@@ -5,4 +5,11 @@ export interface Event {
   date: string
   open: boolean
   visible: boolean
+  registration_options: RegistrationOption[]
+}
+
+export interface RegistrationOption {
+  id: string
+  name: string
+  description?: string
 }

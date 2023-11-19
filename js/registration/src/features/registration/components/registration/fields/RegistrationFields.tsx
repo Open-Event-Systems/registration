@@ -1,4 +1,3 @@
-import { Registration } from "#src/features/registration"
 import { Box, BoxProps, useProps } from "@mantine/core"
 import clsx from "clsx"
 import { ComponentPropsWithoutRef, ReactNode } from "react"
@@ -7,16 +6,11 @@ export type RegistrationFieldsProps = Omit<
   RegistrationFieldsRootProps,
   "children"
 > & {
-  registration: Registration
   fields?: [string, ReactNode][]
 }
 
 export const RegistrationFields = (props: RegistrationFieldsProps) => {
-  const {
-    registration,
-    fields = [],
-    ...other
-  } = useProps("RegistrationFields", {}, props)
+  const { fields = [], ...other } = useProps("RegistrationFields", {}, props)
 
   const fieldNodes: ReactNode[] = []
 

@@ -1,12 +1,21 @@
-import { LoadingOverlay, SimpleLayout } from "#src/components"
+import {
+  LoadingOverlay,
+  ShowLoadingOverlay,
+  SimpleLayout,
+} from "#src/components"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { useAuth } from "#src/features/auth/hooks"
+import { useEvents } from "#src/features/event/hooks"
 import { EventStoreProvider } from "#src/features/event/providers"
-import { RegistrationAPIProvider } from "#src/features/registration"
+import {
+  RegistrationAPIProvider,
+  RegistrationProvider,
+} from "#src/features/registration"
+import { RegistrationPage } from "#src/features/registration/routes/RegistrationPage"
 import { SearchPage } from "#src/features/registration/routes/SearchPage"
 import { AppRoute } from "#src/routes/AppRoute"
 import { NotFoundPage } from "#src/routes/NotFoundPage"
-import { Outlet, createBrowserRouter } from "react-router-dom"
+import { Outlet, createBrowserRouter, useParams } from "react-router-dom"
 
 const LayoutRoute = () => (
   <>
@@ -30,6 +39,24 @@ const RegistrationsRoute = () => {
   )
 }
 
+const LoadingRoute = () => {
+  const events = useEvents()
+  return (
+    <events.loader.Component placeholder={<ShowLoadingOverlay />}>
+      <Outlet />
+    </events.loader.Component>
+  )
+}
+
+const RegistrationRoute = () => {
+  const { registrationId = "" } = useParams()
+  return (
+    <RegistrationProvider id={registrationId}>
+      <Outlet />
+    </RegistrationProvider>
+  )
+}
+
 export const router = createBrowserRouter(
   [
     {
@@ -42,8 +69,23 @@ export const router = createBrowserRouter(
               element: <RegistrationsRoute />,
               children: [
                 {
-                  index: true,
-                  element: <SearchPage />,
+                  element: <LoadingRoute />,
+                  children: [
+                    {
+                      index: true,
+                      element: <SearchPage />,
+                    },
+                    {
+                      element: <RegistrationRoute />,
+                      path: ":registrationId",
+                      children: [
+                        {
+                          index: true,
+                          element: <RegistrationPage />,
+                        },
+                      ],
+                    },
+                  ],
                 },
               ],
             },

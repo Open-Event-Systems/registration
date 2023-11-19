@@ -10,7 +10,7 @@ export enum LoadingState {
 
 export interface ILoader<T> extends Promise<T> {
   get state(): LoadingState
-  get value(): T | undefined
+  get value(): T | null
   get ready(): boolean
   get Component(): ElementType<ManagedLoaderComponentProps<T>>
 
@@ -19,7 +19,7 @@ export interface ILoader<T> extends Promise<T> {
 
 export interface UnloadedLoader<T> extends ILoader<T> {
   get state(): Exclude<LoadingState, LoadingState.ready>
-  get value(): undefined
+  get value(): null
   get ready(): false
 }
 

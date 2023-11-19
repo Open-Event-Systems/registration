@@ -2,6 +2,8 @@
     display: grid;
     grid-template-columns: [name-start] auto [name-end value-start] minmax(1rem, 1fr) [value-end];
     column-gap: var(--mantine-spacing-sm);
+    row-gap: calc(var(--mantine-spacing-xs) / 2);
+    line-height: 2.25rem;
     align-items: baseline;
 
     @media (max-width: 36rem) {
