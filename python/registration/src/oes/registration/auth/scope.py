@@ -55,5 +55,5 @@ class Scopes(Set[str]):
         return f"{{{strs}}}"
 
 
-DEFAULT_SCOPES = Scopes((Scope.event, Scope.cart, Scope.self_service))
+DEFAULT_SCOPES = Scopes((Scope.cart, Scope.self_service))
 """The default scopes."""

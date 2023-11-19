@@ -16,6 +16,7 @@ from oes.registration.cart.models import (
     PricingResult,
     PricingResultRegistration,
 )
+from oes.registration.models.event import RegistrationOption
 from oes.registration.models.registration import (
     Registration,
     RegistrationState,
@@ -69,8 +70,21 @@ class BodyValidationError(Exception):
         self.exc = exc
 
 
-@frozen
+@frozen(kw_only=True)
 class EventResponse:
+    """An event."""
+
+    id: str
+    name: str
+    description: Optional[str] = None
+    date: date
+    open: bool = False
+    visible: bool = False
+    registration_options: Sequence[RegistrationOption] = ()
+
+
+@frozen
+class SelfServiceEventResponse:
     """An event."""
 
     id: str
@@ -78,7 +92,6 @@ class EventResponse:
     description: Optional[str]
     date: date
     open: bool
-    visible: bool
 
 
 @frozen

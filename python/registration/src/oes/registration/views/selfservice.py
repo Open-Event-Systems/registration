@@ -9,7 +9,7 @@ from oes.registration.auth.handlers import RequireSelfService
 from oes.registration.auth.user import User
 from oes.registration.docs import docs_helper
 from oes.registration.interview.service import InterviewService
-from oes.registration.models.event import EventConfig
+from oes.registration.models.event import Event, EventConfig
 from oes.registration.services.registration import (
     RegistrationService,
     get_allowed_add_interviews,
@@ -19,9 +19,25 @@ from oes.registration.services.registration import (
 from oes.registration.util import check_not_found
 from oes.registration.views.responses import (
     InterviewOption,
+    SelfServiceEventResponse,
     SelfServiceRegistrationListResponse,
     SelfServiceRegistrationResponse,
 )
+
+
+@auth(RequireSelfService)
+@app.router.get("/self-service/events")
+@docs_helper(
+    response_type=list[SelfServiceEventResponse],
+    response_summary="The list of events",
+    tags=["Self-Service"],
+)
+async def list_self_service_events(
+    event_config: EventConfig,
+) -> list[Event]:
+    """List events available via self-service."""
+    events = [e for e in event_config.events if e.visible]
+    return events
 
 
 @auth(RequireSelfService)

@@ -9,13 +9,13 @@ from oes.registration.auth.user import User
 from oes.registration.docs import docs_helper
 from oes.registration.models.event import Event, EventConfig
 from oes.registration.util import check_not_found
-from oes.registration.views.responses import EventResponse
+from oes.registration.views.responses import SelfServiceEventResponse
 
 
 @auth(RequireEvent)
 @app.router.get("/events")
 @docs_helper(
-    response_type=list[EventResponse],
+    response_type=list[SelfServiceEventResponse],
     response_summary="The list of available events",
     tags=["Event"],
 )
@@ -26,7 +26,9 @@ async def list_events(events: EventConfig, user: User) -> Sequence[Event]:
 
 @auth(RequireEvent)
 @app.router.get("/events/{event_id}")
-@docs_helper(response_type=EventResponse, response_summary="The event", tags=["Event"])
+@docs_helper(
+    response_type=SelfServiceEventResponse, response_summary="The event", tags=["Event"]
+)
 async def read_event(event_id: str, event_config: EventConfig, user: User) -> Event:
     """Get an event by ID."""
     event = check_not_found(event_config.get_event(event_id))
