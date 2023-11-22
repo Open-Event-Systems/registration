@@ -1,85 +1,40 @@
-import { ILoader, LoadingState, NotFoundError } from "#src/features/loader"
+import { LoadValue, Loader, createLoader } from "#src/features/loader"
 import { observer } from "mobx-react-lite"
-import { ElementType, ReactNode, useLayoutEffect } from "react"
+import { ReactNode, Suspense, useMemo } from "react"
 
-export type LoaderComponentProps = {
-  state?: LoadingState
-  placeholder?: ReactNode
-  notFound?: ReactNode
-  children?: ReactNode
-}
-
-export const LoaderComponent = (props: LoaderComponentProps) => {
-  const { state, placeholder, notFound, children } = props
-
-  let content
-  switch (state) {
-    case LoadingState.notLoading:
-    case LoadingState.loading:
-      content = placeholder
-      break
-    case LoadingState.ready:
-      content = children
-      break
-    case LoadingState.notFound:
-      content = notFound ?? placeholder
-      break
-  }
-
-  return content
-}
-
-export type ManagedLoaderComponentProps<T> = {
-  placeholder?: ReactNode
-  notFound?: ReactNode
+export type LoaderComponentProps<T> = {
+  value: LoadValue<T>
+  fallback?: ReactNode
   children?: ReactNode | ((value: T) => ReactNode)
-  lazy?: boolean
 }
 
-export const createLoaderComponent = <T,>(
-  loader: ILoader<T>,
-): ElementType<ManagedLoaderComponentProps<T>> => {
-  const component = observer(
-    ({
-      placeholder,
-      notFound,
-      children,
-      lazy,
-    }: ManagedLoaderComponentProps<T>) => {
-      useLayoutEffect(() => {
-        if (!lazy) {
-          loader.load().catch((e) => {
-            if (e instanceof NotFoundError) {
-              return
-            } else {
-              throw e
-            }
-          })
-        }
-      }, [])
+export const Await = <T,>(props: LoaderComponentProps<T>) => {
+  const { value, fallback, children } = props
+  const loader = useMemo(() => createLoader(value as Promise<T>), [value])
 
-      let content
-      if (typeof children == "function") {
-        if (loader.ready) {
-          content = children(loader.value as T)
-        }
-      } else {
-        content = children
-      }
-
-      return (
-        <LoaderComponent
-          state={loader.state}
-          notFound={notFound}
-          placeholder={placeholder}
-        >
-          {content}
-        </LoaderComponent>
-      )
-    },
+  return (
+    <Suspense fallback={fallback}>
+      <AwaitSuspender loader={loader}>{children}</AwaitSuspender>
+    </Suspense>
   )
-
-  component.displayName = "ManagedLoaderComponent"
-
-  return component
 }
+
+const AwaitSuspender = observer(
+  <T,>({
+    loader,
+    children,
+  }: {
+    loader: Loader<T>
+    children?: ReactNode | ((value: T) => ReactNode)
+  }) => {
+    if (typeof children == "function") {
+      return children(loader.value)
+    } else if (loader.ready) {
+      return children
+    } else {
+      throw loader
+    }
+  },
+)
+
+AwaitSuspender.displayName = "AwaitSuspender"

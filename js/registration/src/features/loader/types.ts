@@ -1,32 +1,42 @@
-import { ManagedLoaderComponentProps } from "#src/features/loader/components"
-import { ElementType } from "react"
-
 export enum LoadingState {
   notLoading = "notLoading",
   loading = "loading",
-  notFound = "notFound",
-  ready = "ready",
+  rejected = "rejected",
+  resolved = "resolved",
 }
+
+type ValueOrPromise<T> = T | Promise<T>
+type LoadFunc<T> = () => ValueOrPromise<T>
+export type LoadValue<T> = LoadFunc<T> | ValueOrPromise<T>
 
 export interface ILoader<T> extends Promise<T> {
   get state(): LoadingState
   get value(): T | null
+  get error(): unknown
   get ready(): boolean
-  get Component(): ElementType<ManagedLoaderComponentProps<T>>
 
   load(): Promise<T>
 }
 
-export interface UnloadedLoader<T> extends ILoader<T> {
-  get state(): Exclude<LoadingState, LoadingState.ready>
-  get value(): null
+export interface PendingLoader<T> extends ILoader<T> {
+  get state(): LoadingState.loading | LoadingState.notLoading
+  get value(): never
+  get error(): null
   get ready(): false
 }
 
-export interface LoadedLoader<T> extends ILoader<T> {
-  get state(): LoadingState.ready
-  get value(): T
+export interface RejectedLoader<T> extends ILoader<T> {
+  get state(): LoadingState.rejected
+  get value(): never
+  get error(): unknown
   get ready(): true
 }
 
-export type Loader<T> = UnloadedLoader<T> | LoadedLoader<T>
+export interface ResolvedLoader<T> extends ILoader<T> {
+  get state(): LoadingState.resolved
+  get value(): T
+  get error(): null
+  get ready(): true
+}
+
+export type Loader<T> = PendingLoader<T> | ResolvedLoader<T> | RejectedLoader<T>

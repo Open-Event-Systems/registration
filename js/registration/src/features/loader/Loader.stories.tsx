@@ -1,45 +1,37 @@
-import {
-  ManagedLoaderComponentProps,
-  NotFoundError,
-  createLoader,
-} from "#src/features/loader"
-import { Button, Skeleton, Stack, TextInput } from "@mantine/core"
+import { Await } from "#src/features/loader"
+import { Button, Skeleton, Stack } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
-import { ElementType, useMemo, useState } from "react"
+import { useState } from "react"
 
-const meta: Meta<ElementType<ManagedLoaderComponentProps<string>>> = {
-  title: "features/loader/Loader",
+const meta: Meta<typeof Await> = {
+  component: Await,
 }
 
 export default meta
 
-export const Default: StoryObj<
-  ElementType<ManagedLoaderComponentProps<string>>
-> = {
+export const Default: StoryObj<typeof Await> = {
   render() {
-    const [text, setText] = useState("default")
-    const loader = useMemo(
-      () =>
-        createLoader(async () => {
-          await new Promise((r) => window.setTimeout(r, 1500))
-          if (text) {
-            return text
-          } else {
-            throw new NotFoundError()
-          }
-        }),
-      [text],
+    const [promise, setPromise] = useState<string | Promise<string>>(
+      "first load",
     )
 
     return (
       <Stack>
-        <TextInput value={text} onChange={(e) => setText(e.target.value)} />
-        <loader.Component
-          placeholder={<Skeleton>Placeholder</Skeleton>}
-          notFound={<>Not found</>}
+        <Await value={promise} fallback={<Skeleton h={20} w={150} />}>
+          {(value) => <>Loaded value: {value}</>}
+        </Await>
+        <Button
+          maw={100}
+          onClick={() => {
+            const func = async () => {
+              await new Promise((r) => window.setTimeout(r, 1500))
+              return `Loaded at ${new Date()}`
+            }
+            setPromise(func())
+          }}
         >
-          {(value) => <>Text is {value}</>}
-        </loader.Component>
+          Load
+        </Button>
       </Stack>
     )
   },

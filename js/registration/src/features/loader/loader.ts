@@ -1,15 +1,12 @@
 import {
-  ManagedLoaderComponentProps,
-  createLoaderComponent,
-} from "#src/features/loader/components"
-import {
   Loader as LoaderType,
   ILoader,
-  LoadedLoader,
+  ResolvedLoader,
   LoadingState,
+  LoadValue,
 } from "#src/features/loader/types"
 import { action, makeObservable, observable, runInAction } from "mobx"
-import { DependencyList, ElementType, useMemo } from "react"
+import { DependencyList, ElementType, createElement, useMemo } from "react"
 
 class _NotFoundError extends Error {
   constructor(message = "Not found") {
@@ -23,33 +20,40 @@ export const NotFoundError: {
 
 class Loader<T> implements ILoader<T> {
   state = LoadingState.notLoading
-  value: T | null = null
-  get ready() {
-    return this.state == LoadingState.ready
+  error: unknown = null
+
+  private _value: T | null = null
+  private loadFunc: () => Promise<T>
+  private loadPromise: Promise<T> | null = null
+
+  get value(): T {
+    if (this.state == LoadingState.resolved) {
+      return this._value as T
+    } else {
+      throw this
+    }
   }
 
-  Component: ElementType<ManagedLoaderComponentProps<T>>
+  get ready() {
+    return this.state == LoadingState.resolved
+  }
 
-  private loadFunc: () => T | Promise<T>
-  private loadPromise: Promise<T> | undefined
-
-  constructor(value: T | Promise<T> | (() => T | Promise<T>)) {
+  constructor(value: LoadValue<T>) {
     if (typeof value == "function") {
-      this.loadFunc = value as () => T | Promise<T>
-    } else {
+      this.loadFunc = () => Promise.resolve((value as () => T | Promise<T>)())
+    } else if (isPromise(value)) {
       this.loadFunc = () => value
-
-      if (!isPromise(value)) {
-        this.value = value
-        this.state = LoadingState.ready
-      }
+      this.state = LoadingState.loading
+    } else {
+      this.loadFunc = () => Promise.resolve(value)
+      this._value = value
+      this.state = LoadingState.resolved
     }
 
-    this.Component = createLoaderComponent(this)
-
-    makeObservable<this, "tryLoad">(this, {
+    makeObservable<this, "tryLoad" | "_value">(this, {
       state: observable,
-      value: observable.ref,
+      error: observable,
+      _value: observable.ref,
       tryLoad: action,
     })
   }
@@ -68,16 +72,15 @@ class Loader<T> implements ILoader<T> {
     try {
       const res = await this.loadFunc()
       runInAction(() => {
-        this.value = res
-        this.state = LoadingState.ready
+        this._value = res
+        this.state = LoadingState.resolved
       })
       return res
     } catch (e) {
-      if (e instanceof NotFoundError) {
-        runInAction(() => {
-          this.state = LoadingState.notFound
-        })
-      }
+      runInAction(() => {
+        this.state = LoadingState.rejected
+        this.error = e
+      })
       throw e
     }
   }
@@ -108,38 +111,40 @@ class Loader<T> implements ILoader<T> {
     return this.load().finally(onfinally)
   }
 
-  get [Symbol.toStringTag]() {
-    return "[object Loader]"
+  [Symbol.toStringTag] = "[object Loader]"
+}
+
+export function createLoader<T>(loadFunc: () => Promise<T>): LoaderType<T>
+export function createLoader<T>(loadFunc: () => T): LoaderType<T>
+export function createLoader<T>(promise: Promise<T>): LoaderType<T>
+export function createLoader<T>(value: T): ResolvedLoader<T>
+export function createLoader<T>(loadValue: LoadValue<T>): ILoader<T> {
+  if (loadValue instanceof Loader) {
+    return loadValue
+  } else {
+    return new Loader(loadValue)
   }
 }
 
-export function createLoader<T>(loadFunc: () => T | Promise<T>): LoaderType<T>
-export function createLoader<T>(value: Promise<T>): LoaderType<T>
-export function createLoader<T>(value: T): LoadedLoader<T>
-export function createLoader<T>(
-  loadFunc: (() => T | Promise<T>) | Promise<T> | T,
-): ILoader<T> {
-  return new Loader(loadFunc)
-}
-
 export function useLoader<T>(
-  loadFunc: () => T | Promise<T>,
+  loadFunc: () => Promise<T>,
+  deps: DependencyList,
+): LoaderType<T>
+export function useLoader<T>(
+  loadFunc: () => T,
   deps: DependencyList,
 ): LoaderType<T>
 export function useLoader<T>(
   value: Promise<T>,
   deps: DependencyList,
 ): LoaderType<T>
-export function useLoader<T>(value: T, deps: DependencyList): LoadedLoader<T>
+export function useLoader<T>(value: T, deps: DependencyList): ResolvedLoader<T>
 export function useLoader<T>(
-  loadFunc: (() => T | Promise<T>) | Promise<T> | T,
+  loadValue: LoadValue<T>,
   deps: DependencyList,
 ): ILoader<T> {
-  return useMemo(() => new Loader(loadFunc), deps)
+  return useMemo(() => createLoader(loadValue), deps) as ILoader<T>
 }
 
-const isPromise = <T>(obj: unknown): obj is PromiseLike<T> =>
-  typeof obj === "object" &&
-  !!obj &&
-  "then" in obj &&
-  typeof obj.then == "function"
+const isPromise = <T>(t: unknown): t is Promise<T> =>
+  !!t && typeof t == "object" && "then" in t && typeof t.then == "function"
