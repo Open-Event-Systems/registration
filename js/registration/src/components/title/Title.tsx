@@ -1,10 +1,23 @@
-import { action, autorun, makeAutoObservable, runInAction } from "mobx"
+import {
+  action,
+  autorun,
+  makeAutoObservable,
+  observable,
+  runInAction,
+} from "mobx"
 import { observer } from "mobx-react-lite"
-import { ReactNode, createContext, useContext, useLayoutEffect } from "react"
+import { IObservableValue } from "mobx"
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useLayoutEffect,
+  useState,
+} from "react"
 
 class TitleState {
-  title: string[] = []
-  subtitle: string[] = []
+  title: IObservableValue<string>[] = []
+  subtitle: IObservableValue<string>[] = []
 
   constructor() {
     makeAutoObservable(this)
@@ -12,7 +25,7 @@ class TitleState {
     autorun(() => {
       if (this.title.length > 0) {
         const title = this.title[this.title.length - 1]
-        document.title = title
+        document.title = title.get()
       }
     })
   }
@@ -23,7 +36,7 @@ export const TitlePlaceholder = observer(() => {
 
   let title
   if (state.title.length > 0) {
-    title = state.title[state.title.length - 1]
+    title = state.title[state.title.length - 1]?.get()
   }
 
   return <>{title}</>
@@ -34,7 +47,7 @@ export const SubtitlePlaceholder = observer(() => {
 
   let subtitle
   if (state.subtitle.length > 0) {
-    subtitle = state.subtitle[state.subtitle.length - 1]
+    subtitle = state.subtitle[state.subtitle.length - 1]?.get()
   }
 
   return <>{subtitle}</>
@@ -48,16 +61,23 @@ export const Title = ({
   title: string
 }) => {
   const state = useContext(TitleContext)
+  const [localState] = useState(() => observable.box(title))
 
   useLayoutEffect(() => {
     runInAction(() => {
-      state.title.push(title)
+      state.title.push(localState)
     })
 
     return action(() => {
       state.title.pop()
     })
   }, [])
+
+  useLayoutEffect(() => {
+    runInAction(() => {
+      localState.set(title)
+    })
+  }, [title])
 
   return <>{children}</>
 }
@@ -70,16 +90,23 @@ export const Subtitle = ({
   subtitle: string
 }) => {
   const state = useContext(TitleContext)
+  const [localState] = useState(() => observable.box(subtitle))
 
   useLayoutEffect(() => {
     runInAction(() => {
-      state.subtitle.push(subtitle)
+      state.subtitle.push(localState)
     })
 
     return action(() => {
       state.subtitle.pop()
     })
   }, [])
+
+  useLayoutEffect(() => {
+    runInAction(() => {
+      localState.set(subtitle)
+    })
+  }, [subtitle])
 
   return <>{children}</>
 }

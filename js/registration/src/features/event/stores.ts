@@ -1,31 +1,26 @@
-import { listEvents } from "#src/features/event/api"
-import { Event } from "#src/features/event/types"
-import { Loader, NotFoundError, createLoader } from "#src/util/loader"
-import { Wretch } from "wretch"
+import { Event, EventAPI } from "#src/features/event/types"
+import { makeAutoObservable } from "mobx"
 
 export class EventStore {
-  loader: Loader<Map<string, Event>>
+  private events = new Map<string, Event>()
 
-  constructor(public wretch: Wretch) {
-    this.loader = createLoader(() => listEvents(wretch))
+  constructor(private api: EventAPI) {
+    makeAutoObservable(this)
+  }
+
+  [Symbol.iterator](): Iterator<Event> {
+    return this.events.values()
   }
 
   getEvent(id: string): Event | undefined {
-    if (this.loader.checkLoaded()) {
-      return this.loader.value.get(id)
-    } else {
-      return undefined
-    }
+    return this.events.get(id)
   }
 
-  load(id: string): Loader<Event> {
-    return createLoader(async () => {
-      const events = await this.loader
-      const res = events.get(id)
-      if (!res) {
-        throw new NotFoundError()
-      }
-      return res
-    })
+  async load(): Promise<Map<string, Event>> {
+    const res = await this.api.list()
+    for (const event of res) {
+      this.events.set(event.id, event)
+    }
+    return this.events
   }
 }

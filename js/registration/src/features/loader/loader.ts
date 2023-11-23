@@ -6,7 +6,7 @@ import {
   LoadValue,
 } from "#src/features/loader/types"
 import { action, makeObservable, observable, runInAction } from "mobx"
-import { DependencyList, ElementType, createElement, useMemo } from "react"
+import { DependencyList, useMemo } from "react"
 
 class _NotFoundError extends Error {
   constructor(message = "Not found") {
@@ -50,10 +50,8 @@ class Loader<T> implements ILoader<T> {
       this.state = LoadingState.resolved
     }
 
-    makeObservable<this, "tryLoad" | "_value">(this, {
+    makeObservable<this, "tryLoad">(this, {
       state: observable,
-      error: observable,
-      _value: observable.ref,
       tryLoad: action,
     })
   }

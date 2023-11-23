@@ -1,6 +1,6 @@
-import { LoadValue, Loader, createLoader } from "#src/features/loader"
+import { LoadValue, LoadingState, createLoader } from "#src/features/loader"
 import { observer } from "mobx-react-lite"
-import { ReactNode, Suspense, useMemo } from "react"
+import { ReactNode, useLayoutEffect, useMemo } from "react"
 
 export type LoaderComponentProps<T> = {
   value: LoadValue<T>
@@ -8,33 +8,31 @@ export type LoaderComponentProps<T> = {
   children?: ReactNode | ((value: T) => ReactNode)
 }
 
-export const Await = <T,>(props: LoaderComponentProps<T>) => {
+export const Await = observer(<T,>(props: LoaderComponentProps<T>) => {
   const { value, fallback, children } = props
   const loader = useMemo(() => createLoader(value as Promise<T>), [value])
 
-  return (
-    <Suspense fallback={fallback}>
-      <AwaitSuspender loader={loader}>{children}</AwaitSuspender>
-    </Suspense>
-  )
-}
+  useLayoutEffect(() => {
+    loader.load()
+  }, [loader])
 
-const AwaitSuspender = observer(
-  <T,>({
-    loader,
-    children,
-  }: {
-    loader: Loader<T>
-    children?: ReactNode | ((value: T) => ReactNode)
-  }) => {
-    if (typeof children == "function") {
-      return children(loader.value)
-    } else if (loader.ready) {
-      return children
-    } else {
-      throw loader
-    }
-  },
-)
+  let content
+  switch (loader.state) {
+    default:
+    case LoadingState.notLoading:
+    case LoadingState.loading:
+      content = fallback
+      break
+    case LoadingState.resolved:
+    case LoadingState.rejected:
+      if (typeof children == "function") {
+        content = children(loader.value)
+      } else {
+        content = children
+      }
+  }
 
-AwaitSuspender.displayName = "AwaitSuspender"
+  return content
+})
+
+Await.displayName = "Await"

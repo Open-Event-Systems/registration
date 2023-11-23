@@ -1,5 +1,6 @@
 import * as yup from "yup"
 import * as oauth from "oauth4webapi"
+import { Scope } from "#src/features/auth/types/AccountInfo"
 
 const authTokenSchema = yup.object({
   tokenType: yup.string().defined(),
@@ -31,6 +32,20 @@ export class AuthInfo {
     } else {
       this.expiresAt = expiresAt
     }
+  }
+
+  /**
+   * Scope values, as a string array.
+   */
+  get scopeItems(): string[] {
+    return this.scope?.split(" ") || []
+  }
+
+  /**
+   * Get whether a scope is included.
+   */
+  hasScope(scope: Scope): boolean {
+    return this.scopeItems.includes(scope)
   }
 
   /**

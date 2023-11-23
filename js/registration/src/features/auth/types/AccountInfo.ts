@@ -20,3 +20,15 @@ export interface AccountInfo {
 export interface EmailTokenResponse {
   token: string
 }
+
+/**
+ * Scope values.
+ */
+export enum Scope {
+  event = "event",
+  cart = "cart",
+  selfService = "self-service",
+  registration = "registration",
+  registrationEdit = "registration:edit",
+  admin = "admin",
+}

@@ -21,6 +21,12 @@ class Scope(str, Enum):
     self_service = "self-service"
     """May use self-service endpoints and manage one's own registrations."""
 
+    registration = "registration"
+    """May search and view registrations."""
+
+    registration_edit = "registration:edit"
+    """May edit registrations."""
+
 
 @frozen(init=False, repr=False, order=False)
 class Scopes(Set[str]):

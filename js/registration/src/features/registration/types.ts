@@ -61,7 +61,7 @@ export interface RegistrationAPI {
   ): Promise<[RegistrationSearchResult[], NextFunc | null]>
   create(registration: CreateRegistration): Promise<Registration>
   fromResponse(response: Response): Promise<Registration>
-  read(id: string): Promise<Registration | null>
+  read(id: string): Promise<Registration>
   update(registration: Registration): Promise<Registration>
   delete(id: string): Promise<void>
 }

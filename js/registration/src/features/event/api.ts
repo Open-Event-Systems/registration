@@ -1,4 +1,4 @@
-import { Event } from "#src/features/event/types"
+import { Event, EventAPI } from "#src/features/event/types"
 import { Wretch } from "wretch"
 
 /**
@@ -16,3 +16,9 @@ export const listEvents = async (
 
   return map
 }
+
+export const createEventAPI = (wretch: Wretch): EventAPI => ({
+  async list() {
+    return wretch.url("/events").get().json<Event[]>()
+  },
+})

@@ -12,7 +12,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
     entry: {
       selfservice: "./src/features/selfservice/index.tsx",
       receipt: "./src/features/receipt/index.tsx",
-      registration: "./src/features/registration/app.tsx"
+      registration: "./src/features/registration/routes/index.tsx"
     },
     output: {
       publicPath: "/", // TODO: make configurable

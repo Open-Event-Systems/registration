@@ -13,3 +13,7 @@ export interface RegistrationOption {
   name: string
   description?: string
 }
+
+export type EventAPI = {
+  list(): Promise<Event[]>
+}
