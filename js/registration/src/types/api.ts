@@ -1,6 +1,9 @@
-import { Wretch } from "wretch"
+/**
+ * A result and a function to get the next set of results.
+ */
+export type PaginatedResult<T> = [T, NextFunc<T> | null]
 
-export type APIFunc<T extends unknown[], R> = (
-  wretch: Wretch,
-  ...args: T
-) => Promise<R>
+/**
+ * Function to get the next set of results in a paginated list.
+ */
+export type NextFunc<T> = () => Promise<PaginatedResult<T>>

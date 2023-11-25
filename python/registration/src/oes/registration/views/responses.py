@@ -16,6 +16,7 @@ from oes.registration.cart.models import (
     PricingResult,
     PricingResultRegistration,
 )
+from oes.registration.checkout.entities import CheckoutState
 from oes.registration.models.event import RegistrationOption
 from oes.registration.models.registration import (
     Registration,
@@ -122,6 +123,17 @@ class RegistrationListResponse:
             email=reg.email,
             option_ids=sorted(reg.option_ids),
         )
+
+
+@frozen
+class CheckoutListResponse:
+    """Checkout list response."""
+
+    id: str
+    service: str
+    state: CheckoutState
+    date: datetime
+    url: Optional[str]
 
 
 @frozen

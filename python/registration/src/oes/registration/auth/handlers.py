@@ -100,15 +100,23 @@ class ScopeRequirement(Requirement):
         context.succeed(self)
 
 
-RequireEvent = "require_event"
-RequireCart = "require_cart"
-RequireSelfService = "require_self_service"
 RequireAdmin = "require_admin"
+RequireCart = "require_cart"
+RequireCheckout = "require_checkout"
+RequireEvent = "require_event"
+RequireSelfService = "require_self_service"
+RequireRegistration = "require_registration"
+RequireRegistrationEdit = "require_registration_edit"
 
-require_event = Policy(RequireEvent, ScopeRequirement(Scope.event))
 require_admin = Policy(RequireAdmin, ScopeRequirement(Scope.admin))
-require_self_service = Policy(RequireSelfService, ScopeRequirement(Scope.self_service))
 require_cart = Policy(RequireCart, ScopeRequirement(Scope.cart))
+require_checkout = Policy(RequireCheckout, ScopeRequirement(Scope.checkout))
+require_event = Policy(RequireEvent, ScopeRequirement(Scope.event))
+require_self_service = Policy(RequireSelfService, ScopeRequirement(Scope.self_service))
+require_registration = Policy(RequireRegistration, ScopeRequirement(Scope.registration))
+require_registration_edit = Policy(
+    RequireRegistrationEdit, ScopeRequirement(Scope.registration_edit)
+)
 
 
 class RequestUser(BoundValue[User]):

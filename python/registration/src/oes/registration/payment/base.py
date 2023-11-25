@@ -180,6 +180,12 @@ class PaymentService(ABC):
         """The :class:`UpdateHandler`, if supported."""
         return None
 
+    def get_url(
+        self, id: str, extra_data: Optional[dict[str, Any]] = None
+    ) -> Optional[str]:
+        """Get a URL to the transaction."""
+        return None
+
     @abstractmethod
     async def get_checkout(
         self, id: str, extra_data: Optional[dict[str, Any]] = None

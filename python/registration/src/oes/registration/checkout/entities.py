@@ -36,6 +36,8 @@ class CheckoutState(str, Enum):
 class CheckoutEntity(Base):
     """Cart checkout entity."""
 
+    # TODO: index cart data
+
     __tablename__ = "checkout"
 
     id: Mapped[PKUUID]

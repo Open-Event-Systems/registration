@@ -13,7 +13,10 @@ class Scope(str, Enum):
     """May use administration endpoints."""
 
     cart = "cart"
-    """May use cart and checkout endpoints."""
+    """May use cart endpoints."""
+
+    checkout = "checkout"
+    """May search and view checkouts."""
 
     event = "event"
     """May use event endpoints."""

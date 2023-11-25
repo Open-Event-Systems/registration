@@ -4,7 +4,6 @@ from uuid import UUID
 
 from attrs import Factory, field, frozen
 from blacksheep import Content, HTTPException, Request, Response, auth, json
-from blacksheep.messages import get_request_absolute_url
 from blacksheep.server.openapi.common import (
     ContentInfo,
     ParameterInfo,
@@ -30,10 +29,9 @@ from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import json_loads
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
-from oes.registration.util import check_not_found
+from oes.registration.util import check_not_found, make_next_link
 from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import RegistrationListResponse
-from yarl import URL
 
 
 @frozen(kw_only=True)
@@ -94,18 +92,13 @@ async def list_registrations(
 
     if len(results) > 0:
         after_id = results[-1].id
-        params = {
-            "q": q or "",
-            "after": str(after_id),
-        }
+        next_params = {"q": q or "", "after": str(after_id)}
 
         if all:
-            params["all"] = "true"
+            next_params["all"] = "true"
 
-        next_url = URL(str(get_request_absolute_url(request))).with_query(params)
-
-        next_ = f'<{str(next_url)}>; rel="next"'
-        response.add_header(b"Link", next_.encode())
+        next_link = make_next_link(request, next_params)
+        response.add_header(b"Link", next_link)
 
     return response
 

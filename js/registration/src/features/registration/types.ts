@@ -1,3 +1,5 @@
+import { CheckoutState } from "#src/features/checkout/types/Checkout"
+
 export enum RegistrationState {
   pending = "pending",
   created = "created",
@@ -49,7 +51,3 @@ export interface CreateRegistration {
 
   [prop: string]: unknown
 }
-
-export type NextFunc = () => Promise<
-  [RegistrationSearchResult[], NextFunc | null]
->

@@ -2,10 +2,12 @@
 import base64
 from collections.abc import Mapping, MutableMapping
 from datetime import datetime, timezone
-from typing import Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
 from blacksheep import URL, Request
 from blacksheep.exceptions import NotFound
+from blacksheep.messages import get_request_absolute_url
+from yarl import URL as YARL
 
 T = TypeVar("T")
 
@@ -98,3 +100,16 @@ def origin_to_rp_id(origin: str) -> str:
     url = URL(origin.encode())
     assert url.host is not None
     return url.host.decode()
+
+
+def make_next_link(request: Request, params: Mapping[str, Any]) -> bytes:
+    """Get the ``next`` link for pagination."""
+    cur_url = YARL(str(get_request_absolute_url(request)))
+    cur_params = {k: v[0] if len(v) > 0 else "" for k, v in request.query.items()}
+
+    cur_params.update(params)
+
+    next_url = cur_url.with_query(cur_params)
+
+    next_ = f'<{str(next_url)}>; rel="next"'
+    return next_.encode()

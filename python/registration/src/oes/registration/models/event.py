@@ -154,13 +154,13 @@ class Event:
     display_options: EventDisplayOptions = EventDisplayOptions()
     """Display options."""
 
-    def is_visible_to(self, user: User) -> bool:
+    def is_visible_to(self, user: Optional[User]) -> bool:
         """Get whether the event is visible to the given user."""
-        return self.visible or user.is_admin
+        return self.visible or user and user.is_admin
 
-    def is_open_to(self, user: User) -> bool:
+    def is_open_to(self, user: Optional[User]) -> bool:
         """Get whether the event is open to the given user."""
-        return self.open and self.is_visible_to(user) or user.is_admin
+        return self.open and self.is_visible_to(user) or user and user.is_admin
 
 
 @frozen(kw_only=True)

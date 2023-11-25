@@ -10,9 +10,11 @@ from blacksheep import (
     FromJSON,
     FromQuery,
     HTTPException,
+    Request,
     Response,
     allow_anonymous,
     auth,
+    json,
 )
 from blacksheep.exceptions import NotFound
 from blacksheep.server.openapi.common import ContentInfo, ResponseInfo
@@ -21,7 +23,7 @@ from oes.registration.access_code.entities import AccessCodeEntity
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.account_service import AccountService
-from oes.registration.auth.handlers import RequireCart
+from oes.registration.auth.handlers import RequireCart, RequireCheckout
 from oes.registration.auth.user import User
 from oes.registration.cart.models import CartData, PricingResult
 from oes.registration.cart.service import (
@@ -47,19 +49,78 @@ from oes.registration.payment.base import (
     ValidationError,
 )
 from oes.registration.serialization import get_converter
+from oes.registration.serialization.common import structure_datetime
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import (
     RegistrationService,
     assign_registration_numbers,
 )
-from oes.registration.util import check_not_found
+from oes.registration.util import check_not_found, make_next_link
 from oes.registration.views.responses import (
     BodyValidationError,
     CheckoutErrorResponse,
+    CheckoutListResponse,
     CreateCheckoutResponse,
     PricingResultResponse,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+@auth(RequireCheckout)
+@app.router.get("/checkouts")
+@docs_helper(
+    response_type=list[CheckoutListResponse],
+    response_summary="The list of checkouts",
+    skip_serialize=True,
+    tags=["Checkout"],
+)
+async def list_checkouts(
+    request: Request,
+    checkout_service: CheckoutService,
+    registration_id: Optional[UUID] = None,
+    before: Optional[str] = None,
+) -> Response:
+    """List checkouts."""
+    try:
+        before_date = structure_datetime(before)
+    except Exception:
+        before_date = None
+
+    entities = await checkout_service.list_checkouts(
+        registration_id=registration_id, before=before_date
+    )
+
+    results = []
+    for e in entities:
+        try:
+            service = checkout_service.get_payment_service(e.service)
+            service_name = service.name
+            url = service.get_url(e.external_id, e.external_data)
+        except LookupError:
+            service_name = e.service
+            url = None
+
+        results.append(
+            CheckoutListResponse(
+                id=e.id,
+                state=e.state,
+                date=e.date_closed if e.date_closed is not None else e.date_created,
+                service=service_name,
+                url=url,
+            )
+        )
+
+    response = json(
+        get_converter().unstructure(results),
+    )
+
+    if entities:
+        next_link = make_next_link(
+            request, {"before": entities[-1].date_created.isoformat()}
+        )
+        response.add_header(b"Link", next_link)
+
+    return response
 
 
 @auth(RequireCart)
@@ -218,7 +279,7 @@ async def cancel_checkout(id: UUID, checkout_service: CheckoutService) -> Respon
         raise HTTPException(409, "Checkout could not be canceled")
 
 
-@auth(RequireCart)
+@allow_anonymous()
 @app.router.post("/checkouts/{id}/update")
 @docs(
     responses={
@@ -241,7 +302,7 @@ async def update_checkout(
     events: EventConfig,
     hook_sender: HookSender,
     db: AsyncSession,
-    user: User,
+    user: Optional[User] = None,
 ) -> Response:
     """Update a checkout."""
     checkout = check_not_found(await checkout_service.get_checkout(id, lock=True))
@@ -302,7 +363,7 @@ def _validate_checkout_and_event(
     checkout: CheckoutEntity,
     cart_data: CartData,
     events: EventConfig,
-    user: User,
+    user: Optional[User],
 ):
     if not checkout.is_open:
         raise NotFound

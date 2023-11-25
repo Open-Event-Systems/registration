@@ -1,8 +1,9 @@
 import {
-  NextFunc,
   Registration,
+  RegistrationCheckout,
   RegistrationSearchResult,
 } from "#src/features/registration"
+import { PaginatedResult } from "#src/types/api"
 import { makeAutoObservable } from "mobx"
 import { Wretch } from "wretch"
 import queryString from "wretch/addons/queryString"
@@ -35,7 +36,7 @@ export class RegistrationStore {
   async search(
     query: string,
     options = {},
-  ): Promise<[RegistrationSearchResult[], NextFunc | null]> {
+  ): Promise<PaginatedResult<RegistrationSearchResult[]>> {
     let req = this.wretch.addon(queryString)
 
     if (query) {
@@ -67,6 +68,13 @@ export class RegistrationStore {
   async read(id: string): Promise<Registration> {
     const result = await this.wretch.url(`/${id}`).get().json<Registration>()
     return this.set(result)
+  }
+
+  async readCheckouts(id: string): Promise<RegistrationCheckout[]> {
+    return await this.wretch
+      .url(`/${id}/checkouts`)
+      .get()
+      .json<RegistrationCheckout[]>()
   }
 
   async update(registration: Registration): Promise<Registration> {
@@ -108,7 +116,7 @@ export class RegistrationStore {
 
 const getSearchResults = async (
   wretch: Wretch,
-): Promise<[RegistrationSearchResult[], NextFunc | null]> => {
+): Promise<PaginatedResult<RegistrationSearchResult[]>> => {
   const res = await wretch.get().res()
   const body = await res.json()
 

@@ -1,5 +1,6 @@
-import { NextFunc, RegistrationSearchResult } from "#src/features/registration"
+import { RegistrationSearchResult } from "#src/features/registration"
 import { RegistrationStore } from "#src/features/registration/stores/registration"
+import { NextFunc } from "#src/types/api"
 import { makeAutoObservable, reaction, runInAction } from "mobx"
 import { createContext } from "react"
 
@@ -7,7 +8,7 @@ export class Search {
   query = ""
   showAll = false
   results: RegistrationSearchResult[] = []
-  private next: NextFunc | null = null
+  private next: NextFunc<RegistrationSearchResult[]> | null = null
 
   get handleMore(): (() => Promise<void>) | undefined {
     return this.next ? () => this.more() : undefined

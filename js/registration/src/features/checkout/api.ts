@@ -1,9 +1,12 @@
 import {
+  CheckoutListResponse,
   CheckoutResponse,
   PaymentServiceID,
 } from "#src/features/checkout/types/Checkout"
+import { CheckoutAPI } from "#src/features/checkout/types/CheckoutAPI"
+import { getNextFunc } from "#src/util/api"
 import { Wretch } from "wretch"
-import { queryStringAddon } from "wretch/addons"
+import queryString from "wretch/addons/queryString"
 
 /**
  * Create a checkout for a cart.
@@ -21,7 +24,7 @@ export const createCheckout = async <ID extends PaymentServiceID>(
 ): Promise<CheckoutResponse<ID>> => {
   const res = await wretch
     .url(`/carts/${cartId}/checkout`)
-    .addon(queryStringAddon)
+    .addon(queryString)
     .query({ service: service, method: method })
     .post()
     .json<CheckoutResponse<ID>>()
@@ -67,4 +70,66 @@ export const cancelCheckout = async (
   checkoutId: string,
 ): Promise<void> => {
   await wretch.url(`/checkouts/${checkoutId}/cancel`).put().res()
+}
+
+export const createCheckoutAPI = (wretch: Wretch): CheckoutAPI => {
+  const checkoutWretch = wretch.url("/checkouts")
+  const cartWretch = wretch.url("/carts")
+  return {
+    async list(registrationId) {
+      let req = checkoutWretch.addon(queryString)
+
+      if (registrationId) {
+        req = req.query({ registration_id: registrationId })
+      }
+
+      const handler = async (
+        response: Response,
+      ): Promise<CheckoutListResponse[]> => {
+        return await response.json()
+      }
+
+      const response = await req.get().res()
+      const res = await handler(response)
+
+      const nextFunc = getNextFunc(req as Wretch, handler, response)
+      return [res, nextFunc]
+    },
+    async create<ID extends PaymentServiceID>(
+      cartId: string,
+      service: ID,
+      method?: string,
+    ) {
+      return await cartWretch
+        .url(`/${cartId}/checkout`)
+        .addon(queryString)
+        .query({ service: service, method: method })
+        .post()
+        .json<CheckoutResponse<ID>>()
+    },
+    async update(checkoutId: string, data?: Record<string, unknown>) {
+      let req = await checkoutWretch.url(`/${checkoutId}/update`)
+
+      if (data) {
+        req = req.json(data)
+      }
+
+      return await req
+        .post()
+        .error(422, (e) => {
+          const errObj = e.json
+          throw new Error(errObj.detail)
+        })
+        .res((res) => {
+          if (res.status == 204) {
+            return null
+          }
+
+          return res.json()
+        })
+    },
+    async cancel(checkoutId) {
+      await checkoutWretch.url(`/${checkoutId}/cancel`).put().res()
+    },
+  }
 }

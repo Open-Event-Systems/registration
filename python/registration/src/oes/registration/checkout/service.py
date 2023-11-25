@@ -2,6 +2,8 @@
 import asyncio
 import copy
 import itertools
+from collections.abc import Sequence
+from datetime import datetime
 from typing import Any, Mapping, Optional, Union, overload
 from uuid import UUID
 
@@ -77,6 +79,35 @@ class CheckoutService:
             )
 
         return list(itertools.chain.from_iterable(await asyncio.gather(*tasks)))
+
+    async def list_checkouts(
+        self,
+        *,
+        registration_id: Optional[UUID] = None,
+        before: Optional[datetime] = None,
+    ) -> Sequence[CheckoutEntity]:
+        """List checkouts."""
+        q = select(CheckoutEntity)
+
+        if registration_id is not None:
+            q = q.where(
+                CheckoutEntity.cart_data.contains(
+                    {
+                        "registrations": [
+                            {"id": str(id)},
+                        ]
+                    }
+                )
+            )
+
+        if before is not None:
+            q = q.where(CheckoutEntity.date_created < before)
+
+        q = q.order_by(CheckoutEntity.date_created.desc())
+        q = q.limit(50)
+
+        res = await self.db.execute(q)
+        return res.scalars().all()
 
     async def get_checkout(
         self, id: UUID, *, lock: bool = False
