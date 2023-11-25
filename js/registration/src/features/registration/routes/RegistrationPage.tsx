@@ -3,14 +3,17 @@ import { useAuth } from "#src/features/auth/hooks"
 import { Scope } from "#src/features/auth/types/AccountInfo"
 import { useEvents } from "#src/features/event/hooks"
 import { Await } from "#src/features/loader"
-import { Registration as IRegistration } from "#src/features/registration"
+import {
+  Registration as IRegistration,
+  RegistrationState,
+} from "#src/features/registration"
 import { Registration } from "#src/features/registration/components/registration/registration/Registration"
 import { useRegistrationStore } from "#src/features/registration/hooks"
-import { Button, Group, Skeleton, Stack } from "@mantine/core"
-import { IconEdit } from "@tabler/icons-react"
+import { Anchor, Button, Group, Skeleton, Stack } from "@mantine/core"
+import { IconCheck, IconEdit, IconTrash } from "@tabler/icons-react"
 import { observer } from "mobx-react-lite"
 import { useState } from "react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 
 export const RegistrationPage = observer(() => {
   const events = useEvents()
@@ -24,9 +27,6 @@ export const RegistrationPage = observer(() => {
   const reg = regStore.getOrFetch(registrationId)
 
   const [edit, setEdit] = useState(false)
-  const onSave = async (reg: IRegistration) => {
-    await regStore.update(reg)
-  }
 
   return (
     <Await value={reg} fallback={<Placeholder />}>
@@ -34,27 +34,54 @@ export const RegistrationPage = observer(() => {
         return (
           <Title title={formatName(reg)}>
             <Subtitle subtitle="View registration">
+              <Anchor component={Link} to="/">
+                &laquo; Back to registrations
+              </Anchor>
+              {editable && !edit && (
+                <Group>
+                  <Button
+                    leftSection={<IconEdit />}
+                    variant="outline"
+                    onClick={() => setEdit(true)}
+                  >
+                    Edit
+                  </Button>
+                  {reg.state == RegistrationState.pending && (
+                    <Button
+                      leftSection={<IconCheck />}
+                      variant="outline"
+                      onClick={() => {
+                        regStore.complete(reg.id)
+                      }}
+                    >
+                      Complete Registration
+                    </Button>
+                  )}
+                  {reg.state != RegistrationState.canceled && (
+                    <Button
+                      leftSection={<IconTrash />}
+                      variant="outline"
+                      color="red"
+                      onClick={() => {
+                        regStore.cancel(reg.id)
+                      }}
+                    >
+                      Cancel Registration
+                    </Button>
+                  )}
+                </Group>
+              )}
               <Registration
                 key={`${reg.id}-${reg.version}`}
                 registration={reg}
                 events={new Map(Array.from(events, (e) => [e.id, e]))}
                 editable={edit}
                 onCancel={() => setEdit(false)}
-                onSave={(reg) => {
-                  onSave(reg).then(() => setEdit(false))
+                onSave={async (reg) => {
+                  await regStore.update(reg)
+                  setEdit(false)
                 }}
               />
-              <Group>
-                {editable && !edit && (
-                  <Button
-                    leftSection={<IconEdit />}
-                    variant="subtle"
-                    onClick={() => setEdit(true)}
-                  >
-                    Edit
-                  </Button>
-                )}
-              </Group>
             </Subtitle>
           </Title>
         )

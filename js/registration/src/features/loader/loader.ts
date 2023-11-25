@@ -29,6 +29,8 @@ class Loader<T> implements ILoader<T> {
   get value(): T {
     if (this.state == LoadingState.resolved) {
       return this._value as T
+    } else if (this.state == LoadingState.rejected) {
+      throw this.error
     } else {
       throw this
     }

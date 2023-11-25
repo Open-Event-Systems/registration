@@ -88,6 +88,22 @@ export class RegistrationStore {
     await this.wretch.url(`/${id}`).delete().res()
     this.registrations.delete(id)
   }
+
+  async complete(id: string): Promise<Registration> {
+    const res = await this.wretch
+      .url(`/${id}/complete`)
+      .put()
+      .json<Registration>()
+    return this.set(res)
+  }
+
+  async cancel(id: string): Promise<Registration> {
+    const res = await this.wretch
+      .url(`/${id}/cancel`)
+      .put()
+      .json<Registration>()
+    return this.set(res)
+  }
 }
 
 const getSearchResults = async (

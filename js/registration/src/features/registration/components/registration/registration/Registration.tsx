@@ -47,9 +47,6 @@ export const Registration = (props: RegistrationProps) => {
     : events.getEvent(registration.event_id)
   return (
     <>
-      <RegistrationFieldsContext.Provider value={[editState, event]}>
-        <RegistrationFields fields={getFields(editState, editable, event)} />
-      </RegistrationFieldsContext.Provider>
       {editable && (
         <Group>
           <Button
@@ -75,6 +72,9 @@ export const Registration = (props: RegistrationProps) => {
           </Button>
         </Group>
       )}
+      <RegistrationFieldsContext.Provider value={[editState, event]}>
+        <RegistrationFields fields={getFields(editState, editable, event)} />
+      </RegistrationFieldsContext.Provider>
     </>
   )
 }
