@@ -1,5 +1,3 @@
-import { Subtitle, Title } from "#src/components"
-import { useRegistrationAPI } from "#src/features/registration"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import {
   SearchContext,
@@ -7,13 +5,15 @@ import {
 } from "#src/features/registration/stores/search"
 import { Search } from "#src/features/registration/components/search/Search"
 import { useEvents } from "#src/features/event/hooks"
-import { Event } from "#src/features/event/types"
+import { useRegistrationStore } from "#src/features/registration/hooks"
 
 export const SearchPage = observer(() => {
   const events = useEvents()
-  const api = useRegistrationAPI()
+  const regStore = useRegistrationStore()
   const [firstEvent] = events
-  const state = useLocalObservable(() => new SearchStore(api, firstEvent?.id))
+  const state = useLocalObservable(
+    () => new SearchStore(regStore, firstEvent?.id),
+  )
 
   return (
     <SearchContext.Provider value={state}>

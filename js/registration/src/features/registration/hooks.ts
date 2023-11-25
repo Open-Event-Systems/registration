@@ -1,10 +1,9 @@
-import { Loader, createLoader } from "#src/features/loader"
-import { Registration } from "#src/features/registration"
+import { placeholderWretch } from "#src/config/api"
+import { RegistrationStore } from "#src/features/registration/stores/registration"
 import { createContext, useContext } from "react"
 
-export const RegistrationContext = createContext<Loader<Registration>>(
-  createLoader(() => Promise.reject()),
+export const RegistrationStoreContext = createContext(
+  new RegistrationStore(placeholderWretch),
 )
-
-export const useRegistration = (): Loader<Registration> =>
-  useContext(RegistrationContext)
+export const useRegistrationStore = (): RegistrationStore =>
+  useContext(RegistrationStoreContext)

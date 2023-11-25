@@ -14,14 +14,13 @@ import {
 import { NoteField } from "#src/features/registration/components/registration/registration/field-types/NoteField"
 import { OptionsField } from "#src/features/registration/components/registration/registration/field-types/OptionsField"
 import { TextField } from "#src/features/registration/components/registration/registration/field-types/TextField"
-import { useRegistration } from "#src/features/registration/hooks"
 import { Button, Group } from "@mantine/core"
 import { IconCheck, IconX } from "@tabler/icons-react"
 import { observable, toJS } from "mobx"
 import { ReactNode, useState } from "react"
 
 export type RegistrationProps = {
-  registration?: IRegistration
+  registration: IRegistration
   events?: Map<string, Event>
   editable?: boolean
   onSave?: (registration: IRegistration) => void
@@ -36,57 +35,47 @@ export const Registration = (props: RegistrationProps) => {
     onSave,
     onCancel,
   } = props
-  const ctx = useRegistration()
   const events = useEvents()
-  const loader = useLoader(() => registration ?? ctx, [registration, ctx])
+
+  // hacky way to clone an object
   const [editState, setEditState] = useState(() =>
-    createLoader(() => loader.then((res) => observable(res))),
+    observable(JSON.parse(JSON.stringify(registration))),
   )
 
+  const event = eventsMap
+    ? eventsMap.get(registration.event_id)
+    : events.getEvent(registration.event_id)
   return (
-    <Await value={editState}>
-      {(registration) => {
-        const event = eventsMap
-          ? eventsMap.get(registration.event_id)
-          : events.getEvent(registration.event_id)
-        return (
-          <>
-            <RegistrationFieldsContext.Provider value={[registration, event]}>
-              <RegistrationFields
-                fields={getFields(registration, editable, event)}
-              />
-            </RegistrationFieldsContext.Provider>
-            {editable && (
-              <Group>
-                <Button
-                  leftSection={<IconCheck />}
-                  variant="primary"
-                  onClick={() => {
-                    const reg = toJS(registration)
-                    onSave && onSave(reg)
-                  }}
-                >
-                  Save
-                </Button>
-                <Button
-                  leftSection={<IconX />}
-                  variant="outline"
-                  color="red"
-                  onClick={() => {
-                    onCancel && onCancel()
-                    setEditState(
-                      createLoader(() => loader.then((res) => observable(res))),
-                    )
-                  }}
-                >
-                  Cancel
-                </Button>
-              </Group>
-            )}
-          </>
-        )
-      }}
-    </Await>
+    <>
+      <RegistrationFieldsContext.Provider value={[editState, event]}>
+        <RegistrationFields fields={getFields(editState, editable, event)} />
+      </RegistrationFieldsContext.Provider>
+      {editable && (
+        <Group>
+          <Button
+            leftSection={<IconCheck />}
+            variant="primary"
+            onClick={() => {
+              const reg = toJS(editState)
+              onSave && onSave(reg)
+            }}
+          >
+            Save
+          </Button>
+          <Button
+            leftSection={<IconX />}
+            variant="outline"
+            color="red"
+            onClick={() => {
+              onCancel && onCancel()
+              setEditState(observable(registration))
+            }}
+          >
+            Cancel
+          </Button>
+        </Group>
+      )}
+    </>
   )
 }
 

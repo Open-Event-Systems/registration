@@ -1,8 +1,5 @@
-import {
-  NextFunc,
-  RegistrationAPI,
-  RegistrationSearchResult,
-} from "#src/features/registration"
+import { NextFunc, RegistrationSearchResult } from "#src/features/registration"
+import { RegistrationStore } from "#src/features/registration/stores/registration"
 import { makeAutoObservable, reaction, runInAction } from "mobx"
 import { createContext } from "react"
 
@@ -17,7 +14,7 @@ export class Search {
   }
 
   constructor(
-    private api: RegistrationAPI,
+    private regStore: RegistrationStore,
     public eventId: string | null = null,
   ) {
     makeAutoObservable(this)
@@ -35,7 +32,7 @@ export class Search {
     const query = this.query
     const eventId = this.eventId
     const showAll = this.showAll
-    const [items, next] = await this.api.search(query, {
+    const [items, next] = await this.regStore.search(query, {
       event_id: eventId ?? undefined,
       all: showAll || undefined,
     })

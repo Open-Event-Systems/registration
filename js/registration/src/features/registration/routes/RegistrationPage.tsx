@@ -5,37 +5,43 @@ import { useEvents } from "#src/features/event/hooks"
 import { Await } from "#src/features/loader"
 import { Registration as IRegistration } from "#src/features/registration"
 import { Registration } from "#src/features/registration/components/registration/registration/Registration"
-import { useRegistration } from "#src/features/registration/hooks"
+import { useRegistrationStore } from "#src/features/registration/hooks"
 import { Button, Group, Skeleton, Stack } from "@mantine/core"
 import { IconEdit } from "@tabler/icons-react"
 import { observer } from "mobx-react-lite"
 import { useState } from "react"
+import { useParams } from "react-router-dom"
 
 export const RegistrationPage = observer(() => {
   const events = useEvents()
-  const regLoader = useRegistration()
+  const regStore = useRegistrationStore()
+  const { registrationId = "" } = useParams()
+
   const authStore = useAuth()
   const editable =
     !!authStore.authInfo?.hasScope(Scope.registrationEdit) || true
 
+  const reg = regStore.getOrFetch(registrationId)
+
   const [edit, setEdit] = useState(false)
   const onSave = async (reg: IRegistration) => {
-    console.log(reg)
+    await regStore.update(reg)
   }
 
   return (
-    <Await value={regLoader} fallback={<Placeholder />}>
+    <Await value={reg} fallback={<Placeholder />}>
       {(reg) => {
         return (
           <Title title={formatName(reg)}>
             <Subtitle subtitle="View registration">
               <Registration
+                key={`${reg.id}-${reg.version}`}
+                registration={reg}
                 events={new Map(Array.from(events, (e) => [e.id, e]))}
                 editable={edit}
                 onCancel={() => setEdit(false)}
                 onSave={(reg) => {
-                  onSave(reg)
-                  setEdit(false)
+                  onSave(reg).then(() => setEdit(false))
                 }}
               />
               <Group>

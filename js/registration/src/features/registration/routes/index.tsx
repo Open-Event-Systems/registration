@@ -25,11 +25,6 @@ import { createEventAPI } from "#src/features/event/api"
 import { EventStore } from "#src/features/event/stores"
 import { EventStoreContext } from "#src/features/event/hooks"
 import { SearchPage } from "#src/features/registration/routes/SearchPage"
-import {
-  RegistrationAPIContext,
-  createRegistrationAPI,
-  useRegistrationAPI,
-} from "#src/features/registration"
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"
 import "#src/components/styles.css"
@@ -40,18 +35,16 @@ import "#src/features/registration/components/search/Results.scss"
 import "#src/features/registration/components/registration/fields/RegistrationFields.scss"
 import theme from "#src/config/theme"
 import { RegistrationPage } from "#src/features/registration/routes/RegistrationPage"
-import { RegistrationContext } from "#src/features/registration/hooks"
+import { RegistrationStoreProvider } from "#src/features/registration"
 
 const AppRoute = ({ app }: { app: Loader<AppStore> }) => {
-  const loaders = useLoader(async () => {
+  const setup = useLoader(async () => {
     const _app = await app
     const eventAPI = createEventAPI(_app.authStore.authWretch)
     const eventStore = new EventStore(eventAPI)
     await eventStore.load()
 
-    const registrationAPI = createRegistrationAPI(_app.authStore.authWretch)
-
-    return { eventStore, registrationAPI }
+    return { eventStore }
   }, [app])
 
   return (
@@ -61,12 +54,12 @@ const AppRoute = ({ app }: { app: Loader<AppStore> }) => {
           <AppStoreContext.Provider value={app}>
             <AuthContext.Provider value={app.authStore}>
               <WretchContext.Provider value={app.authStore.authWretch}>
-                <Await value={loaders} fallback={<ShowLoadingOverlay />}>
-                  {({ eventStore, registrationAPI }) => (
+                <Await value={setup} fallback={<ShowLoadingOverlay />}>
+                  {({ eventStore }) => (
                     <EventStoreContext.Provider value={eventStore}>
-                      <RegistrationAPIContext.Provider value={registrationAPI}>
+                      <RegistrationStoreProvider>
                         <Outlet />
-                      </RegistrationAPIContext.Provider>
+                      </RegistrationStoreProvider>
                     </EventStoreContext.Provider>
                   )}
                 </Await>
@@ -81,20 +74,6 @@ const AppRoute = ({ app }: { app: Loader<AppStore> }) => {
       </Await>
       <LoadingOverlay />
     </>
-  )
-}
-
-const RegistrationRoute = () => {
-  const { registrationId = "" } = useParams()
-  const api = useRegistrationAPI()
-  const registration = useLoader(
-    () => api.read(registrationId),
-    [registrationId],
-  )
-  return (
-    <RegistrationContext.Provider key={registrationId} value={registration}>
-      <Outlet />
-    </RegistrationContext.Provider>
   )
 }
 
@@ -129,7 +108,10 @@ makeApp(() => {
               },
               {
                 path: ":registrationId",
-                element: <RegistrationRoute />,
+                Component() {
+                  const { registrationId = "" } = useParams()
+                  return <Outlet key={registrationId} />
+                },
                 children: [
                   {
                     index: true,
