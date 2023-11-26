@@ -1,3 +1,4 @@
+import { placeholderWretch } from "#src/config/api"
 import {
   CheckoutListResponse,
   CheckoutResponse,
@@ -5,6 +6,7 @@ import {
 } from "#src/features/checkout/types/Checkout"
 import { CheckoutAPI } from "#src/features/checkout/types/CheckoutAPI"
 import { getNextFunc } from "#src/util/api"
+import { createContext } from "react"
 import { Wretch } from "wretch"
 import queryString from "wretch/addons/queryString"
 
@@ -76,24 +78,24 @@ export const createCheckoutAPI = (wretch: Wretch): CheckoutAPI => {
   const checkoutWretch = wretch.url("/checkouts")
   const cartWretch = wretch.url("/carts")
   return {
-    async list(registrationId) {
+    list(options = {}) {
       let req = checkoutWretch.addon(queryString)
 
-      if (registrationId) {
-        req = req.query({ registration_id: registrationId })
+      if (options.registrationId) {
+        req = req.query({ registration_id: options.registrationId })
       }
 
-      const handler = async (
-        response: Response,
-      ): Promise<CheckoutListResponse[]> => {
-        return await response.json()
+      if (options.before) {
+        req = req.query({ before: options.before })
       }
 
-      const response = await req.get().res()
-      const res = await handler(response)
-
-      const nextFunc = getNextFunc(req as Wretch, handler, response)
-      return [res, nextFunc]
+      return {
+        queryKey: ["checkouts", options],
+        async queryFn() {
+          return await req.get().json<CheckoutListResponse[]>()
+        },
+        initialData: [],
+      }
     },
     async create<ID extends PaymentServiceID>(
       cartId: string,
@@ -133,3 +135,7 @@ export const createCheckoutAPI = (wretch: Wretch): CheckoutAPI => {
     },
   }
 }
+
+export const CheckoutAPIContext = createContext(
+  createCheckoutAPI(placeholderWretch),
+)

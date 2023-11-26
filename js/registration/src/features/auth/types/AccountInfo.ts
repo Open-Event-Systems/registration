@@ -27,6 +27,7 @@ export interface EmailTokenResponse {
 export enum Scope {
   event = "event",
   cart = "cart",
+  checkout = "checkout",
   selfService = "self-service",
   registration = "registration",
   registrationEdit = "registration:edit",

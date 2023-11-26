@@ -23,7 +23,10 @@ from oes.registration.auth.handlers import (
     TokenAuthHandler,
     require_admin,
     require_cart,
+    require_checkout,
     require_event,
+    require_registration,
+    require_registration_edit,
     require_self_service,
 )
 from oes.registration.cart.service import CartService
@@ -256,10 +259,13 @@ def app_factory():
     # set up authorization
     authorization = app.use_authorization()
     authorization.default_policy = Policy("authenticated", AuthenticatedRequirement())
-    authorization.add(require_event)
-    authorization.add(require_cart)
-    authorization.add(require_self_service)
     authorization.add(require_admin)
+    authorization.add(require_cart)
+    authorization.add(require_checkout)
+    authorization.add(require_event)
+    authorization.add(require_self_service)
+    authorization.add(require_registration)
+    authorization.add(require_registration_edit)
 
     # set up CORS
 

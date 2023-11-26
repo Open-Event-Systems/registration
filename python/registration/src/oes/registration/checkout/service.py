@@ -94,7 +94,7 @@ class CheckoutService:
                 CheckoutEntity.cart_data.contains(
                     {
                         "registrations": [
-                            {"id": str(id)},
+                            {"id": str(registration_id)},
                         ]
                     }
                 )

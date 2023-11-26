@@ -2,28 +2,34 @@ import {
   RegistrationAPI,
   RegistrationSearchResult,
 } from "#src/features/registration"
-import { searchQuery } from "#src/features/registration/api"
-import { RegistrationStore } from "#src/features/registration/stores/registration"
-import { NextFunc } from "#src/types/api"
-import { QueryClient } from "@tanstack/react-query"
-import { makeAutoObservable, reaction, runInAction } from "mobx"
+import {
+  UndefinedInitialDataInfiniteOptions,
+  UseInfiniteQueryOptions,
+} from "@tanstack/react-query"
+import { makeAutoObservable, reaction } from "mobx"
 import { createContext } from "react"
 
 export class Search {
   query = ""
   showAll = false
-  results: RegistrationSearchResult[] = []
-  private next: NextFunc<RegistrationSearchResult[]> | null = null
-
-  get handleMore(): (() => Promise<void>) | undefined {
-    return this.next ? () => this.more() : undefined
-  }
+  eventId: string | null = null
+  queryOptions: UndefinedInitialDataInfiniteOptions<RegistrationSearchResult[]>
 
   constructor(
-    private client: QueryClient,
     private api: RegistrationAPI,
-    public eventId: string | null = null,
+    eventId: string | null = null,
   ) {
+    this.eventId = eventId
+
+    this.queryOptions = {
+      ...this.api.list(this.query, { event_id: eventId, all: this.showAll }),
+      queryFn: () => [],
+      placeholderData: {
+        pages: [],
+        pageParams: [],
+      },
+    }
+
     makeAutoObservable(this)
 
     reaction(
@@ -35,47 +41,16 @@ export class Search {
     )
   }
 
-  private async search() {
+  private search() {
     const query = this.query
     const eventId = this.eventId
     const showAll = this.showAll
-    const [items, next] = await this.client.ensureQueryData(
-      searchQuery(this.api, query, {
-        all: showAll,
-        event_id: eventId ?? undefined,
-      }),
-    )
-
-    if (
-      this.query != query ||
-      this.eventId != eventId ||
-      this.showAll != showAll
-    ) {
-      return
+    this.queryOptions = {
+      ...this.api.list(query, { event_id: eventId, all: showAll }),
+      placeholderData(prev) {
+        return prev
+      },
     }
-
-    runInAction(() => {
-      this.next = next
-      this.results = items
-    })
-  }
-
-  private async more() {
-    const next = this.next
-    if (!next) {
-      return
-    }
-
-    const [items, newNext] = await next()
-
-    if (this.next != next) {
-      return
-    }
-
-    runInAction(() => {
-      this.next = newNext
-      this.results.push(...items)
-    })
   }
 }
 

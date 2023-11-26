@@ -10,11 +10,9 @@ from blacksheep import (
     FromJSON,
     FromQuery,
     HTTPException,
-    Request,
     Response,
     allow_anonymous,
     auth,
-    json,
 )
 from blacksheep.exceptions import NotFound
 from blacksheep.server.openapi.common import ContentInfo, ResponseInfo
@@ -55,7 +53,7 @@ from oes.registration.services.registration import (
     RegistrationService,
     assign_registration_numbers,
 )
-from oes.registration.util import check_not_found, make_next_link
+from oes.registration.util import check_not_found
 from oes.registration.views.responses import (
     BodyValidationError,
     CheckoutErrorResponse,
@@ -71,18 +69,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 @docs_helper(
     response_type=list[CheckoutListResponse],
     response_summary="The list of checkouts",
-    skip_serialize=True,
     tags=["Checkout"],
 )
 async def list_checkouts(
-    request: Request,
     checkout_service: CheckoutService,
     registration_id: Optional[UUID] = None,
     before: Optional[str] = None,
-) -> Response:
+) -> list[CheckoutListResponse]:
     """List checkouts."""
     try:
-        before_date = structure_datetime(before)
+        before_date = structure_datetime(before) if before else None
     except Exception:
         before_date = None
 
@@ -102,7 +98,7 @@ async def list_checkouts(
 
         results.append(
             CheckoutListResponse(
-                id=e.id,
+                id=e.external_id,
                 state=e.state,
                 date=e.date_closed if e.date_closed is not None else e.date_created,
                 service=service_name,
@@ -110,17 +106,7 @@ async def list_checkouts(
             )
         )
 
-    response = json(
-        get_converter().unstructure(results),
-    )
-
-    if entities:
-        next_link = make_next_link(
-            request, {"before": entities[-1].date_created.isoformat()}
-        )
-        response.add_header(b"Link", next_link)
-
-    return response
+    return results
 
 
 @auth(RequireCart)

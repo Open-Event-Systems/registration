@@ -4,28 +4,23 @@ import {
   Search as SearchStore,
 } from "#src/features/registration/stores/search"
 import { Search } from "#src/features/registration/components/search/Search"
-import { EventAPIContext, useEvents } from "#src/features/event/hooks"
-import {
-  RegistrationAPIContext,
-  useRegistrationStore,
-} from "#src/features/registration/hooks"
-import {
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query"
-import { eventsQuery } from "#src/features/event/api"
+import { EventAPIContext } from "#src/features/event/hooks"
+import { RegistrationAPIContext } from "#src/features/registration/hooks"
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query"
 import { useContext } from "react"
 
 export const SearchPage = observer(() => {
-  const client = useQueryClient()
   const eventAPI = useContext(EventAPIContext)
   const registrationAPI = useContext(RegistrationAPIContext)
-  const events = useSuspenseQuery(eventsQuery(eventAPI))
+  const events = useQuery(eventAPI.list())
 
   const [firstEvent] = events.data.values()
   const state = useLocalObservable(
-    () => new SearchStore(client, registrationAPI, firstEvent?.id),
+    () => new SearchStore(registrationAPI, firstEvent?.id),
+  )
+
+  const { data, hasNextPage, fetchNextPage } = useInfiniteQuery(
+    state.queryOptions,
   )
 
   return (
@@ -35,6 +30,11 @@ export const SearchPage = observer(() => {
           id: e.id,
           name: e.name,
         }))}
+        registrations={data ? flatten(data.pages) : undefined}
+        hasMore={hasNextPage}
+        onMore={async () => {
+          await fetchNextPage()
+        }}
         getLink={(r) => {
           let url = window.location.href
           if (!url.endsWith("/")) {
@@ -49,3 +49,11 @@ export const SearchPage = observer(() => {
     </SearchContext.Provider>
   )
 })
+
+const flatten = <T,>(data: T[][]): T[] => {
+  const flattened = []
+  for (const page of data) {
+    flattened.push(...page)
+  }
+  return flattened
+}

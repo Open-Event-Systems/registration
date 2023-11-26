@@ -1,9 +1,10 @@
 """Scope module."""
 from collections.abc import Set
 from enum import Enum
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Optional
 
 from attrs import frozen
+from oes.registration.config import CommandLineConfig
 
 
 class Scope(str, Enum):
@@ -64,5 +65,15 @@ class Scopes(Set[str]):
         return f"{{{strs}}}"
 
 
-DEFAULT_SCOPES = Scopes((Scope.cart, Scope.self_service))
+# TODO: remove event scope
+DEFAULT_SCOPES = Scopes((Scope.event, Scope.cart, Scope.self_service))
 """The default scopes."""
+
+
+def get_default_scopes(config: Optional[CommandLineConfig] = None) -> Scopes:
+    """Get the default scopes."""
+    if config and config.insecure and config.no_auth:
+        # for debugging, return all scopes
+        return Scopes(Scope.__members__.values())
+    else:
+        return DEFAULT_SCOPES

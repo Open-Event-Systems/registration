@@ -116,7 +116,8 @@ export const Default: StoryObj<typeof Results> = {
     return (
       <Results
         registrations={[...(registrations ?? []), ...(more ?? [])]}
-        onMore={allowMore ? handleMore : undefined}
+        hasMore={allowMore}
+        onMore={handleMore}
         {...other}
       />
     )

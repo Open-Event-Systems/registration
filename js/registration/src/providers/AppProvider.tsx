@@ -1,37 +1,73 @@
-import { ShowLoadingOverlay } from "#src/components"
-import { SimpleLayout } from "#src/components/layout/SimpleLayout"
-import { AuthStoreProvider } from "#src/features/auth/providers"
+import { AuthContext } from "#src/features/auth/hooks"
+import { CheckoutAPIContext } from "#src/features/checkout/api"
+import { EventAPIContext } from "#src/features/event/hooks"
+import { RegistrationAPIContext } from "#src/features/registration/hooks"
 import { WretchContext } from "#src/hooks/api"
-import { AppStoreContext } from "#src/hooks/app"
-import { useLoader } from "#src/hooks/loader"
-import { NotFoundPage } from "#src/routes/NotFoundPage"
-import { AppStore } from "#src/stores/AppStore"
-import { ReactNode } from "react"
+import { AppContext, AppStore } from "#src/stores/AppStore"
+import { Context, ReactNode, useLayoutEffect, useState } from "react"
 
-export const AppProvider = ({ children }: { children?: ReactNode }) => {
-  const appStoreLoader = useLoader(async () => {
-    const app = await AppStore.fromConfig()
-    return app
-  })
+export const AppProvider = ({
+  children,
+  fallback,
+}: {
+  children?: ReactNode
+  fallback?: ReactNode
+}) => {
+  const [app, setApp] = useState<AppStore | null>(null)
+
+  useLayoutEffect(() => {
+    AppStore.fromConfig()
+      .then((app) => {
+        return app.authStore.load().then(() => app)
+      })
+      .then((app) => setApp(app))
+  }, [])
+
+  if (!app) {
+    return fallback
+  }
 
   return (
-    <appStoreLoader.Component
-      notFound={
-        <SimpleLayout>
-          <NotFoundPage />
-        </SimpleLayout>
-      }
-      placeholder={<ShowLoadingOverlay />}
+    <ContextProvider
+      contexts={[
+        AppContext,
+        AuthContext,
+        WretchContext,
+        EventAPIContext,
+        RegistrationAPIContext,
+        CheckoutAPIContext,
+      ]}
+      values={[
+        app,
+        app.authStore,
+        app.authStore.authWretch,
+        app.eventAPI,
+        app.registrationAPI,
+        app.checkoutAPI,
+      ]}
     >
-      {(appStore) => (
-        <AppStoreContext.Provider value={appStore}>
-          <AuthStoreProvider authStore={appStore.authStore}>
-            <WretchContext.Provider value={appStore.authStore.authWretch}>
-              {children}
-            </WretchContext.Provider>
-          </AuthStoreProvider>
-        </AppStoreContext.Provider>
-      )}
-    </appStoreLoader.Component>
+      {children}
+    </ContextProvider>
   )
+}
+
+type ContextProviderProps<V extends [unknown, ...unknown[]]> = {
+  values: V
+  contexts: { [K in keyof V]: Context<V[K]> }
+  children?: ReactNode
+}
+
+const ContextProvider = <V extends [unknown, ...unknown[]]>(
+  props: ContextProviderProps<V>,
+) => {
+  const { contexts, values, children } = props
+  let content = children
+
+  for (let i = contexts.length - 1; i >= 0; i--) {
+    const context = contexts[i]
+    const value = values[i]
+    content = <context.Provider value={value}>{content}</context.Provider>
+  }
+
+  return content
 }

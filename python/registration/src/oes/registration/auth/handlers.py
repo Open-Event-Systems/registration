@@ -3,7 +3,6 @@ from collections.abc import Callable
 from typing import Any, Optional
 from uuid import UUID
 
-from attrs import evolve
 from blacksheep import Request
 from blacksheep.exceptions import Forbidden
 from blacksheep.server.bindings import Binder, BoundValue
@@ -12,7 +11,7 @@ from guardpost.asynchronous.authentication import AuthenticationHandler
 from guardpost.authorization import AuthorizationContext
 from guardpost.synchronous.authorization import Requirement
 from jwt import InvalidTokenError
-from oes.registration.auth.scope import Scope, Scopes
+from oes.registration.auth.scope import Scope
 from oes.registration.auth.token import AccessToken
 from oes.registration.auth.user import User, UserIdentity
 from oes.registration.config import CommandLineConfig
@@ -35,8 +34,6 @@ class TokenAuthHandler(AuthenticationHandler):
         )
 
         if token:
-            token = self._apply_debug_settings(token)
-
             user = UserIdentity(
                 id=UUID(token.sub) if token.sub else None,
                 email=token.email,
@@ -47,15 +44,6 @@ class TokenAuthHandler(AuthenticationHandler):
         else:
             context.identity = None
             return None
-
-    def _apply_debug_settings(self, token: AccessToken) -> AccessToken:
-        # If the testing no_auth setting is enabled, override scopes
-        if self.cmd_config.insecure and self.cmd_config.no_auth:
-            token = evolve(
-                token,
-                scope=Scopes(Scope.__members__.values()),
-            )
-        return token
 
 
 def _get_token(request: Request) -> Optional[str]:

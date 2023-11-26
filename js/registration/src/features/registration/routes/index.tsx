@@ -2,31 +2,15 @@ import {
   LoadingOverlay,
   ShowLoadingOverlay,
   SimpleLayout,
-  Subtitle,
-  Title,
 } from "#src/components"
-import { LoadingOverlay as MantineLoadingOverlay } from "@mantine/core"
-import { AuthContext } from "#src/features/auth/hooks"
-import { Await, Loader, createLoader, useLoader } from "#src/features/loader"
-import { WretchContext } from "#src/hooks/api"
-import { AppStoreContext } from "#src/hooks/app"
-import { AppStore } from "#src/stores/AppStore"
 import { makeApp } from "#src/util/react"
 import { MantineProvider } from "@mantine/core"
 import {
-  Outlet,
   RouterProvider,
   createBrowserRouter,
-  useLoaderData,
-  useParams,
   useRouteError,
 } from "react-router-dom"
 
-import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
-
-import { createEventAPI } from "#src/features/event/api"
-import { EventStore } from "#src/features/event/stores"
-import { EventAPIContext, EventStoreContext } from "#src/features/event/hooks"
 import { SearchPage } from "#src/features/registration/routes/SearchPage"
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"
@@ -41,98 +25,71 @@ import { RegistrationPage } from "#src/features/registration/routes/Registration
 import {
   QueryClient,
   QueryClientProvider,
-  QueryErrorResetBoundary,
+  useQuery,
 } from "@tanstack/react-query"
-import { eventsRoute } from "#src/features/event/routes"
-import { Suspense, useEffect, useState } from "react"
-import { useLocation, useNavigate } from "#src/hooks/location"
-import { isWretchError } from "#src/util/api"
-import { createRegistrationAPI } from "#src/features/registration/api"
-import { RegistrationAPIContext } from "#src/features/registration/hooks"
+import { AppRoute, AuthErrorBoundary } from "#src/routes/AppRoute"
+import { LayoutRoute } from "#src/routes/LayoutRoute"
+import { useAuth } from "#src/features/auth/hooks"
+import { useApp } from "#src/hooks/app"
+import { ReactNode } from "react"
+import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
+import { useEventAPI } from "#src/features/event/hooks"
+import { isNotFoundError } from "#src/util/api"
+
+const RegistrationLayout = ({ children }: { children?: ReactNode }) => {
+  const app = useApp()
+  const auth = useAuth()
+  const eventAPI = useEventAPI()
+  const query = useQuery(eventAPI.list())
+
+  return (
+    <SimpleLayout>
+      {query.isSuccess ? children : <ShowLoadingOverlay />}
+      <SignInDialog.Manager authStore={auth} wretch={app.wretch} />
+    </SimpleLayout>
+  )
+}
 
 makeApp(() => {
-  const appPromise = AppStore.fromConfig().then(async (app) => {
-    await app.authStore.load()
-    const wretch = app.wretch
-    const authWretch = app.authStore.authWretch
-    const eventAPI = createEventAPI(authWretch)
-    const registrationAPI = createRegistrationAPI(authWretch)
-    return {
-      app,
-      wretch,
-      authWretch,
-      eventAPI,
-      registrationAPI,
-    }
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry(failureCount, error) {
+          if (isNotFoundError(error)) {
+            return false
+          } else {
+            return failureCount < 3
+          }
+        },
+        throwOnError(error) {
+          if (isNotFoundError(error)) {
+            return true
+          } else {
+            return false
+          }
+        },
+      },
+    },
   })
-
-  const eventAPI = appPromise.then((res) => res.eventAPI)
-  const client = new QueryClient()
 
   const router = createBrowserRouter(
     [
       {
-        id: "root",
-        async loader() {
-          return await appPromise
-        },
-        Component() {
-          const { app, eventAPI, registrationAPI } = useLoaderData() as Awaited<
-            typeof appPromise
-          >
-          return (
-            <>
-              <AppStoreContext.Provider value={app}>
-                <AuthContext.Provider value={app.authStore}>
-                  <WretchContext.Provider value={app.authStore.authWretch}>
-                    <QueryClientProvider client={client}>
-                      <EventAPIContext.Provider value={eventAPI}>
-                        <RegistrationAPIContext.Provider
-                          value={registrationAPI}
-                        >
-                          <Outlet />
-                        </RegistrationAPIContext.Provider>
-                      </EventAPIContext.Provider>
-                      <SignInDialog.Manager
-                        authStore={app.authStore}
-                        wretch={app.wretch}
-                      />
-                    </QueryClientProvider>
-                  </WretchContext.Provider>
-                </AuthContext.Provider>
-              </AppStoreContext.Provider>
-            </>
-          )
-        },
+        element: <AppRoute fallback={<ShowLoadingOverlay />} />,
         children: [
           {
-            ErrorBoundary() {
-              const err = useRouteError()
-              if (isWretchError(err) && err.status == 401) {
-                if (err.status == 401) {
-                  return <ShowLoadingOverlay />
-                }
-              }
-              throw err
-            },
+            element: <LayoutRoute Layout={RegistrationLayout} />,
             children: [
               {
-                ...eventsRoute(client, eventAPI),
-                Component() {
-                  return (
-                    <SimpleLayout>
-                      <Title title="Registrations">
-                        <Subtitle subtitle="View registrations">
-                          <Outlet />
-                        </Subtitle>
-                      </Title>
-                    </SimpleLayout>
-                  )
-                },
+                errorElement: <AuthErrorBoundary />,
                 children: [
                   {
                     index: true,
                     element: <SearchPage />,
+                  },
+                  {
+                    path: ":registrationId",
+                    element: <RegistrationPage />,
                   },
                 ],
               },
@@ -147,12 +104,11 @@ makeApp(() => {
   )
 
   return (
-    <MantineProvider theme={theme}>
-      <RouterProvider
-        router={router}
-        fallbackElement={<ShowLoadingOverlay />}
-      />
-      <LoadingOverlay />
-    </MantineProvider>
+    <QueryClientProvider client={client}>
+      <MantineProvider theme={theme}>
+        <RouterProvider router={router} />
+        <LoadingOverlay />
+      </MantineProvider>
+    </QueryClientProvider>
   )
 })

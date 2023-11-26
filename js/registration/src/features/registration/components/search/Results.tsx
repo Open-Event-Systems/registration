@@ -1,5 +1,4 @@
 import { RegistrationSearchResult } from "#src/features/registration"
-import { SearchContext } from "#src/features/registration/stores/search"
 import { Button, Loader, Table, TableTdProps, Text } from "@mantine/core"
 import { observer } from "mobx-react-lite"
 import { createContext, useContext, useState } from "react"
@@ -9,20 +8,18 @@ export type ResultsProps = {
   getLink?: (
     registration: RegistrationSearchResult,
   ) => [string | undefined, string | undefined] | undefined
+  hasMore?: boolean
   onMore?: () => Promise<void>
 }
 
 export const Results = observer((props: ResultsProps) => {
-  const { registrations, getLink, onMore } = props
-  const ctx = useContext(SearchContext)
+  const { registrations = [], getLink, hasMore, onMore } = props
 
   const [loading, setLoading] = useState(false)
 
-  const onMoreFunc = onMore ?? ctx?.handleMore
-
   let content
 
-  if ((registrations ?? ctx?.results ?? []).length > 0) {
+  if (registrations.length > 0) {
     content = (
       <Table highlightOnHover striped>
         <Table.Thead>
@@ -34,11 +31,8 @@ export const Results = observer((props: ResultsProps) => {
             <Table.Th>Email</Table.Th>
           </Table.Tr>
         </Table.Thead>
-        <ResultRows
-          getLink={getLink}
-          registrations={registrations ?? ctx?.results}
-        />
-        {onMoreFunc && (
+        <ResultRows getLink={getLink} registrations={registrations} />
+        {hasMore && (
           <Table.Tfoot>
             <Table.Tr>
               <Table.Td colSpan={5}>
@@ -48,8 +42,12 @@ export const Results = observer((props: ResultsProps) => {
                   <Button
                     variant="transparent"
                     onClick={() => {
+                      if (!onMore) {
+                        return
+                      }
+
                       setLoading(true)
-                      onMoreFunc()
+                      onMore()
                         .then(() => setLoading(false))
                         .catch((e) => {
                           setLoading(false)

@@ -11,3 +11,5 @@ export const EventStoreContext = createContext(
 )
 
 export const useEvents = () => useContext(EventStoreContext)
+
+export const useEventAPI = (): EventAPI => useContext(EventAPIContext)

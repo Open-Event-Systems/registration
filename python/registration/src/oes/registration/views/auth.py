@@ -27,7 +27,7 @@ from oes.registration.auth.credential_service import (
 from oes.registration.auth.email_auth_service import EmailAuthService, send_auth_code
 from oes.registration.auth.models import CredentialType
 from oes.registration.auth.oauth.validator import CustomServer
-from oes.registration.auth.scope import DEFAULT_SCOPES
+from oes.registration.auth.scope import DEFAULT_SCOPES, get_default_scopes
 from oes.registration.auth.token import (
     WEBAUTHN_REFRESH_TOKEN_LIFETIME,
     TokenResponse,
@@ -42,6 +42,7 @@ from oes.registration.auth.webauthn import (
     validate_webauthn_authentication,
     validate_webauthn_registration,
 )
+from oes.registration.config import CommandLineConfig
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.models.config import Config
@@ -186,6 +187,7 @@ async def new_account_endpoint(
     account_service: AccountService,
     credential_service: CredentialService,
     config: Config,
+    cmd_config: CommandLineConfig,
     body: Optional[AttrsBody[NewAccountBody]] = None,
 ) -> TokenResponse:
     """Create a new account, without credentials."""
@@ -194,7 +196,7 @@ async def new_account_endpoint(
     user = UserIdentity(
         id=new_account.id,
         email=new_account.email,
-        scope=DEFAULT_SCOPES,
+        scope=get_default_scopes(cmd_config),
     )
 
     refresh_token = create_new_refresh_token(user)
@@ -208,6 +210,7 @@ async def new_account_endpoint(
     return TokenResponse.create(
         access_token=access_token,
         refresh_token=refresh_token,
+        scope=access_token.scope,
         expires_in=expires_in,
         key=config.auth.signing_key,
     )
@@ -293,6 +296,7 @@ async def complete_webauthn_registration(
     return TokenResponse.create(
         access_token=access_token,
         refresh_token=refresh_token,
+        scope=access_token.scope,
         expires_in=int(WEBAUTHN_REFRESH_TOKEN_LIFETIME.total_seconds()),
         key=config.auth.signing_key,
     )
@@ -357,6 +361,7 @@ async def complete_webauthn_authentication(
     body: AttrsBody[WebAuthnChallengeResult],
     account_service: AccountService,
     credential_service: CredentialService,
+    cmd_config: CommandLineConfig,
     config: Config,
 ) -> TokenResponse:
     """Complete a WebAuthn authentication challenge."""
@@ -380,7 +385,7 @@ async def complete_webauthn_authentication(
     user = UserIdentity(
         id=account.id,
         email=account.email,
-        scope=DEFAULT_SCOPES,
+        scope=get_default_scopes(cmd_config),
     )
 
     now = get_now(seconds_only=True)
@@ -397,6 +402,7 @@ async def complete_webauthn_authentication(
     return TokenResponse.create(
         access_token=access_token,
         refresh_token=refresh_token,
+        scope=access_token.scope,
         expires_in=int(WEBAUTHN_REFRESH_TOKEN_LIFETIME.total_seconds()),
         key=config.auth.signing_key,
     )

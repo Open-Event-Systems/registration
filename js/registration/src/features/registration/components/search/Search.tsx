@@ -11,6 +11,8 @@ import {
 export type SearchProps = {
   events?: { id: string; name: string }[]
   registrations?: RegistrationSearchResult[]
+  hasMore?: boolean
+  onMore?: () => Promise<void>
   getLink?: (
     registration: RegistrationSearchResult,
   ) => [string | undefined, string | undefined] | undefined
@@ -19,7 +21,15 @@ export type SearchProps = {
 }
 
 export const Search = (props: SearchProps) => {
-  const { events, registrations, getLink, InputProps, ResultsProps } = props
+  const {
+    events,
+    registrations,
+    getLink,
+    hasMore,
+    onMore,
+    InputProps,
+    ResultsProps,
+  } = props
   return (
     <>
       <Input
@@ -33,6 +43,8 @@ export const Search = (props: SearchProps) => {
         registrations={registrations}
         getLink={getLink}
         {...ResultsProps}
+        hasMore={hasMore}
+        onMore={onMore}
       />
     </>
   )

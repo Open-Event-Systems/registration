@@ -1,3 +1,8 @@
+import {
+  DefinedInitialDataOptions,
+  UseQueryOptions,
+} from "@tanstack/react-query"
+
 export interface Event {
   id: string
   name: string
@@ -15,5 +20,5 @@ export interface RegistrationOption {
 }
 
 export type EventAPI = {
-  list(): Promise<Event[]>
+  list(): DefinedInitialDataOptions<Map<string, Event>>
 }

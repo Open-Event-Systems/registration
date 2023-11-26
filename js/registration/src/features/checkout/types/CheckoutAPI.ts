@@ -3,12 +3,13 @@ import {
   CheckoutResponse,
   PaymentServiceID,
 } from "#src/features/checkout/types/Checkout"
-import { PaginatedResult } from "#src/types/api"
+import { DefinedInitialDataOptions } from "@tanstack/react-query"
 
 export type CheckoutAPI = {
-  list(
-    registrationId?: string,
-  ): Promise<PaginatedResult<CheckoutListResponse[]>>
+  list(options?: {
+    registrationId?: string
+    before?: string
+  }): DefinedInitialDataOptions<CheckoutListResponse[]>
   create<ID extends PaymentServiceID>(
     cartId: string,
     service: ID,

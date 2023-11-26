@@ -1,5 +1,9 @@
-import { CheckoutState } from "#src/features/checkout/types/Checkout"
-import { PaginatedResult } from "#src/types/api"
+import {
+  UndefinedInitialDataInfiniteOptions,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+  UseQueryOptions,
+} from "@tanstack/react-query"
 
 export enum RegistrationState {
   pending = "pending",
@@ -55,7 +59,11 @@ export interface CreateRegistration {
 
 export type RegistrationAPI = {
   list(
-    q?: string,
-    options?: { all?: boolean; event_id?: string },
-  ): Promise<PaginatedResult<RegistrationSearchResult[]>>
+    query?: string,
+    options?: { event_id?: string | null; all?: boolean },
+  ): UndefinedInitialDataInfiniteOptions<RegistrationSearchResult[]>
+  read(id: string): UndefinedInitialDataOptions<Registration>
+  update(): UseMutationOptions<Registration, Error, Registration>
+  complete(id: string): UseMutationOptions<Registration, Error>
+  cancel(id: string): UseMutationOptions<Registration, Error>
 }
