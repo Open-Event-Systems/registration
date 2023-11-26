@@ -1,4 +1,5 @@
 import { Event, EventAPI } from "#src/features/event/types"
+import { QueryOptions } from "@tanstack/react-query"
 import { Wretch } from "wretch"
 
 /**
@@ -22,3 +23,12 @@ export const createEventAPI = (wretch: Wretch): EventAPI => ({
     return wretch.url("/events").get().json<Event[]>()
   },
 })
+
+export const eventsQuery = (api: EventAPI) =>
+  ({
+    queryKey: ["events"],
+    queryFn: async () => {
+      const events = await api.list()
+      return new Map(events.map((e) => [e.id, e]))
+    },
+  }) satisfies QueryOptions

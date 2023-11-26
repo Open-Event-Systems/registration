@@ -1,4 +1,5 @@
 import { CheckoutState } from "#src/features/checkout/types/Checkout"
+import { PaginatedResult } from "#src/types/api"
 
 export enum RegistrationState {
   pending = "pending",
@@ -50,4 +51,11 @@ export interface CreateRegistration {
   preferred_name?: string
 
   [prop: string]: unknown
+}
+
+export type RegistrationAPI = {
+  list(
+    q?: string,
+    options?: { all?: boolean; event_id?: string },
+  ): Promise<PaginatedResult<RegistrationSearchResult[]>>
 }

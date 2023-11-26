@@ -4,21 +4,34 @@ import {
   Search as SearchStore,
 } from "#src/features/registration/stores/search"
 import { Search } from "#src/features/registration/components/search/Search"
-import { useEvents } from "#src/features/event/hooks"
-import { useRegistrationStore } from "#src/features/registration/hooks"
+import { EventAPIContext, useEvents } from "#src/features/event/hooks"
+import {
+  RegistrationAPIContext,
+  useRegistrationStore,
+} from "#src/features/registration/hooks"
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
+import { eventsQuery } from "#src/features/event/api"
+import { useContext } from "react"
 
 export const SearchPage = observer(() => {
-  const events = useEvents()
-  const regStore = useRegistrationStore()
-  const [firstEvent] = events
+  const client = useQueryClient()
+  const eventAPI = useContext(EventAPIContext)
+  const registrationAPI = useContext(RegistrationAPIContext)
+  const events = useSuspenseQuery(eventsQuery(eventAPI))
+
+  const [firstEvent] = events.data.values()
   const state = useLocalObservable(
-    () => new SearchStore(regStore, firstEvent?.id),
+    () => new SearchStore(client, registrationAPI, firstEvent?.id),
   )
 
   return (
     <SearchContext.Provider value={state}>
       <Search
-        events={Array.from(events, (e) => ({
+        events={Array.from(events.data.values(), (e) => ({
           id: e.id,
           name: e.name,
         }))}

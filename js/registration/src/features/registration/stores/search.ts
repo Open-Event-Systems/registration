@@ -1,6 +1,11 @@
-import { RegistrationSearchResult } from "#src/features/registration"
+import {
+  RegistrationAPI,
+  RegistrationSearchResult,
+} from "#src/features/registration"
+import { searchQuery } from "#src/features/registration/api"
 import { RegistrationStore } from "#src/features/registration/stores/registration"
 import { NextFunc } from "#src/types/api"
+import { QueryClient } from "@tanstack/react-query"
 import { makeAutoObservable, reaction, runInAction } from "mobx"
 import { createContext } from "react"
 
@@ -15,7 +20,8 @@ export class Search {
   }
 
   constructor(
-    private regStore: RegistrationStore,
+    private client: QueryClient,
+    private api: RegistrationAPI,
     public eventId: string | null = null,
   ) {
     makeAutoObservable(this)
@@ -33,10 +39,12 @@ export class Search {
     const query = this.query
     const eventId = this.eventId
     const showAll = this.showAll
-    const [items, next] = await this.regStore.search(query, {
-      event_id: eventId ?? undefined,
-      all: showAll || undefined,
-    })
+    const [items, next] = await this.client.ensureQueryData(
+      searchQuery(this.api, query, {
+        all: showAll,
+        event_id: eventId ?? undefined,
+      }),
+    )
 
     if (
       this.query != query ||
