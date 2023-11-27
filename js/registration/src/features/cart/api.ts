@@ -147,6 +147,7 @@ export const createCartAPI = (wretch: Wretch, client: QueryClient): CartAPI => {
           const body: Cart = await res.json()
           return [id, body]
         },
+        staleTime: 300000,
       }
     },
     readCart(id) {
@@ -157,6 +158,7 @@ export const createCartAPI = (wretch: Wretch, client: QueryClient): CartAPI => {
           const body: Cart = await res.json()
           return [id, body]
         },
+        staleTime: 300000,
       }
     },
     readPricingResult(id) {
@@ -168,6 +170,7 @@ export const createCartAPI = (wretch: Wretch, client: QueryClient): CartAPI => {
             .get()
             .json<PricingResult>()
         },
+        staleTime: 300000,
       }
     },
     readAddInterview(cartId, interviewId, options = {}) {
@@ -200,6 +203,7 @@ export const createCartAPI = (wretch: Wretch, client: QueryClient): CartAPI => {
             .get()
             .json<CheckoutMethod[]>()
         },
+        staleTime: 300000,
       }
     },
     removeRegistrationFromCart(cartId) {
@@ -214,7 +218,7 @@ export const createCartAPI = (wretch: Wretch, client: QueryClient): CartAPI => {
           return [newCartId, body]
         },
         onSuccess([newCartId, newCart]) {
-          client.setQueryData(["carts", newCartId], newCart)
+          client.setQueryData(["carts", newCartId], [newCartId, newCart])
         },
       }
     },

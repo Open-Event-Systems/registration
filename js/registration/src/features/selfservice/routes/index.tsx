@@ -34,12 +34,11 @@ import "#src/components/styles.css"
 import "#src/features/auth/styles.css"
 import "#src/features/interview/styles.css"
 import "#src/features/cart/styles.css"
-import "#src/features/selfservice/routes/EventPage.module.css"
-import "#src/features/selfservice/routes/CartPage.module.css"
 import theme from "#src/config/theme"
 import { LayoutRoute } from "#src/routes/LayoutRoute"
 import { EventPage } from "#src/features/selfservice/routes/EventPage"
 import { CurrentCartStoreProvider } from "#src/features/cart/providers"
+import { CartPage } from "#src/features/selfservice/routes/CartPage"
 
 const SelfServiceLayout = ({ children }: { children?: ReactNode }) => {
   const app = useApp()
@@ -104,6 +103,10 @@ makeApp(() => {
                 {
                   index: true,
                   element: <EventPage />,
+                },
+                {
+                  path: "cart",
+                  element: <CartPage />,
                 },
               ],
             },

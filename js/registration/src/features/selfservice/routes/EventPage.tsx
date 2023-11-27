@@ -49,7 +49,7 @@ import { useEffect } from "react"
 import { isWretchError } from "#src/util/api"
 
 export const EventPage = () => {
-  const { eventId = "", accessCode = "" } = useParams()
+  const { eventId = "", accessCode } = useParams()
 
   const client = useQueryClient()
   const cartAPI = useCartAPI()
