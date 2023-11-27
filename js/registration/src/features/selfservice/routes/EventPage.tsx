@@ -29,7 +29,6 @@ import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/ac
 import { Markdown } from "@open-event-systems/interview-components"
 
 import { useQuery } from "@tanstack/react-query"
-import { NotFoundError } from "#src/features/loader"
 
 import classes from "./EventPage.module.css"
 
@@ -37,8 +36,7 @@ export const EventPage = () => {
   const { eventId = "", accessCode } = useParams()
 
   const selfServiceAPI = useSelfServiceAPI()
-  const events = useQuery(selfServiceAPI.listEvents())
-  const event = events.data.get(eventId)
+  const event = useQuery(selfServiceAPI.readEvent(eventId))
 
   const accessCodeResult = useQuery({
     ...selfServiceAPI.checkAccessCode(eventId, accessCode || ""),
@@ -58,7 +56,7 @@ export const EventPage = () => {
   const loc = useLocation()
   const navigate = useNavigate()
 
-  if (!registrations.isSuccess || !currentCartQuery.data) {
+  if (!event.isSuccess || !registrations.isSuccess || !currentCartQuery.data) {
     return (
       <CardGrid>
         <RegistrationCardPlaceholder />
@@ -68,17 +66,12 @@ export const EventPage = () => {
     )
   }
 
-  if (!event) {
-    // TODO: move where this error is defined, and catch it in a boundary
-    throw new NotFoundError()
-  }
-
   const [currentCartId, currentCart] = currentCartQuery.data
 
   return (
-    <PageTitle title={event.name}>
+    <PageTitle title={event.data.name}>
       <RegistrationsView
-        event={event}
+        event={event.data}
         currentCartId={currentCartId}
         registrations={registrations.data.registrations}
       />

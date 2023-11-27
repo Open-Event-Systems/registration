@@ -1,34 +1,34 @@
 import { NextFunc } from "#src/types/api"
-import { Wretch, WretchError } from "wretch"
+import { Wretch } from "wretch"
 
 /**
- * Check if an error is a {@link WretchError}.
+ * Not found error.
  */
-export const isWretchError = (e: unknown): e is WretchError => {
-  return (
-    e != null &&
-    typeof e == "object" &&
-    "name" in e &&
-    "message" in e &&
-    "status" in e &&
-    "response" in e &&
-    "url" in e
-  )
-}
+export class NotFoundError extends Error {
+  status: 404 = 404
 
-export interface NotFoundError {
-  status: 404
+  constructor(message = "Not found") {
+    super(message)
+  }
 }
 
 /**
- * Test if an exception is from a not found response.
+ * Return whether an object is a {@link Response}-like object with an error status.
  */
-export const isNotFoundError = (e: unknown): e is NotFoundError => {
-  return (
-    (isWretchError(e) && e.status == 404) ||
-    (e instanceof Error && "status" in e && e.status == 404)
-  )
-}
+export const isResponseError = (e: unknown): e is { status: number } =>
+  typeof e == "object" &&
+  e != null &&
+  "status" in e &&
+  typeof e.status == "number" &&
+  e.status >= 400
+
+/**
+ * Test if an error is a "not found" error.
+ */
+export const isNotFoundError = (
+  e: unknown,
+): e is NotFoundError | { status: 404 } =>
+  e instanceof NotFoundError || isResponseError(e)
 
 /**
  * Wrap a promise to resolve with null in the case of a not found error.

@@ -1,9 +1,11 @@
-import { placeholderWretch } from "#src/config/api"
+import { defaultQueryClient, placeholderWretch } from "#src/config/api"
 import {
   SelfServiceAPI,
   SelfServiceEvent,
   SelfServiceRegistrationListResponse,
 } from "#src/features/selfservice/types"
+import { NotFoundError } from "#src/utils/api"
+import { QueryClient } from "@tanstack/react-query"
 import { createContext } from "react"
 import { Wretch, WretchResponse } from "wretch"
 import queryString from "wretch/addons/queryString"
@@ -53,7 +55,10 @@ export const checkAccessCode = async (
   return true
 }
 
-export const createSelfServiceAPI = (wretch: Wretch): SelfServiceAPI => {
+export const createSelfServiceAPI = (
+  wretch: Wretch,
+  client: QueryClient,
+): SelfServiceAPI => {
   const accessCodeWretch = wretch.url("/access-code")
   wretch = wretch.url("/self-service")
 
@@ -71,6 +76,19 @@ export const createSelfServiceAPI = (wretch: Wretch): SelfServiceAPI => {
         initialData: new Map(),
         staleTime: Infinity,
         initialDataUpdatedAt: 0,
+      }
+    },
+    readEvent(id) {
+      return {
+        queryKey: ["self-service", "events", id],
+        queryFn: async () => {
+          const events = await client.ensureQueryData(this.listEvents())
+          const event = events.get(id)
+          if (!event) {
+            throw new NotFoundError()
+          }
+          return event
+        },
       }
     },
     listRegistrations(options = {}) {
@@ -118,5 +136,5 @@ export const createSelfServiceAPI = (wretch: Wretch): SelfServiceAPI => {
 }
 
 export const SelfServiceAPIContext = createContext(
-  createSelfServiceAPI(placeholderWretch),
+  createSelfServiceAPI(placeholderWretch, defaultQueryClient),
 )

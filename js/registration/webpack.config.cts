@@ -10,9 +10,9 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
   return {
     mode: prod ? "production" : "development",
     entry: {
-      selfservice: "./src/features/selfservice/routes/index.tsx",
-      receipt: "./src/features/receipt/index.tsx",
-      registration: "./src/features/registration/routes/index.tsx"
+      main: "./src/routes/index.tsx",
+      // receipt: "./src/features/receipt/index.tsx",
+      // registration: "./src/features/registration/routes/index.tsx"
     },
     output: {
       publicPath: "/", // TODO: make configurable
@@ -117,21 +117,21 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       new HtmlWebpackPlugin({
         title: "Registration",
         template: "./src/index.html",
-        chunks: ["selfservice"],
+        chunks: ["main"],
         filename: "index.html",
       }),
-      new HtmlWebpackPlugin({
-        title: "Registration",
-        template: "./src/index.html",
-        chunks: ["registration"],
-        filename: "registrations/index.html",
-      }),
-      new HtmlWebpackPlugin({
-        title: "Receipt",
-        template: "./src/index.html",
-        chunks: ["receipt"],
-        filename: "receipt/index.html",
-      }),
+      // new HtmlWebpackPlugin({
+      //   title: "Registration",
+      //   template: "./src/index.html",
+      //   chunks: ["registration"],
+      //   filename: "registrations/index.html",
+      // }),
+      // new HtmlWebpackPlugin({
+      //   title: "Receipt",
+      //   template: "./src/index.html",
+      //   chunks: ["receipt"],
+      //   filename: "receipt/index.html",
+      // }),
     ],
     // source map config
     devtool: prod ? false : "eval-cheap-source-map",
@@ -142,6 +142,16 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
           { from: /^\/registrations(\/|$)/, to: "/registrations/index.html" },
           { from: /^\//, to: "/index.html" },
         ],
+      },
+      client: {
+        overlay: {
+          runtimeErrors: (error) => {
+            if ("status" in error && error.status == 404) {
+              return false
+            }
+            return true
+          }
+        }
       },
       port: 9000,
     },

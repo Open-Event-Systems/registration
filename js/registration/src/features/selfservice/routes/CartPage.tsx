@@ -1,12 +1,6 @@
 import { Subtitle, Title } from "#src/components/title/Title"
-import {
-  fetchCartPricingResult,
-  getCartIdFromResponse,
-} from "#src/features/cart/api"
-import { useCartAPI, useCurrentCartStore } from "#src/features/cart/hooks"
-import { Cart } from "#src/features/cart/types"
+import { useCartAPI } from "#src/features/cart/hooks"
 import { Cart as CartComponent } from "#src/features/cart/components/cart/Cart"
-import { useWretch } from "#src/hooks/api"
 import { LineItem as LineItemComponent } from "#src/features/cart/components/cart/LineItem"
 import { Modifier as ModifierComponent } from "#src/features/cart/components/cart/Modifier"
 import { Anchor, Box, Button, Grid, Group, Stack, Text } from "@mantine/core"
@@ -31,10 +25,10 @@ import { InterviewDialog } from "#src/features/interview/components/InterviewDia
 import { CartRegistration } from "#src/features/cart/components/cart/CartRegistration"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { isWretchError } from "#src/utils/api"
 import { setCurrentCartId } from "#src/features/cart/utils"
 
 import classes from "./CartPage.module.css"
+import { isNotFoundError } from "#src/utils/api"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -46,9 +40,7 @@ export const CartPage = observer(() => {
   })
 
   const currentCartFailed =
-    (currentCart.isError &&
-      isWretchError(currentCart.error) &&
-      currentCart.error.status == 404) ||
+    (currentCart.isError && isNotFoundError(currentCart.error)) ||
     (currentCart.isSuccess && currentCart.data == null)
 
   const emptyCart = useQuery({

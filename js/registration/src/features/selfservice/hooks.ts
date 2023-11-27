@@ -12,7 +12,7 @@ import {
 import { SelfServiceAPI } from "#src/features/selfservice/types"
 import { useWretch } from "#src/hooks/api"
 import { useLocation, useNavigate } from "#src/hooks/location"
-import { isWretchError } from "#src/utils/api"
+import { isNotFoundError } from "#src/utils/api"
 import { createLoader } from "#src/utils/loader"
 import {
   InterviewStateRecord,
@@ -48,10 +48,9 @@ export const useCurrentCart = (eventId: string) => {
     throwOnError: false,
   })
   const currentCartError =
-    (currentCartQuery.isError &&
-      isWretchError(currentCartQuery.error) &&
-      currentCartQuery.error.status == 404) ||
+    (currentCartQuery.isError && isNotFoundError(currentCartQuery.error)) ||
     (currentCartQuery.isSuccess && currentCartQuery.data == null)
+
   const emptyCartQuery = useQuery({
     ...api.readEmptyCart(eventId),
     enabled: currentCartError,

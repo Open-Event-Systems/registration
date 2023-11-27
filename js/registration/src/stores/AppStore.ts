@@ -41,7 +41,7 @@ export class AppStore {
     this.cartAPI = createCartAPI(authWretch, queryClient)
     this.registrationAPI = createRegistrationAPI(authWretch)
     this.checkoutAPI = createCheckoutAPI(authWretch)
-    this.selfServiceAPI = createSelfServiceAPI(authWretch)
+    this.selfServiceAPI = createSelfServiceAPI(authWretch, queryClient)
   }
 
   static async fromConfig(queryClient: QueryClient): Promise<AppStore> {

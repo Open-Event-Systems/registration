@@ -2,34 +2,20 @@ import {
   LoadingOverlay,
   ShowLoadingOverlay,
   SimpleLayout,
-  Subtitle,
-  Title,
 } from "#src/components"
+import { AccessCodeRoute } from "#src/features/selfservice/routes/AccessCodeRoute"
+import { CartPage } from "#src/features/selfservice/routes/CartPage"
+import { EventPage } from "#src/features/selfservice/routes/EventPage"
+import { EventRoute } from "#src/features/selfservice/routes/EventRoute"
+import { SelfServiceLayout } from "#src/features/selfservice/routes/SelfServiceLayout"
+import { AppRoute } from "#src/routes/AppRoute"
+import { LayoutRoute } from "#src/routes/LayoutRoute"
+import { NotFoundErrorBoundary, NotFoundPage } from "#src/routes/NotFoundPage"
 import { isNotFoundError } from "#src/utils/api"
 import { makeApp } from "#src/utils/react"
 import { MantineProvider } from "@mantine/core"
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query"
-import {
-  Outlet,
-  RouterProvider,
-  createBrowserRouter,
-  useParams,
-} from "react-router-dom"
-import { AppRoute } from "#src/routes/AppRoute"
-import { ReactNode } from "react"
-import { useApp } from "#src/hooks/app"
-import { useAuth } from "#src/features/auth/hooks"
-import { useSelfServiceAPI } from "#src/features/selfservice/hooks"
-import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
-import { LayoutRoute } from "#src/routes/LayoutRoute"
-import { EventPage } from "#src/features/selfservice/routes/EventPage"
-import { CartPage } from "#src/features/selfservice/routes/CartPage"
-import { AccessCodeNotFoundPage } from "#src/features/selfservice/routes/AccessCodeNotFoundPage"
-import { NotFoundErrorBoundary } from "#src/routes/NotFoundPage"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"
@@ -38,50 +24,6 @@ import "#src/features/auth/styles.css"
 import "#src/features/interview/styles.css"
 import "#src/features/cart/styles.css"
 import theme from "#src/config/theme"
-
-const SelfServiceLayout = ({ children }: { children?: ReactNode }) => {
-  const app = useApp()
-  const auth = useAuth()
-  const selfService = useSelfServiceAPI()
-  const query = useQuery(selfService.listEvents())
-
-  return (
-    <SimpleLayout>
-      <Title title="Registrations">
-        <Subtitle subtitle="Manage registrations">
-          {query.isSuccess ? children : <ShowLoadingOverlay />}
-          <SignInDialog.Manager authStore={auth} wretch={app.wretch} />
-        </Subtitle>
-      </Title>
-    </SimpleLayout>
-  )
-}
-
-const EventRoute = () => {
-  const { eventId = "" } = useParams()
-  const selfServiceAPI = useSelfServiceAPI()
-  const query = useQuery(selfServiceAPI.readEvent(eventId))
-
-  if (!query.isSuccess) {
-    return <ShowLoadingOverlay />
-  } else {
-    return <Outlet />
-  }
-}
-
-const AccessCodeRoute = () => {
-  const { eventId = "", accessCode = "" } = useParams()
-  const selfServiceAPI = useSelfServiceAPI()
-  const query = useQuery(selfServiceAPI.checkAccessCode(eventId, accessCode))
-
-  if (!query.isSuccess) {
-    return <ShowLoadingOverlay />
-  } else if (query.data) {
-    return <Outlet />
-  } else {
-    return <AccessCodeNotFoundPage />
-  }
-}
 
 makeApp(() => {
   const client = new QueryClient({
@@ -142,6 +84,15 @@ makeApp(() => {
                   ],
                 },
               ],
+            },
+          ],
+        },
+        {
+          element: <LayoutRoute Layout={SelfServiceLayout} />,
+          children: [
+            {
+              path: "*",
+              element: <NotFoundPage />,
             },
           ],
         },

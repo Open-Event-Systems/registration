@@ -41,6 +41,7 @@ declare module "#src/hooks/location" {
 
 export type SelfServiceAPI = {
   listEvents(): DefinedInitialDataOptions<Map<string, SelfServiceEvent>>
+  readEvent(id: string): UndefinedInitialDataOptions<SelfServiceEvent>
   listRegistrations(options?: {
     eventId?: string
     accessCode?: string
