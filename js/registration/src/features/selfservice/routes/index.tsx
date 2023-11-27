@@ -7,7 +7,7 @@ import {
 } from "#src/components"
 import { isNotFoundError } from "#src/util/api"
 import { makeApp } from "#src/util/react"
-import { MantineProvider } from "@mantine/core"
+import { MantineProvider, Text } from "@mantine/core"
 import {
   QueryClient,
   QueryClientProvider,
@@ -107,6 +107,33 @@ makeApp(() => {
                 {
                   path: "cart",
                   element: <CartPage />,
+                },
+                {
+                  path: "access-code/:accessCode",
+                  Component() {
+                    const { eventId = "", accessCode = "" } = useParams()
+                    const api = useSelfServiceAPI()
+                    const query = useQuery(
+                      api.checkAccessCode(eventId, accessCode),
+                    )
+
+                    if (!query.isSuccess) {
+                      return <ShowLoadingOverlay />
+                    } else if (!!query.data) {
+                      return <EventPage />
+                    } else {
+                      return (
+                        <Title title="Access Code Not Found">
+                          <Subtitle subtitle="">
+                            <Text component="p">
+                              The access code was not found. It may be invalid
+                              or expired.
+                            </Text>
+                          </Subtitle>
+                        </Title>
+                      )
+                    }
+                  },
                 },
               ],
             },

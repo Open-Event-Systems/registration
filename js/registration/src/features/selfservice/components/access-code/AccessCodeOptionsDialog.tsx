@@ -3,11 +3,18 @@ import {
   ModalDialog,
   ModalDialogProps,
 } from "#src/components/dialog/ModalDialog"
-import { useCartStore, useCurrentCartStore } from "#src/features/cart/hooks"
+import {
+  useCartAPI,
+  useCartStore,
+  useCurrentCartStore,
+} from "#src/features/cart/hooks"
+import { useInterviewRecordStore } from "#src/features/interview"
 import { AccessCodeOptions } from "#src/features/selfservice/components/access-code/AccessCodeOptions"
 import { SelfServiceRegistrationListResponse } from "#src/features/selfservice/types"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { Text } from "@mantine/core"
+import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
+import { useQueryClient } from "@tanstack/react-query"
 import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { ReactNode } from "react"
@@ -35,7 +42,9 @@ export const AccessCodeOptionsDialog = (
           create a new registration.
         </Text>
         <AccessCodeOptions
-          registrations={response.registrations.map((r) => r.registration)}
+          registrations={response.registrations
+            .filter((r) => r.change_options.length > 0)
+            .map((r) => r.registration)}
           interviews={response.add_options}
           onSelectAdd={(id) => {
             onSelect && onSelect(id)
@@ -81,13 +90,20 @@ export const AccessCodeOptionsDialog = (
 }
 
 const AccessCodeOptionsDialogManager = observer(
-  (props: AccessCodeOptionsDialogProps & { accessCode?: string }) => {
+  (
+    props: AccessCodeOptionsDialogProps & {
+      accessCode?: string
+      eventId: string
+      cartId: string
+    },
+  ) => {
+    const { accessCode, eventId, cartId, ...other } = props
     const loc = useLocation()
     const navigate = useNavigate()
-    const cartStore = useCartStore()
-    const currentCartStore = useCurrentCartStore()
 
-    const { accessCode, ...other } = props
+    const client = useQueryClient()
+    const cartAPI = useCartAPI()
+    const recordStore = useInterviewRecordStore()
 
     const state = useLocalObservable(() => ({
       loading: false,
@@ -111,11 +127,16 @@ const AccessCodeOptionsDialogManager = observer(
                 },
               })
             } else if (interviewId) {
-              const record = await cartStore.startInterview(
-                currentCartStore,
-                interviewId,
-                registrationId,
-                accessCode,
+              const response = await client.fetchQuery(
+                cartAPI.readAddInterview(cartId, interviewId, {
+                  accessCode: accessCode,
+                }),
+              )
+              const record = await startInterview(
+                recordStore,
+                defaultAPI,
+                response,
+                { eventId: eventId, cartId: cartId },
               )
 
               navigate(loc, {
@@ -123,7 +144,7 @@ const AccessCodeOptionsDialogManager = observer(
                   ...loc.state,
                   accessCodeDialogRegistrationId: undefined,
                   showInterviewDialog: {
-                    eventId: currentCartStore.eventId,
+                    eventId: eventId,
                     recordId: record.id,
                   },
                 },

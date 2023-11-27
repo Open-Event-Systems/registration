@@ -1,4 +1,7 @@
-import { DefinedInitialDataOptions } from "@tanstack/react-query"
+import {
+  DefinedInitialDataOptions,
+  UndefinedInitialDataOptions,
+} from "@tanstack/react-query"
 
 export interface SelfServiceEvent {
   id: string
@@ -42,4 +45,8 @@ export type SelfServiceAPI = {
     eventId?: string
     accessCode?: string
   }): DefinedInitialDataOptions<SelfServiceRegistrationListResponse>
+  checkAccessCode(
+    eventId: string,
+    accessCode: string,
+  ): UndefinedInitialDataOptions<boolean>
 }

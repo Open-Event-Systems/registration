@@ -17,25 +17,24 @@ import {
 } from "@tabler/icons-react"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { observer } from "mobx-react-lite"
-import { useLoader } from "#src/hooks/loader"
-import { Loader } from "#src/util/loader"
 import { CheckoutMethodsManager } from "#src/features/checkout/components/methods/CheckoutMethodsManager"
 import { CheckoutManager } from "#src/features/checkout/components/checkout/CheckoutManager"
 import { Fragment, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import {
+  useCompleteCartInterviewFn,
   useSelfServiceAPI,
-  useSelfServiceLoader,
 } from "#src/features/selfservice/hooks"
 import { Link as RLink } from "react-router-dom"
 import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog"
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog"
 import { CartRegistration } from "#src/features/cart/components/cart/CartRegistration"
 
-import classes from "./CartPage.module.css"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { isWretchError } from "#src/util/api"
 import { setCurrentCartId } from "#src/features/cart/utils"
+
+import classes from "./CartPage.module.css"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -105,7 +104,6 @@ const CartViewPlaceholder = () => (
 
 const CartView = observer(
   ({ cartId, eventId }: { cartId: string; eventId: string }) => {
-    const wretch = useWretch()
     const selfServiceAPI = useSelfServiceAPI()
     const cartAPI = useCartAPI()
 
@@ -121,6 +119,8 @@ const CartView = observer(
 
     const loc = useLocation()
     const navigate = useNavigate()
+
+    const completeInterview = useCompleteCartInterviewFn()
 
     const [checkoutComplete, setCheckoutComplete] = useState(false)
 
@@ -229,48 +229,14 @@ const CartView = observer(
 
             // reload self-service memberships
             client.invalidateQueries({
-              queryKey: selfServiceAPI.listRegistrations({ eventId: eventId })
-                .queryKey,
+              queryKey: ["self-service", "registrations"],
             })
           }}
         />
         <InterviewOptionsDialog.Manager
           options={selfService.data.add_options}
         />
-        <InterviewDialog.Manager
-          onComplete={async (record) => {
-            const response = record.stateResponse
-            const metadata = record.metadata
-
-            if (
-              metadata.cartId &&
-              metadata.eventId &&
-              response.complete &&
-              response.target_url
-            ) {
-              const res = await wretch
-                .url(response.target_url, true)
-                .json({ state: response.state })
-                .post()
-                .res()
-
-              const newCartId = getCartIdFromResponse(res)
-              const newCart: Cart = await res.json()
-
-              client.setQueryData(cartAPI.readCart(newCartId).queryKey, [
-                newCartId,
-                newCart,
-              ])
-              setCurrentCart.mutate([newCartId, newCart])
-
-              navigate(loc, {
-                state: { ...loc.state, showInterviewDialog: undefined },
-                replace: true,
-              })
-              navigate(`/events/${metadata.eventId}/cart`)
-            }
-          }}
-        />
+        <InterviewDialog.Manager onComplete={completeInterview} />
       </>
     )
   },

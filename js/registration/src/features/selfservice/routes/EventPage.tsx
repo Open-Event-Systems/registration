@@ -1,4 +1,4 @@
-import { Title as PageTitle, Subtitle } from "#src/components/title/Title"
+import { Title as PageTitle } from "#src/components/title/Title"
 import { useParams } from "react-router-dom"
 import {
   CardGrid,
@@ -13,49 +13,37 @@ import {
 import { observer } from "mobx-react-lite"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import {
-  useAccessCodeLoader,
+  useCompleteCartInterviewFn,
+  useCurrentCart,
   useSelfServiceAPI,
-  useSelfServiceLoader,
+  useStartCartInterviewFn,
 } from "#src/features/selfservice/hooks"
-import { Event } from "#src/features/event/types"
 import {
   SelfServiceEvent,
   SelfServiceRegistrationResponse,
 } from "#src/features/selfservice/types"
-import {
-  fetchCartInterview,
-  getCartIdFromResponse,
-} from "#src/features/cart/api"
-import { useWretch } from "#src/hooks/api"
-import {
-  fetchCurrentOrEmptyCart,
-  getCurrentCartId,
-} from "#src/features/cart/utils"
-import { useEvents } from "#src/features/event/hooks"
-import { useCartAPI, useCurrentCartStore } from "#src/features/cart/hooks"
 import { Link as RLink } from "react-router-dom"
 import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog"
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog"
-import { Cart } from "#src/features/cart/types"
 import { AccessCodeOptionsDialog } from "#src/features/selfservice/components/access-code/AccessCodeOptionsDialog"
 import { Markdown } from "@open-event-systems/interview-components"
-import { useInterviewRecordStore } from "#src/features/interview/hooks"
-import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
+
+import { useQuery } from "@tanstack/react-query"
+import { NotFoundError } from "#src/features/loader"
 
 import classes from "./EventPage.module.css"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { NotFoundError } from "#src/features/loader"
-import { useEffect } from "react"
-import { isWretchError } from "#src/util/api"
 
 export const EventPage = () => {
   const { eventId = "", accessCode } = useParams()
 
-  const client = useQueryClient()
-  const cartAPI = useCartAPI()
   const selfServiceAPI = useSelfServiceAPI()
   const events = useQuery(selfServiceAPI.listEvents())
   const event = events.data.get(eventId)
+
+  const accessCodeResult = useQuery({
+    ...selfServiceAPI.checkAccessCode(eventId, accessCode || ""),
+    enabled: !!accessCode,
+  })
 
   const registrations = useQuery(
     selfServiceAPI.listRegistrations({
@@ -64,41 +52,13 @@ export const EventPage = () => {
     }),
   )
 
-  const currentCart = useQuery({
-    ...cartAPI.readCurrentCart(eventId),
-    throwOnError: false,
-  })
+  const currentCartQuery = useCurrentCart(eventId)
+  const completeInterview = useCompleteCartInterviewFn()
 
-  const currentCartFailed =
-    (currentCart.isError &&
-      isWretchError(currentCart.error) &&
-      currentCart.error.status == 404) ||
-    (currentCart.isSuccess && currentCart.data == null)
-
-  const emptyCart = useQuery({
-    ...cartAPI.readEmptyCart(eventId),
-    enabled: currentCartFailed,
-  })
-  const setCurrentCart = useMutation(cartAPI.setCurrentCart(eventId))
-
-  // replace current cart with empty cart if not found
-  useEffect(() => {
-    if (currentCartFailed && emptyCart.data) {
-      setCurrentCart.mutate(emptyCart.data)
-    }
-  }, [currentCartFailed, emptyCart.data])
-
-  // const events = useEvents()
-  // const event = events.getEvent(eventId) as Event
-  // const selfService = useSelfServiceLoader()
-  // const currentCartStore = useCurrentCartStore()
-  // const accessCodeLoader = useAccessCodeLoader()
-
-  const wretch = useWretch()
   const loc = useLocation()
   const navigate = useNavigate()
 
-  if (!registrations.isSuccess || !currentCart.data) {
+  if (!registrations.isSuccess || !currentCartQuery.data) {
     return (
       <CardGrid>
         <RegistrationCardPlaceholder />
@@ -113,7 +73,7 @@ export const EventPage = () => {
     throw new NotFoundError()
   }
 
-  const currentCartId = currentCart.data[0]
+  const [currentCartId, currentCart] = currentCartQuery.data
 
   return (
     <PageTitle title={event.name}>
@@ -152,10 +112,10 @@ export const EventPage = () => {
               Add Registration
             </Button>
           </Grid.Col>
-          {currentCart.data[1].registrations.length > 0 ? (
+          {currentCart.registrations.length > 0 ? (
             <Grid.Col span="content">
               <Anchor component={RLink} to={`/events/${eventId}/cart`}>
-                View cart ({currentCart.data[1].registrations.length})
+                View cart ({currentCart.registrations.length})
               </Anchor>
             </Grid.Col>
           ) : null}
@@ -164,46 +124,16 @@ export const EventPage = () => {
       <InterviewOptionsDialog.Manager
         options={registrations.data.add_options}
       />
-      {/* <AccessCodeOptionsDialog.Manager
+      <AccessCodeOptionsDialog.Manager
+        eventId={eventId}
+        cartId={currentCartId}
         opened={
-          !!accessCodeLoader.value &&
-          !loc.state?.showInterviewDialog?.eventId
+          accessCodeResult.isSuccess && !loc.state?.showInterviewDialog?.eventId
         }
         accessCode={accessCode}
-        response={results}
-      /> */}
-      <InterviewDialog.Manager
-        onComplete={async (record) => {
-          const response = record.stateResponse
-          const metadata = record.metadata
-
-          if (
-            metadata.cartId &&
-            metadata.eventId &&
-            response.complete &&
-            response.target_url
-          ) {
-            const res = await wretch
-              .url(response.target_url, true)
-              .json({ state: response.state })
-              .post()
-              .res()
-
-            const newCartId = getCartIdFromResponse(res)
-            const cart: Cart = await res.json()
-            client.setQueryData(cartAPI.readCart(newCartId).queryKey, [
-              newCartId,
-              cart,
-            ])
-            setCurrentCart.mutate([newCartId, cart])
-            navigate(loc, {
-              state: { ...loc.state, showInterviewDialog: undefined },
-              replace: true,
-            })
-            navigate(`/events/${metadata.eventId}/cart`)
-          }
-        }}
+        response={registrations.data}
       />
+      <InterviewDialog.Manager onComplete={completeInterview} />
     </PageTitle>
   )
 }
@@ -218,12 +148,7 @@ const RegistrationsView = observer(
     registrations: SelfServiceRegistrationResponse[]
     currentCartId: string
   }) => {
-    const navigate = useNavigate()
-    const loc = useLocation()
-    const client = useQueryClient()
-    const interviewRecordStore = useInterviewRecordStore()
-
-    const cartAPI = useCartAPI()
+    const startInterview = useStartCartInterviewFn(currentCartId, event.id)
 
     if (registrations.length == 0) {
       return <NoRegistrationsMessage className={classes.noRegMessage} />
@@ -240,32 +165,7 @@ const RegistrationsView = observer(
                 label: o.name,
               }))}
               onMenuSelect={async (id) => {
-                const state = await client.ensureQueryData(
-                  cartAPI.readAddInterview(currentCartId, id, {
-                    registrationId: r.registration.id,
-                  }),
-                )
-
-                const next = await startInterview(
-                  interviewRecordStore,
-                  defaultAPI,
-                  state,
-                  {
-                    cartId: currentCartId,
-                    eventId: event.id,
-                  },
-                )
-
-                // show dialog
-                navigate(loc, {
-                  state: {
-                    ...loc.state,
-                    showInterviewDialog: {
-                      eventId: event.id,
-                      recordId: next.id,
-                    },
-                  },
-                })
+                await startInterview(id, { registrationId: r.registration.id })
               }}
             >
               <Markdown content={r.registration.description} />

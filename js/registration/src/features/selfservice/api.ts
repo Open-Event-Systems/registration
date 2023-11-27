@@ -54,6 +54,7 @@ export const checkAccessCode = async (
 }
 
 export const createSelfServiceAPI = (wretch: Wretch): SelfServiceAPI => {
+  const accessCodeWretch = wretch.url("/access-code")
   wretch = wretch.url("/self-service")
 
   return {
@@ -91,6 +92,26 @@ export const createSelfServiceAPI = (wretch: Wretch): SelfServiceAPI => {
         initialData: { add_options: [], registrations: [] },
         staleTime: Infinity,
         initialDataUpdatedAt: 0,
+      }
+    },
+    checkAccessCode(eventId, accessCode) {
+      return {
+        queryKey: [
+          "access-codes",
+          { accessCode: accessCode, eventId: eventId },
+        ],
+        async queryFn() {
+          const res = await accessCodeWretch
+            .url(`/${accessCode}`)
+            .addon(queryString)
+            .query({ event_id: eventId })
+            .get()
+            .notFound(() => null)
+            .res<WretchResponse | null>()
+
+          return !!res
+        },
+        staleTime: 60000,
       }
     },
   }
