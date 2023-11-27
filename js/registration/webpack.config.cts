@@ -139,7 +139,6 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       historyApiFallback: {
         rewrites: [
           { from: /^\/receipt(\/|$)/, to: "/receipt/index.html" },
-          { from: /^\/registrations(\/|$)/, to: "/registrations/index.html" },
           { from: /^\//, to: "/index.html" },
         ],
       },

@@ -5,6 +5,7 @@
     "outDir": "./dist",
     "rootDir": "./",
     "paths": {
+      "#src/*.scss": ["./src/*.scss"],
       "#src/*.css": ["./src/*.css"],
       "#src/*": ["./src/*/index.js", "./src/*.js"],
       "@mantine/core": ["../node_modules/@mantine/core/lib/index.d.ts"],

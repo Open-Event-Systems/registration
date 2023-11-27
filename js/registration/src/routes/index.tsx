@@ -3,11 +3,6 @@ import {
   ShowLoadingOverlay,
   SimpleLayout,
 } from "#src/components"
-import { AccessCodeRoute } from "#src/features/selfservice/routes/AccessCodeRoute"
-import { CartPage } from "#src/features/selfservice/routes/CartPage"
-import { EventPage } from "#src/features/selfservice/routes/EventPage"
-import { EventRoute } from "#src/features/selfservice/routes/EventRoute"
-import { SelfServiceLayout } from "#src/features/selfservice/routes/SelfServiceLayout"
 import { AppRoute } from "#src/routes/AppRoute"
 import { LayoutRoute } from "#src/routes/LayoutRoute"
 import { NotFoundErrorBoundary, NotFoundPage } from "#src/routes/NotFoundPage"
@@ -20,9 +15,6 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom"
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"
 import "#src/components/styles.css"
-import "#src/features/auth/styles.css"
-import "#src/features/interview/styles.css"
-import "#src/features/cart/styles.css"
 import theme from "#src/config/theme"
 
 makeApp(() => {
@@ -53,31 +45,79 @@ makeApp(() => {
         <AppRoute queryClient={client} fallback={<ShowLoadingOverlay />} />
       ),
       children: [
+        // Self service
         {
-          element: <LayoutRoute Layout={SelfServiceLayout} />,
+          async lazy() {
+            await Promise.all([
+              import("#src/features/auth/styles.css"),
+              import("#src/features/interview/styles.css"),
+              import("#src/features/cart/styles.css"),
+            ])
+            const { SelfServiceLayout } = await import(
+              "#src/features/selfservice/routes/SelfServiceLayout"
+            )
+            return {
+              element: <LayoutRoute Layout={SelfServiceLayout} />,
+            }
+          },
           children: [
             {
               errorElement: <NotFoundErrorBoundary />,
               children: [
                 {
                   path: "/events/:eventId",
-                  element: <EventRoute />,
+                  async lazy() {
+                    const { EventRoute } = await import(
+                      "#src/features/selfservice/routes/EventRoute"
+                    )
+                    return {
+                      element: <EventRoute />,
+                    }
+                  },
                   children: [
                     {
                       index: true,
-                      element: <EventPage />,
+                      async lazy() {
+                        const { EventPage } = await import(
+                          "#src/features/selfservice/routes/EventPage"
+                        )
+                        return {
+                          element: <EventPage />,
+                        }
+                      },
                     },
                     {
                       path: "cart",
-                      element: <CartPage />,
+                      async lazy() {
+                        const { CartPage } = await import(
+                          "#src/features/selfservice/routes/CartPage"
+                        )
+                        return {
+                          element: <CartPage />,
+                        }
+                      },
                     },
                     {
                       path: "access-code/:accessCode",
-                      element: <AccessCodeRoute />,
+                      async lazy() {
+                        const { AccessCodeRoute } = await import(
+                          "#src/features/selfservice/routes/AccessCodeRoute"
+                        )
+                        return {
+                          element: <AccessCodeRoute />,
+                        }
+                      },
                       children: [
                         {
                           index: true,
-                          element: <EventPage />,
+                          async lazy() {
+                            const { EventRoute } = await import(
+                              "#src/features/selfservice/routes/EventRoute"
+                            )
+                            return {
+                              element: <EventRoute />,
+                            }
+                          },
                         },
                       ],
                     },
@@ -87,8 +127,64 @@ makeApp(() => {
             },
           ],
         },
+
+        // Registration
         {
-          element: <LayoutRoute Layout={SelfServiceLayout} />,
+          path: "/registrations",
+          async lazy() {
+            await Promise.all([
+              import("#src/features/auth/styles.css"),
+              import(
+                "#src/features/registration/components/registration/fields/RegistrationFields.scss"
+              ),
+              import(
+                "#src/features/registration/components/registration/registration/Registration.module.scss"
+              ),
+              import(
+                "#src/features/registration/components/search/Results.scss"
+              ),
+            ])
+            const { RegistrationLayout } = await import(
+              "#src/features/registration/routes/RegistrationLayout"
+            )
+            return {
+              element: <LayoutRoute Layout={RegistrationLayout} />,
+            }
+          },
+          children: [
+            {
+              errorElement: <NotFoundErrorBoundary />,
+              children: [
+                {
+                  index: true,
+                  async lazy() {
+                    const { SearchPage } = await import(
+                      "#src/features/registration/routes/SearchPage"
+                    )
+
+                    return {
+                      element: <SearchPage />,
+                    }
+                  },
+                },
+                {
+                  path: ":registrationId",
+                  async lazy() {
+                    const { RegistrationPage } = await import(
+                      "#src/features/registration/routes/RegistrationPage"
+                    )
+
+                    return {
+                      element: <RegistrationPage />,
+                    }
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          element: <LayoutRoute Layout={SimpleLayout} />,
           children: [
             {
               path: "*",
@@ -103,7 +199,10 @@ makeApp(() => {
   return (
     <QueryClientProvider client={client}>
       <MantineProvider theme={theme}>
-        <RouterProvider router={router} />
+        <RouterProvider
+          router={router}
+          fallbackElement={<ShowLoadingOverlay />}
+        />
         <LoadingOverlay />
       </MantineProvider>
     </QueryClientProvider>
