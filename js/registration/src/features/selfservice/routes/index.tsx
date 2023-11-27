@@ -5,25 +5,28 @@ import {
   Subtitle,
   Title,
 } from "#src/components"
+import { isNotFoundError } from "#src/util/api"
 import { makeApp } from "#src/util/react"
 import { MantineProvider } from "@mantine/core"
-import { RouterProvider, createBrowserRouter } from "react-router-dom"
-
-import { SearchPage } from "#src/features/registration/routes/SearchPage"
-import { RegistrationPage } from "#src/features/registration/routes/RegistrationPage"
 import {
   QueryClient,
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query"
-import { AppRoute, AuthErrorBoundary } from "#src/routes/AppRoute"
-import { LayoutRoute } from "#src/routes/LayoutRoute"
-import { useAuth } from "#src/features/auth/hooks"
-import { useApp } from "#src/hooks/app"
+import {
+  Outlet,
+  RouterProvider,
+  createBrowserRouter,
+  useParams,
+} from "react-router-dom"
+
+import { AppRoute } from "#src/routes/AppRoute"
 import { ReactNode } from "react"
+
+import { useApp } from "#src/hooks/app"
+import { useAuth } from "#src/features/auth/hooks"
+import { useSelfServiceAPI } from "#src/features/selfservice/hooks"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
-import { useEventAPI } from "#src/features/event/hooks"
-import { isNotFoundError } from "#src/util/api"
 
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"
@@ -31,15 +34,18 @@ import "#src/components/styles.css"
 import "#src/features/auth/styles.css"
 import "#src/features/interview/styles.css"
 import "#src/features/cart/styles.css"
-import "#src/features/registration/components/search/Results.scss"
-import "#src/features/registration/components/registration/fields/RegistrationFields.scss"
+import "#src/features/selfservice/routes/EventPage.module.css"
+import "#src/features/selfservice/routes/CartPage.module.css"
 import theme from "#src/config/theme"
+import { LayoutRoute } from "#src/routes/LayoutRoute"
+import { EventPage } from "#src/features/selfservice/routes/EventPage"
+import { CurrentCartStoreProvider } from "#src/features/cart/providers"
 
-const RegistrationLayout = ({ children }: { children?: ReactNode }) => {
+const SelfServiceLayout = ({ children }: { children?: ReactNode }) => {
   const app = useApp()
   const auth = useAuth()
-  const eventAPI = useEventAPI()
-  const query = useQuery(eventAPI.list())
+  const selfService = useSelfServiceAPI()
+  const query = useQuery(selfService.listEvents())
 
   return (
     <SimpleLayout>
@@ -75,38 +81,37 @@ makeApp(() => {
     },
   })
 
-  const router = createBrowserRouter(
-    [
-      {
-        element: (
-          <AppRoute queryClient={client} fallback={<ShowLoadingOverlay />} />
-        ),
-        children: [
-          {
-            element: <LayoutRoute Layout={RegistrationLayout} />,
-            children: [
-              {
-                errorElement: <AuthErrorBoundary />,
-                children: [
-                  {
-                    index: true,
-                    element: <SearchPage />,
-                  },
-                  {
-                    path: ":registrationId",
-                    element: <RegistrationPage />,
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-    ],
+  const router = createBrowserRouter([
     {
-      basename: "/registrations",
+      element: (
+        <AppRoute queryClient={client} fallback={<ShowLoadingOverlay />} />
+      ),
+      children: [
+        {
+          element: <LayoutRoute Layout={SelfServiceLayout} />,
+          children: [
+            {
+              path: "/events/:eventId",
+              Component() {
+                const { eventId = "" } = useParams()
+                return (
+                  <CurrentCartStoreProvider key={eventId} eventId={eventId}>
+                    <Outlet />
+                  </CurrentCartStoreProvider>
+                )
+              },
+              children: [
+                {
+                  index: true,
+                  element: <EventPage />,
+                },
+              ],
+            },
+          ],
+        },
+      ],
     },
-  )
+  ])
 
   return (
     <QueryClientProvider client={client}>

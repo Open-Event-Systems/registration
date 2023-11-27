@@ -1,22 +1,27 @@
 import { AuthContext } from "#src/features/auth/hooks"
+import { CartAPIContext } from "#src/features/cart/api"
 import { CheckoutAPIContext } from "#src/features/checkout/api"
 import { EventAPIContext } from "#src/features/event/hooks"
 import { RegistrationAPIContext } from "#src/features/registration/hooks"
+import { SelfServiceAPIContext } from "#src/features/selfservice/api"
 import { WretchContext } from "#src/hooks/api"
 import { AppContext, AppStore } from "#src/stores/AppStore"
+import { QueryClient } from "@tanstack/react-query"
 import { Context, ReactNode, useLayoutEffect, useState } from "react"
 
 export const AppProvider = ({
   children,
+  queryClient,
   fallback,
 }: {
   children?: ReactNode
+  queryClient: QueryClient
   fallback?: ReactNode
 }) => {
   const [app, setApp] = useState<AppStore | null>(null)
 
   useLayoutEffect(() => {
-    AppStore.fromConfig()
+    AppStore.fromConfig(queryClient)
       .then((app) => {
         return app.authStore.load().then(() => app)
       })
@@ -34,16 +39,20 @@ export const AppProvider = ({
         AuthContext,
         WretchContext,
         EventAPIContext,
+        CartAPIContext,
         RegistrationAPIContext,
         CheckoutAPIContext,
+        SelfServiceAPIContext,
       ]}
       values={[
         app,
         app.authStore,
         app.authStore.authWretch,
         app.eventAPI,
+        app.cartAPI,
         app.registrationAPI,
         app.checkoutAPI,
+        app.selfServiceAPI,
       ]}
     >
       {children}

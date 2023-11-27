@@ -1,3 +1,13 @@
+import { DefinedInitialDataOptions } from "@tanstack/react-query"
+
+export interface SelfServiceEvent {
+  id: string
+  name: string
+  description?: string
+  date: string
+  open: boolean
+}
+
 export interface SelfServiceRegistration {
   id: string
   title?: string
@@ -24,4 +34,12 @@ declare module "#src/hooks/location" {
   interface LocationState {
     accessCodeDialogRegistrationId?: string
   }
+}
+
+export type SelfServiceAPI = {
+  listEvents(): DefinedInitialDataOptions<Map<string, SelfServiceEvent>>
+  listRegistrations(options?: {
+    eventId?: string
+    accessCode?: string
+  }): DefinedInitialDataOptions<SelfServiceRegistrationListResponse>
 }

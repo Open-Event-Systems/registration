@@ -14,18 +14,25 @@ import { observer } from "mobx-react-lite"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import {
   useAccessCodeLoader,
+  useSelfServiceAPI,
   useSelfServiceLoader,
 } from "#src/features/selfservice/hooks"
 import { Event } from "#src/features/event/types"
-import { SelfServiceRegistrationResponse } from "#src/features/selfservice/types"
-import { fetchCartInterview } from "#src/features/cart/api"
+import {
+  SelfServiceEvent,
+  SelfServiceRegistrationResponse,
+} from "#src/features/selfservice/types"
+import {
+  fetchCartInterview,
+  getCartIdFromResponse,
+} from "#src/features/cart/api"
 import { useWretch } from "#src/hooks/api"
 import {
   fetchCurrentOrEmptyCart,
   getCurrentCartId,
 } from "#src/features/cart/utils"
 import { useEvents } from "#src/features/event/hooks"
-import { useCurrentCartStore } from "#src/features/cart/hooks"
+import { useCartAPI, useCurrentCartStore } from "#src/features/cart/hooks"
 import { Link as RLink } from "react-router-dom"
 import { InterviewOptionsDialog } from "#src/features/cart/components/interview/InterviewOptionsDialog"
 import { InterviewDialog } from "#src/features/interview/components/InterviewDialog"
@@ -36,123 +43,167 @@ import { useInterviewRecordStore } from "#src/features/interview/hooks"
 import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 
 import classes from "./EventPage.module.css"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { NotFoundError } from "#src/features/loader"
+import { useEffect } from "react"
+import { isWretchError } from "#src/util/api"
 
 export const EventPage = () => {
   const { eventId = "", accessCode = "" } = useParams()
-  const events = useEvents()
-  const event = events.getEvent(eventId) as Event
-  const selfService = useSelfServiceLoader()
-  const currentCartStore = useCurrentCartStore()
-  const accessCodeLoader = useAccessCodeLoader()
+
+  const client = useQueryClient()
+  const cartAPI = useCartAPI()
+  const selfServiceAPI = useSelfServiceAPI()
+  const events = useQuery(selfServiceAPI.listEvents())
+  const event = events.data.get(eventId)
+
+  const registrations = useQuery(
+    selfServiceAPI.listRegistrations({
+      eventId: eventId,
+      accessCode: accessCode,
+    }),
+  )
+
+  const currentCart = useQuery({
+    ...cartAPI.readCurrentCart(eventId),
+    throwOnError: false,
+  })
+
+  const currentCartFailed =
+    (currentCart.isError &&
+      isWretchError(currentCart.error) &&
+      currentCart.error.status == 404) ||
+    (currentCart.isSuccess && currentCart.data == null)
+
+  const emptyCart = useQuery({
+    ...cartAPI.readEmptyCart(eventId),
+    enabled: currentCartFailed,
+  })
+  const setCurrentCart = useMutation(cartAPI.setCurrentCart(eventId))
+
+  // replace current cart with empty cart if not found
+  useEffect(() => {
+    if (currentCartFailed && emptyCart.data) {
+      setCurrentCart.mutate(emptyCart.data)
+    }
+  }, [currentCartFailed, emptyCart.data])
+
+  // const events = useEvents()
+  // const event = events.getEvent(eventId) as Event
+  // const selfService = useSelfServiceLoader()
+  // const currentCartStore = useCurrentCartStore()
+  // const accessCodeLoader = useAccessCodeLoader()
 
   const wretch = useWretch()
   const loc = useLocation()
   const navigate = useNavigate()
 
+  if (!registrations.isSuccess || !currentCart.data) {
+    return (
+      <CardGrid>
+        <RegistrationCardPlaceholder />
+        <RegistrationCardPlaceholder />
+        <RegistrationCardPlaceholder />
+      </CardGrid>
+    )
+  }
+
+  if (!event) {
+    // TODO: move where this error is defined, and catch it in a boundary
+    throw new NotFoundError()
+  }
+
+  const currentCartId = currentCart.data[0]
+
   return (
     <PageTitle title={event.name}>
-      <Subtitle subtitle="Manage registrations">
-        <selfService.Component
-          placeholder={
-            <CardGrid>
-              <RegistrationCardPlaceholder />
-              <RegistrationCardPlaceholder />
-              <RegistrationCardPlaceholder />
-            </CardGrid>
+      <RegistrationsView
+        event={event}
+        currentCartId={currentCartId}
+        registrations={registrations.data.registrations}
+      />
+      {/* Spacer only for small screens */}
+      <Box className={classes.spacer} />
+      {registrations.data.add_options.length > 0 && (
+        <Grid align="center" className={classes.grid}>
+          <Grid.Col
+            span={{
+              base: 12,
+              sm: "content",
+            }}
+          >
+            <Button
+              variant="filled"
+              leftSection={<IconPlus />}
+              fullWidth
+              onClick={() => {
+                // show dialog
+                navigate(loc, {
+                  state: {
+                    ...loc.state,
+                    showInterviewOptionsDialog: {
+                      eventId: eventId,
+                      cartId: currentCartId,
+                    },
+                  },
+                })
+              }}
+            >
+              Add Registration
+            </Button>
+          </Grid.Col>
+          {currentCart.data[1].registrations.length > 0 ? (
+            <Grid.Col span="content">
+              <Anchor component={RLink} to={`/events/${eventId}/cart`}>
+                View cart ({currentCart.data[1].registrations.length})
+              </Anchor>
+            </Grid.Col>
+          ) : null}
+        </Grid>
+      )}
+      <InterviewOptionsDialog.Manager
+        options={registrations.data.add_options}
+      />
+      {/* <AccessCodeOptionsDialog.Manager
+        opened={
+          !!accessCodeLoader.value &&
+          !loc.state?.showInterviewDialog?.eventId
+        }
+        accessCode={accessCode}
+        response={results}
+      /> */}
+      <InterviewDialog.Manager
+        onComplete={async (record) => {
+          const response = record.stateResponse
+          const metadata = record.metadata
+
+          if (
+            metadata.cartId &&
+            metadata.eventId &&
+            response.complete &&
+            response.target_url
+          ) {
+            const res = await wretch
+              .url(response.target_url, true)
+              .json({ state: response.state })
+              .post()
+              .res()
+
+            const newCartId = getCartIdFromResponse(res)
+            const cart: Cart = await res.json()
+            client.setQueryData(cartAPI.readCart(newCartId).queryKey, [
+              newCartId,
+              cart,
+            ])
+            setCurrentCart.mutate([newCartId, cart])
+            navigate(loc, {
+              state: { ...loc.state, showInterviewDialog: undefined },
+              replace: true,
+            })
+            navigate(`/events/${metadata.eventId}/cart`)
           }
-        >
-          {(results) => {
-            return (
-              <>
-                <RegistrationsView
-                  event={event}
-                  registrations={results.registrations}
-                />
-                {/* Spacer only for small screens */}
-                <Box className={classes.spacer} />
-                {results.add_options.length > 0 && (
-                  <Grid align="center" className={classes.grid}>
-                    <Grid.Col
-                      span={{
-                        base: 12,
-                        sm: "content",
-                      }}
-                    >
-                      <Button
-                        variant="filled"
-                        leftSection={<IconPlus />}
-                        fullWidth
-                        onClick={() => {
-                          // show dialog
-                          navigate(loc, {
-                            state: {
-                              ...loc.state,
-                              showInterviewOptionsDialog: eventId,
-                            },
-                          })
-                        }}
-                      >
-                        Add Registration
-                      </Button>
-                    </Grid.Col>
-                    {currentCartStore.loader?.value?.registrations.length ? (
-                      <Grid.Col span="content">
-                        <Anchor
-                          component={RLink}
-                          to={`/events/${eventId}/cart`}
-                        >
-                          View cart (
-                          {currentCartStore.loader.value.registrations.length})
-                        </Anchor>
-                      </Grid.Col>
-                    ) : null}
-                  </Grid>
-                )}
-                <InterviewOptionsDialog.Manager options={results.add_options} />
-                <AccessCodeOptionsDialog.Manager
-                  opened={
-                    !!accessCodeLoader.value &&
-                    !loc.state?.showInterviewDialog?.eventId
-                  }
-                  accessCode={accessCode}
-                  response={results}
-                />
-                <InterviewDialog.Manager
-                  onComplete={async (record) => {
-                    const response = record.stateResponse
-                    const metadata = record.metadata
-
-                    if (
-                      metadata.cartId &&
-                      metadata.eventId &&
-                      response.complete &&
-                      response.target_url
-                    ) {
-                      const res = await wretch
-                        .url(response.target_url, true)
-                        .json({ state: response.state })
-                        .post()
-                        .res()
-
-                      const cart: Cart = await res.json()
-
-                      const url = new URL(res.url)
-                      const parts = url.pathname.split("/")
-                      const newCartId = parts[parts.length - 1]
-                      currentCartStore.setCurrentCart(newCartId, cart)
-                      navigate(loc, {
-                        state: { ...loc.state, showInterviewDialog: undefined },
-                        replace: true,
-                      })
-                      navigate(`/events/${metadata.eventId}/cart`)
-                    }
-                  }}
-                />
-              </>
-            )
-          }}
-        </selfService.Component>
-      </Subtitle>
+        }}
+      />
     </PageTitle>
   )
 }
@@ -161,14 +212,18 @@ const RegistrationsView = observer(
   ({
     event,
     registrations,
+    currentCartId,
   }: {
-    event: Event
+    event: SelfServiceEvent
     registrations: SelfServiceRegistrationResponse[]
+    currentCartId: string
   }) => {
     const navigate = useNavigate()
     const loc = useLocation()
-    const wretch = useWretch()
+    const client = useQueryClient()
     const interviewRecordStore = useInterviewRecordStore()
+
+    const cartAPI = useCartAPI()
 
     if (registrations.length == 0) {
       return <NoRegistrationsMessage className={classes.noRegMessage} />
@@ -185,20 +240,10 @@ const RegistrationsView = observer(
                 label: o.name,
               }))}
               onMenuSelect={async (id) => {
-                let cartId = getCurrentCartId()
-                if (!cartId) {
-                  const [curOrEmptyCartId] = await fetchCurrentOrEmptyCart(
-                    wretch,
-                    event.id,
-                  )
-                  cartId = curOrEmptyCartId
-                }
-
-                const state = await fetchCartInterview(
-                  wretch,
-                  cartId,
-                  id,
-                  r.registration.id,
+                const state = await client.ensureQueryData(
+                  cartAPI.readAddInterview(currentCartId, id, {
+                    registrationId: r.registration.id,
+                  }),
                 )
 
                 const next = await startInterview(
@@ -206,7 +251,7 @@ const RegistrationsView = observer(
                   defaultAPI,
                   state,
                   {
-                    cartId: cartId,
+                    cartId: currentCartId,
                     eventId: event.id,
                   },
                 )

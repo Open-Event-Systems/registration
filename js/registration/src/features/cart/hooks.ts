@@ -1,5 +1,7 @@
 import { placeholderWretch } from "#src/config/api"
+import { CartAPIContext } from "#src/features/cart/api"
 import { CartStore, CurrentCartStore } from "#src/features/cart/stores"
+import { CartAPI } from "#src/features/cart/types"
 import { makeInterviewRecordStore } from "@open-event-systems/interview-lib"
 import { createContext, useContext } from "react"
 
@@ -15,3 +17,5 @@ export const CurrentCartStoreContext = createContext(
 
 export const useCartStore = () => useContext(CartStoreContext)
 export const useCurrentCartStore = () => useContext(CurrentCartStoreContext)
+
+export const useCartAPI = (): CartAPI => useContext(CartAPIContext)

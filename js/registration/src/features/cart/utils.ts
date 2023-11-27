@@ -3,7 +3,7 @@ import { Wretch } from "wretch"
 import { handleNotFound } from "#src/util/api"
 import { Cart } from "#src/features/cart/types"
 
-const COOKIE_NAME = "oes-current-cart"
+const COOKIE_NAME = "oes-current-cart-"
 
 /**
  * Saves the user's current cart ID.
@@ -12,8 +12,9 @@ const COOKIE_NAME = "oes-current-cart"
  * the browsing session. localStorage would keep the data around in between sessions,
  * but sessionStorage is per-tab.
  */
-export const setCurrentCartId = (id: string) => {
-  const cookieStr = `${COOKIE_NAME}=${encodeURIComponent(
+export const setCurrentCartId = (eventId: string, id: string) => {
+  const name = `${COOKIE_NAME}${eventId}`
+  const cookieStr = `${encodeURIComponent(name)}=${encodeURIComponent(
     id,
   )}; path=/; SameSite=Strict`
   document.cookie = cookieStr
@@ -22,12 +23,13 @@ export const setCurrentCartId = (id: string) => {
 /**
  * Get the current cart ID, or undefined.
  */
-export const getCurrentCartId = (): string | undefined => {
+export const getCurrentCartId = (eventId: string): string | undefined => {
+  const name = `${COOKIE_NAME}${eventId}`
   const values = document.cookie
     .split(";")
     .map((e) => e.split("=", 2))
     .map((kvs) => kvs.map((e) => e.trim()))
-    .filter(([k, _v]) => k == COOKIE_NAME)
+    .filter(([k, _v]) => k == encodeURIComponent(name))
     .map(([_k, v]) => v)
 
   return values[0]

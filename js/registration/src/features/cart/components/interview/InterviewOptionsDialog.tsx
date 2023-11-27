@@ -3,14 +3,17 @@ import {
   ModalDialog,
   ModalDialogProps,
 } from "#src/components/dialog/ModalDialog"
-import { useCartStore, useCurrentCartStore } from "#src/features/cart/hooks"
+import { useCartAPI } from "#src/features/cart/hooks"
 import { InterviewOption } from "#src/features/cart/types"
+import { useInterviewRecordStore } from "#src/features/interview"
 import { useLocation, useNavigate } from "#src/hooks/location"
+import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
+import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useLayoutEffect, useState } from "react"
 
 declare module "#src/hooks/location" {
   interface LocationState {
-    showInterviewOptionsDialog?: string
+    showInterviewOptionsDialog?: { eventId: string; cartId: string }
   }
 }
 
@@ -59,12 +62,17 @@ const Manager = (props: InterviewOptionsDialogProps) => {
 
   const loc = useLocation()
   const navigate = useNavigate()
-  const cartStore = useCartStore()
-  const currentCartStore = useCurrentCartStore()
+  const cartAPI = useCartAPI()
+  const recordStore = useInterviewRecordStore()
+
+  const showData = loc.state?.showInterviewOptionsDialog
+  const show = !!showData
+  const eventId = showData?.eventId ?? ""
+  const cartId = showData?.cartId ?? ""
+
+  const client = useQueryClient()
 
   const [prevOptions, setPrevOptions] = useState(options)
-
-  const show = currentCartStore.eventId == loc.state?.showInterviewOptionsDialog
 
   useLayoutEffect(() => {
     if (show) {
@@ -73,11 +81,17 @@ const Manager = (props: InterviewOptionsDialogProps) => {
   }, [show, options])
 
   const handleSelect = async (opt: InterviewOption) => {
-    const record = await cartStore.startInterview(currentCartStore, opt.id)
+    const response = await client.fetchQuery(
+      cartAPI.readAddInterview(cartId, opt.id),
+    )
+    const record = await startInterview(recordStore, defaultAPI, response, {
+      cartId: cartId,
+      eventId: eventId,
+    })
     navigate(loc, {
       state: {
         showInterviewDialog: {
-          eventId: currentCartStore.eventId,
+          eventId: eventId,
           recordId: record.id,
         },
       },

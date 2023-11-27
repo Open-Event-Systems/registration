@@ -1,3 +1,11 @@
+import { CheckoutMethod } from "#src/features/checkout/types/Checkout"
+import { StateResponse } from "@open-event-systems/interview-lib"
+import {
+  DefinedInitialDataOptions,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+} from "@tanstack/react-query"
+
 export interface CartRegistration {
   id: string
   submission_id?: string
@@ -45,6 +53,29 @@ export interface PricingResult {
 export interface InterviewOption {
   id: string
   name: string
+}
+
+export type CartAPI = {
+  readEmptyCart(eventId: string): UndefinedInitialDataOptions<[string, Cart]>
+  readCart(id: string): UndefinedInitialDataOptions<[string, Cart]>
+  readPricingResult(id: string): UndefinedInitialDataOptions<PricingResult>
+  readAddInterview(
+    cartId: string,
+    interviewId: string,
+    options?: { registrationId?: string; accessCode?: string },
+  ): UndefinedInitialDataOptions<StateResponse>
+  readCheckoutMethods(
+    cartId: string,
+  ): UndefinedInitialDataOptions<CheckoutMethod[]>
+  removeRegistrationFromCart(
+    cartId: string,
+  ): UseMutationOptions<[string, Cart], Error, string>
+  readCurrentCart(
+    eventId: string,
+  ): UndefinedInitialDataOptions<[string, Cart] | null>
+  setCurrentCart(
+    eventId: string,
+  ): UseMutationOptions<[string, Cart], Error, [string, Cart]>
 }
 
 declare module "@open-event-systems/interview-lib" {

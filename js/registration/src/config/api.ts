@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query"
 import wretch from "wretch"
 
 let _defaultWretch = wretch()
@@ -30,3 +31,8 @@ export const placeholderWretch = wretch().middlewares([
     throw new Error("The application was not configured")
   },
 ])
+
+/**
+ * The default {@link QueryClient}.
+ */
+export const defaultQueryClient = new QueryClient()

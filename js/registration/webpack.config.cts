@@ -10,7 +10,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
   return {
     mode: prod ? "production" : "development",
     entry: {
-      selfservice: "./src/features/selfservice/index.tsx",
+      selfservice: "./src/features/selfservice/routes/index.tsx",
       receipt: "./src/features/receipt/index.tsx",
       registration: "./src/features/registration/routes/index.tsx"
     },
