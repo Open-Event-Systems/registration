@@ -1,6 +1,6 @@
 import { CheckoutState } from "#src/features/checkout/CheckoutState"
 import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
-import { Loader } from "#src/util/loader"
+import { Loader } from "#src/utils/loader"
 import {
   Alert,
   Button,

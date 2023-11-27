@@ -5,7 +5,7 @@ import {
   Subtitle,
   Title,
 } from "#src/components"
-import { makeApp } from "#src/util/react"
+import { makeApp } from "#src/utils/react"
 import { MantineProvider } from "@mantine/core"
 import { RouterProvider, createBrowserRouter } from "react-router-dom"
 
@@ -23,7 +23,7 @@ import { useApp } from "#src/hooks/app"
 import { ReactNode } from "react"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { useEventAPI } from "#src/features/event/hooks"
-import { isNotFoundError } from "#src/util/api"
+import { isNotFoundError } from "#src/utils/api"
 
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"

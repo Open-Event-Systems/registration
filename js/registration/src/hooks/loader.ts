@@ -1,5 +1,5 @@
 import { LoadingContext } from "#src/components"
-import { Loader, createLoader } from "#src/util/loader"
+import { Loader, createLoader } from "#src/utils/loader"
 import { useCallback, useContext, useState } from "react"
 
 /**

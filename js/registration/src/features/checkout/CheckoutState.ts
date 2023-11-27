@@ -2,7 +2,7 @@ import { PaymentServiceMap } from "#src/features/checkout/types/Checkout"
 import { CheckoutResponse } from "#src/features/checkout/types/Checkout"
 import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
 import { CheckoutComponent } from "#src/features/checkout/types/CheckoutComponent"
-import { Loader, createLoader } from "#src/util/loader"
+import { Loader, createLoader } from "#src/utils/loader"
 import { action, makeAutoObservable } from "mobx"
 
 /**

@@ -5,8 +5,8 @@ import {
   Subtitle,
   Title,
 } from "#src/components"
-import { isNotFoundError } from "#src/util/api"
-import { makeApp } from "#src/util/react"
+import { isNotFoundError } from "#src/utils/api"
+import { makeApp } from "#src/utils/react"
 import { MantineProvider, Text } from "@mantine/core"
 import {
   QueryClient,

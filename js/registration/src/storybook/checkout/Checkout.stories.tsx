@@ -3,7 +3,7 @@ import { CheckoutContainer } from "#src/features/checkout/components/checkout/Ch
 import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
 import { CheckoutResponse } from "#src/features/checkout/types/Checkout"
 import { getCheckoutComponent } from "#src/features/checkout/types/PaymentService"
-import { Loader, createLoader } from "#src/util/loader"
+import { Loader, createLoader } from "#src/utils/loader"
 import { useEffect, useState } from "react"
 
 export default {

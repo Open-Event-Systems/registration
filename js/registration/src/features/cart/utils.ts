@@ -1,6 +1,6 @@
 import { fetchCart, fetchEmptyCart } from "#src/features/cart/api"
 import { Wretch } from "wretch"
-import { handleNotFound } from "#src/util/api"
+import { handleNotFound } from "#src/utils/api"
 import { Cart } from "#src/features/cart/types"
 
 const COOKIE_NAME = "oes-current-cart-"

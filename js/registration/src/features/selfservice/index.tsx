@@ -1,4 +1,4 @@
-import { makeApp } from "#src/util/react"
+import { makeApp } from "#src/utils/react"
 import { RouterProvider } from "react-router-dom"
 import { router } from "#src/features/selfservice/routes/Router"
 import { MantineProvider } from "@mantine/core"

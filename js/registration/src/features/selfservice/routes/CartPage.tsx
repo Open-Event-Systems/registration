@@ -31,7 +31,7 @@ import { InterviewDialog } from "#src/features/interview/components/InterviewDia
 import { CartRegistration } from "#src/features/cart/components/cart/CartRegistration"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { isWretchError } from "#src/util/api"
+import { isWretchError } from "#src/utils/api"
 import { setCurrentCartId } from "#src/features/cart/utils"
 
 import classes from "./CartPage.module.css"

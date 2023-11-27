@@ -6,7 +6,7 @@ import {
 } from "#src/features/checkout/api"
 import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
 import { getCheckoutComponent } from "#src/features/checkout/types/PaymentService"
-import { Loader, createLoader } from "#src/util/loader"
+import { Loader, createLoader } from "#src/utils/loader"
 import { action, makeAutoObservable } from "mobx"
 import { Wretch } from "wretch"
 

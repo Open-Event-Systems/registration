@@ -12,8 +12,8 @@ import {
 import { SelfServiceAPI } from "#src/features/selfservice/types"
 import { useWretch } from "#src/hooks/api"
 import { useLocation, useNavigate } from "#src/hooks/location"
-import { isWretchError } from "#src/util/api"
-import { createLoader } from "#src/util/loader"
+import { isWretchError } from "#src/utils/api"
+import { createLoader } from "#src/utils/loader"
 import {
   InterviewStateRecord,
   defaultAPI,

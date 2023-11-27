@@ -1,5 +1,5 @@
 import { CheckoutMethodsDialog } from "#src/features/checkout/components/methods/CheckoutMethodsDialog"
-import { createLoader } from "#src/util/loader"
+import { createLoader } from "#src/utils/loader"
 import { Meta, StoryFn } from "@storybook/react"
 
 export default {
