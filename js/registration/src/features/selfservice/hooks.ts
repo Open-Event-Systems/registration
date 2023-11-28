@@ -1,38 +1,20 @@
-import { placeholderWretch } from "#src/config/api"
 import { getCartIdFromResponse } from "#src/features/cart/api"
 import { useCartAPI } from "#src/features/cart/hooks"
 import { Cart } from "#src/features/cart/types"
 import { setCurrentCartId } from "#src/features/cart/utils"
 import { useInterviewRecordStore } from "#src/features/interview"
-import {
-  SelfServiceAPIContext,
-  checkAccessCode,
-  listSelfServiceRegistrations,
-} from "#src/features/selfservice/api"
+import { SelfServiceAPIContext } from "#src/features/selfservice/api"
 import { SelfServiceAPI } from "#src/features/selfservice/types"
 import { useWretch } from "#src/hooks/api"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { isNotFoundError } from "#src/utils/api"
-import { createLoader } from "#src/utils/loader"
 import {
   InterviewStateRecord,
   defaultAPI,
   startInterview,
 } from "@open-event-systems/interview-lib"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { createContext, useCallback, useContext, useEffect } from "react"
-
-export const SelfServiceLoaderContext = createContext(
-  createLoader(() => listSelfServiceRegistrations(placeholderWretch)),
-)
-
-export const useSelfServiceLoader = () => useContext(SelfServiceLoaderContext)
-
-export const AccessCodeLoaderContext = createContext(
-  createLoader(() => checkAccessCode(placeholderWretch, "", "")),
-)
-
-export const useAccessCodeLoader = () => useContext(AccessCodeLoaderContext)
+import { useCallback, useContext, useEffect } from "react"
 
 export const useSelfServiceAPI = (): SelfServiceAPI =>
   useContext(SelfServiceAPIContext)
