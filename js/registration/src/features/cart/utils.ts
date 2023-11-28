@@ -1,8 +1,3 @@
-import { fetchCart, fetchEmptyCart } from "#src/features/cart/api"
-import { Wretch } from "wretch"
-import { handleNotFound } from "#src/utils/api"
-import { Cart } from "#src/features/cart/types"
-
 const COOKIE_NAME = "oes-current-cart-"
 
 /**
@@ -33,43 +28,4 @@ export const getCurrentCartId = (eventId: string): string | undefined => {
     .map(([_k, v]) => v)
 
   return values[0]
-}
-
-/**
- * Get the current cart, or the empty cart if the saved current cart ID cannot be found.
- * @returns A pair of the cart ID and the {@link Cart}.
- */
-export const fetchCurrentOrEmptyCart = async (
-  wretch: Wretch,
-  eventId: string,
-): Promise<readonly [string, Cart]> => {
-  const currentId = getCurrentCartId()
-
-  if (!currentId) {
-    return await fetchEmptyCart(wretch, eventId)
-  } else {
-    const [cartId, cart] = await fetchCartOrEmpty(wretch, currentId, eventId)
-    if (cartId != currentId) {
-      setCurrentCartId(cartId)
-    }
-
-    return [cartId, cart]
-  }
-}
-
-/**
- * Fetch the given cart ID, or the empty cart if not found.
- */
-export const fetchCartOrEmpty = async (
-  wretch: Wretch,
-  cartId: string,
-  eventId: string,
-): Promise<readonly [string, Cart]> => {
-  const result = await handleNotFound(fetchCart(wretch, cartId))
-
-  if (result) {
-    return [cartId, result]
-  }
-
-  return await fetchEmptyCart(wretch, eventId)
 }

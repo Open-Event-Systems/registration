@@ -20,13 +20,17 @@ export const Default: StoryObj<typeof RegistrationFields> = {
       [
         "Options",
         <OptionsField
+          key="options"
           options={[
             { id: "standard", label: "Standard" },
             { id: "vip", label: "VIP" },
           ]}
         />,
       ],
-      ["Note", <Note value={"### Example Note\n\nAn example note."} />],
+      [
+        "Note",
+        <Note key="note" value={"### Example Note\n\nAn example note."} />,
+      ],
     ],
   },
 }

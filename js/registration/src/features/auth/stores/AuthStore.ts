@@ -10,11 +10,6 @@ import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 const JS_CLIENT_ID = "oes"
 
 /**
- * The redirect URI.
- */
-const REDIRECT_URI = "/auth/redirect"
-
-/**
  * The local storage key for the auth data.
  */
 const LOCAL_STORAGE_KEY = "oes-auth-data-v1"

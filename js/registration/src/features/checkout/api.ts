@@ -5,7 +5,6 @@ import {
   PaymentServiceID,
 } from "#src/features/checkout/types/Checkout"
 import { CheckoutAPI } from "#src/features/checkout/types/CheckoutAPI"
-import { getNextFunc } from "#src/utils/api"
 import { createContext } from "react"
 import { Wretch } from "wretch"
 import queryString from "wretch/addons/queryString"

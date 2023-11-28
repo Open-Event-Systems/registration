@@ -12,12 +12,7 @@ import { Registration } from "#src/features/registration/components/registration
 import { useRegistrationAPI } from "#src/features/registration/hooks"
 import { Anchor, Button, Group, Skeleton, Stack, Table } from "@mantine/core"
 import { IconCheck, IconEdit, IconTrash } from "@tabler/icons-react"
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import dayjs from "dayjs"
 import { observer } from "mobx-react-lite"
 import { useState } from "react"

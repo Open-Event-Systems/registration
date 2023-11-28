@@ -4,6 +4,7 @@ import {
 } from "#src/components/dialog/ModalDialog"
 import { useInterviewRecordStore } from "#src/features/interview/hooks"
 import { useLocation, useNavigate } from "#src/hooks/location"
+import { LoadingOverlay } from "@mantine/core"
 import { Interview, Step } from "@open-event-systems/interview-components"
 import {
   InterviewAPI,
@@ -12,7 +13,6 @@ import {
 import { FormValues } from "@open-event-systems/interview-lib"
 import clsx from "clsx"
 import { useRef } from "react"
-import { WretchResponse } from "wretch"
 
 export type InterviewDialogProps = {
   onSubmit?: (values: FormValues) => void
@@ -71,6 +71,7 @@ export const InterviewDialog = (props: InterviewDialogProps) => {
           onSubmit={onSubmit}
         />
       )}
+      <LoadingOverlay visible={submitting} />
     </ModalDialog>
   )
 }

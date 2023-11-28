@@ -1,6 +1,4 @@
-import { useEvents } from "#src/features/event/hooks"
 import { Event } from "#src/features/event/types"
-import { Await, createLoader, useLoader } from "#src/features/loader"
 import {
   Registration as IRegistration,
   RegistrationState,
@@ -35,16 +33,14 @@ export const Registration = (props: RegistrationProps) => {
     onSave,
     onCancel,
   } = props
-  const events = useEvents()
 
   // hacky way to clone an object
   const [editState, setEditState] = useState(() =>
     observable(JSON.parse(JSON.stringify(registration))),
   )
 
-  const event = eventsMap
-    ? eventsMap.get(registration.event_id)
-    : events.getEvent(registration.event_id)
+  const event = eventsMap ? eventsMap.get(registration.event_id) : undefined
+
   return (
     <>
       {editable && (
@@ -83,33 +79,43 @@ const getFields = (r: IRegistration, editable: boolean, event?: Event) => {
   const fields: unknown[] = [
     ["No.", r.number],
     ["Event", event?.name || r.event_id],
-    ["Created At", <DateTimeField name="date_created" />],
-    r.date_updated && ["Updated At", <DateTimeField name="date_updated" />],
+    ["Created At", <DateTimeField key="date_created" name="date_created" />],
+    r.date_updated && [
+      "Updated At",
+      <DateTimeField key="date_updated" name="date_updated" />,
+    ],
     ["Status", formatState(r.state)],
     (r.preferred_name || editable) && [
       "Preferred Name",
-      <TextField name="preferred_name" editable={editable} />,
+      <TextField
+        key="preferred_name"
+        name="preferred_name"
+        editable={editable}
+      />,
     ],
     (r.first_name || editable) && [
       "First Name",
-      <TextField name="first_name" editable={editable} />,
+      <TextField key="first_name" name="first_name" editable={editable} />,
     ],
     (r.last_name || editable) && [
       "Last Name",
-      <TextField name="last_name" editable={editable} />,
+      <TextField key="last_name" name="last_name" editable={editable} />,
     ],
     (r.birth_date || editable) && [
       "Birth Date",
-      <DateField name="birth_date" editable={editable} />,
+      <DateField key="birth_date" name="birth_date" editable={editable} />,
     ],
     (r.email || editable) && [
       "Email",
-      <TextField name="email" editable={editable} />,
+      <TextField key="email" name="email" editable={editable} />,
     ],
-    ["Options", <OptionsField name="option_ids" editable={editable} />],
+    [
+      "Options",
+      <OptionsField key="option_ids" name="option_ids" editable={editable} />,
+    ],
     (r.note || editable) && [
       "Note",
-      <NoteField name="note" editable={editable} />,
+      <NoteField key="note" name="note" editable={editable} />,
     ],
   ]
 

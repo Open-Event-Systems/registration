@@ -9,9 +9,5 @@ import { ReactNode } from "react"
  * resolution.
  */
 export const ThemeProvider = ({ children }: { children?: ReactNode }) => {
-  return (
-    <MantineProvider theme={theme} withGlobalStyles withNormalizeCSS>
-      {children}
-    </MantineProvider>
-  )
+  return <MantineProvider theme={theme}>{children}</MantineProvider>
 }

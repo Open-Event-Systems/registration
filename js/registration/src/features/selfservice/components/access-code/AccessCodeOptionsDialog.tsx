@@ -3,11 +3,7 @@ import {
   ModalDialog,
   ModalDialogProps,
 } from "#src/components/dialog/ModalDialog"
-import {
-  useCartAPI,
-  useCartStore,
-  useCurrentCartStore,
-} from "#src/features/cart/hooks"
+import { useCartAPI } from "#src/features/cart/hooks"
 import { useInterviewRecordStore } from "#src/features/interview"
 import { AccessCodeOptions } from "#src/features/selfservice/components/access-code/AccessCodeOptions"
 import { SelfServiceRegistrationListResponse } from "#src/features/selfservice/types"

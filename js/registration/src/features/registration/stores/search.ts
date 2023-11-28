@@ -2,10 +2,7 @@ import {
   RegistrationAPI,
   RegistrationSearchResult,
 } from "#src/features/registration"
-import {
-  UndefinedInitialDataInfiniteOptions,
-  UseInfiniteQueryOptions,
-} from "@tanstack/react-query"
+import { UndefinedInitialDataInfiniteOptions } from "@tanstack/react-query"
 import { makeAutoObservable, reaction } from "mobx"
 import { createContext } from "react"
 

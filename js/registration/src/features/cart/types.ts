@@ -1,7 +1,6 @@
 import { CheckoutMethod } from "#src/features/checkout/types/Checkout"
 import { StateResponse } from "@open-event-systems/interview-lib"
 import {
-  DefinedInitialDataOptions,
   UndefinedInitialDataOptions,
   UseMutationOptions,
 } from "@tanstack/react-query"

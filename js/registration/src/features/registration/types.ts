@@ -2,7 +2,6 @@ import {
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
   UseMutationOptions,
-  UseQueryOptions,
 } from "@tanstack/react-query"
 
 export enum RegistrationState {

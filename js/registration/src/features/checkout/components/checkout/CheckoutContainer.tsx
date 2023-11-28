@@ -7,7 +7,6 @@ import {
   LoadingOverlay,
   LoadingOverlayProps,
   Text,
-  Title,
 } from "@mantine/core"
 import { observer } from "mobx-react-lite"
 import { ReactNode, useEffect } from "react"

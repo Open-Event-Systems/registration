@@ -11,8 +11,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
     mode: prod ? "production" : "development",
     entry: {
       main: "./src/routes/index.tsx",
-      // receipt: "./src/features/receipt/index.tsx",
-      // registration: "./src/features/registration/routes/index.tsx"
+      receipt: "./src/features/receipt/index.tsx",
     },
     output: {
       publicPath: "/", // TODO: make configurable
@@ -120,18 +119,12 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         chunks: ["main"],
         filename: "index.html",
       }),
-      // new HtmlWebpackPlugin({
-      //   title: "Registration",
-      //   template: "./src/index.html",
-      //   chunks: ["registration"],
-      //   filename: "registrations/index.html",
-      // }),
-      // new HtmlWebpackPlugin({
-      //   title: "Receipt",
-      //   template: "./src/index.html",
-      //   chunks: ["receipt"],
-      //   filename: "receipt/index.html",
-      // }),
+      new HtmlWebpackPlugin({
+        title: "Receipt",
+        template: "./src/index.html",
+        chunks: ["receipt"],
+        filename: "receipt/index.html",
+      }),
     ],
     // source map config
     devtool: prod ? false : "eval-cheap-source-map",

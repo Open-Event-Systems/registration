@@ -1,7 +1,4 @@
-import {
-  DefinedInitialDataOptions,
-  UseQueryOptions,
-} from "@tanstack/react-query"
+import { DefinedInitialDataOptions } from "@tanstack/react-query"
 
 export interface Event {
   id: string

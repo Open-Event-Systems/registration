@@ -40,13 +40,13 @@ ButtonList.displayName = "ButtonList"
 
 export type ButtonListButtonProps = ButtonProps
 
-const ButtonListButton = createPolymorphicComponent<
-  "button",
-  ButtonListButtonProps
->(
-  forwardRef<HTMLButtonElement, ButtonListButtonProps>((props, ref) => {
-    const { className, classNames, styles, unstyled, children, ...other } =
-      useProps("ButtonListButton", {}, props)
+const _ButtonListButton = forwardRef<HTMLButtonElement, ButtonListButtonProps>(
+  (props, ref) => {
+    const { className, children, ...other } = useProps(
+      "ButtonListButton",
+      {},
+      props,
+    )
 
     return (
       <Button
@@ -62,8 +62,15 @@ const ButtonListButton = createPolymorphicComponent<
         {children}
       </Button>
     )
-  }),
+  },
 )
+
+_ButtonListButton.displayName = "ButtonListButton"
+
+const ButtonListButton = createPolymorphicComponent<
+  "button",
+  ButtonListButtonProps
+>(_ButtonListButton)
 
 ButtonListButton.displayName = "ButtonListButton"
 

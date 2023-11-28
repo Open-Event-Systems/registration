@@ -70,7 +70,7 @@ export const Default: StoryObj<typeof Results> = {
     },
   },
   render(args) {
-    const { registrations, onMore, ...other } = args
+    const { registrations, ...other } = args
     const [more, setMore] = useState<RegistrationSearchResult[] | undefined>(
       undefined,
     )
@@ -117,8 +117,8 @@ export const Default: StoryObj<typeof Results> = {
       <Results
         registrations={[...(registrations ?? []), ...(more ?? [])]}
         hasMore={allowMore}
-        onMore={handleMore}
         {...other}
+        onMore={handleMore}
       />
     )
   },

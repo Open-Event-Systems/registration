@@ -5,7 +5,7 @@ import { Wretch } from "wretch"
  * Not found error.
  */
 export class NotFoundError extends Error {
-  status: 404 = 404
+  status = 404 as const
 
   constructor(message = "Not found") {
     super(message)
