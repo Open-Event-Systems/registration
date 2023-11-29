@@ -58,7 +58,7 @@ from oes.registration.views.responses import (
     BodyValidationError,
     CheckoutErrorResponse,
     CheckoutListResponse,
-    CreateCheckoutResponse,
+    CheckoutResponse,
     PricingResultResponse,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -160,7 +160,7 @@ async def list_available_checkout_methods(
     responses={
         200: ResponseInfo(
             "The created checkout details",
-            content=[ContentInfo(CreateCheckoutResponse)],
+            content=[ContentInfo(CheckoutResponse)],
         ),
         409: ResponseInfo(
             "Info about registrations that are out-of-date",
@@ -233,10 +233,11 @@ async def create_checkout(
         content=Content(
             b"application/json",
             get_converter().dumps(
-                CreateCheckoutResponse(
+                CheckoutResponse(
                     id=checkout_entity.id,
                     service=checkout.service,
                     external_id=checkout.id,
+                    state=checkout.state,
                     data=checkout.response_data,
                 )
             ),
@@ -270,7 +271,7 @@ async def cancel_checkout(id: UUID, checkout_service: CheckoutService) -> Respon
 @docs(
     responses={
         200: ResponseInfo(
-            "An updated checkout", content=[ContentInfo(CreateCheckoutResponse)]
+            "An updated checkout", content=[ContentInfo(CheckoutResponse)]
         ),
         204: ResponseInfo("Returned when the checkout was completed"),
         422: ResponseInfo("An error with payment occurred"),
@@ -454,7 +455,7 @@ def _make_checkout_update_response(
             content=Content(
                 b"application/json",
                 get_converter().dumps(
-                    CreateCheckoutResponse(
+                    CheckoutResponse(
                         id=checkout_entity.id,
                         service=checkout_entity.service,
                         external_id=checkout_result.id,

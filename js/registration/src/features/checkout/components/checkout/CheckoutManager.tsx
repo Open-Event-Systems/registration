@@ -11,6 +11,7 @@ declare module "#src/hooks/location" {
   interface LocationState {
     showCheckoutDialog?: {
       cartId: string
+      checkoutId: string
       service: PaymentServiceID
       method?: string
     }

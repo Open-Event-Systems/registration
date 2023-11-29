@@ -249,12 +249,13 @@ class CheckoutErrorResponse:
 
 
 @frozen
-class CreateCheckoutResponse:
-    """A created checkout."""
+class CheckoutResponse:
+    """A created or updated checkout."""
 
     id: UUID
     service: str
     external_id: str
+    state: CheckoutState
     data: dict[str, Any] = Factory(dict)
 
 

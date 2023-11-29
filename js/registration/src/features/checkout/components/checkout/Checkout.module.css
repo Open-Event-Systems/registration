@@ -1,3 +1,6 @@
 :global .CheckoutDialog-body {
     min-height: 100px;
+    display: grid;
+    grid-template-columns: minmax(1rem, 1fr);
+    row-gap: var(--mantine-spacing-xs);
 }

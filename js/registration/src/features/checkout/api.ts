@@ -1,79 +1,20 @@
-import { placeholderWretch } from "#src/config/api"
+import { defaultQueryClient, placeholderWretch } from "#src/config/api"
+import { CheckoutState } from "#src/features/checkout/types/Checkout"
 import {
   CheckoutListResponse,
   CheckoutResponse,
-  PaymentServiceID,
+  Checkout,
 } from "#src/features/checkout/types/Checkout"
 import { CheckoutAPI } from "#src/features/checkout/types/CheckoutAPI"
+import { QueryClient, UseMutationOptions } from "@tanstack/react-query"
 import { createContext } from "react"
 import { Wretch } from "wretch"
 import queryString from "wretch/addons/queryString"
 
-/**
- * Create a checkout for a cart.
- * @param wretch - The {@link Wretch} instance.
- * @param cartId - The cart Id.
- * @param service - The service ID.
- * @param method - The checkout method.
- * @returns The created checkout info.
- */
-export const createCheckout = async <ID extends PaymentServiceID>(
+export const createCheckoutAPI = (
   wretch: Wretch,
-  cartId: string,
-  service: ID,
-  method: string | undefined,
-): Promise<CheckoutResponse<ID>> => {
-  const res = await wretch
-    .url(`/carts/${cartId}/checkout`)
-    .addon(queryString)
-    .query({ service: service, method: method })
-    .post()
-    .json<CheckoutResponse<ID>>()
-
-  return res
-}
-
-/**
- * Update a checkout.
- * @returns null if the checkout is complete, or additional checkout information if necessary.
- */
-export const updateCheckout = async <ID extends PaymentServiceID>(
-  wretch: Wretch,
-  checkoutId: string,
-  data?: Record<string, unknown>,
-): Promise<CheckoutResponse<ID> | null> => {
-  let req = await wretch.url(`/checkouts/${checkoutId}/update`)
-
-  if (data) {
-    req = req.json(data)
-  }
-
-  return await req
-    .post()
-    .error(422, (e) => {
-      const errObj = e.json
-      throw new Error(errObj.detail)
-    })
-    .res((res) => {
-      if (res.status == 204) {
-        return null
-      }
-
-      return res.json()
-    })
-}
-
-/**
- * Cancel a checkout by ID.
- */
-export const cancelCheckout = async (
-  wretch: Wretch,
-  checkoutId: string,
-): Promise<void> => {
-  await wretch.url(`/checkouts/${checkoutId}/cancel`).put().res()
-}
-
-export const createCheckoutAPI = (wretch: Wretch): CheckoutAPI => {
+  client: QueryClient,
+): CheckoutAPI => {
   const checkoutWretch = wretch.url("/checkouts")
   const cartWretch = wretch.url("/carts")
   return {
@@ -96,45 +37,126 @@ export const createCheckoutAPI = (wretch: Wretch): CheckoutAPI => {
         initialData: [],
       }
     },
-    async create<ID extends PaymentServiceID>(
+    create<ID extends string = string>(
       cartId: string,
       service: ID,
-      method?: string,
-    ) {
-      return await cartWretch
-        .url(`/${cartId}/checkout`)
-        .addon(queryString)
-        .query({ service: service, method: method })
-        .post()
-        .json<CheckoutResponse<ID>>()
-    },
-    async update(checkoutId: string, data?: Record<string, unknown>) {
-      let req = await checkoutWretch.url(`/${checkoutId}/update`)
+      method: string | null = null,
+    ): UseMutationOptions<Checkout<ID>> {
+      return {
+        async mutationFn() {
+          let req = cartWretch
+            .url(`/${cartId}/checkout`)
+            .addon(queryString)
+            .query({ service: service })
 
-      if (data) {
-        req = req.json(data)
+          if (method) {
+            req = req.query({ method: method })
+          }
+
+          const result = await req.post().json<CheckoutResponse<ID>>()
+          return {
+            cartId: cartId,
+            data: result.data,
+            externalId: result.external_id,
+            id: result.id,
+            method: method,
+            service: service,
+            state: result.state,
+          }
+        },
+        onSuccess: (response) => {
+          client.setQueryData(this.read(response.id).queryKey, response)
+        },
       }
+    },
+    read(checkoutId) {
+      return {
+        queryKey: ["checkouts", checkoutId],
+        async queryFn() {
+          const response = await checkoutWretch
+            .url(`/${checkoutId}`)
+            .get()
+            .json<CheckoutResponse>()
+          return {
+            cartId: null,
+            data: response.data,
+            externalId: response.external_id,
+            id: response.id,
+            method: null,
+            service: response.service,
+            state: response.state,
+          }
+        },
+        staleTime: Infinity,
+      }
+    },
+    update(checkoutId) {
+      return {
+        async mutationFn(body) {
+          let req = checkoutWretch.url(`/${checkoutId}/update`)
+          if (body) {
+            req = req.json(body)
+          }
 
-      return await req
-        .post()
-        .error(422, (e) => {
-          const errObj = e.json
-          throw new Error(errObj.detail)
-        })
-        .res((res) => {
-          if (res.status == 204) {
+          const response = await req.post().res()
+          if (response.status == 204) {
             return null
           }
 
-          return res.json()
-        })
+          const respData: CheckoutResponse = await response.json()
+          return {
+            cartId: null,
+            data: respData.data,
+            externalId: respData.external_id,
+            id: respData.id,
+            method: null,
+            service: respData.service,
+            state: respData.state,
+          }
+        },
+        onSuccess: (result) => {
+          if (result == null) {
+            // completed
+            client.setQueryData(
+              this.read(checkoutId).queryKey,
+              (old: Checkout | undefined): Checkout | undefined =>
+                old ? { ...old, state: CheckoutState.complete } : undefined,
+            )
+          } else {
+            client.setQueryData(
+              this.read(checkoutId).queryKey,
+              (old: Checkout | undefined): Checkout | undefined =>
+                old
+                  ? {
+                      ...result,
+                      cartId: old.cartId,
+                      method: old.method,
+                      state: CheckoutState.complete,
+                    }
+                  : result,
+            )
+          }
+        },
+      }
     },
-    async cancel(checkoutId) {
-      await checkoutWretch.url(`/${checkoutId}/cancel`).put().res()
+    cancel(checkoutId) {
+      return {
+        async mutationFn() {
+          await checkoutWretch.url(`/${checkoutId}/cancel`).put().res()
+          return null
+        },
+        onSuccess: () => {
+          client.setQueryData(
+            this.read(checkoutId).queryKey,
+            (old: Checkout | undefined): Checkout | undefined =>
+              old ? { ...old, state: CheckoutState.canceled } : undefined,
+          )
+        },
+      }
     },
   }
 }
 
 export const CheckoutAPIContext = createContext(
-  createCheckoutAPI(placeholderWretch),
+  createCheckoutAPI(placeholderWretch, defaultQueryClient),
 )

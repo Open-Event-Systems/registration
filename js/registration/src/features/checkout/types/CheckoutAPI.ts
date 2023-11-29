@@ -1,23 +1,30 @@
 import {
+  Checkout,
   CheckoutListResponse,
-  CheckoutResponse,
-  PaymentServiceID,
 } from "#src/features/checkout/types/Checkout"
-import { DefinedInitialDataOptions } from "@tanstack/react-query"
+import {
+  DefinedInitialDataOptions,
+  UndefinedInitialDataOptions,
+  UseMutationOptions,
+} from "@tanstack/react-query"
 
 export type CheckoutAPI = {
   list(options?: {
     registrationId?: string
     before?: string
   }): DefinedInitialDataOptions<CheckoutListResponse[]>
-  create<ID extends PaymentServiceID>(
+  create<ID extends string = string>(
     cartId: string,
     service: ID,
-    method?: string,
-  ): Promise<CheckoutResponse<ID>>
-  update<ID extends PaymentServiceID>(
+    method?: string | null,
+  ): UseMutationOptions<Checkout<ID>>
+  read(checkoutId: string): UndefinedInitialDataOptions<Checkout>
+  update(
     checkoutId: string,
-    data?: Record<string, unknown>,
-  ): Promise<CheckoutResponse<ID> | null>
-  cancel(checkoutId: string): Promise<void>
+  ): UseMutationOptions<
+    Checkout | null,
+    Error,
+    Record<string, unknown> | undefined
+  >
+  cancel(checkoutId: string): UseMutationOptions<null>
 }
