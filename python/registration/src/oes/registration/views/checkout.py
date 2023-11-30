@@ -41,11 +41,8 @@ from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.service import HookSender
 from oes.registration.models.config import Config
 from oes.registration.models.event import EventConfig
-from oes.registration.payment.base import (
-    CheckoutMethod,
-    CheckoutStateError,
-    ValidationError,
-)
+from oes.registration.payment.base import CheckoutMethod
+from oes.registration.payment.errors import CheckoutStateError, ValidationError
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.common import structure_datetime
 from oes.registration.services.event import EventService

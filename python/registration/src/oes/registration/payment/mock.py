@@ -6,13 +6,15 @@ from uuid import UUID
 from oes.registration.checkout.entities import CheckoutState
 from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.payment.base import (
-    CheckoutCancelError,
     CheckoutMethod,
     CheckoutMethodsRequest,
-    CheckoutStateError,
     CreateCheckoutRequest,
     PaymentService,
     UpdateRequest,
+)
+from oes.registration.payment.errors import (
+    CheckoutCancelError,
+    CheckoutStateError,
     ValidationError,
 )
 from oes.registration.util import get_now

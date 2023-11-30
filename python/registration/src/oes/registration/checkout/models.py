@@ -1,4 +1,5 @@
 """Checkout models."""
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID
@@ -28,10 +29,10 @@ class PaymentServiceCheckout:
     date_closed: Optional[datetime] = None
     """The date the checkout was closed with the service."""
 
-    checkout_data: dict[str, Any] = Factory(dict)
+    checkout_data: Mapping[str, Any] = Factory(dict)
     """Additional checkout data with the service."""
 
-    response_data: dict[str, Any] = Factory(dict)
+    response_data: Mapping[str, Any] = Factory(dict)
     """Additional checkout data with the service that will not be stored."""
 
     @property

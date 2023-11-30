@@ -19,15 +19,14 @@ from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
 from oes.registration.log import AuditLogType, audit_log
 from oes.registration.payment.base import (
-    CheckoutCancelError,
     CheckoutMethod,
     CheckoutMethodsRequest,
-    CheckoutStateError,
     CreateCheckoutRequest,
     PaymentService,
     UpdateRequest,
 )
 from oes.registration.payment.config import PaymentServices
+from oes.registration.payment.errors import CheckoutCancelError, CheckoutStateError
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import get_now
 from sqlalchemy import select

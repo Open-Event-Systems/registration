@@ -20,15 +20,14 @@ from oes.registration.cart.models import (
 from oes.registration.checkout.entities import CheckoutState
 from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.payment.base import (
-    CheckoutCancelError,
     CheckoutMethod,
     CheckoutMethodsRequest,
     CreateCheckoutRequest,
     PaymentService,
     UpdateHandler,
     UpdateRequest,
-    ValidationError,
 )
+from oes.registration.payment.errors import CheckoutCancelError, ValidationError
 from oes.registration.serialization import get_config_converter
 from oes.registration.serialization.common import structure_datetime
 

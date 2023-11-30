@@ -12,13 +12,15 @@ from loguru import logger
 from oes.registration.checkout.entities import CheckoutState
 from oes.registration.checkout.models import PaymentServiceCheckout
 from oes.registration.payment.base import (
-    CheckoutCancelError,
     CheckoutMethod,
     CheckoutMethodsRequest,
     CreateCheckoutRequest,
     PaymentService,
-    PaymentServiceError,
     UpdateRequest,
+)
+from oes.registration.payment.errors import (
+    CheckoutCancelError,
+    PaymentServiceError,
     ValidationError,
 )
 from oes.registration.serialization import get_config_converter

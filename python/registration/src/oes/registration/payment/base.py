@@ -10,28 +10,7 @@ import orjson
 from attrs import frozen
 from oes.registration.cart.models import CartData, PricingResult
 from oes.registration.checkout.models import PaymentServiceCheckout
-
-
-class PaymentServiceError(RuntimeError):
-    """Raised when an operation with a payment service does not succeed."""
-
-    pass
-
-
-class CheckoutStateError(PaymentServiceError):
-    """Raised when there is an issue with the state of a checkout."""
-
-
-class CheckoutCancelError(CheckoutStateError):
-    """Raised when a checkout could not be canceled."""
-
-    pass
-
-
-class ValidationError(ValueError, PaymentServiceError):
-    """Raised when data does not validate."""
-
-    pass
+from oes.registration.payment.errors import ValidationError
 
 
 @frozen
