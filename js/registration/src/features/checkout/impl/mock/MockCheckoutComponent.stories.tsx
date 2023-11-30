@@ -1,15 +1,10 @@
-import { ModalDialog } from "#src/components"
 import { CheckoutAPIContext } from "#src/features/checkout/api"
-import {
-  CheckoutComponent,
-  CheckoutRenderProps,
-} from "#src/features/checkout/components/checkout/CheckoutComponent"
 import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
-import { MockCheckoutComponent } from "#src/features/checkout/impl/mock2/MockCheckoutComponent"
+import { MockCheckoutComponent } from "#src/features/checkout/impl/mock/MockCheckoutComponent"
 import { Checkout, CheckoutState } from "#src/features/checkout/types/Checkout"
 import { CheckoutAPI } from "#src/features/checkout/types/CheckoutAPI"
 import { useNavigate } from "#src/hooks/location"
-import { Box, Button, LoadingOverlay, Text } from "@mantine/core"
+import { Button } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { useState } from "react"

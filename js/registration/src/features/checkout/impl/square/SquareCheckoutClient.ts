@@ -1,4 +1,4 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState"
+import { Checkout } from "#src/features/checkout/types/Checkout"
 import { Card, Payments, Square } from "@square/web-payments-sdk-types"
 
 declare module "#src/features/checkout/types/Checkout" {
@@ -21,14 +21,13 @@ export interface SquareCheckoutUpdate {
   verification_token?: string | null
 }
 
-export class SquareCheckout {
+export class SquareCheckoutClient {
   private payments: Payments
 
   constructor(
     square: Square,
     private applicationId: string,
     private locationId: string,
-    private checkoutState: CheckoutState<"square">,
   ) {
     this.payments = square.payments(this.applicationId, this.locationId)
   }
@@ -37,29 +36,18 @@ export class SquareCheckout {
     return this.payments.card()
   }
 
-  async verifyBuyer(token: string): Promise<string | null> {
+  async verifyBuyer(
+    checkout: Checkout<"square">,
+    token: string,
+  ): Promise<string | null> {
     const res = await this.payments.verifyBuyer(token, {
-      amount: this.checkoutState.data.amount,
+      amount: checkout.data.amount,
       intent: "CHARGE",
-      currencyCode: this.checkoutState.data.currency,
+      currencyCode: checkout.data.currency,
       billingContact: {},
     })
 
     return res?.token ?? null
-  }
-
-  async completeCheckout(
-    token: string,
-    idempotencyKey: string,
-    verificationToken?: string,
-  ) {
-    const update: Record<string, unknown> & SquareCheckoutUpdate = {
-      source_id: token,
-      idempotency_key: idempotencyKey,
-      verification_token: verificationToken,
-    }
-
-    await this.checkoutState.update(update)
   }
 }
 

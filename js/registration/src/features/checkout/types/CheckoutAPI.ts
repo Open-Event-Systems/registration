@@ -15,9 +15,11 @@ export type CheckoutAPI = {
   }): DefinedInitialDataOptions<CheckoutListResponse[]>
   create<ID extends string = string>(
     cartId: string,
-    service: ID,
-    method?: string | null,
-  ): UseMutationOptions<Checkout<ID>>
+  ): UseMutationOptions<
+    Checkout<ID>,
+    Error,
+    { service: ID; method?: string | null }
+  >
   read(checkoutId: string): UndefinedInitialDataOptions<Checkout>
   update(
     checkoutId: string,

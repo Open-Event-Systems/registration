@@ -1,14 +1,17 @@
 import { useCheckoutAPI } from "#src/features/checkout/hooks"
 import { getCheckoutComponent } from "#src/features/checkout/impl"
-import { Checkout } from "#src/features/checkout/types/Checkout"
+import { Checkout, CheckoutState } from "#src/features/checkout/types/Checkout"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { ComponentType, ReactNode, useEffect, useState } from "react"
 
 export type CheckoutImplComponentProps<T extends string = string> = {
+  checkoutId: string
   isSubmitting: boolean
+  setSubmitting: (submitting: boolean) => void
   checkout?: Checkout<T>
   error?: string
-  update: (body?: Record<string, unknown>) => void
+  setError: (error: string | null) => void
+  update: (body?: Record<string, unknown>) => Promise<Checkout<T> | null>
   cancel: () => void
 }
 
@@ -33,6 +36,8 @@ export const CheckoutComponent = (props: CheckoutComponentProps) => {
   const cancel = useMutation(checkoutAPI.cancel(checkoutId))
   const [Component, setComponent] =
     useState<ComponentType<CheckoutRenderProps> | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     setComponent(null)
@@ -48,15 +53,20 @@ export const CheckoutComponent = (props: CheckoutComponentProps) => {
   }, [checkoutQuery.data?.service])
 
   return children({
+    checkoutId,
     Component: Component ?? undefined,
-    isSubmitting: update.isPending,
+    isSubmitting: update.isPending || submitting,
+    setSubmitting,
     checkout: checkoutQuery.data,
-    error: update.error?.message,
-    update(body) {
-      update.mutate(body)
+    error: update.error?.message ?? error ?? undefined,
+    setError,
+    async update(body) {
+      return await update.mutateAsync(body)
     },
     cancel() {
-      cancel.mutate()
+      if (checkoutQuery.data?.state == CheckoutState.pending) {
+        cancel.mutate()
+      }
     },
   })
 }

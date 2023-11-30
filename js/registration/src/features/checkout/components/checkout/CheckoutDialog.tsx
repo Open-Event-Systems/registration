@@ -1,11 +1,11 @@
 import { LoadingOverlay, Skeleton, Text, useProps } from "@mantine/core"
-import { ReactNode, useRef } from "react"
+import { ReactNode, useEffect, useRef } from "react"
 
 import "./Checkout.module.css"
 import clsx from "clsx"
 import { ModalDialog, ModalDialogProps } from "#src/components"
 import { CheckoutComponent } from "#src/features/checkout/components/checkout/CheckoutComponent"
-import { CheckoutState } from "#src/features/checkout/types/Checkout"
+import { Checkout, CheckoutState } from "#src/features/checkout/types/Checkout"
 import { useCheckoutAPI } from "#src/features/checkout/hooks"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useLocation, useNavigate } from "#src/hooks/location"
@@ -41,6 +41,10 @@ CheckoutDialog.Complete = () => (
   <Text component="p">Your order is complete.</Text>
 )
 
+CheckoutDialog.Canceled = () => (
+  <Text component="p">This checkout has been canceled.</Text>
+)
+
 CheckoutDialog.Error = ({ children }: { children?: string }) => (
   <Text c="red">{children}</Text>
 )
@@ -66,12 +70,23 @@ CheckoutDialog.Manager = (
   const query = useQuery({
     ...checkoutAPI.read(checkoutId ?? ""),
     enabled: !!checkoutId,
+    throwOnError: false,
   })
-  const cancel = useMutation(checkoutAPI.cancel(checkoutId ?? ""))
 
   const prevContent = useRef<ReactNode>()
+  const prevCheckout = useRef<Checkout | null>(null)
+
+  const cancel = useMutation(
+    checkoutAPI.cancel(checkoutId ?? prevCheckout.current?.id ?? ""),
+  )
 
   const show = !!locState?.checkoutId
+
+  useEffect(() => {
+    if (!show && prevCheckout.current?.state == CheckoutState.pending) {
+      cancel.mutate()
+    }
+  }, [show])
 
   let content
 
@@ -84,6 +99,8 @@ CheckoutDialog.Manager = (
           let content
           if (renderProps.checkout?.state == CheckoutState.complete) {
             content = <CheckoutDialog.Complete />
+          } else if (renderProps.checkout?.state == CheckoutState.canceled) {
+            content = <CheckoutDialog.Canceled />
           } else if (Component) {
             content = <Component {...other} />
           } else {
@@ -108,6 +125,7 @@ CheckoutDialog.Manager = (
 
   if (show) {
     prevContent.current = content
+    prevCheckout.current = query.data ?? null
   }
 
   return (
@@ -115,7 +133,7 @@ CheckoutDialog.Manager = (
       {...props}
       opened={show}
       onClose={() => {
-        if (checkoutId) {
+        if (checkoutId && query.data?.state == CheckoutState.pending) {
           cancel.mutate()
         }
         navigate(-1)

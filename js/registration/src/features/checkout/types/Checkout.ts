@@ -18,6 +18,17 @@ export interface CheckoutMethod {
 export type CheckoutExternalData<ID extends string = string> =
   ID extends PaymentServiceID ? PaymentServiceMap[ID] : Record<string, unknown>
 
+declare module "#src/hooks/location" {
+  interface LocationState {
+    showCheckoutDialog?: {
+      cartId: string
+      checkoutId: string
+      service: PaymentServiceID
+      method?: string
+    }
+  }
+}
+
 export interface CheckoutListResponse {
   id: string
   service: string

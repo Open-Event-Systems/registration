@@ -12,7 +12,6 @@ import {
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { observer } from "mobx-react-lite"
 import { CheckoutMethodsManager } from "#src/features/checkout/components/methods/CheckoutMethodsManager"
-import { CheckoutManager } from "#src/features/checkout/components/checkout/CheckoutManager"
 import { Fragment, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import {
@@ -29,6 +28,7 @@ import { setCurrentCartId } from "#src/features/cart/utils"
 
 import classes from "./CartPage.module.css"
 import { isNotFoundError } from "#src/utils/api"
+import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -214,17 +214,7 @@ const CartView = observer(
           )}
         </Grid>
         <CheckoutMethodsManager cartId={cartId} />
-        <CheckoutManager
-          cartId={cartId}
-          onComplete={() => {
-            setCheckoutComplete(true)
-
-            // reload self-service memberships
-            client.invalidateQueries({
-              queryKey: ["self-service", "registrations"],
-            })
-          }}
-        />
+        <CheckoutDialog.Manager />
         <InterviewOptionsDialog.Manager
           options={selfService.data.add_options}
         />

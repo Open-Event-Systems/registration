@@ -1,56 +1,67 @@
-import { CheckoutState } from "#src/features/checkout/CheckoutState"
-import { Button, Stack, TextInput } from "@mantine/core"
-import { useEffect, useState } from "react"
-
-export type MockCheckoutData = Record<string, unknown>
+import { CheckoutImplComponentProps } from "#src/features/checkout/components/checkout/CheckoutComponent"
+import { Checkout } from "#src/features/checkout/types/Checkout"
+import { Button, Skeleton, Stack, TextInput } from "@mantine/core"
+import { useLayoutEffect, useState } from "react"
 
 declare module "#src/features/checkout/types/Checkout" {
   interface PaymentServiceMap {
-    mock: MockCheckoutData
+    mock: Record<string, unknown>
   }
 }
 
-export type MockCheckoutComponentProps = {
-  state: CheckoutState<"mock">
-}
+export type MockCheckoutComponentProps = CheckoutImplComponentProps<"mock">
 
-export const MockCheckoutComponent = ({
-  state,
-}: MockCheckoutComponentProps) => {
-  const [cardValue, setCardValue] = useState("")
-
-  const paymentHandler = async (cardValue: string) => {
-    await new Promise((r) => window.setTimeout(r, 1000))
-    await state.updateFunc({ card: cardValue })
-  }
-  const setup = () => new Promise((r) => window.setTimeout(r, 1000))
-
-  useEffect(() => {
-    state.withLoading(setup()).then(() => {
-      state.clearLoading()
-    })
+export const MockCheckoutComponent = (props: MockCheckoutComponentProps) => {
+  const { checkout } = props
+  const [setupFinished, setSetupFinished] = useState(false)
+  useLayoutEffect(() => {
+    window.setTimeout(() => {
+      setSetupFinished(true)
+    }, 1500)
   }, [])
 
+  if (!checkout || !setupFinished) {
+    return <MockCheckoutComponent.Placeholder />
+  } else {
+    return <MockCheckoutComponent.Form {...props} checkout={checkout} />
+  }
+}
+
+MockCheckoutComponent.Placeholder = () => (
+  <Stack>
+    <Skeleton height="2.25rem" />
+    <Skeleton height="2.25rem" />
+  </Stack>
+)
+
+MockCheckoutComponent.Form = (
+  props: MockCheckoutComponentProps & { checkout: Checkout<"mock"> },
+) => {
+  const { update } = props
+  const [value, setValue] = useState("")
   return (
-    <form>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        let card = parseInt(value)
+        if (isNaN(card)) {
+          card = 0
+        }
+
+        update({ card: card })
+      }}
+    >
       <Stack>
         <TextInput
-          placeholder="Card #"
+          name="card"
+          placeholder="Mock Card #"
           inputMode="numeric"
-          value={cardValue}
-          onChange={(e) => {
-            setCardValue(e.target.value)
-          }}
+          title="Card Number"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
         />
-        <Button
-          onClick={() => {
-            if (state.loading) {
-              return
-            }
-            state.wrapPromise(paymentHandler(cardValue))
-          }}
-        >
-          Checkout
+        <Button type="submit" variant="filled">
+          Pay
         </Button>
       </Stack>
     </form>

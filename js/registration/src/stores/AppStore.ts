@@ -40,7 +40,7 @@ export class AppStore {
     this.eventAPI = createEventAPI(authWretch)
     this.cartAPI = createCartAPI(authWretch, queryClient)
     this.registrationAPI = createRegistrationAPI(authWretch)
-    this.checkoutAPI = createCheckoutAPI(authWretch)
+    this.checkoutAPI = createCheckoutAPI(authWretch, queryClient)
     this.selfServiceAPI = createSelfServiceAPI(authWretch, queryClient)
   }
 

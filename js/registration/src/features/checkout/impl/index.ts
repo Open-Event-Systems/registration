@@ -11,9 +11,21 @@ export const getCheckoutComponent = async <T extends string = string>(
   switch (service) {
     case "mock":
       const { MockCheckoutComponent } = await import(
-        "#src/features/checkout/impl/mock2/MockCheckoutComponent"
+        "#src/features/checkout/impl/mock/MockCheckoutComponent"
       )
       Component = MockCheckoutComponent
+      break
+    case "system":
+      const { SystemCheckoutComponent } = await import(
+        "#src/features/checkout/impl/system/SystemCheckoutComponent"
+      )
+      Component = SystemCheckoutComponent
+      break
+    case "square":
+      const { SquareCheckoutComponent } = await import(
+        "#src/features/checkout/impl/square/SquareCheckoutComponent"
+      )
+      Component = SquareCheckoutComponent
       break
     default:
       throw new Error(`Unsupported payment service: ${service}`)

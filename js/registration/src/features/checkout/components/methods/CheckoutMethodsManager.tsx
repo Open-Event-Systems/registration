@@ -1,9 +1,9 @@
-import { fetchAvailableCheckoutMethods } from "#src/features/cart/api"
+import { useCartAPI } from "#src/features/cart/hooks"
 import { CheckoutMethodsDialog } from "#src/features/checkout/components/methods/CheckoutMethodsDialog"
+import { useCheckoutAPI } from "#src/features/checkout/hooks"
 import { PaymentServiceID } from "#src/features/checkout/types/Checkout"
-import { useWretch } from "#src/hooks/api"
-import { useLoader } from "#src/hooks/loader"
 import { useLocation, useNavigate } from "#src/hooks/location"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
 declare module "#src/hooks/location" {
   interface LocationState {
@@ -18,28 +18,45 @@ export type CheckoutMethodsManagerProps = {
 export const CheckoutMethodsManager = ({
   cartId,
 }: CheckoutMethodsManagerProps) => {
-  const wretch = useWretch()
-  const options = useLoader(() => fetchAvailableCheckoutMethods(wretch, cartId))
-
+  const cartAPI = useCartAPI()
+  const checkoutAPI = useCheckoutAPI()
   const loc = useLocation()
   const navigate = useNavigate()
 
+  const opened = loc.state?.showCheckoutMethodsDialog == cartId
+
+  const methods = useQuery({ ...cartAPI.readCheckoutMethods(cartId) })
+  const createCheckout = useMutation(checkoutAPI.create(cartId))
+
   return (
     <CheckoutMethodsDialog
-      opened={loc.state?.showCheckoutMethodsDialog == cartId}
+      opened={opened}
       onClose={() => navigate(-1)}
-      methods={options}
+      methods={methods.data}
+      loading={!methods.isSuccess}
       onSelect={(service, method) => {
         navigate(loc, {
-          state: {
-            showCheckoutDialog: {
-              cartId: cartId,
-              service: service as PaymentServiceID,
-              method: method,
-            },
-          },
+          state: { showCheckoutMethodsDialog: undefined },
           replace: true,
         })
+        createCheckout.mutate(
+          { service: service, method: method },
+          {
+            onSuccess(checkout) {
+              navigate(loc, {
+                state: {
+                  showCheckoutDialog: {
+                    checkoutId: checkout.id,
+                    cartId: cartId,
+                    service: service as PaymentServiceID,
+                    method: method,
+                  },
+                },
+                replace: true,
+              })
+            },
+          },
+        )
       }}
     />
   )

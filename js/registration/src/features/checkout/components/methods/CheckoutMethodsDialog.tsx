@@ -3,26 +3,27 @@ import {
   Button,
   LoadingOverlay,
   LoadingOverlayProps,
-  Modal,
-  ModalProps,
   useProps,
 } from "@mantine/core"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 
 import "./CheckoutMethods.module.css"
 import clsx from "clsx"
+import { ModalDialog, ModalDialogProps } from "#src/components"
 
 export type CheckoutMethodsDialogProps = {
-  methods: CheckoutMethod[] | Promise<CheckoutMethod[]>
+  methods?: CheckoutMethod[]
+  loading?: boolean
   onSelect?: (service: string, method?: string) => void
   LoadingOverlayProps?: Partial<LoadingOverlayProps>
-} & Omit<ModalProps, "children" | "onSelect">
+} & Omit<ModalDialogProps, "children" | "onSelect">
 
 export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
   const {
     className,
     classNames,
     methods,
+    loading,
     onSelect,
     opened,
     LoadingOverlayProps,
@@ -37,32 +38,17 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
     props,
   )
 
-  const [loaded, setLoaded] = useState("then" in methods ? false : true)
-  const [methodsArray, setMethodsArray] = useState<CheckoutMethod[]>(
-    "then" in methods ? [] : methods,
-  )
-
-  const showOptions = loaded && methodsArray.length != 1
+  const showOptions = !loading && !!methods && methods.length != 1
 
   useEffect(() => {
-    // load the methods
-    if (opened && "then" in methods) {
-      methods.then((res) => {
-        setMethodsArray(res)
-        setLoaded(true)
-      })
-    }
-  }, [methods, opened])
-
-  useEffect(() => {
-    if (loaded && methodsArray.length == 1) {
+    if (opened && !loading && !!methods && methods.length == 1) {
       // select the first option automatically if it is the only option
-      onSelect && onSelect(methodsArray[0].service, methodsArray[0].method)
+      onSelect && onSelect(methods[0].service, methods[0].method)
     }
-  }, [loaded, methodsArray])
+  }, [opened, loading, methods])
 
   return (
-    <Modal
+    <ModalDialog
       title="Payment Method"
       centered
       className={clsx("CheckoutMethodsDialog-root", className)}
@@ -70,12 +56,12 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
         ...classNames,
         body: clsx("CheckoutMethodsDialog-body", classNames?.body),
       }}
-      opened={opened}
+      opened={opened && !!methods && methods.length > 1}
       {...other}
     >
       <Button.Group orientation="vertical">
         {showOptions &&
-          methodsArray.map((m) => (
+          methods.map((m) => (
             <Button
               key={`${m.service}-${m.method}`}
               size="md"
@@ -89,6 +75,6 @@ export const CheckoutMethodsDialog = (props: CheckoutMethodsDialogProps) => {
           ))}
       </Button.Group>
       <LoadingOverlay {...LoadingOverlayProps} visible={!showOptions} />
-    </Modal>
+    </ModalDialog>
   )
 }

@@ -39,11 +39,13 @@ export const createCheckoutAPI = (
     },
     create<ID extends string = string>(
       cartId: string,
-      service: ID,
-      method: string | null = null,
-    ): UseMutationOptions<Checkout<ID>> {
+    ): UseMutationOptions<
+      Checkout<ID>,
+      Error,
+      { service: ID; method?: string | null }
+    > {
       return {
-        async mutationFn() {
+        async mutationFn({ service, method = null }) {
           let req = cartWretch
             .url(`/${cartId}/checkout`)
             .addon(queryString)
@@ -73,6 +75,7 @@ export const createCheckoutAPI = (
       return {
         queryKey: ["checkouts", checkoutId],
         async queryFn() {
+          console.log("reading", checkoutId)
           const response = await checkoutWretch
             .url(`/${checkoutId}`)
             .get()
@@ -92,11 +95,9 @@ export const createCheckoutAPI = (
     },
     update(checkoutId) {
       return {
-        async mutationFn(body) {
+        async mutationFn(body = {}) {
           let req = checkoutWretch.url(`/${checkoutId}/update`)
-          if (body) {
-            req = req.json(body)
-          }
+          req = req.json(body)
 
           const response = await req.post().res()
           if (response.status == 204) {
