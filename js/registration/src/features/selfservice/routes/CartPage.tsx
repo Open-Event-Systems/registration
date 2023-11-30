@@ -214,7 +214,7 @@ const CartView = observer(
           )}
         </Grid>
         <CheckoutMethodsManager cartId={cartId} />
-        <CheckoutDialog.Manager />
+        <CheckoutDialog.Manager eventId={eventId} />
         <InterviewOptionsDialog.Manager
           options={selfService.data.add_options}
         />

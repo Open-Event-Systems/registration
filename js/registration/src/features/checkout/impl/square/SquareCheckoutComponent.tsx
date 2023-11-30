@@ -4,7 +4,7 @@ import {
   SquareCheckoutUpdate,
   loadSquare,
 } from "#src/features/checkout/impl/square/SquareCheckoutClient"
-import { Box, Button, Stack } from "@mantine/core"
+import { Box, Button, Skeleton, Stack } from "@mantine/core"
 import type { Card } from "@square/web-payments-sdk-types"
 import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
@@ -120,6 +120,7 @@ export const SquareCheckoutComponent = observer(
     return (
       <Box component="form" onSubmit={handleSubmit}>
         <Stack>
+          {!localState.ready && <Placeholder />}
           <div ref={localState.setContainerEl}></div>
           <Button type="submit" variant="filled">
             Pay
@@ -131,6 +132,13 @@ export const SquareCheckoutComponent = observer(
 )
 
 SquareCheckoutComponent.displayName = "SquareCheckoutComponent"
+
+const Placeholder = () => (
+  <>
+    <Skeleton h="5.5rem" />
+    <Skeleton h="2.25rem" />
+  </>
+)
 
 // TODO: replace with a better ID function
 const makeKey = (suffix: string) =>

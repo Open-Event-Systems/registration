@@ -7,8 +7,10 @@ import { ModalDialog, ModalDialogProps } from "#src/components"
 import { CheckoutComponent } from "#src/features/checkout/components/checkout/CheckoutComponent"
 import { Checkout, CheckoutState } from "#src/features/checkout/types/Checkout"
 import { useCheckoutAPI } from "#src/features/checkout/hooks"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useLocation, useNavigate } from "#src/hooks/location"
+import { useCartAPI } from "#src/features/cart/hooks"
+import { setCurrentCartId } from "#src/features/cart/utils"
 
 export type CheckoutDialogProps = {
   children?: ReactNode
@@ -57,8 +59,11 @@ CheckoutDialog.Placeholder = () => (
 )
 
 CheckoutDialog.Manager = (
-  props: Omit<CheckoutDialogProps, "children" | "opened" | "onClose">,
+  props: Omit<CheckoutDialogProps, "children" | "opened" | "onClose"> & {
+    eventId: string
+  },
 ) => {
+  const { eventId, ...other } = props
   const loc = useLocation()
   const navigate = useNavigate()
 
@@ -67,6 +72,10 @@ CheckoutDialog.Manager = (
   const checkoutId = locState?.checkoutId
 
   const checkoutAPI = useCheckoutAPI()
+  const cartAPI = useCartAPI()
+
+  const client = useQueryClient()
+
   const query = useQuery({
     ...checkoutAPI.read(checkoutId ?? ""),
     enabled: !!checkoutId,
@@ -130,13 +139,16 @@ CheckoutDialog.Manager = (
 
   return (
     <CheckoutDialog
-      {...props}
+      {...other}
       opened={show}
       onClose={() => {
-        if (checkoutId && query.data?.state == CheckoutState.pending) {
-          cancel.mutate()
+        if (query.data?.state == CheckoutState.complete) {
+          navigate(`/events/${props.eventId}`)
+          setCurrentCartId(eventId, "")
+          client.invalidateQueries(cartAPI.readCurrentCart(eventId))
+        } else {
+          navigate(-1)
         }
-        navigate(-1)
       }}
     >
       {show ? content : prevContent.current}

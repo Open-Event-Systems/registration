@@ -817,7 +817,7 @@ def create_square_service(
     """Factory to create the :class:`SquarePaymentService`."""
     # ensure square is available
     if square is None:
-        logger.info("Stripe library is not installed")
+        logger.info("Square library is not installed")
         return None
 
     try:

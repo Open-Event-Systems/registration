@@ -142,6 +142,7 @@ export const createCheckoutAPI = (
     },
     cancel(checkoutId) {
       return {
+        mutationKey: ["checkouts", checkoutId, "cancel"],
         async mutationFn() {
           await checkoutWretch.url(`/${checkoutId}/cancel`).put().res()
           return null
