@@ -42,6 +42,12 @@ from oes.registration.hook.service import HookSender
 from oes.registration.models.config import Config
 from oes.registration.models.event import EventConfig
 from oes.registration.payment.base import CheckoutMethod
+from oes.registration.payment.config import (
+    PaymentMethod,
+    PaymentServices,
+    get_available_payment_methods,
+    is_payment_method_available,
+)
 from oes.registration.payment.errors import CheckoutStateError, ValidationError
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.common import structure_datetime
@@ -116,7 +122,7 @@ async def list_checkouts(
 async def list_available_checkout_methods(
     cart_id: str,
     cart_service: CartService,
-    checkout_service: CheckoutService,
+    payment_services: PaymentServices,
     event_config: EventConfig,
     config: Config,
     user: User,
@@ -144,9 +150,17 @@ async def list_available_checkout_methods(
         )
         cart_entity.set_pricing_result(pricing_result)
 
-    methods = await checkout_service.get_checkout_methods_for_cart(
-        cart_data, pricing_result
-    )
+    methods = [
+        CheckoutMethod(
+            method=m.id,
+            name=m.name,
+        )
+        for m in get_available_payment_methods(
+            payment_services.get_methods(),
+            cart_data=cart_data,
+            pricing_result=pricing_result,
+        )
+    ]
 
     return methods
 
@@ -168,12 +182,12 @@ async def list_available_checkout_methods(
 )
 async def create_checkout(
     cart_id: str,
-    service: FromQuery[str],
     method: FromQuery[str],
     cart_service: CartService,
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
     access_code_service: AccessCodeService,
+    payment_services: PaymentServices,
     event_config: EventConfig,
     config: Config,
     db: AsyncSession,
@@ -183,9 +197,6 @@ async def create_checkout(
     """Create a checkout for a cart."""
     cart_entity = check_not_found(await cart_service.get_cart(cart_id))
     cart = cart_entity.get_cart_data_model()
-
-    if not checkout_service.is_service_available(service.value):
-        raise NotFound
 
     event = check_not_found(event_config.get_event(cart.event_id))
     if not event.is_open_to(user):
@@ -212,17 +223,20 @@ async def create_checkout(
     )
     cart_entity.set_pricing_result(pricing_result)
 
-    if not await _validate_checkout_method(
-        service.value, method.value, cart, pricing_result, checkout_service
-    ):
+    method_obj = _validate_checkout_method(
+        method.value, cart, pricing_result, payment_services
+    )
+
+    if not method_obj:
         await db.commit()
         raise NotFound
 
     checkout_entity, checkout = await checkout_service.create_checkout(
-        service_id=service.value,
+        service_id=method_obj.service,
         cart_id=cart_id,
         cart_data=cart,
         pricing_result=pricing_result,
+        method=method_obj,
     )
 
     response = Response(
@@ -465,17 +479,19 @@ def _make_checkout_update_response(
         return Response(204)
 
 
-async def _validate_checkout_method(
-    service: str,
-    method: str,
+def _validate_checkout_method(
+    id: str,
     cart_data: CartData,
     pricing_result: PricingResult,
-    checkout_service: CheckoutService,
-):
-    options = await checkout_service.get_checkout_methods_for_cart(
-        cart_data, pricing_result
-    )
-    return any(o.service == service and o.method == method for o in options)
+    payment_services: PaymentServices,
+) -> Optional[PaymentMethod]:
+    method = payment_services.get_method(id)
+    if not method or not is_payment_method_available(
+        method, cart_data=cart_data, pricing_result=pricing_result
+    ):
+        return None
+
+    return method
 
 
 @allow_anonymous()

@@ -52,7 +52,7 @@ from oes.registration.http_client import (
 from oes.registration.interview.service import InterviewService
 from oes.registration.log import setup_logging
 from oes.registration.models.config import Config
-from oes.registration.payment.config import load_services
+from oes.registration.payment.config import create_payment_services
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import (
     JSONEncoder,
@@ -213,7 +213,7 @@ async def _setup_app(config: Config, app: Application):
     http_client = setup_http_client()
     app.services.add_instance(http_client)
 
-    payment_services = load_services(config.payment)
+    payment_services = create_payment_services(config.payment)
     app.services.add_instance(payment_services)
 
 

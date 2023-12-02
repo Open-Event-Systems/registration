@@ -31,6 +31,7 @@ def check_not_found(obj: Optional[T]) -> T:
     Returns:
         The not-None ``obj``.
     """
+    # TODO: rename this
     if obj is None:
         raise NotFound
     return obj

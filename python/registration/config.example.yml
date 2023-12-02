@@ -34,7 +34,7 @@ payment:
   # The base URL for links to receipts.
   receipt_base_url: http://localhost/receipt
 
-  # Payment service configuration
+  # Payment services configuration
   services:
     mock: {}
 
@@ -67,6 +67,12 @@ payment:
 
     #   # The application's secret key
     #   secret_key: changeit
+
+  # Payment methods configuration
+  methods:
+    - id: mock
+      service: mock
+      name: Mock
 
 # Interview config
 interview:

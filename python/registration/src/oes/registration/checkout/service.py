@@ -1,7 +1,5 @@
 """Checkout service."""
-import asyncio
 import copy
-import itertools
 from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Mapping, Optional, Union, overload
@@ -18,15 +16,10 @@ from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
 from oes.registration.log import AuditLogType, audit_log
-from oes.registration.payment.base import (
-    CheckoutMethod,
-    CheckoutMethodsRequest,
-    CreateCheckoutRequest,
-    PaymentService,
-    UpdateRequest,
-)
-from oes.registration.payment.config import PaymentServices
+from oes.registration.payment.base import PaymentService, UpdateRequest
+from oes.registration.payment.config import PaymentMethod, PaymentServices
 from oes.registration.payment.errors import CheckoutCancelError, CheckoutStateError
+from oes.registration.payment.models import CreateCheckoutRequest
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import get_now
 from sqlalchemy import select
@@ -56,28 +49,6 @@ class CheckoutService:
         if not res:
             raise LookupError(f"Payment service not found {id}")
         return res
-
-    async def get_checkout_methods_for_cart(
-        self, cart_data: CartData, pricing_result: PricingResult
-    ) -> list[CheckoutMethod]:
-        """Get a collection of available checkout methods for a cart."""
-        tasks = []
-        for service_id in self.payment_services.get_available_services():
-            service = self.payment_services.get_service(service_id)
-            if not service:
-                continue
-
-            tasks.append(
-                service.get_checkout_methods(
-                    CheckoutMethodsRequest(
-                        service=service.id,
-                        cart_data=cart_data,
-                        pricing_result=pricing_result,
-                    )
-                )
-            )
-
-        return list(itertools.chain.from_iterable(await asyncio.gather(*tasks)))
 
     async def list_checkouts(
         self,
@@ -129,7 +100,7 @@ class CheckoutService:
         cart_id: str,
         cart_data: CartData,
         pricing_result: PricingResult,
-        method: Optional[str] = None,
+        method: PaymentMethod,
     ) -> tuple[CheckoutEntity, PaymentServiceCheckout]:
         """Create a checkout in an external service.
 
@@ -140,7 +111,7 @@ class CheckoutService:
             cart_id: The cart ID.
             cart_data: The cart data.
             pricing_result: The pricing result.
-            method: Payment method type.
+            method: Payment method object.
 
         Returns:
             A pair of the new :class:`CheckoutEntity` and the

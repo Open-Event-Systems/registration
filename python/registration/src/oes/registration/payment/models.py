@@ -4,6 +4,8 @@ from typing import Optional
 
 from attrs import Factory, frozen
 from oes.registration.cart.models import CartData, PricingResult
+from oes.registration.checkout.models import PaymentServiceCheckout
+from oes.registration.payment.config import PaymentMethod
 from oes.registration.payment.types import CheckoutData
 
 
@@ -14,8 +16,8 @@ class CreateCheckoutRequest:
     service: str
     """The service ID."""
 
-    method: Optional[str] = None
-    """The payment method ID."""
+    method: PaymentMethod
+    """The payment method."""
 
     cart_data: CartData
     """The cart data."""

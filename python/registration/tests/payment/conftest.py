@@ -13,8 +13,8 @@ from oes.registration.cart.models import (
     PricingResultRegistration,
 )
 from oes.registration.payment.base import CreateCheckoutRequest, PaymentService
+from oes.registration.payment.services.stripe import StripeConfig, StripePaymentService
 from oes.registration.payment.square import SquareConfig, SquarePaymentService
-from oes.registration.payment.stripe import StripeConfig, StripePaymentService
 
 
 def make_stripe_service():

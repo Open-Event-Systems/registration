@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Optional, Protocol
 from uuid import UUID
 
+from oes.registration.models.logic import WhenCondition
 from typing_extensions import TypeAlias
 
 if TYPE_CHECKING:
@@ -19,6 +20,34 @@ if TYPE_CHECKING:
 
 CheckoutData: TypeAlias = Mapping[str, Any]
 """Payment service specific data associated with a checkout."""
+
+
+class PaymentMethodConfigBase(Protocol):
+    """Base properties of a payment method configuration."""
+
+    @property
+    @abstractmethod
+    def id(self) -> str:
+        """The payment method ID."""
+        ...
+
+    @property
+    @abstractmethod
+    def service(self) -> str:
+        """The service ID."""
+        ...
+
+    @property
+    @abstractmethod
+    def name(self) -> Optional[str]:
+        """A human-readable name for the payment method."""
+        ...
+
+    @property
+    @abstractmethod
+    def when(self) -> WhenCondition:
+        """The ``when`` condition."""
+        ...
 
 
 class PaymentService(Protocol):

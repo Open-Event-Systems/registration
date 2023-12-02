@@ -1,10 +1,11 @@
 """Serialization used internally for configuration."""
 import base64
 from collections.abc import Sequence
-from typing import Tuple, Union, get_args, get_origin
+from typing import Tuple, get_args, get_origin
 
 from cattrs import Converter
 from oes.registration.models.config import Base64Bytes
+from oes.registration.models.logic import WhenCondition
 from oes.registration.serialization.common import CustomConverter
 from oes.registration.serialization.common import (
     configure_converter as configure_common,
@@ -41,7 +42,7 @@ def configure_converter(c: Converter):
         ValueOrEvaluable, lambda v, t: structure_value_or_evaluable(c, v, t)
     )
     c.register_structure_hook_func(
-        lambda cls: cls == Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]],
+        lambda cls: cls == WhenCondition,
         lambda v, t: structure_value_or_evaluable_sequence(c, v, t),
     )
 

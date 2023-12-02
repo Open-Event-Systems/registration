@@ -256,7 +256,7 @@ class CheckoutResponse:
     service: str
     external_id: str
     state: CheckoutState
-    data: dict[str, Any] = Factory(dict)
+    data: Mapping[str, Any] = Factory(dict)
 
 
 @frozen

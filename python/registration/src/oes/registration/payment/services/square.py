@@ -59,9 +59,15 @@ class SquareError(RuntimeError):
             return "Square error"
 
 
-@frozen
-class SquareConfig:
-    """Square configuration."""
+class SquarePaymentMethod(str, Enum):
+    """Square payment methods."""
+
+    card = "card"
+
+
+@frozen(kw_only=True)
+class SquarePaymentConfig:
+    """Square payment configuration."""
 
     application_id: str
     """The application ID."""
@@ -75,10 +81,10 @@ class SquareConfig:
     environment: str = "sandbox"
     """The environment type."""
 
-    catalog_item_mapping: Mapping[str, str] = Factory(lambda: {})
+    catalog_item_mapping: Mapping[str, str] = Factory(dict)
     """Map line item type IDs to Square catalog item IDs."""
 
-    modifier_mapping: Mapping[str, str] = Factory(lambda: {})
+    modifier_mapping: Mapping[str, str] = Factory(dict)
     """Map modifier type IDs to Square modifier IDs."""
 
 
@@ -228,7 +234,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater):
     def name(self) -> str:
         return "Square"
 
-    def __init__(self, config: SquareConfig):
+    def __init__(self, config: SquarePaymentConfig):
         self._config = config
         self._client = Client(
             access_token=config.access_token,
@@ -796,19 +802,13 @@ converter.register_structure_hook(datetime, lambda v, t: structure_datetime(v))
 
 
 def create_square_service(
-    config: dict[str, Any],
+    config_data: Mapping,
 ) -> Optional[SquarePaymentService]:
     """Factory to create the :class:`SquarePaymentService`."""
     # ensure square is available
     if square is None:
         logger.info("Square library is not installed")
         return None
-
-    try:
-        config_obj = get_config_converter().structure(config, SquareConfig)
-    except Exception as e:
-        logger.opt(exception=e).warning("Failed to load Square configuration")
-        return None
-
-    service = SquarePaymentService(config_obj)
+    config = get_config_converter().structure(config_data, SquarePaymentConfig)
+    service = SquarePaymentService(config)
     return service

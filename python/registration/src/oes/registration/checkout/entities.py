@@ -1,6 +1,7 @@
 """Checkout entities."""
 import copy
 import secrets
+from collections.abc import Mapping
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
@@ -139,13 +140,13 @@ class CheckoutEntity(Base):
         self,
         service: str,
         external_id: str,
-        external_data: Optional[dict[str, Any]] = None,
+        external_data: Optional[Mapping[str, Any]] = None,
     ):
         """Update the service info."""
         self.service = service
         self.external_id = external_id
         self.external_data = (
-            copy.deepcopy(external_data) if external_data is not None else {}
+            dict(copy.deepcopy(external_data)) if external_data is not None else {}
         )
 
     def set_cart_data(self, cart_id: str, cart_data: CartData):

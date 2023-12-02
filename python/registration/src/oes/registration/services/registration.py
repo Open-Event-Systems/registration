@@ -13,6 +13,7 @@ from oes.registration.hook.service import HookSender
 from oes.registration.log import AuditLogType, audit_log
 from oes.registration.models.config import Config
 from oes.registration.models.event import Event, EventInterviewOption
+from oes.registration.models.logic import when_matches
 from oes.registration.models.registration import (
     RegistrationState,
     SelfServiceRegistration,
@@ -229,7 +230,7 @@ def get_allowed_add_interviews(
     return [
         interview
         for interview in event.add_interviews
-        if interview.when_matches(**context)
+        if when_matches(interview, context)
     ]
 
 
@@ -263,7 +264,7 @@ def get_allowed_change_interviews(
     return [
         interview
         for interview in event.change_interviews
-        if interview.when_matches(**context)
+        if when_matches(interview, context)
     ]
 
 

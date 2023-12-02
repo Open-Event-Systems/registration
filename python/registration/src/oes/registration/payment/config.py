@@ -1,90 +1,158 @@
 """Payment configuration objects."""
 from __future__ import annotations
 
-from collections.abc import Iterable
-from typing import Any, Callable, Optional
+from collections.abc import Iterable, Iterator, Mapping
+from typing import TYPE_CHECKING, Any, Optional
 
-from importlib_metadata import entry_points
+from attrs import frozen
 from loguru import logger
-from oes.registration.models.config import PaymentConfig
-from oes.registration.payment.base import PaymentService
-from oes.registration.payment.system import SystemPaymentService
+from oes.registration.cart.models import CartData, PricingResult
+from oes.registration.models.config import PaymentConfig, PaymentMethodConfigMapping
+from oes.registration.models.logic import WhenCondition, when_matches
+from oes.template import Expression
 
-PaymentServiceFactory = Callable[[dict[str, Any]], Optional[PaymentService]]
-"""Factory function to configure and return a :class:`PaymentService`.
+if TYPE_CHECKING:
+    from oes.registration.payment.types import PaymentService
 
-May return None if the service is not available.
-"""
 
-GROUP = "oes.registration.payment_services"
+@frozen
+class PaymentMethod:
+    """A payment method."""
+
+    id: str
+    """The payment method ID."""
+
+    name: str
+    """A human-readable name."""
+
+    service: str
+    """The payment service ID this method uses."""
+
+    config: Mapping[str, Any]
+    """Payment method configuration settings."""
+
+    when: WhenCondition = ()
+    """The conditions when this method is allowed."""
 
 
 class PaymentServices:
-    """Class for looking up/creating :class:`PaymentService` classes."""
+    """Payment services configuration object."""
 
-    services: dict[str, PaymentService]
-    entry_points: dict[str, Any]
-
-    def __init__(self):
-        self.services = {}
-        self.entry_points = {}
-
-    def get_service_exists(self, id: str) -> bool:
-        """Get whether a service ID is installed."""
-        return id in self.entry_points
-
-    def load_service(self, id: str, config: dict[str, Any]):
-        """Load a :class:`PaymentService`.
-
-        Args:
-            id: The payment service ID.
-            config: The payment service configuration data.
-        """
-        ep = self.entry_points[id]
-        factory: PaymentServiceFactory = ep.load()
-        service = factory(config)
-        if service is not None:
-            self.services[id] = service
-            logger.info(f"Loaded payment service {id}")
-
-    def get_available_services(self) -> Iterable[str]:
-        """Get an iterable of available service IDs."""
-        return self.services.keys()
-
-    def get_service(
+    def __init__(
         self,
-        id: str,
-    ) -> Optional[PaymentService]:
-        """Get a :class:`PaymentService`.
+        services: Mapping[str, PaymentService],
+        methods: Mapping[str, PaymentMethod],
+    ):
+        self._services = services
+        self._methods = methods
 
-        Args:
-            id: The service ID.
+    def get_services(self) -> Iterator[PaymentService]:
+        """Get configured payment services."""
+        return iter(self._services.values())
 
-        Returns:
-            The service, or None if not available.
-        """
-        return self.services.get(id)
+    def get_service(self, id: str) -> Optional[PaymentService]:
+        """Get a :class:`PaymentService` by ID, or ``None`` if not found."""
+        return self._services.get(id)
+
+    def get_methods(self) -> Iterator[PaymentMethod]:
+        """Get configured payment methods."""
+        return iter(self._methods.values())
+
+    def get_method(self, id: str) -> Optional[PaymentMethod]:
+        """Get a :class:`PaymentMethod` by ID, or ``None`` if not found."""
+        return self._methods.get(id)
 
 
-def load_services(config: PaymentConfig) -> PaymentServices:
-    """Load :class:`PaymentService` classes."""
-    services = PaymentServices()
-    services.services["system"] = SystemPaymentService()
+def get_available_payment_methods(
+    methods: Iterable[PaymentMethod],
+    *,
+    cart_data: CartData,
+    pricing_result: PricingResult,
+) -> Iterator[PaymentMethod]:
+    """Get available payment methods for a cart."""
+    yield from (
+        m
+        for m in methods
+        if is_payment_method_available(
+            m, cart_data=cart_data, pricing_result=pricing_result
+        )
+    )
 
-    # TODO: get explicit enable/disable settings from somewhere?
 
-    eps = entry_points(group=GROUP)
-    for ep in eps:
-        services.entry_points[ep.name] = ep
+def is_payment_method_available(
+    method: PaymentMethod,
+    *,
+    cart_data: CartData,
+    pricing_result: PricingResult,
+) -> bool:
+    """Return whether a payment method is available for the given cart."""
+    ctx = {
+        "cart_data": cart_data,
+        "pricing_result": pricing_result,
+    }
+    return when_matches(method, ctx)
 
-    for service_id, service_config in config.services.items():
-        if not services.get_service_exists(service_id):
-            logger.info(f"Payment service {service_id!r} not available")
+
+def create_payment_services(payment_config: PaymentConfig) -> PaymentServices:
+    """Create a :class:`PaymentServices` object."""
+    from .services.system import SystemPaymentService
+
+    services = {}
+    for id, config_data in payment_config.services.items():
+        res = create_payment_service(id, config_data)
+        if res is not None:
+            services[id] = res
+
+    services["system"] = SystemPaymentService()
+
+    methods = {}
+
+    for method_config in payment_config.methods:
+        service_id = method_config["service"]
+        if service_id not in services:
+            logger.warning(
+                f"Payment method {method_config['id']} uses nonexistent service "
+                f"{service_id}"
+            )
             continue
+        method = create_payment_method(method_config)
+        methods[method.id] = method
 
-        try:
-            services.load_service(service_id, service_config)
-        except Exception as e:
-            logger.warning(f"Payment service {service_id} configuration failed: {e}")
+    methods["zero-balance"] = PaymentMethod(
+        id="zero-balance",
+        service="system",
+        name="Complete Checkout",
+        config={},
+        when=Expression("pricing_result.total_price == 0"),
+    )
 
-    return services
+    return PaymentServices(services, methods)
+
+
+def create_payment_service(
+    id: str, config_data: Mapping[str, Any]
+) -> Optional[PaymentService]:
+    """Get a payment service from a config."""
+    if id == "mock":
+        from .services.mock import create_mock_payment_service
+
+        return create_mock_payment_service(config_data)
+    elif id == "square":
+        from .services.square import create_square_service
+
+        return create_square_service(config_data)
+    else:
+        logger.warning(f"Unsupported payment service: {id}")
+        return None
+
+
+def create_payment_method(config_data: PaymentMethodConfigMapping) -> PaymentMethod:
+    """Create a :class:`PaymentMethod` from configuration data."""
+    config_dict = dict(config_data)
+    return PaymentMethod(
+        id=config_dict.pop("id"),
+        service=config_dict.pop("service"),
+        name=config_dict.pop("name"),
+        when=config_dict.pop("when", ()),
+        config=config_dict,
+    )

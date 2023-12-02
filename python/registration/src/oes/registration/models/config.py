@@ -1,9 +1,10 @@
 """Config models."""
-from collections.abc import Sequence
-from typing import Any, NewType, Optional
+from collections.abc import Mapping, Sequence
+from typing import Any, NewType, Optional, TypedDict
 
-from attrs import field, frozen, validators
+from attrs import Factory, field, frozen, validators
 from oes.registration.hook.models import HookConfig
+from oes.registration.models.logic import WhenCondition
 from typed_settings import Secret, option
 
 
@@ -39,7 +40,23 @@ class AuthConfig:
     """The name of this service."""
 
 
-PaymentServiceConfig = dict[str, Any]
+class PaymentMethodConfigMappingOptional(TypedDict, total=False):
+    """Base payment method configuration, optional keys."""
+
+    when: WhenCondition
+
+
+class PaymentMethodConfigMapping(PaymentMethodConfigMappingOptional):
+    """Base payment method configuration."""
+
+    id: str
+    """The payment method ID."""
+
+    service: str
+    """The payment service."""
+
+    name: str
+    """A human readable name."""
 
 
 @frozen
@@ -52,8 +69,11 @@ class PaymentConfig:
     receipt_base_url: str = ""
     """Receipt base URL."""
 
-    services: Optional[dict[str, PaymentServiceConfig]] = {}
-    """Per-service payment config."""
+    services: Mapping[str, Mapping[str, Any]] = Factory(dict)
+    """Payment service configuration."""
+
+    methods: Sequence[PaymentMethodConfigMapping] = ()
+    """Payment methods config."""
 
 
 Base64Bytes = NewType("Base64Bytes", bytes)

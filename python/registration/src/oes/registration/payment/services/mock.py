@@ -1,5 +1,6 @@
 """Mock payment service."""
 import uuid
+from collections.abc import Mapping
 from typing import Optional
 from uuid import UUID
 
@@ -108,3 +109,8 @@ class MockPaymentService(PaymentService, CheckoutUpdater):
             date_closed=date_closed,
             checkout_data=checkout_data,
         )
+
+
+def create_mock_payment_service(config_data: Mapping) -> MockPaymentService:
+    """Create a mock payment service."""
+    return MockPaymentService()

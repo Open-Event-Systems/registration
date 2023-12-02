@@ -17,13 +17,10 @@ from oes.registration.payment.errors import ValidationError
 class CheckoutMethod:
     """A checkout method."""
 
-    service: str
-    """The service ID."""
-
-    method: Optional[str] = None
+    method: str
     """The method ID."""
 
-    name: Optional[str] = None
+    name: str
     """The method name."""
 
 

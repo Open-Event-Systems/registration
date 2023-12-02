@@ -1,35 +1,18 @@
 """Event models."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from datetime import date  # noqa
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from attrs import Factory, field, frozen
 from oes.registration.models.identifier import validate_identifier
-from oes.template import Template, ValueOrEvaluable, evaluate
+from oes.registration.models.logic import Whenable, WhenCondition
+from oes.template import Template
 from typing_extensions import Self
 
 if TYPE_CHECKING:
     from oes.registration.auth.user import User
-
-
-class Whenable(ABC):
-    """Class with a ``when`` condition."""
-
-    @property
-    @abstractmethod
-    def when(self) -> Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]]:
-        """The ``when`` condition."""
-        ...
-
-    def when_matches(self, **context: Any) -> bool:
-        """Return whether the conditions match."""
-        if isinstance(self.when, Sequence) and not isinstance(self.when, str):
-            return all(evaluate(expr, context) for expr in self.when)
-        else:
-            return bool(evaluate(self.when, context))
 
 
 @frozen(kw_only=True)
@@ -62,7 +45,7 @@ class ModifierRule(Whenable):
     amount: int
     """The amount."""
 
-    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]]
+    when: WhenCondition
     """The condition/conditions when the modifier applies."""
 
 
@@ -85,7 +68,7 @@ class LineItemRule(Whenable):
     modifiers: Sequence[ModifierRule] = ()
     """Modifier rules."""
 
-    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]]
+    when: WhenCondition
     """The condition/conditions when the line item is present."""
 
 
@@ -113,7 +96,7 @@ class EventInterviewOption(Whenable):
     id: str
     """The interview ID."""
 
-    when: Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]] = ()
+    when: WhenCondition = ()
     """The condition."""
 
 

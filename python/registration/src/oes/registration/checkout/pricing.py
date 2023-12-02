@@ -12,6 +12,7 @@ from oes.registration.cart.models import (
     PricingResultRegistration,
 )
 from oes.registration.models.event import Event, LineItemRule, ModifierRule
+from oes.registration.models.logic import when_matches
 from oes.registration.models.registration import RegistrationState
 from oes.template import Context
 
@@ -96,7 +97,7 @@ def _get_name(data: dict[str, Any]) -> Optional[str]:
 
 def _eval_line_items(event: Event, context: Context):
     for li_rule in event.pricing_rules:
-        if li_rule.when_matches(**context):
+        if when_matches(li_rule, context):
             yield _make_line_item(li_rule, context)
 
 
@@ -117,7 +118,7 @@ def _make_line_item(rule: LineItemRule, context: Context) -> LineItem:
 
 def _eval_modifiers(li_rule: LineItemRule, context: Context):
     for mod_rule in li_rule.modifiers:
-        if mod_rule.when_matches(**context):
+        if when_matches(mod_rule, context):
             yield _make_modifier(mod_rule, context)
 
 
