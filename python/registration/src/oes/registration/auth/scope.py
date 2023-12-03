@@ -65,8 +65,7 @@ class Scopes(Set[str]):
         return f"{{{strs}}}"
 
 
-# TODO: remove event scope
-DEFAULT_SCOPES = Scopes((Scope.event, Scope.cart, Scope.self_service))
+DEFAULT_SCOPES = Scopes((Scope.cart, Scope.self_service))
 """The default scopes."""
 
 
