@@ -11,7 +11,6 @@ import {
 } from "@tabler/icons-react"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { observer } from "mobx-react-lite"
-import { CheckoutMethodsManager } from "#src/features/checkout/components/methods/CheckoutMethodsManager"
 import { Fragment, useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 import {
@@ -28,7 +27,7 @@ import { setCurrentCartId } from "#src/features/cart/utils"
 
 import classes from "./CartPage.module.css"
 import { isNotFoundError } from "#src/utils/api"
-import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
+import { CheckoutManager } from "#src/features/checkout/components/checkout/CheckoutManager"
 
 export const CartPage = observer(() => {
   const { eventId = "" } = useParams()
@@ -127,7 +126,9 @@ const CartView = observer(
     const showOptions = () => {
       navigate(loc, {
         state: {
-          showCheckoutMethodsDialog: cartId,
+          showCheckoutDialog: {
+            cartId: cartId,
+          },
         },
       })
     }
@@ -213,8 +214,21 @@ const CartView = observer(
             </Grid.Col>
           )}
         </Grid>
-        <CheckoutMethodsManager cartId={cartId} />
-        <CheckoutDialog.Manager eventId={eventId} />
+        <CheckoutManager
+          onComplete={() => {
+            // redirect to events page and reset current cart on completion
+            setCheckoutComplete(true)
+            navigate(`/events/${eventId}`)
+            setCurrentCartId(eventId, "")
+            client.invalidateQueries({
+              queryKey: cartAPI.readCurrentCart(eventId).queryKey,
+            })
+            client.invalidateQueries({
+              queryKey: selfServiceAPI.listRegistrations({ eventId: eventId })
+                .queryKey,
+            })
+          }}
+        />
         <InterviewOptionsDialog.Manager
           options={selfService.data.add_options}
         />

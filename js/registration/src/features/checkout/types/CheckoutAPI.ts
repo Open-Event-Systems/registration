@@ -13,13 +13,9 @@ export type CheckoutAPI = {
     registrationId?: string
     before?: string
   }): DefinedInitialDataOptions<CheckoutListResponse[]>
-  create<ID extends string = string>(
+  create(
     cartId: string,
-  ): UseMutationOptions<
-    Checkout<ID>,
-    Error,
-    { service: ID; method?: string | null }
-  >
+  ): UseMutationOptions<Checkout, Error, { method: string }>
   read(checkoutId: string): UndefinedInitialDataOptions<Checkout>
   update(
     checkoutId: string,
@@ -28,5 +24,5 @@ export type CheckoutAPI = {
     Error,
     Record<string, unknown> | undefined
   >
-  cancel(checkoutId: string): UseMutationOptions<null>
+  cancel(checkoutId: string): UseMutationOptions<void>
 }

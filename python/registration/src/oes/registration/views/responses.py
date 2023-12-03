@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import date, datetime  # noqa
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from attrs import Factory, field, frozen
@@ -23,6 +23,7 @@ from oes.registration.models.registration import (
     RegistrationState,
     SelfServiceRegistration,
 )
+from oes.registration.payment.types import CheckoutData
 from typing_extensions import Self
 
 
@@ -256,7 +257,7 @@ class CheckoutResponse:
     service: str
     external_id: str
     state: CheckoutState
-    data: Mapping[str, Any] = Factory(dict)
+    data: CheckoutData = Factory(dict)
 
 
 @frozen

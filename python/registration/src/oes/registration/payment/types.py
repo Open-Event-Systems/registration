@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
 from uuid import UUID
 
 from oes.registration.models.logic import WhenCondition
@@ -131,6 +131,7 @@ class PaymentService(Protocol):
         ...
 
 
+@runtime_checkable
 class CheckoutUpdater(Protocol):
     """A payment service that receives updates directly from the client."""
 

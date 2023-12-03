@@ -1,135 +1,146 @@
-import { CheckoutImplComponentProps } from "#src/features/checkout/components/checkout/CheckoutComponent"
+import { useCheckout } from "#src/features/checkout/hooks"
 import {
   SquareCheckoutClient,
   SquareCheckoutUpdate,
   loadSquare,
 } from "#src/features/checkout/impl/square/SquareCheckoutClient"
+import { Checkout } from "#src/features/checkout/types/Checkout"
 import { Box, Button, Skeleton, Stack } from "@mantine/core"
 import type { Card } from "@square/web-payments-sdk-types"
-import { action } from "mobx"
+import { action, runInAction } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { FormEvent, useEffect } from "react"
 
-export const SquareCheckoutComponent = observer(
-  (props: CheckoutImplComponentProps<"square">) => {
-    const {
-      checkoutId,
-      checkout,
-      setError,
-      isSubmitting,
-      setSubmitting,
-      update,
-    } = props
+export const SquareCheckoutComponent = observer(() => {
+  const {
+    id: checkoutId,
+    checkout,
+    update,
+    error,
+    setError,
+    setSubmitting,
+    updating,
+  } = useCheckout()
 
-    const localState = useLocalObservable(() => ({
-      containerEl: null as HTMLDivElement | null,
-      setContainerEl(el: HTMLDivElement | null) {
-        this.containerEl = el
-      },
-      square: null as SquareCheckoutClient | null,
-      card: null as Card | null,
-      ready: false,
-      idempotencyKey: makeKey(checkoutId),
-    }))
+  const localState = useLocalObservable(() => ({
+    containerEl: null as HTMLDivElement | null,
+    setContainerEl(el: HTMLDivElement | null) {
+      this.containerEl = el
+    },
+    square: null as SquareCheckoutClient | null,
+    card: null as Card | null,
+    ready: false,
+    idempotencyKey: makeKey(checkoutId),
+  }))
 
-    const handleSubmit = async (e: FormEvent) => {
-      e.preventDefault()
-      if (isSubmitting) {
-        return
-      }
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (updating) {
+      return
+    }
 
-      const { square, card, idempotencyKey } = localState
-      if (square && card && checkout) {
-        setSubmitting(true)
-        setError(null)
+    const { square, card, idempotencyKey } = localState
+    if (square && card && checkout) {
+      setSubmitting(true)
+      setError(null)
+      try {
+        let tokenRes
+        let verificationToken
+
         try {
-          const tokenRes = await card.tokenize()
+          tokenRes = await card.tokenize()
           if (tokenRes.status != "OK" || !tokenRes.token) {
-            const errorMessage =
-              tokenRes.errors && tokenRes.errors[0]
-                ? tokenRes.errors[0].message
-                : "Payment failed"
-            setError(errorMessage)
+            // const errorMessage =
+            //   tokenRes.errors && tokenRes.errors[0]
+            //     ? tokenRes.errors[0].message
+            //     : "Payment failed"
+            // setError(errorMessage)
             return
           }
 
-          const verificationToken = await square.verifyBuyer(
-            checkout,
+          verificationToken = await square.verifyBuyer(
+            checkout as Checkout<"square">,
             tokenRes.token,
           )
-          const body = {
-            source_id: tokenRes.token,
-            idempotency_key: idempotencyKey,
-            verification_token: verificationToken ?? undefined,
-          } satisfies SquareCheckoutUpdate
-
-          await update(body).catch(
-            action(() => {
-              localState.idempotencyKey = makeKey(checkoutId)
-            }),
-          )
         } catch (e) {
-          setError(`${e}`)
-        } finally {
-          setSubmitting(false)
+          if (e instanceof Error) {
+            setError(e.message)
+          } else {
+            setError(`${e}`)
+          }
+          throw e
         }
-      }
-    }
 
-    const checkoutData = checkout?.data
+        const body = {
+          source_id: tokenRes.token,
+          idempotency_key: idempotencyKey,
+          verification_token: verificationToken ?? undefined,
+        } satisfies SquareCheckoutUpdate
 
-    useEffect(() => {
-      if (checkoutData && !localState.square) {
-        loadSquare(checkoutData.sandbox !== false)
-          .then(
-            action((square) => {
-              const client = new SquareCheckoutClient(
-                square,
-                checkoutData.application_id,
-                checkoutData.location_id,
-              )
-              localState.square = client
-              return client
-            }),
-          )
-          .then((client) => {
-            return client.getCardPaymentMethod().then(
-              action((card) => {
-                localState.card = card
-              }),
-            )
-          })
-      }
-    }, [checkoutData?.application_id, checkoutData?.location_id])
-
-    useEffect(() => {
-      const { card, containerEl } = localState
-      if (card && containerEl) {
-        card.attach(containerEl).then(
+        await update(body).catch(
           action(() => {
-            localState.ready = true
+            localState.idempotencyKey = makeKey(checkoutId)
           }),
         )
-
-        return () => {
-          card.detach()
-        }
+      } finally {
+        setSubmitting(false)
       }
-    }, [localState.card, localState.containerEl])
+    }
+  }
 
-    return (
-      <Box component="form" onSubmit={handleSubmit}>
-        <Stack>
-          {!localState.ready && <Placeholder />}
-          <div ref={localState.setContainerEl}></div>
-          <Button type="submit" variant="filled">
-            Pay
-          </Button>
-        </Stack>
-      </Box>
-    )
-  },
-)
+  const checkoutData = (checkout as Checkout<"square"> | undefined)?.data
+
+  useEffect(() => {
+    if (checkoutData && !localState.square) {
+      loadSquare(checkoutData.sandbox !== false)
+        .then(
+          action((square) => {
+            const client = new SquareCheckoutClient(
+              square,
+              checkoutData.application_id,
+              checkoutData.location_id,
+            )
+            localState.square = client
+            return client
+          }),
+        )
+        .then((client) => {
+          return client.getCardPaymentMethod().then(
+            action((card) => {
+              localState.card = card
+            }),
+          )
+        })
+    }
+  }, [checkoutData?.application_id, checkoutData?.location_id])
+
+  useEffect(() => {
+    const { card, containerEl } = localState
+    if (card && containerEl) {
+      card.attach(containerEl).then(
+        action(() => {
+          localState.ready = true
+        }),
+      )
+
+      return () => {
+        card.detach()
+      }
+    }
+  }, [localState.card, localState.containerEl])
+
+  return (
+    <Box component="form" onSubmit={handleSubmit}>
+      <Stack>
+        {!localState.ready && <Placeholder />}
+        <div ref={localState.setContainerEl}></div>
+        <Button type="submit" variant="filled">
+          Pay
+        </Button>
+      </Stack>
+    </Box>
+  )
+})
 
 SquareCheckoutComponent.displayName = "SquareCheckoutComponent"
 

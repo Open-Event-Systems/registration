@@ -1,6 +1,3 @@
-import { NextFunc } from "#src/types/api"
-import { Wretch } from "wretch"
-
 /**
  * Not found error.
  */
@@ -31,6 +28,17 @@ export const isNotFoundError = (
   e instanceof NotFoundError || isResponseError(e)
 
 /**
+ * Test if an error is an error from the backend with "detail" as a property.
+ */
+export const isAPIError = (e: unknown): e is { json: { detail: string } } =>
+  isResponseError(e) &&
+  "json" in e &&
+  typeof e.json == "object" &&
+  !!e.json &&
+  "detail" in e.json &&
+  typeof e.json.detail == "string"
+
+/**
  * Wrap a promise to resolve with null in the case of a not found error.
  */
 export const handleNotFound = <T>(promise: Promise<T>): Promise<T | null> => {
@@ -40,56 +48,4 @@ export const handleNotFound = <T>(promise: Promise<T>): Promise<T | null> => {
     }
     return Promise.reject(err)
   })
-}
-
-/**
- * Get a {@link NextFunc} for a paginated response.
- */
-export function getNextFunc<T>(
-  wretch: Wretch,
-  handler: (response: Response) => Promise<T>,
-  link: string,
-): NextFunc<T> | null
-export function getNextFunc<T>(
-  wretch: Wretch,
-  handler: (response: Response) => Promise<T>,
-  response: Response,
-): NextFunc<T> | null
-export function getNextFunc<T>(
-  wretch: Wretch,
-  handler: (response: Response) => Promise<T>,
-  linkOrResponse: Response | string,
-): NextFunc<T> | null {
-  let url
-  if (typeof linkOrResponse == "string") {
-    url = linkOrResponse
-  } else {
-    url = getNextLink(linkOrResponse)
-  }
-
-  const nextUrl = url
-
-  if (!nextUrl) {
-    return null
-  }
-
-  return async () => {
-    const response = await wretch.url(nextUrl, true).get().res()
-    const result = await handler(response)
-    const nextFunc = getNextFunc(wretch, handler, response)
-    return [result, nextFunc]
-  }
-}
-
-/**
- * Get the "next" link from a response.
- */
-export const getNextLink = (response: Response): string | undefined => {
-  const linkHeader = response.headers.get("Link")
-  if (!linkHeader) {
-    return undefined
-  }
-
-  const nextMatch = /<(.*?)>;\s*rel="next"/.exec(linkHeader) ?? []
-  return nextMatch[1]
 }

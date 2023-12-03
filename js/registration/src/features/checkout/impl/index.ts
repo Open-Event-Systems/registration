@@ -1,12 +1,11 @@
-import { CheckoutRenderProps } from "#src/features/checkout/components/checkout/CheckoutComponent"
-import { ComponentType } from "react"
+import { CheckoutImplComponentType } from "#src/features/checkout/types/Checkout"
 
 /**
  * Get the checkout component for a service.
  */
-export const getCheckoutComponent = async <T extends string = string>(
+export const getCheckoutImplComponentType = async <T extends string = string>(
   service: T,
-): Promise<ComponentType<CheckoutRenderProps<T>>> => {
+): Promise<CheckoutImplComponentType> => {
   let Component: unknown
   switch (service) {
     case "mock":
@@ -30,5 +29,5 @@ export const getCheckoutComponent = async <T extends string = string>(
     default:
       throw new Error(`Unsupported payment service: ${service}`)
   }
-  return Component as ComponentType<CheckoutRenderProps<T>>
+  return Component as CheckoutImplComponentType
 }

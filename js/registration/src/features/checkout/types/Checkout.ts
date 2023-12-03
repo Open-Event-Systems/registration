@@ -1,3 +1,5 @@
+import { ComponentType } from "react"
+
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface PaymentServiceMap {}
 
@@ -10,9 +12,8 @@ export enum CheckoutState {
 }
 
 export interface CheckoutMethod {
-  service: string
-  method?: string
-  name?: string
+  name: string
+  method: string
 }
 
 export type CheckoutExternalData<ID extends string = string> =
@@ -21,14 +22,13 @@ export type CheckoutExternalData<ID extends string = string> =
 declare module "#src/hooks/location" {
   interface LocationState {
     showCheckoutDialog?: {
-      cartId: string
-      checkoutId: string
-      service: PaymentServiceID
-      method?: string
+      cartId?: string
+      checkoutId?: string
+      service?: PaymentServiceID
+      eventId?: string
     }
   }
 }
-
 export interface CheckoutListResponse {
   id: string
   service: string
@@ -37,34 +37,16 @@ export interface CheckoutListResponse {
   url?: string
 }
 
-export interface CheckoutResponse<ID extends string = string> {
-  id: string
-  service: ID
-  external_id: string
-  state: CheckoutState
-  data: CheckoutExternalData<ID>
-}
-
 export type Checkout<ID extends string = string> = {
   /**
-   * The cart ID.
+   * The checkout ID on the server.
    */
-  cartId: string | null
+  id: string
 
   /**
    * The service ID.
    */
   service: ID
-
-  /**
-   * The payment method
-   */
-  method: string | null
-
-  /**
-   * The checkout ID on the server.
-   */
-  id: string
 
   /**
    * The checkout ID in the external service.
@@ -82,54 +64,19 @@ export type Checkout<ID extends string = string> = {
   data: CheckoutExternalData<ID>
 }
 
-// export type Checkout<ID extends string = string> = {
-//   /**
-//    * The cart ID.
-//    */
-//   get cartId(): string
+export type CheckoutContextValue = {
+  id: string
+  ready: boolean
+  checkout?: Checkout
+  error: string | null
+  setError: (error: string | null | undefined) => void
+  setSubmitting: (submitting: boolean) => void
+  updating: boolean
+  update: (body?: Record<string, unknown>) => Promise<Checkout | null>
+  cancel: () => Promise<void>
+} & (
+  | { ready: true; checkout: Checkout }
+  | { ready: false; checkout?: Checkout }
+)
 
-//   /**
-//    * The service ID.
-//    */
-//   get service(): ID
-
-//   /**
-//    * The payment method
-//    */
-//   get method(): string | null
-
-//   /**
-//    * The checkout ID on the server.
-//    */
-//   get id(): string
-
-//   /**
-//    * The checkout ID in the external service.
-//    */
-//   get externalId(): string
-
-//   /**
-//    * The checkout state.
-//    */
-//   get state(): CheckoutState
-
-//   /**
-//    * The data associated with the checkout.
-//    */
-//   get data(): CheckoutExternalData<ID>
-
-//   /**
-//    * The current error.
-//    */
-//   get error(): string | null
-
-//   /**
-//    * Update the checkout.
-//    */
-//   update(body?: Record<string, unknown>): Promise<CheckoutResponse<ID> | null>
-
-//   /**
-//    * Cancel the checkout.
-//    */
-//   cancel(): Promise<void>
-// }
+export type CheckoutImplComponentType = ComponentType<Record<string, never>>

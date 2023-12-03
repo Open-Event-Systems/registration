@@ -2,7 +2,6 @@ import { defaultQueryClient, placeholderWretch } from "#src/config/api"
 import { CheckoutState } from "#src/features/checkout/types/Checkout"
 import {
   CheckoutListResponse,
-  CheckoutResponse,
   Checkout,
 } from "#src/features/checkout/types/Checkout"
 import { CheckoutAPI } from "#src/features/checkout/types/CheckoutAPI"
@@ -37,34 +36,16 @@ export const createCheckoutAPI = (
         initialData: [],
       }
     },
-    create<ID extends string = string>(
+    create(
       cartId: string,
-    ): UseMutationOptions<
-      Checkout<ID>,
-      Error,
-      { service: ID; method?: string | null }
-    > {
+    ): UseMutationOptions<Checkout, Error, { method: string }> {
       return {
-        async mutationFn({ service, method = null }) {
+        async mutationFn({ method }) {
           let req = cartWretch
             .url(`/${cartId}/checkout`)
             .addon(queryString)
-            .query({ service: service })
-
-          if (method) {
-            req = req.query({ method: method })
-          }
-
-          const result = await req.post().json<CheckoutResponse<ID>>()
-          return {
-            cartId: cartId,
-            data: result.data,
-            externalId: result.external_id,
-            id: result.id,
-            method: method,
-            service: service,
-            state: result.state,
-          }
+            .query({ method: method })
+          return await req.post().json<Checkout>()
         },
         onSuccess: (response) => {
           client.setQueryData(this.read(response.id).queryKey, response)
@@ -75,26 +56,17 @@ export const createCheckoutAPI = (
       return {
         queryKey: ["checkouts", checkoutId],
         async queryFn() {
-          console.log("reading", checkoutId)
-          const response = await checkoutWretch
+          return await checkoutWretch
             .url(`/${checkoutId}`)
             .get()
-            .json<CheckoutResponse>()
-          return {
-            cartId: null,
-            data: response.data,
-            externalId: response.external_id,
-            id: response.id,
-            method: null,
-            service: response.service,
-            state: response.state,
-          }
+            .json<Checkout>()
         },
         staleTime: Infinity,
       }
     },
     update(checkoutId) {
       return {
+        mutationKey: ["checkouts", checkoutId],
         async mutationFn(body = {}) {
           let req = checkoutWretch.url(`/${checkoutId}/update`)
           req = req.json(body)
@@ -104,16 +76,7 @@ export const createCheckoutAPI = (
             return null
           }
 
-          const respData: CheckoutResponse = await response.json()
-          return {
-            cartId: null,
-            data: respData.data,
-            externalId: respData.external_id,
-            id: respData.id,
-            method: null,
-            service: respData.service,
-            state: respData.state,
-          }
+          return await response.json()
         },
         onSuccess: (result) => {
           if (result == null) {
@@ -130,8 +93,6 @@ export const createCheckoutAPI = (
                 old
                   ? {
                       ...result,
-                      cartId: old.cartId,
-                      method: old.method,
                       state: CheckoutState.complete,
                     }
                   : result,
@@ -145,7 +106,6 @@ export const createCheckoutAPI = (
         mutationKey: ["checkouts", checkoutId, "cancel"],
         async mutationFn() {
           await checkoutWretch.url(`/${checkoutId}/cancel`).put().res()
-          return null
         },
         onSuccess: () => {
           client.setQueryData(

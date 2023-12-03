@@ -1,4 +1,4 @@
-:global .CheckoutDialog-body {
+.CheckoutDialog-body {
     min-height: 100px;
     display: grid;
     grid-template-columns: minmax(1rem, 1fr);

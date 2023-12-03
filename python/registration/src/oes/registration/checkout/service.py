@@ -16,10 +16,10 @@ from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
 from oes.registration.log import AuditLogType, audit_log
-from oes.registration.payment.base import PaymentService, UpdateRequest
 from oes.registration.payment.config import PaymentMethod, PaymentServices
 from oes.registration.payment.errors import CheckoutCancelError, CheckoutStateError
-from oes.registration.payment.models import CreateCheckoutRequest
+from oes.registration.payment.models import CreateCheckoutRequest, UpdateRequest
+from oes.registration.payment.types import CheckoutUpdater, PaymentService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import get_now
 from sqlalchemy import select
@@ -39,16 +39,9 @@ class CheckoutService:
         self.payment_services = payment_services
         self.hook_sender = hook_sender
 
-    def is_service_available(self, id: str) -> bool:
-        """Get whether the given service is configured and loaded."""
-        return id in list(self.payment_services.get_available_services())
-
-    def get_payment_service(self, id: str) -> PaymentService:
+    def get_payment_service(self, id: str) -> Optional[PaymentService]:
         """Get a payment service by ID."""
-        res = self.payment_services.get_service(id)
-        if not res:
-            raise LookupError(f"Payment service not found {id}")
-        return res
+        return self.payment_services.get_service(id)
 
     async def list_checkouts(
         self,
@@ -118,6 +111,7 @@ class CheckoutService:
                 :class:`PaymentServiceCheckout`.
         """
         service = self.get_payment_service(service_id)
+        assert service is not None
         entity = CheckoutEntity(
             state=CheckoutState.pending,
             service=service.id,
@@ -203,6 +197,7 @@ class CheckoutService:
             raise ValueError("Invalid arguments")
 
         service = self.get_payment_service(service_id)
+        assert service is not None
         res = await service.get_checkout(external_id, extra_data)
         return res
 
@@ -223,14 +218,14 @@ class CheckoutService:
         if checkout.state == CheckoutState.complete:
             return False
 
-        if not self.is_service_available(checkout.service):
-            return False
-
         service = self.get_payment_service(checkout.service)
+
+        if not service:
+            return False
 
         try:
             result = await service.cancel_checkout(
-                checkout.external_id, checkout.external_data
+                checkout.external_id, checkout_data=checkout.external_data
             )
         except CheckoutCancelError:
             return False
@@ -304,7 +299,7 @@ class CheckoutService:
             raise CheckoutStateError("Checkout is already closed")
 
         service = self.get_payment_service(checkout.service)
-        if not service.update_handler:
+        if not service or not isinstance(service, CheckoutUpdater):
             raise CheckoutStateError("Not supported")
 
         req = UpdateRequest(
@@ -314,7 +309,7 @@ class CheckoutService:
             body=body,
         )
 
-        result = await service.update_handler(req)
+        result = await service.update_checkout(req)
         self._apply_updated_checkout(checkout, result)
 
         if result.state == CheckoutState.complete:

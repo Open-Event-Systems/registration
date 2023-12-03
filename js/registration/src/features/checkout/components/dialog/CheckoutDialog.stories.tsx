@@ -1,6 +1,8 @@
-import { CheckoutDialog } from "#src/features/checkout/components/checkout/CheckoutDialog"
+import { CheckoutDialog } from "#src/features/checkout/components/dialog/CheckoutDialog"
 import { Button, TextInput } from "@mantine/core"
 import { Meta, StoryObj } from "@storybook/react"
+
+import "./CheckoutDialog.css"
 
 const meta: Meta<typeof CheckoutDialog> = {
   component: CheckoutDialog,

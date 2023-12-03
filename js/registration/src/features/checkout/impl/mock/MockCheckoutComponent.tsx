@@ -1,5 +1,4 @@
-import { CheckoutImplComponentProps } from "#src/features/checkout/components/checkout/CheckoutComponent"
-import { Checkout } from "#src/features/checkout/types/Checkout"
+import { useCheckout } from "#src/features/checkout/hooks"
 import { Button, Skeleton, Stack, TextInput } from "@mantine/core"
 import { useLayoutEffect, useState } from "react"
 
@@ -9,11 +8,12 @@ declare module "#src/features/checkout/types/Checkout" {
   }
 }
 
-export type MockCheckoutComponentProps = CheckoutImplComponentProps<"mock">
+export const MockCheckoutComponent = () => {
+  const { checkout, update, updating } = useCheckout()
 
-export const MockCheckoutComponent = (props: MockCheckoutComponentProps) => {
-  const { checkout } = props
   const [setupFinished, setSetupFinished] = useState(false)
+  const [cardValue, setCardValue] = useState("")
+
   useLayoutEffect(() => {
     window.setTimeout(() => {
       setSetupFinished(true)
@@ -22,33 +22,17 @@ export const MockCheckoutComponent = (props: MockCheckoutComponentProps) => {
 
   if (!checkout || !setupFinished) {
     return <MockCheckoutComponent.Placeholder />
-  } else {
-    return <MockCheckoutComponent.Form {...props} checkout={checkout} />
   }
-}
 
-MockCheckoutComponent.Placeholder = () => (
-  <Stack>
-    <Skeleton height="2.25rem" />
-    <Skeleton height="2.25rem" />
-  </Stack>
-)
-
-MockCheckoutComponent.Form = (
-  props: MockCheckoutComponentProps & { checkout: Checkout<"mock"> },
-) => {
-  const { update } = props
-  const [value, setValue] = useState("")
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault()
-        let card = parseInt(value)
-        if (isNaN(card)) {
-          card = 0
+        if (updating) {
+          return
         }
 
-        update({ card: card })
+        update({ card: cardValue })
       }}
     >
       <Stack>
@@ -57,8 +41,8 @@ MockCheckoutComponent.Form = (
           placeholder="Mock Card #"
           inputMode="numeric"
           title="Card Number"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
+          value={cardValue}
+          onChange={(e) => setCardValue(e.target.value)}
         />
         <Button type="submit" variant="filled">
           Pay
@@ -67,3 +51,10 @@ MockCheckoutComponent.Form = (
     </form>
   )
 }
+
+MockCheckoutComponent.Placeholder = () => (
+  <Stack>
+    <Skeleton height="2.25rem" />
+    <Skeleton height="2.25rem" />
+  </Stack>
+)
