@@ -13,6 +13,7 @@ from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.credential_service import CredentialService
 from oes.registration.auth.entities import AccountEntity, CredentialEntity
 from oes.registration.auth.models import CredentialType
+from oes.registration.auth.scope import Scopes
 from oes.registration.auth.token import TokenBase
 from oes.registration.models.config import AuthConfig
 from oes.registration.util import (
@@ -227,6 +228,7 @@ async def create_webauthn_account(
     credential_entity: CredentialEntity,
     account_service: AccountService,
     credential_service: CredentialService,
+    scope: Scopes = Scopes(),
 ) -> AccountEntity:
     """Create an account from a WebAuthn credential.
 
@@ -234,6 +236,7 @@ async def create_webauthn_account(
         credential_entity: The :class:`CredentialEntity`.
         account_service: The :class:`AccountService`.
         credential_service: The :class:`CredentialService`.
+        scope: The scopes to grant.
 
     Returns:
         The created :class:`AccountEntity`.
@@ -250,7 +253,9 @@ async def create_webauthn_account(
         raise WebAuthnError("Credential is already registered")
 
     account = await account_service.create_account(
-        None, id=credential_entity.account_id
+        None,
+        id=credential_entity.account_id,
+        scope=scope,
     )
     account.credentials.append(credential_entity)
     return account

@@ -44,6 +44,9 @@ class AccountEntity(Base):
     email: Mapped[Optional[str]]
     """The email associated with this account."""
 
+    scope: Mapped[str]
+    """Auth scopes granted to this account."""
+
     credentials: Mapped[list[CredentialEntity]] = relationship(
         back_populates="account",
         cascade=DEFAULT_CASCADE_DELETE_ORPHAN,

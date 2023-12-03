@@ -4,6 +4,7 @@ from typing import Optional
 from uuid import UUID
 
 from oes.registration.auth.entities import AccountEntity
+from oes.registration.auth.scope import Scopes
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -36,11 +37,13 @@ class AccountService:
         self,
         email: Optional[str],
         id: Optional[UUID] = None,
+        scope: Scopes = Scopes(),
     ) -> AccountEntity:
         """Create a new account."""
         entity = AccountEntity(
             id=id if id is not None else uuid.uuid4(),
             email=email,
+            scope=str(scope),
             credentials=[],
             registrations=[],
         )

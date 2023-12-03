@@ -27,7 +27,7 @@ from oes.registration.auth.credential_service import (
 from oes.registration.auth.email_auth_service import EmailAuthService, send_auth_code
 from oes.registration.auth.models import CredentialType
 from oes.registration.auth.oauth.validator import CustomServer
-from oes.registration.auth.scope import DEFAULT_SCOPES, get_default_scopes
+from oes.registration.auth.scope import Scopes, get_default_scopes
 from oes.registration.auth.token import (
     WEBAUTHN_REFRESH_TOKEN_LIFETIME,
     TokenResponse,
@@ -192,11 +192,14 @@ async def new_account_endpoint(
 ) -> TokenResponse:
     """Create a new account, without credentials."""
     email = _verify_email_token(body.value.email_token if body else None, config)
-    new_account = await account_service.create_account(email)
+    scope = get_default_scopes(cmd_config)
+
+    new_account = await account_service.create_account(email, scope=scope)
+
     user = UserIdentity(
         id=new_account.id,
         email=new_account.email,
-        scope=get_default_scopes(cmd_config),
+        scope=scope,
     )
 
     refresh_token = create_new_refresh_token(user)
@@ -256,11 +259,14 @@ async def complete_webauthn_registration(
     request: Request,
     body: AttrsBody[WebAuthnChallengeResult],
     config: Config,
+    cmd_config: CommandLineConfig,
     account_service: AccountService,
     credential_service: CredentialService,
 ) -> TokenResponse:
     """Complete a WebAuthn registration."""
     origin = get_origin(request)
+
+    scope = get_default_scopes(cmd_config)
 
     try:
         credential_entity = validate_webauthn_registration(
@@ -271,7 +277,7 @@ async def complete_webauthn_registration(
         )
 
         account = await create_webauthn_account(
-            credential_entity, account_service, credential_service
+            credential_entity, account_service, credential_service, scope
         )
     except WebAuthnError as e:
         logger.debug(f"WebAuthn registration failed: {e}")
@@ -283,7 +289,7 @@ async def complete_webauthn_registration(
     user = UserIdentity(
         id=account.id,
         email=account.email,
-        scope=DEFAULT_SCOPES,
+        scope=scope,
     )
 
     now = get_now(seconds_only=True)
@@ -361,7 +367,6 @@ async def complete_webauthn_authentication(
     body: AttrsBody[WebAuthnChallengeResult],
     account_service: AccountService,
     credential_service: CredentialService,
-    cmd_config: CommandLineConfig,
     config: Config,
 ) -> TokenResponse:
     """Complete a WebAuthn authentication challenge."""
@@ -385,7 +390,7 @@ async def complete_webauthn_authentication(
     user = UserIdentity(
         id=account.id,
         email=account.email,
-        scope=get_default_scopes(cmd_config),
+        scope=Scopes(account.scope),
     )
 
     now = get_now(seconds_only=True)

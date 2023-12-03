@@ -46,13 +46,13 @@ class UserIdentity(Identity, User):
         self,
         id: Optional[UUID] = None,
         email: Optional[str] = None,
-        scope: Optional[Scopes] = None,
+        scope: Scopes = Scopes(),
     ):
         super().__init__(
             {
                 "id": id,
                 "email": email,
-                "scope": scope if scope is not None else Scopes(),
+                "scope": scope,
             },
             "Bearer",
         )
