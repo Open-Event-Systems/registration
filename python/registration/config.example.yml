@@ -11,6 +11,9 @@ auth:
   # Key used to sign auth tokens
   signing_key: changeit
 
+  # Base URL for first-party auth endpoints
+  auth_base_url: http://localhost:9000
+
   # Origins that are allowed to access API endpoints
   allowed_origins:
     - http://localhost

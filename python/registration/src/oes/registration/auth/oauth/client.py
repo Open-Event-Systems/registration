@@ -10,11 +10,18 @@ JS_CLIENT_ID = "oes"
 
 @frozen(kw_only=True)
 class Client:
+    """OAuth client."""
+
     id: str
     """The client ID."""
 
     redirect_uris: Sequence[str] = field(converter=tuple)
     """Allowed redirect URIs."""
+
+    @property
+    def client_id(self) -> str:
+        """The client ID."""
+        return self.id
 
 
 def get_js_client(auth_config: AuthConfig) -> Client:

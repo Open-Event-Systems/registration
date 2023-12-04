@@ -2,30 +2,36 @@
 from __future__ import annotations
 
 import secrets
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from blacksheep.messages import datetime
 from oes.registration.auth.models import CredentialType
+from oes.registration.auth.scope import Scopes
 from oes.registration.entities.base import (
     DEFAULT_CASCADE_DELETE_ORPHAN,
     PKUUID,
     Base,
     JSONData,
 )
-from oes.registration.util import get_now
+from oes.util import get_now
 from sqlalchemy import ForeignKey, Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing_extensions import Self
 
 CREDENTIAL_TYPE_LEN = 32
 CREDENTIAL_ID_MAX_LEN = 1024
+
 EMAIL_MAX_LEN = 254
+
 AUTH_CODE_LEN = 9
 AUTH_CODE_MAX_LEN = 12
 AUTH_CODE_MAX_NUM_SENT = 10
 AUTH_CODE_MAX_ATTEMPTS = 10
 AUTH_CODE_EXPIRATION_SEC = 1800
+
+DEVICE_CODE_MAX_LEN = 64
+DEVICE_USER_CODE_MAX_LEN = 12
 
 if TYPE_CHECKING:
     from oes.registration.entities.registration import RegistrationEntity
@@ -187,6 +193,59 @@ class EmailAuthCodeEntity(Base):
     def generate_code(cls) -> str:
         """Generate an auth code."""
         return "".join(secrets.choice(_digits) for _ in range(AUTH_CODE_LEN))
+
+
+class DeviceAuthEntity(Base):
+    """Entity for device grant codes."""
+
+    __tablename__ = "device_auth"
+
+    device_code: Mapped[str] = mapped_column(
+        String(DEVICE_CODE_MAX_LEN), primary_key=True
+    )
+    user_code: Mapped[str] = mapped_column(
+        String(DEVICE_USER_CODE_MAX_LEN), unique=True
+    )
+    client_id: Mapped[str]
+    scope: Mapped[str]
+    date_created: Mapped[datetime]
+    date_expires: Mapped[datetime]
+    account_id: Mapped[Optional[UUID]]
+    """The account ID that authorized the request."""
+
+    def is_valid(self, *, now: Optional[datetime] = None) -> bool:
+        """Return whether the auth entity is still valid."""
+        cur = now if now is not None else get_now()
+        return self.date_expires > cur
+
+    @classmethod
+    def create(
+        cls,
+        *,
+        client_id: str,
+        scope: Scopes = Scopes,
+        date_expires: datetime,
+    ) -> Self:
+        """Create a :class:`DeviceAuthEntity`."""
+        return cls(
+            device_code=_create_device_code(),
+            user_code=_create_user_code(),
+            client_id=client_id,
+            scope=str(scope),
+            date_created=get_now(),
+            date_expires=date_expires,
+        )
+
+
+_code_str = "BCDFGHJKLMNPQRSTVWXYZ23456789"
+
+
+def _create_device_code() -> str:
+    return secrets.token_urlsafe(16)
+
+
+def _create_user_code() -> str:
+    return "".join(secrets.choice(_code_str) for _ in range(8))
 
 
 import oes.registration.entities.registration  # noqa

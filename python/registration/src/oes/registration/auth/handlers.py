@@ -11,18 +11,16 @@ from guardpost.asynchronous.authentication import AuthenticationHandler
 from guardpost.authorization import AuthorizationContext
 from guardpost.synchronous.authorization import Requirement
 from jwt import InvalidTokenError
-from oes.registration.auth.scope import Scope
+from oes.registration.auth.scope import Scope, Scopes
 from oes.registration.auth.token import AccessToken
 from oes.registration.auth.user import User, UserIdentity
-from oes.registration.config import CommandLineConfig
 from oes.registration.models.config import Config
 
 
 class TokenAuthHandler(AuthenticationHandler):
     """Handler to allow the web server to use token auth."""
 
-    def __init__(self, cmd_config: CommandLineConfig, config: Config):
-        self.cmd_config = cmd_config
+    def __init__(self, config: Config):
         self.config = config
 
     async def authenticate(self, context: Request) -> Optional[Identity]:
@@ -70,8 +68,8 @@ def _decode_token(value: str, *, key: str) -> Optional[AccessToken]:
 class ScopeRequirement(Requirement):
     """Require a scope."""
 
-    def __init__(self, scope: Scope):
-        self.scope = scope
+    def __init__(self, *scopes: Scope):
+        self.scopes = Scopes(scopes)
 
     def handle(self, context: AuthorizationContext):
         identity = context.identity
@@ -80,8 +78,10 @@ class ScopeRequirement(Requirement):
             context.fail("Missing identity")
             return
 
-        if not isinstance(identity, UserIdentity) or self.scope not in identity.scope:
-            context.fail(f"Missing scope {self.scope}")
+        if not isinstance(identity, UserIdentity) or not any(
+            s in identity.scope for s in self.scopes
+        ):
+            context.fail(f"Missing one of scopes: {self.scopes!r}")
             # workaround: the authorization framework returns 401 instead of 403...
             raise Forbidden
 

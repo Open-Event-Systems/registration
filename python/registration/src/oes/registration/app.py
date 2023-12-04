@@ -18,6 +18,7 @@ from loguru import logger
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.credential_service import CredentialService
+from oes.registration.auth.device_service import DeviceAuthService
 from oes.registration.auth.email_auth_service import EmailAuthService
 from oes.registration.auth.handlers import (
     TokenAuthHandler,
@@ -29,6 +30,8 @@ from oes.registration.auth.handlers import (
     require_registration_edit,
     require_self_service,
 )
+from oes.registration.auth.oauth.server import CustomServer
+from oes.registration.auth.scope import get_default_scopes
 from oes.registration.cart.service import CartService
 from oes.registration.checkout.service import CheckoutService
 from oes.registration.config import CommandLineConfig, load_config, load_event_config
@@ -78,6 +81,7 @@ json.use(
 app.services.add_scoped(EmailAuthService)
 app.services.add_scoped(AccountService)
 app.services.add_scoped(CredentialService)
+app.services.add_scoped(DeviceAuthService)
 app.services.add_scoped(HookService)
 app.services.add_scoped(EventService)
 app.services.add_scoped(RegistrationService)
@@ -174,6 +178,24 @@ def _commit_callback_service_factory(
     return service
 
 
+def _oauth_factory(
+    services: GetServiceContext,
+) -> CustomServer:
+    config: Config = services.provider[Config]
+    cmd_config: CommandLineConfig = services.provider[CommandLineConfig]
+    account_service = services.provider[AccountService]
+    device_auth_service = services.provider[DeviceAuthService]
+    credential_service = services.provider[CredentialService]
+    return CustomServer(
+        config.auth,
+        get_default_scopes(cmd_config),
+        account_service,
+        credential_service,
+        device_auth_service,
+        get_running_loop(),
+    )
+
+
 def _hook_retry_service_factory(services: GetServiceContext) -> HookRetryService:
     config: Config = services.provider[Config]
     db_config: DBConfig = services.provider[DBConfig]
@@ -254,7 +276,7 @@ def app_factory():
     app.services.add_instance(get_converter(), Converter)
 
     # set up authentication
-    app.use_authentication().add(TokenAuthHandler(cmd_config, config))
+    app.use_authentication().add(TokenAuthHandler(config))
 
     # set up authorization
     authorization = app.use_authorization()

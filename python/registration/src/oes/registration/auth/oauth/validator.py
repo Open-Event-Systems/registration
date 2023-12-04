@@ -1,21 +1,20 @@
 """oauthlib request validator module."""
 import asyncio
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 from uuid import UUID
 
 import jwt
 from oauthlib.common import Request
-from oauthlib.oauth2 import RequestValidator, Server
+from oauthlib.oauth2 import RequestValidator
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.credential_service import (
     CredentialService,
-    create_new_refresh_token,
     create_refresh_token_entity,
     validate_refresh_token,
 )
 from oes.registration.auth.oauth.client import Client, get_js_client
-from oes.registration.auth.scope import DEFAULT_SCOPES, Scope, Scopes
+from oes.registration.auth.scope import Scope, Scopes
 from oes.registration.auth.token import AccessToken, RefreshToken
 from oes.registration.auth.user import UserIdentity
 from oes.registration.models.config import AuthConfig
@@ -25,6 +24,7 @@ class GrantType(str, Enum):
     """OAuth grant types."""
 
     refresh_token = "refresh_token"
+    device_code = "urn:ietf:params:oauth:grant-type:device_code"
 
 
 class CustomValidator(RequestValidator):
@@ -39,11 +39,13 @@ class CustomValidator(RequestValidator):
     def __init__(
         self,
         auth_config: AuthConfig,
+        default_scope: Scopes,
         account_service: AccountService,
         credential_service: CredentialService,
         loop: asyncio.AbstractEventLoop,
     ):
         self._auth_config = auth_config
+        self._default_scope = default_scope
         self._account_service = account_service
         self._credential_service = credential_service
         self._loop = loop
@@ -87,7 +89,7 @@ class CustomValidator(RequestValidator):
     def get_default_scopes(
         self, client_id: str, request: Request, *args, **kwargs
     ) -> list[str]:
-        return list(DEFAULT_SCOPES)
+        return sorted(self._default_scope)
 
     def validate_response_type(
         self,
@@ -121,8 +123,8 @@ class CustomValidator(RequestValidator):
         *args,
         **kwargs
     ) -> bool:
-        # TODO
-        return grant_type == GrantType.refresh_token
+        # TODO: check setting for each client
+        return grant_type in GrantType.__members__.values()
 
     def save_bearer_token(
         self, token: dict, request: Request, *args, **kwargs
@@ -148,8 +150,9 @@ class CustomValidator(RequestValidator):
         if access_token is None:
             return False
 
-        # All the resource's required scopes must be present in the token's scopes
-        if not all(s in access_token.scope for s in scopes):
+        # At least one of the resource's required scopes must be present in the token's
+        # scopes
+        if not any(s in access_token.scope for s in scopes):
             return False
 
         client = self._clients.get(access_token.azp) if access_token.azp else None
@@ -201,68 +204,16 @@ class CustomValidator(RequestValidator):
         else:
             return []
 
+    def is_origin_allowed(
+        self, client_id: str, origin: str, request: Request, *args, **kwargs
+    ) -> bool:
+        return (
+            origin in self._auth_config.allowed_origins
+            or "*" in self._auth_config.allowed_origins
+        )
+
     def _validate_token(self, token: str) -> Optional[AccessToken]:
         try:
             return AccessToken.decode(token, key=self._auth_config.signing_key)
         except jwt.InvalidTokenError:
             return None
-
-    def _get_user(self, token: Union[AccessToken, RefreshToken]) -> UserIdentity:
-        return UserIdentity(
-            id=UUID(token.sub) if token.sub else None,
-            email=token.email,
-            scope=token.scope,
-        )
-
-
-class CustomServer(Server):
-    """OAuth custom server."""
-
-    _auth_config: AuthConfig
-    _account_service: AccountService
-    _credential_service: CredentialService
-    _loop: asyncio.AbstractEventLoop
-
-    def __init__(
-        self,
-        auth_config: AuthConfig,
-        account_service: AccountService,
-        credential_service: CredentialService,
-        loop: asyncio.AbstractEventLoop,
-    ):
-        super().__init__(
-            request_validator=CustomValidator(
-                auth_config, account_service, credential_service, loop
-            ),
-            token_generator=self._generate_access_token,
-            refresh_token_generator=self._generate_refresh_token,
-        )
-
-        self._auth_config = auth_config
-        self._account_service = account_service
-        self._credential_service = credential_service
-        self._loop = loop
-
-    def _generate_access_token(self, request: Request) -> str:
-        assert isinstance(request.refresh_token, RefreshToken)
-        access_token = request.refresh_token.create_access_token(
-            scope=Scopes(request.scopes)
-        )
-        return access_token.encode(key=self._auth_config.signing_key)
-
-    def _generate_refresh_token(self, request: Request) -> str:
-        cur_token = request.refresh_token
-        if isinstance(cur_token, RefreshToken):
-            # Update the token
-            refresh_token = cur_token.reissue_refresh_token()
-        else:
-            assert request.user is None or isinstance(request.user, UserIdentity)
-            refresh_token = create_new_refresh_token(
-                request.user,
-                request.user.scope
-                if request.user
-                else None,  # TODO: check allowed scopes
-            )
-
-        request.refresh_token = refresh_token
-        return refresh_token.encode(key=self._auth_config.signing_key)

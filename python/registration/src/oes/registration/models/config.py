@@ -30,6 +30,9 @@ class AuthConfig:
     signing_key: str = field(repr=False)
     """The token signing key."""
 
+    auth_base_url: str
+    """The base URL for first party auth endpoints."""
+
     allowed_origins: Sequence[str]
     """The allowed origins."""
 

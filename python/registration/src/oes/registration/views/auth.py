@@ -24,9 +24,13 @@ from oes.registration.auth.credential_service import (
     create_new_refresh_token,
     create_refresh_token_entity,
 )
+from oes.registration.auth.device_service import (
+    DeviceAuthService,
+    authorize_device_auth,
+)
 from oes.registration.auth.email_auth_service import EmailAuthService, send_auth_code
 from oes.registration.auth.models import CredentialType
-from oes.registration.auth.oauth.validator import CustomServer
+from oes.registration.auth.oauth.server import CustomServer
 from oes.registration.auth.scope import Scopes, get_default_scopes
 from oes.registration.auth.token import (
     WEBAUTHN_REFRESH_TOKEN_LIFETIME,
@@ -48,6 +52,7 @@ from oes.registration.docs import docs, docs_helper
 from oes.registration.models.config import Config
 from oes.registration.util import check_not_found, get_now, get_origin, origin_to_rp_id
 from oes.registration.views.parameters import AttrsBody
+from oes.util.blacksheep import FromAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -104,6 +109,13 @@ class WebAuthnChallengeResult:
     challenge: str
     result: str
     email_token: Optional[str] = None
+
+
+@frozen
+class CompleteDeviceAuthRequest:
+    """Request to complete device auth."""
+
+    user_code: str
 
 
 @app.router.get("/auth/account")
@@ -415,6 +427,85 @@ async def complete_webauthn_authentication(
 
 @allow_anonymous()
 @app.router.post(
+    "/auth/authorize-device",
+)
+@docs(
+    request_body=RequestBodyInfo(
+        examples={"device_grant": {"client_id": "oes", "scope": "cart self-service"}}
+    ),
+    responses={200: ResponseInfo("The token response")},
+    tags=["OAuth"],
+)
+@transaction
+async def device_auth_endpoint(
+    form: FromForm,
+    request: Request,
+    config: Config,
+    cmd_config: CommandLineConfig,
+    account_service: AccountService,
+    device_auth_service: DeviceAuthService,
+    credential_service: CredentialService,
+) -> Response:
+    """Device authorization endpoint."""
+    loop = asyncio.get_running_loop()
+    server = CustomServer(
+        config.auth,
+        get_default_scopes(cmd_config),
+        account_service,
+        credential_service,
+        device_auth_service,
+        loop,
+    )
+
+    headers = {k.decode(): v.decode() for k, v in request.headers.items()}
+
+    resp_headers, resp_body, resp_status = await asyncio.to_thread(
+        server.create_device_authorization_response,
+        str(request.url),
+        request.method,
+        form.value,
+        headers,
+    )
+
+    response = Response(
+        resp_status,
+        [(k.encode(), v.encode()) for k, v in resp_headers.items()],
+        Content(b"application/json", resp_body.encode()),
+    )
+    return response
+
+
+@app.router.post(
+    "/auth/complete-authorize-device",
+)
+@docs(
+    responses={200: ResponseInfo("The token response")},
+    tags=["OAuth"],
+)
+@transaction
+async def complete_device_auth_endpoint(
+    body: FromAttrs[CompleteDeviceAuthRequest],
+    device_auth_service: DeviceAuthService,
+    account_service: AccountService,
+    user: User,
+) -> Response:
+    """Complete device authorization."""
+    auth = await device_auth_service.get_by_user_code(body.value.user_code)
+    if not auth or not auth.is_valid():
+        raise Forbidden
+
+    account = await account_service.get_account(user.id)
+    if not account:
+        raise Forbidden
+
+    if not authorize_device_auth(auth, account):
+        raise Forbidden
+
+    return Response(204)
+
+
+@allow_anonymous()
+@app.router.post(
     "/auth/token",
 )
 @docs(
@@ -424,7 +515,12 @@ async def complete_webauthn_authentication(
                 "client_id": "oes",
                 "grant_type": "refresh_token",
                 "refresh_token": "...",
-            }
+            },
+            "device_grant": {
+                "client_id": "oes",
+                "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                "device_code": "...",
+            },
         }
     ),
     responses={200: ResponseInfo("The token response")},
@@ -435,12 +531,21 @@ async def token_endpoint(
     request: Request,
     form: FromForm,
     config: Config,
+    cmd_config: CommandLineConfig,
     account_service: AccountService,
     credential_service: CredentialService,
+    device_auth_service: DeviceAuthService,
 ) -> Response:
     """Token endpoint for OAuth."""
     loop = asyncio.get_running_loop()
-    server = CustomServer(config.auth, account_service, credential_service, loop)
+    server = CustomServer(
+        config.auth,
+        get_default_scopes(cmd_config),
+        account_service,
+        credential_service,
+        device_auth_service,
+        loop,
+    )
     headers = {k.decode(): v.decode() for k, v in request.headers.items()}
 
     resp_headers, resp_body, resp_status = await asyncio.to_thread(
