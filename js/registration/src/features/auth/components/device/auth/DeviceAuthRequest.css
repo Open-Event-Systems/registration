@@ -1,0 +1,14 @@
+.DeviceAuthRequest-root {
+    text-align: center;
+}
+
+.DeviceAuthRequest-qrCode {
+    display: block;
+    margin: auto;
+    min-width: 200px;
+    min-height: 200px;
+}
+
+.DeviceAuthRequest-text {
+    display: block;
+}

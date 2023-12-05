@@ -1,0 +1,8 @@
+.DeviceAuthorization-spacer {
+    flex: auto
+}
+
+.DeviceAuthorization-confirm,
+.DeviceAuthorization-cancel {
+    flex: 0 0 auto;
+}
