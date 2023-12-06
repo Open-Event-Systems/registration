@@ -4,7 +4,7 @@ from typing import Optional
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.entities import AccountEntity, DeviceAuthEntity
 from oes.registration.auth.scope import Scopes
-from oes.registration.auth.user import UserIdentity
+from oes.registration.auth.user import User, UserIdentity
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,15 +36,25 @@ class DeviceAuthService:
         await self.db.delete(auth)
 
 
-def authorize_device_auth(
+async def authorize_device_auth(
     auth: DeviceAuthEntity,
-    account: AccountEntity,
+    user: User,
+    account_service: AccountService,
+    new_account: bool = False,
+    email: Optional[str] = None,
+    scope: Optional[Scopes] = None,
+    require_webauthn: bool = False,
 ) -> bool:
     """Authorize a device.
 
     Args:
         auth: The :class:`DeviceAuthEntity`.
-        account: The authorizing :class:`AccountEntity`.
+        user: The authorizing user.
+        account_service: The account service.
+        new_account: Whether to create a new account instead of using the authorizer's.
+        email: The email associated with the new account.
+        scope: Overrides the granted scopes.
+        require_webauthn: Require WebAuthn for a refresh token.
 
     Returns:
         True if the authorization was successful, otherwise False.
@@ -53,12 +63,28 @@ def authorize_device_auth(
         return False
 
     requested_scope = Scopes(auth.scope)
-    account_scope = Scopes(account.scope)
+    user_scope = user.scope
 
-    combined_scope = Scopes(requested_scope & account_scope)
-    auth.scope = str(combined_scope)
+    combined_scope = Scopes(requested_scope & user_scope)
 
-    auth.account_id = account.id
+    if user.is_admin:
+        override_scope = Scopes(scope) if scope is not None else combined_scope
+
+        if new_account:
+            account = await account_service.create_account(
+                email=email, scope=override_scope
+            )
+            auth.account_id = account.id
+        else:
+            auth.account_id = user.id
+
+        auth.require_webauthn = require_webauthn
+
+        auth.scope = str(override_scope)
+    else:
+        auth.scope = str(combined_scope)
+        auth.account_id = user.id
+
     return True
 
 

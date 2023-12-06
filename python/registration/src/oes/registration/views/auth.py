@@ -52,6 +52,7 @@ from oes.registration.docs import docs, docs_helper
 from oes.registration.models.config import Config
 from oes.registration.util import check_not_found, get_now, get_origin, origin_to_rp_id
 from oes.registration.views.parameters import AttrsBody
+from oes.registration.views.responses import CheckDeviceAuthResponse
 from oes.util.blacksheep import FromAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -112,10 +113,21 @@ class WebAuthnChallengeResult:
 
 
 @frozen
-class CompleteDeviceAuthRequest:
-    """Request to complete device auth."""
+class CheckDeviceAuthRequest:
+    """Check a user code."""
 
     user_code: str
+
+
+@frozen
+class AuthorizeDeviceAuthRequest:
+    """Request to authorize a device."""
+
+    user_code: str
+    scope: Optional[str] = None
+    new_account: bool = False
+    email: Optional[str] = None
+    require_webauthn: bool = False
 
 
 @app.router.get("/auth/account")
@@ -476,6 +488,32 @@ async def device_auth_endpoint(
 
 
 @app.router.post(
+    "/auth/check-authorize-device",
+)
+@docs_helper(
+    response_type=CheckDeviceAuthResponse,
+    response_summary="The device auth information",
+    tags=["OAuth"],
+)
+async def check_device_auth_endpoint(
+    body: FromAttrs[CheckDeviceAuthRequest],
+    device_auth_service: DeviceAuthService,
+) -> CheckDeviceAuthResponse:
+    """Check the status of a device authorization."""
+    auth = await device_auth_service.get_by_user_code(body.value.user_code)
+    if not auth or auth.account_id is not None or not auth.is_valid():
+        raise Forbidden
+
+    # TODO: keep these in an official place
+    client_id_names = {"oes": "Registration", "oes.kiosk": "Registration Kiosk"}
+
+    return CheckDeviceAuthResponse(
+        client=client_id_names.get(auth.client_id, auth.client_id),
+        scope=auth.scope,
+    )
+
+
+@app.router.post(
     "/auth/complete-authorize-device",
 )
 @docs(
@@ -484,7 +522,7 @@ async def device_auth_endpoint(
 )
 @transaction
 async def complete_device_auth_endpoint(
-    body: FromAttrs[CompleteDeviceAuthRequest],
+    body: FromAttrs[AuthorizeDeviceAuthRequest],
     device_auth_service: DeviceAuthService,
     account_service: AccountService,
     user: User,
@@ -494,11 +532,15 @@ async def complete_device_auth_endpoint(
     if not auth or not auth.is_valid():
         raise Forbidden
 
-    account = await account_service.get_account(user.id)
-    if not account:
-        raise Forbidden
-
-    if not authorize_device_auth(auth, account):
+    if not await authorize_device_auth(
+        auth,
+        user,
+        account_service,
+        body.value.new_account,
+        body.value.email,
+        Scopes(body.value.scope) if body.value.scope is not None else None,
+        body.value.require_webauthn,
+    ):
         raise Forbidden
 
     return Response(204)

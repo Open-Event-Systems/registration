@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from oes.registration.entities.registration import RegistrationEntity
 
 _digits = "0123456789"
+_code_str = "BCDFGHJKLMNPQRSTVWXYZ23456789"
 
 
 class AccountEntity(Base):
@@ -213,6 +214,8 @@ class DeviceAuthEntity(Base):
     account_id: Mapped[Optional[UUID]]
     """The account ID that authorized the request."""
 
+    require_webauthn: Mapped[bool]
+
     def is_valid(self, *, now: Optional[datetime] = None) -> bool:
         """Return whether the auth entity is still valid."""
         cur = now if now is not None else get_now()
@@ -225,6 +228,7 @@ class DeviceAuthEntity(Base):
         client_id: str,
         scope: Scopes = Scopes,
         date_expires: datetime,
+        require_webauthn: bool = False,
     ) -> Self:
         """Create a :class:`DeviceAuthEntity`."""
         return cls(
@@ -234,10 +238,8 @@ class DeviceAuthEntity(Base):
             scope=str(scope),
             date_created=get_now(),
             date_expires=date_expires,
+            require_webauthn=require_webauthn,
         )
-
-
-_code_str = "BCDFGHJKLMNPQRSTVWXYZ23456789"
 
 
 def _create_device_code() -> str:

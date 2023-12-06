@@ -10,12 +10,16 @@ import { isNotFoundError } from "#src/utils/api"
 import { makeApp } from "#src/utils/react"
 import { MantineProvider } from "@mantine/core"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { RouterProvider, createBrowserRouter } from "react-router-dom"
+import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import "@mantine/core/styles.css"
 import "@open-event-systems/interview-components/styles.css"
 import "#src/components/styles.css"
 import theme from "#src/config/theme"
+import { FullScreenLayout } from "#src/components/layout/FullScreenLayout"
+import { useAuth } from "#src/features/auth/hooks"
+import { useApp } from "#src/hooks/app"
+import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 
 makeApp(() => {
   const client = new QueryClient({
@@ -45,6 +49,35 @@ makeApp(() => {
         <AppRoute queryClient={client} fallback={<ShowLoadingOverlay />} />
       ),
       children: [
+        // Auth routes
+        {
+          Component() {
+            const auth = useAuth()
+            const app = useApp()
+            return (
+              <FullScreenLayout>
+                <Outlet />
+                <SignInDialog.Manager authStore={auth} wretch={app.wretch} />
+              </FullScreenLayout>
+            )
+          },
+          children: [
+            {
+              path: "/auth/authorize-device",
+              async lazy() {
+                const [_styles, { DeviceAuthPage }] = await Promise.all([
+                  import("#src/features/auth/styles.css"),
+                  import("#src/features/auth/routes/DeviceAuthPage"),
+                ])
+
+                return {
+                  element: <DeviceAuthPage />,
+                }
+              },
+            },
+          ],
+        },
+
         // Self service
         {
           async lazy() {

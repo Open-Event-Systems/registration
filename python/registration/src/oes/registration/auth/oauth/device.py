@@ -77,7 +77,8 @@ class DeviceGrantType(GrantTypeBase):
             {
                 "device_code": auth.device_code,
                 "user_code": auth.user_code,
-                "verification_uri": f"{self._auth_config.auth_base_url}/auth/device",
+                "verification_uri": f"{self._auth_config.auth_base_url}"
+                "/auth/authorize-device",
                 "verification_uri_complete": f"{self._auth_config.auth_base_url}/auth"
                 f"/authorize-device#user_code={auth.user_code}",
                 "expires_in": DEFAULT_AUTH_CODE_EXPIRATION_TIME.total_seconds(),
@@ -87,10 +88,13 @@ class DeviceGrantType(GrantTypeBase):
 
     def create_token_response(self, request: Request, token_handler):
         try:
-            self._validate_token_response(request)
+            auth = self._validate_token_response(request)
         except errors.OAuth2Error as e:
             return e.headers, e.json, e.status_code
-        token = token_handler.create_token(request, refresh_token=True)
+
+        token = token_handler.create_token(
+            request, refresh_token=not auth.require_webauthn
+        )
 
         self.request_validator.save_token(token, request)
         headers = self._get_default_headers()
@@ -140,6 +144,8 @@ class DeviceGrantType(GrantTypeBase):
 
         request.user = res
         request.scopes = list(res.scope)
+
+        return auth
 
     async def _create_auth_entity(
         self, client_id: str, scope: Scopes = Scopes()

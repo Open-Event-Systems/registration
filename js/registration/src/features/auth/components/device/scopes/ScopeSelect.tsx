@@ -21,7 +21,7 @@ export const ScopeSelect = (props: ScopeSelectProps) => {
     >
       <Stack>
         {Object.entries(scopeDescriptions).map(([scope, desc]) => (
-          <Checkbox value={scope} label={desc} />
+          <Checkbox key={scope} value={scope} label={desc} />
         ))}
       </Stack>
     </Checkbox.Group>

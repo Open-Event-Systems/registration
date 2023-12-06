@@ -3,7 +3,7 @@ import { Button, Stack, Text, Title } from "@mantine/core"
 import { IconCheck, IconX } from "@tabler/icons-react"
 import { useState } from "react"
 
-type Options = {
+export type DeviceAuthorizationOptions = {
   account: "my_account" | "anonymous" | "new_account"
   email: string
   scope: string[]
@@ -14,14 +14,14 @@ export type DeviceAuthorizationProps = {
   client: string
   scope: string[]
   showOptions?: boolean
-  onComplete?: (options: Options) => void
+  onComplete?: (options: DeviceAuthorizationOptions) => void
   onCancel?: () => void
 }
 
 export const DeviceAuthorization = (props: DeviceAuthorizationProps) => {
   const { client, scope, showOptions, onComplete, onCancel } = props
 
-  const [options, setOptions] = useState<Options>({
+  const [options, setOptions] = useState<DeviceAuthorizationOptions>({
     account: "my_account",
     email: "",
     requireWebAuthn: false,
