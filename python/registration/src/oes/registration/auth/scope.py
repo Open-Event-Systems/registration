@@ -44,7 +44,7 @@ class Scopes(Set[str]):
         elif isinstance(iterable, str):
             values = frozenset(iterable.split())
         else:
-            values = frozenset(iterable)
+            values = frozenset(s.value if isinstance(s, Scope) else s for s in iterable)
 
         object.__setattr__(self, "_set", values)
 

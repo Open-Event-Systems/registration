@@ -79,7 +79,7 @@ class DeviceGrantType(GrantTypeBase):
                 "user_code": auth.user_code,
                 "verification_uri": f"{self._auth_config.auth_base_url}/auth/device",
                 "verification_uri_complete": f"{self._auth_config.auth_base_url}/auth"
-                f"/device#user_code={auth.user_code}",
+                f"/authorize-device#user_code={auth.user_code}",
                 "expires_in": DEFAULT_AUTH_CODE_EXPIRATION_TIME.total_seconds(),
             }
         )
@@ -116,11 +116,26 @@ class DeviceGrantType(GrantTypeBase):
 
         self.validate_grant_type(request)
 
-        res = asyncio.run_coroutine_threadsafe(
-            self._complete_auth(request.device_code), self._loop
+        auth = asyncio.run_coroutine_threadsafe(
+            self._get_auth(request.device_code), self._loop
         ).result()
 
-        if not res:
+        if auth is None:
+            raise errors.InvalidGrantError(request=request)
+        elif not auth.is_valid():
+            err = errors.InvalidGrantError(request=request)
+            err.error = "expired_token"
+            raise err
+        elif not auth.account_id:
+            err = errors.InvalidGrantError(request=request)
+            err.error = "authorization_pending"
+            raise err
+
+        res = asyncio.run_coroutine_threadsafe(
+            self._complete_auth(auth), self._loop
+        ).result()
+
+        if auth is None:
             raise errors.InvalidGrantError(request=request)
 
         request.user = res
@@ -137,11 +152,10 @@ class DeviceGrantType(GrantTypeBase):
         await self._auth_service.save_device_auth(entity)
         return entity
 
-    async def _complete_auth(self, device_code: str):
-        auth = await self._auth_service.get_by_device_code(device_code)
-        if not auth:
-            return None
+    async def _get_auth(self, device_code: str):
+        return await self._auth_service.get_by_device_code(device_code)
 
+    async def _complete_auth(self, auth: DeviceAuthEntity):
         return await complete_device_auth(
             auth, self._auth_service, self._account_service
         )

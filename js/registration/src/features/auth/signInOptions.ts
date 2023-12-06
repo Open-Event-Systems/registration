@@ -1,3 +1,4 @@
+import { getDeviceAuthSignIn } from "#src/features/auth/components/signin/DeviceAuth"
 import { getEmailSignIn } from "#src/features/auth/components/signin/EmailAuth"
 import { getGuestSignIn } from "#src/features/auth/components/signin/Guest"
 import {
@@ -11,4 +12,5 @@ export const signInOptions: SignInOptions = {
   email: getEmailSignIn,
   platformWebAuthn: getPlatformWebAuthnSignIn,
   guest: getGuestSignIn,
+  device: getDeviceAuthSignIn,
 }

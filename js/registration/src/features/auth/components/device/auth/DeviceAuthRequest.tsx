@@ -4,23 +4,33 @@ import QRCode from "qrcode"
 
 export type DeviceAuthRequestProps = {
   url: string
+  urlComplete: string
   userCode: string
 }
 
 export const DeviceAuthRequest = (props: DeviceAuthRequestProps) => {
-  const { url, userCode } = props
+  const { url, urlComplete, userCode } = props
 
   const [dataURL, setDataURL] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    QRCode.toDataURL(url, { width: 200 }).then((dataURL) => setDataURL(dataURL))
+    QRCode.toDataURL(urlComplete, { width: 200 }).then((dataURL) =>
+      setDataURL(dataURL),
+    )
   }, [url])
 
   return (
     <Box className="DeviceAuthRequest-root">
+      <Text className="DeviceAuthRequest-text" c="dimmed" fz="smaller">
+        Scan code
+      </Text>
       <img className={"DeviceAuthRequest-qrCode"} src={dataURL} alt="" />
       <Text className="DeviceAuthRequest-text" c="dimmed" fz="smaller">
-        Or enter code{" "}
+        or visit
+        <br />
+        {url}
+        <br />
+        and enter code{" "}
         <Text component="code" fw="bold">
           {String(userCode)}
         </Text>

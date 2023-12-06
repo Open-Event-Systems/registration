@@ -15,6 +15,7 @@ export default meta
 export const Default: StoryObj<typeof DeviceAuthRequest> = {
   args: {
     url: "http://localhost:6006/#",
+    urlComplete: "http://localhost:6006/#123456",
     userCode: "123456",
   },
 }
