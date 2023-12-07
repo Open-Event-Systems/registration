@@ -8,7 +8,6 @@ export interface WebAuthnChallenge {
 export interface WebAuthnChallengeResult {
   challenge: string
   result: string
-  email_token?: string | null
 }
 
 export type PlatformWebAuthnDetails = {

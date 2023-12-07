@@ -20,6 +20,9 @@ ALGORITHM = "HS256"
 DEFAULT_ACCESS_TOKEN_LIFETIME = timedelta(minutes=15)
 """Default access token lifetime."""
 
+GUEST_INITIAL_ACCESS_TOKEN_LIFETIME = timedelta(minutes=60)
+"""Initial account access token lifetime."""
+
 DEFAULT_REFRESH_TOKEN_LIFETIME = timedelta(days=90)
 """Default refresh token lifetime."""
 

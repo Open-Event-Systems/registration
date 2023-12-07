@@ -13,7 +13,7 @@ from oes.registration.auth.credential_service import (
     create_refresh_token_entity,
     validate_refresh_token,
 )
-from oes.registration.auth.oauth.client import Client, get_js_client
+from oes.registration.auth.oauth.client import Client, get_clients
 from oes.registration.auth.scope import Scope, Scopes
 from oes.registration.auth.token import AccessToken, RefreshToken
 from oes.registration.auth.user import UserIdentity
@@ -50,10 +50,7 @@ class CustomValidator(RequestValidator):
         self._credential_service = credential_service
         self._loop = loop
 
-        js_client = get_js_client(auth_config)
-        self._clients = {
-            js_client.id: js_client,
-        }
+        self._clients = get_clients(auth_config)
 
     def validate_client_id(
         self, client_id: str, request: Request, *args, **kwargs
@@ -165,6 +162,8 @@ class CustomValidator(RequestValidator):
             id=UUID(access_token.sub) if access_token.sub else None,
             email=access_token.email,
             scope=access_token.scope,
+            expiration_date=access_token.exp,
+            client_id=access_token.azp,
         )
 
         return True
@@ -192,6 +191,8 @@ class CustomValidator(RequestValidator):
             id=UUID(refresh_token_obj.sub) if refresh_token_obj.sub else None,
             email=refresh_token_obj.email,
             scope=refresh_token_obj.scope,
+            expiration_date=refresh_token_obj.exp,
+            client_id=refresh_token_obj.azp,
         )
         request.refresh_token = refresh_token_obj
         return True

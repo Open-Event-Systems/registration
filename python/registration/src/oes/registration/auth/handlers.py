@@ -36,6 +36,8 @@ class TokenAuthHandler(AuthenticationHandler):
                 id=UUID(token.sub) if token.sub else None,
                 email=token.email,
                 scope=token.scope,
+                expiration_date=token.exp,
+                client_id=token.azp,
             )
             context.identity = user
             return user

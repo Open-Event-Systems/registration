@@ -293,11 +293,3 @@ class AccessCodeResponse:
             used=entity.used,
             data=entity.get_settings(),
         )
-
-
-@frozen
-class CheckDeviceAuthResponse:
-    """Status of a device auth."""
-
-    client: str
-    scope: str

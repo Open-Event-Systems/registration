@@ -1,6 +1,5 @@
 """WebAuthn module."""
 import secrets
-import uuid
 from datetime import datetime, timedelta
 from typing import Literal, Optional
 from uuid import UUID
@@ -13,7 +12,6 @@ from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.credential_service import CredentialService
 from oes.registration.auth.entities import AccountEntity, CredentialEntity
 from oes.registration.auth.models import CredentialType
-from oes.registration.auth.scope import Scopes
 from oes.registration.auth.token import TokenBase
 from oes.registration.models.config import AuthConfig
 from oes.registration.util import (
@@ -69,6 +67,7 @@ class WebAuthnRegistrationChallenge(TokenBase):
         cls,
         rp_id: str,
         rp_name: str,
+        account_id: UUID,
         user_name: Optional[str] = None,
         expiration_date: Optional[datetime] = None,
     ) -> tuple[Self, PublicKeyCredentialCreationOptions]:
@@ -77,10 +76,10 @@ class WebAuthnRegistrationChallenge(TokenBase):
         Args:
             rp_id: The ID of the relying party.
             rp_name: The name of the relying party.
+            account_id: The user ID.
             user_name: The name of the user.
             expiration_date: A non-default expiration date.
         """
-        account_id = uuid.uuid4()
         challenge_bytes = secrets.token_bytes(16)
         opts = webauthn.generate_registration_options(
             rp_id=rp_id,
@@ -224,25 +223,23 @@ def validate_webauthn_registration(
     return credential_entity
 
 
-async def create_webauthn_account(
+async def add_webauthn_credential(
     credential_entity: CredentialEntity,
     account_service: AccountService,
     credential_service: CredentialService,
-    scope: Scopes = Scopes(),
 ) -> AccountEntity:
-    """Create an account from a WebAuthn credential.
+    """Add a WebAuthn credential to an account.
 
     Args:
         credential_entity: The :class:`CredentialEntity`.
         account_service: The :class:`AccountService`.
         credential_service: The :class:`CredentialService`.
-        scope: The scopes to grant.
 
     Returns:
-        The created :class:`AccountEntity`.
+        The :class:`AccountEntity`.
 
     Raises:
-        WebAuthnError: If the account or credential already exist.
+        WebAuthnError: If the credential already exists.
     """
     account = await account_service.get_account(credential_entity.account_id)
     if account is not None:
@@ -252,11 +249,6 @@ async def create_webauthn_account(
     if cur_credential is not None:
         raise WebAuthnError("Credential is already registered")
 
-    account = await account_service.create_account(
-        None,
-        id=credential_entity.account_id,
-        scope=scope,
-    )
     account.credentials.append(credential_entity)
     return account
 

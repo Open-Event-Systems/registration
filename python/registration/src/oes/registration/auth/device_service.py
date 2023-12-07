@@ -2,7 +2,7 @@
 from typing import Optional
 
 from oes.registration.auth.account_service import AccountService
-from oes.registration.auth.entities import AccountEntity, DeviceAuthEntity
+from oes.registration.auth.entities import DeviceAuthEntity
 from oes.registration.auth.scope import Scopes
 from oes.registration.auth.user import User, UserIdentity
 from sqlalchemy import select
@@ -105,7 +105,12 @@ async def complete_device_auth(
     if not auth:
         return None
 
-    user = UserIdentity(id=account.id, email=account.email, scope=Scopes(auth.scope))
+    user = UserIdentity(
+        id=account.id,
+        email=account.email,
+        scope=Scopes(auth.scope),
+        client_id=auth.client_id,
+    )
 
     await auth_service.delete(auth)
     return user

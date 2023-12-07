@@ -74,6 +74,7 @@ def create_new_refresh_token(
         expiration_date=expiration_date
         if expiration_date is not None
         else (get_now(seconds_only=True) + DEFAULT_REFRESH_TOKEN_LIFETIME),
+        client_id=user.client_id if user is not None else None,
     )
 
 

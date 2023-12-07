@@ -1,5 +1,6 @@
 """User module."""
 from abc import abstractmethod
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -29,6 +30,18 @@ class User(Protocol):
         """The user's allowed scopes."""
         ...
 
+    @property
+    @abstractmethod
+    def client_id(self) -> Optional[str]:
+        """The client ID."""
+        ...
+
+    @property
+    @abstractmethod
+    def expiration_date(self) -> Optional[datetime]:
+        """The expiration date."""
+        ...
+
     def has_scope(self, *scopes: str) -> bool:
         """Return whether the token has all the given scopes."""
         return all(s in self.scope for s in scopes)
@@ -47,12 +60,16 @@ class UserIdentity(Identity, User):
         id: Optional[UUID] = None,
         email: Optional[str] = None,
         scope: Scopes = Scopes(),
+        expiration_date: Optional[datetime] = None,
+        client_id: Optional[str] = None,
     ):
         super().__init__(
             {
                 "id": id,
                 "email": email,
                 "scope": scope,
+                "expiration_date": expiration_date,
+                "client_id": client_id,
             },
             "Bearer",
         )
@@ -71,3 +88,13 @@ class UserIdentity(Identity, User):
     def scope(self) -> Scopes:
         """The user's allowed scopes."""
         return self.claims["scope"]
+
+    @property
+    def client_id(self) -> Optional[str]:
+        """The client ID."""
+        return self.claims.get("client_id")
+
+    @property
+    def expiration_date(self) -> Optional[datetime]:
+        """The expiration date."""
+        return self.claims.get("expiration_date")
