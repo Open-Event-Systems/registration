@@ -12,13 +12,25 @@ export type AuthAPI = {
     clientId: string,
   ): UseMutationOptions<oauth.TokenEndpointResponse>
   readAccountInfo(): UndefinedInitialDataOptions<AccountInfo>
-  createInitialRefreshToken(): UseMutationOptions<oauth.TokenEndpointResponse>
-  sendVerificationEmail(): UseMutationOptions<void, Error, string>
+  createInitialRefreshToken(): UseMutationOptions<
+    oauth.TokenEndpointResponse,
+    Error,
+    string
+  >
+  sendVerificationEmail(): UseMutationOptions<
+    void,
+    Error,
+    { accessToken: string; email: string }
+  >
   verifyEmail(
+    accessToken: string,
     email: string,
   ): UseMutationOptions<oauth.TokenEndpointResponse, Error, string>
-  readWebAuthnRegistrationChallenge(): UndefinedInitialDataOptions<WebAuthnChallenge>
+  readWebAuthnRegistrationChallenge(
+    accessToken: string,
+  ): UndefinedInitialDataOptions<WebAuthnChallenge>
   completeWebAuthnRegistration(
+    accessToken: string,
     challenge: WebAuthnChallenge,
   ): UseMutationOptions<void, Error, string>
   readWebAuthnAuthenticationChallenge(

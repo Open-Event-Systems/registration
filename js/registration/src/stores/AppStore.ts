@@ -19,9 +19,12 @@ import { createSelfServiceAPI } from "#src/features/selfservice/api"
 import { CartAPI } from "#src/features/cart/types"
 import { createCartAPI } from "#src/features/cart/api"
 import { QueryClient } from "@tanstack/react-query"
+import { AuthAPI } from "#src/features/auth/types/api"
+import { createAuthAPI } from "#src/features/auth/api"
 
 export class AppStore {
   authStore: AuthStore
+  authAPI: AuthAPI
   eventAPI: EventAPI
   cartAPI: CartAPI
   registrationAPI: RegistrationAPI
@@ -37,6 +40,7 @@ export class AppStore {
     this.authStore = new AuthStore(apiUrl, wretch)
     const authWretch = this.authStore.authWretch
 
+    this.authAPI = createAuthAPI(wretch, authWretch, queryClient)
     this.eventAPI = createEventAPI(authWretch)
     this.cartAPI = createCartAPI(authWretch, queryClient)
     this.registrationAPI = createRegistrationAPI(authWretch)

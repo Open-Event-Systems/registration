@@ -75,3 +75,28 @@ const Option = createPolymorphicComponent<"button", OptionProps>(
 )
 
 Option.displayName = "Option"
+
+type SignInOptionsOptionProps = NavLinkProps & {
+  onClick?: () => void
+}
+
+export const SignInOptionsOption = createPolymorphicComponent<
+  "button",
+  SignInOptionsOptionProps
+>((props: SignInOptionsOptionProps) => {
+  const { onClick, ...other } = props
+
+  return (
+    <NavLink
+      component="button"
+      className="SignInOptionsMenuOption-root"
+      onClick={(e) => {
+        e.preventDefault()
+        onClick && onClick()
+      }}
+      {...other}
+    />
+  )
+})
+
+SignInOptionsOption.displayName = "SignInOptionsOption"

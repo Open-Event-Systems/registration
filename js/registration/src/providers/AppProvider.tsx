@@ -1,3 +1,4 @@
+import { AuthAPIContext } from "#src/features/auth/api"
 import { AuthContext } from "#src/features/auth/hooks"
 import { CartAPIContext } from "#src/features/cart/api"
 import { CheckoutAPIContext } from "#src/features/checkout/api"
@@ -38,6 +39,7 @@ export const AppProvider = ({
         AppContext,
         AuthContext,
         WretchContext,
+        AuthAPIContext,
         EventAPIContext,
         CartAPIContext,
         RegistrationAPIContext,
@@ -48,6 +50,7 @@ export const AppProvider = ({
         app,
         app.authStore,
         app.authStore.authWretch,
+        app.authAPI,
         app.eventAPI,
         app.cartAPI,
         app.registrationAPI,

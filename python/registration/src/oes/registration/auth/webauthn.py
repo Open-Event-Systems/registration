@@ -241,9 +241,11 @@ async def add_webauthn_credential(
     Raises:
         WebAuthnError: If the credential already exists.
     """
-    account = await account_service.get_account(credential_entity.account_id)
-    if account is not None:
-        raise WebAuthnError("Account already exists")
+    account = await account_service.get_account(
+        credential_entity.account_id, with_credentials=True
+    )
+    if account is None:
+        raise WebAuthnError("Account not found")
 
     cur_credential = await credential_service.get_credential(credential_entity.id)
     if cur_credential is not None:

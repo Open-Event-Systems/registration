@@ -1,0 +1,14 @@
+.EmailAuth-root {
+    flex: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.EmailAuth-stack {
+    flex: auto;
+}
+
+.EmailAuth-spacer {
+    flex: auto
+}

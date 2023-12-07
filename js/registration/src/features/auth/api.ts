@@ -1,3 +1,4 @@
+import { defaultQueryClient, placeholderWretch } from "#src/config/api"
 import {
   AccountInfo,
   EmailTokenResponse,
@@ -9,6 +10,7 @@ import {
 import { AuthAPI } from "#src/features/auth/types/api"
 import { QueryClient } from "@tanstack/react-query"
 import * as oauth from "oauth4webapi"
+import { createContext } from "react"
 import { Wretch } from "wretch"
 import formUrl from "wretch/addons/formUrl"
 
@@ -43,52 +45,68 @@ export const createAuthAPI = (
     },
     createInitialRefreshToken() {
       return {
-        async mutationFn() {
-          return await authWretch.url("/refresh-token").post().json()
+        mutationKey: ["auth", "refresh-token"],
+        async mutationFn(accessToken) {
+          return await wretch
+            .url("/refresh-token")
+            .headers({ Authorization: `Bearer ${accessToken}` })
+            .post()
+            .json()
         },
       }
     },
     sendVerificationEmail() {
       return {
         mutationKey: ["auth", "email"],
-        async mutationFn(email) {
-          await authWretch
+        async mutationFn({ accessToken, email }) {
+          await wretch
             .url("/email/send")
+            .headers({ Authorization: `Bearer ${accessToken}` })
             .json({ email: email })
             .post()
+            .error(422, () => {
+              throw new Error("Invalid email")
+            })
             .res()
         },
       }
     },
-    verifyEmail(email) {
+    verifyEmail(accessToken, email) {
       return {
         mutationKey: ["auth", "email"],
         async mutationFn(code) {
-          return await authWretch
+          return await wretch
             .url("/email/verify")
+            .headers({ Authorization: `Bearer ${accessToken}` })
             .json({ email: email, code: code })
             .post()
             .json()
         },
       }
     },
-    readWebAuthnRegistrationChallenge() {
+    readWebAuthnRegistrationChallenge(accessToken) {
       return {
         queryKey: ["auth", "webauthn", "register"],
         async queryFn() {
-          return await authWretch.url("/webauthn/register").get().json()
+          return await wretch
+            .url("/webauthn/register")
+            .headers({ Authorization: `Bearer ${accessToken}` })
+            .get()
+            .json()
         },
         staleTime: 600000,
       }
     },
-    completeWebAuthnRegistration(challenge) {
+    completeWebAuthnRegistration(accessToken, challenge) {
       return {
         mutationKey: ["auth", "webauthn", "register"],
         async mutationFn(result) {
-          await authWretch
+          await wretch
             .url("/webauthn/register")
+            .headers({ Authorization: `Bearer ${accessToken}` })
             .json({ challenge: challenge.challenge, result: result })
-            .post().res
+            .post()
+            .res()
         },
       }
     },
@@ -184,6 +202,10 @@ export const createAuthAPI = (
     },
   }
 }
+
+export const AuthAPIContext = createContext(
+  createAuthAPI(placeholderWretch, placeholderWretch, defaultQueryClient),
+)
 
 /**
  * Get the current account information.

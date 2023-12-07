@@ -22,7 +22,7 @@ export const SelfServiceLayout = ({ children }: { children?: ReactNode }) => {
       <Title title="Registrations">
         <Subtitle subtitle="Manage registrations">
           {query.isSuccess ? children : <ShowLoadingOverlay />}
-          <SignInDialog.Manager authStore={auth} wretch={app.wretch} />
+          <SignInDialog.Manager2 authStore={auth} wretch={app.wretch} />
         </Subtitle>
       </Title>
     </SimpleLayout>

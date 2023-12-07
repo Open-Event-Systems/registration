@@ -7,7 +7,7 @@ import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 /**
  * The client ID of the main JS app.
  */
-const JS_CLIENT_ID = "oes"
+export const JS_CLIENT_ID = "oes"
 
 /**
  * The local storage key for the auth data.

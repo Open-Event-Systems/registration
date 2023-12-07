@@ -3,20 +3,29 @@ import {
   ModalDialogProps,
 } from "#src/components/dialog/ModalDialog"
 import { SignInOptionsMenu } from "#src/features/auth/components/options/SignInOptionsMenu"
+import { WebAuthnOptionsMenu } from "#src/features/auth/components/options/WebAuthnOptionsMenu"
+import {
+  SignInStateContext,
+  SignInStep,
+  createSignIn,
+  useAuthAPI,
+} from "#src/features/auth/hooks"
+import { signInComponents, signInOptions } from "#src/features/auth/options"
 import { AuthStore } from "#src/features/auth/stores/AuthStore"
 import { SignInStore } from "#src/features/auth/stores/SignInStore"
 import { SignInOptions } from "#src/features/auth/types/SignInOptions"
 import { useLocation, useNavigate } from "#src/hooks/location"
-import { useProps } from "@mantine/core"
+import { Box, Skeleton, Stack, useProps } from "@mantine/core"
+import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query"
 import clsx from "clsx"
 import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
-import { ReactNode, useEffect } from "react"
+import { ComponentType, ReactNode, useEffect, useState } from "react"
 import { Wretch } from "wretch"
 
 declare module "#src/hooks/location" {
   interface LocationState {
-    signInOption?: keyof SignInOptions
+    signInOption?: string
   }
 }
 
@@ -146,3 +155,59 @@ SignInDialog.Manager = observer((props: SignInDialogManagerProps) => {
 })
 
 SignInDialog.Manager.displayName = "SigninDialog.Manager"
+
+SignInDialog.Manager2 = observer((props: SignInDialogManagerProps) => {
+  const { authStore, children } = props
+  const navigate = useNavigate()
+  const loc = useLocation()
+
+  // show when auth setup finishes and there is no auth info
+  const show = authStore.ready && !authStore.authInfo
+
+  const state = createSignIn()
+
+  let usePadding = false
+  let content = <SignInDialog.Placeholder />
+
+  if (state.step == SignInStep.signIn) {
+    if (state.signInComponent) {
+      const Component = state.signInComponent
+      content = <Component />
+      usePadding = true
+    } else if (state.signInOptions) {
+      content = (
+        <>
+          {state.signInOptions.map(([id, Component]) => (
+            <Component key={id} />
+          ))}
+        </>
+      )
+    }
+  } else if (state.step == SignInStep.webAuthn) {
+    content = <WebAuthnOptionsMenu.Manager />
+  }
+
+  return (
+    <SignInStateContext.Provider value={state}>
+      {children}
+      <SignInDialog
+        opened={show}
+        loading={state.updating}
+        classNames={{
+          body: clsx({ "SignInDialog-padding": usePadding }),
+        }}
+      >
+        {content}
+      </SignInDialog>
+    </SignInStateContext.Provider>
+  )
+})
+
+SignInDialog.Manager2.displayName = "SigninDialog.Manager2"
+
+SignInDialog.Placeholder = () => (
+  <Stack>
+    <Skeleton h="2.25rem" />
+    <Skeleton h="2.25rem" />
+  </Stack>
+)

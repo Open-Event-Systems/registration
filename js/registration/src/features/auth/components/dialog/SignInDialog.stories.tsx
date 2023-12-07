@@ -6,9 +6,9 @@ import { IconUserOff } from "@tabler/icons-react"
 import { IconAt } from "@tabler/icons-react"
 import { useEffect, useState } from "react"
 
-import "../options/SignInOptionsMenu.module.css"
-import "../signin/EmailAuth.module.css"
-import "./SignInDialog.module.css"
+import "../options/SignInOptionsMenu.css"
+import "../signin/EmailAuth.css"
+import "./SignInDialog.css"
 
 const webAuthnDetails = getPlatformWebAuthnDetails("")
 const iOSWebAuthnDetails = getPlatformWebAuthnDetails("iPhone")

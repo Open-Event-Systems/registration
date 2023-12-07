@@ -1,0 +1,10 @@
+.SignInDialog-body {
+    padding: 0 0 var(--mantine-spacing-xs) 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.SignInDialog-padding {
+    padding: var(--mantine-spacing-xs);
+}
