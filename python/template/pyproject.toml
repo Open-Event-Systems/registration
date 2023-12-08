@@ -12,7 +12,7 @@ python = "^3.9"
 jinja2 = "^3.1.2"
 attrs = "^23.1"
 typing-extensions = "^4.7.1"
-oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", subdirectory = "python/util", rev = "207f35e3f4eff0822bb727b7cffca7156929d97b" }
+oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", subdirectory = "python/util", rev = "39ac369f1817d847062c738db59011ea1ee9ab77" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.3.0"
