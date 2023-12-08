@@ -27,6 +27,7 @@ def configure_cors(
     allow_origins: Union[str, Iterable[str], None] = None,
     allow_methods: Union[str, Iterable[str]] = "*",
     allow_headers: Union[str, Iterable[str], None] = None,
+    allow_credentials: bool = False,
     max_age: int = 600,
 ):
     """Configure an app to set CORS headers."""
@@ -34,5 +35,6 @@ def configure_cors(
         allow_origins=allow_origins,
         allow_methods=allow_methods,
         allow_headers=allow_headers,
+        allow_credentials=allow_credentials,
         max_age=max_age,
     )

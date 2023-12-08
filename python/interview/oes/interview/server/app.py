@@ -71,6 +71,7 @@ def make_app(settings: Settings, interview_config: InterviewConfig) -> Applicati
     # middlewares
     configure_cors(
         app,
+        allow_methods=("GET", "POST", "PUT", "DELETE"),
         allow_origins=settings.allowed_origins,
         allow_headers=(
             "Authorization",
