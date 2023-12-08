@@ -1,6 +1,6 @@
 @import "./components/dialog/SignInDialog.css";
 @import "./components/options/SignInOptionsMenu.css";
-@import "./components/signin/EmailAuth.css";
+@import "./options/Email.css";
 @import "./components/device/auth-options/DeviceAuthOptions.css";
 @import "./components/device/auth/DeviceAuthRequest.css";
 @import "./components/device/auth/DeviceAuthorization.css";

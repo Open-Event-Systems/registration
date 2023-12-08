@@ -1,16 +1,5 @@
-import * as yup from "yup"
-import * as oauth from "oauth4webapi"
 import { Scope } from "#src/features/auth/types/AccountInfo"
-
-const authTokenSchema = yup.object({
-  tokenType: yup.string().defined(),
-  accessToken: yup.string().defined(),
-  refreshToken: yup.string().nullable(),
-  expiresAt: yup.number().nullable(),
-  scope: yup.string().nullable(),
-  accountId: yup.string().nullable(),
-  email: yup.string().nullable(),
-})
+import { TokenEndpointResponse } from "oauth4webapi"
 
 /**
  * Stores a token response.
@@ -51,7 +40,7 @@ export class AuthInfo {
   /**
    * Create a {@link AuthInfo} from a token endpoint response.
    */
-  static createFromResponse(response: oauth.TokenEndpointResponse): AuthInfo {
+  static createFromResponse(response: TokenEndpointResponse): AuthInfo {
     let expiresAt = null
     if (response.expires_in != null) {
       const now = Math.floor(new Date().getTime() / 1000)
@@ -76,7 +65,16 @@ export class AuthInfo {
    */
   static createFromObject(obj: object): AuthInfo | null {
     try {
-      const parsed = authTokenSchema.validateSync(obj)
+      const parsed = obj as {
+        tokenType: string
+        accessToken: string
+        refreshToken?: string
+        expiresAt?: number
+        scope?: string
+        accountId?: string
+        email?: string
+      }
+
       return new AuthInfo(
         parsed.tokenType,
         parsed.accessToken,

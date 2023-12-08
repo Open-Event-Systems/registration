@@ -1,48 +1,12 @@
-import {
-  createAccount,
-  getWebAuthnRegistrationChallenge,
-  sendVerificationEmail,
-  verifyEmail,
-} from "#src/features/auth/api"
-import {
-  SignInOptionsMenu,
-  SignInOptionsOption,
-} from "#src/features/auth/components/options/SignInOptionsMenu"
-import {
-  getPlatformWebAuthnDetails,
-  getWebAuthnAvailability,
-  performWebAuthnRegistration,
-  saveWebAuthnCredentialId,
-} from "#src/features/auth/components/signin/WebAuthn"
-import { useAuth, useAuthAPI, useSignInState } from "#src/features/auth/hooks"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
-import { JS_CLIENT_ID } from "#src/features/auth/stores/AuthStore"
-import {
-  SignInOptionComponentProps,
-  SignInOption,
-} from "#src/features/auth/types/SignInOptions"
-import { WebAuthnChallenge } from "#src/features/auth/types/WebAuthn"
-import { useLocation, useNavigate } from "#src/hooks/location"
-import { Box, Button, Stack, Text, TextInput, useProps } from "@mantine/core"
-import { IconAt, IconUserOff } from "@tabler/icons-react"
-import { useIsMutating, useMutation } from "@tanstack/react-query"
-import clsx from "clsx"
-import { action, makeAutoObservable, runInAction, when } from "mobx"
+import { SignInOptionsOption } from "#src/features/auth/components/options/SignInOptionsMenu"
+
+import { useAuthAPI, useSignInState } from "#src/features/auth/hooks"
+import { Button, Stack, Text, TextInput } from "@mantine/core"
+import { IconAt } from "@tabler/icons-react"
+import { useMutation } from "@tanstack/react-query"
+import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
-import { ComponentPropsWithRef, useEffect } from "react"
-import { Wretch } from "wretch"
-
-declare module "#src/hooks/location" {
-  interface LocationState {
-    emailAuthEmail?: string
-  }
-}
-
-enum Step {
-  send = "send",
-  verify = "verify",
-  complete = "complete",
-}
+import { useEffect } from "react"
 
 export const EmailSignInOption = () => {
   const state = useSignInState()
@@ -57,61 +21,6 @@ export const EmailSignInOption = () => {
       }}
     />
   )
-}
-
-class EmailSignInState {
-  email = ""
-  code = ""
-  step = Step.send
-  error: string | null = null
-  emailToken: string | null = null
-  webAuthnChallenge: WebAuthnChallenge | null = null
-
-  constructor(private wretch: Wretch) {
-    makeAutoObservable(this)
-  }
-
-  async sendEmail(email: string) {
-    this.error = null
-    try {
-      await sendVerificationEmail(this.wretch, email)
-      runInAction(() => {
-        this.step = Step.verify
-      })
-    } catch (e) {
-      runInAction(() => {
-        this.error = `${e}`
-      })
-    }
-  }
-
-  async verifyEmail(email: string, code: string) {
-    this.error = null
-    try {
-      const res = await verifyEmail(this.wretch, email, code)
-      runInAction(() => {
-        if (res) {
-          this.emailToken = res.token
-          this.step = Step.complete
-        } else {
-          this.error = "Try again"
-        }
-      })
-    } catch (_e) {
-      runInAction(() => {
-        this.error = "An error occurred"
-      })
-    }
-  }
-
-  async create() {
-    const result = await createAccount(this.wretch, this.emailToken)
-    if (result) {
-      return AuthInfo.createFromResponse(result)
-    } else {
-      return null
-    }
-  }
 }
 
 /**

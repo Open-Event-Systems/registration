@@ -1,5 +1,4 @@
 import { useSignInState } from "#src/features/auth/hooks"
-import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 import { IconUserOff } from "@tabler/icons-react"
 import { SignInOptionsOption } from "#src/features/auth/components/options/SignInOptionsMenu"
 
