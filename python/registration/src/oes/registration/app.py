@@ -66,6 +66,7 @@ from oes.registration.serialization.json import (
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.views.responses import BodyValidationError, ExceptionDetails
+from oes.util.blacksheep import configure_cors
 from rodi import GetServiceContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -290,24 +291,14 @@ def app_factory():
     authorization.add(require_registration_edit)
 
     # set up CORS
-
-    app.use_cors(
+    configure_cors(
+        app,
         allow_methods=("GET", "POST", "PUT", "DELETE"),
         allow_origins=config.auth.allowed_origins,
         allow_credentials=True,
         allow_headers=(
             "Authorization",
             "Content-Type",
-        ),
-        expose_headers=(
-            "Transfer-Encoding",
-            "Content-Encoding",
-            "Vary",
-            "Request-Context",
-            "Set-Cookie",
-            "Server",
-            "Date",
-            "Link",
         ),
     )
 

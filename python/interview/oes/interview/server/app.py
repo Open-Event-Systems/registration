@@ -77,6 +77,7 @@ def make_app(settings: Settings, interview_config: InterviewConfig) -> Applicati
             "Authorization",
             "Content-Type",
         ),
+        allow_credentials=True,
     )
     app.on_middlewares_configuration(configure_forwarded_headers)
 

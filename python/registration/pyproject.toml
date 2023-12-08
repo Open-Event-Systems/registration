@@ -30,7 +30,7 @@ webauthn = "^1.8.1"
 squareup = {version = "^29.0.0.20230720", optional = true}
 
 # TODO: proper versioning of this
-oes-template = { git = "https://github.com/Open-Event-Systems/registration.git", rev = "82c6d5aac7d1959c098f0cbfb22dc90ce1d487ce", subdirectory = "python/template" }
+oes-template = { git = "https://github.com/Open-Event-Systems/registration.git", rev = "a9a800154bd97a30d7d270c0c930a5d90878c80b", subdirectory = "python/template" }
 
 # Payment services
 stripe = {version = "^5.4.0", optional = true}
