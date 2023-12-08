@@ -8,11 +8,15 @@ import {
   WebAuthnChallengeResult,
 } from "#src/features/auth/types/WebAuthn"
 import { AuthAPI } from "#src/features/auth/types/api"
+import { isResponseError } from "#src/utils/api"
 import { QueryClient } from "@tanstack/react-query"
 import * as oauth from "oauth4webapi"
 import { createContext } from "react"
 import { Wretch } from "wretch"
 import formUrl from "wretch/addons/formUrl"
+import { WretchError } from "wretch/resolver"
+
+const DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 
 export const createAuthAPI = (
   wretch: Wretch,
@@ -127,7 +131,7 @@ export const createAuthAPI = (
         mutationKey: ["auth", "webauthn", "register"],
         async mutationFn(result) {
           return await wretch
-            .url("/webauthn/register")
+            .url("/webauthn/authenticate")
             .json({ challenge: challenge.challenge, result: result })
             .post()
             .json()
@@ -198,6 +202,30 @@ export const createAuthAPI = (
             .post()
             .res()
         },
+      }
+    },
+    completeDeviceAuth(clientId, deviceCode) {
+      return {
+        queryKey: ["auth", "authorize-device-token", { clientId, deviceCode }],
+        async queryFn() {
+          const req = wretch.addon(formUrl).url("/token").formUrl({
+            grant_type: DEVICE_GRANT_TYPE,
+            client_id: clientId,
+            device_code: deviceCode,
+          })
+          return await req.post().json()
+        },
+        retry(failureCount, error) {
+          if (isResponseError(error)) {
+            const wretchErr = error as WretchError
+            const body = wretchErr.json as { error: string }
+            return body.error == "authorization_pending"
+          } else {
+            return false
+          }
+        },
+        retryDelay: 5000,
+        throwOnError: false,
       }
     },
   }

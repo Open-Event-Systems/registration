@@ -4,12 +4,12 @@ import { signInComponents, signInOptions } from "#src/features/auth/options"
 import { AuthInfo } from "#src/features/auth/stores/AuthInfo"
 import { AuthStore, JS_CLIENT_ID } from "#src/features/auth/stores/AuthStore"
 import { AuthAPI } from "#src/features/auth/types/api"
-import { setSavedWebAuthnCredentialId } from "#src/features/auth/webauthn"
-import { useLocation, useNavigate } from "#src/hooks/location"
 import {
-  browserSupportsWebAuthn,
-  platformAuthenticatorIsAvailable,
-} from "@simplewebauthn/browser"
+  getWebAuthnAvailability,
+  setSavedWebAuthnCredentialId,
+} from "#src/features/auth/webauthn"
+import { useLocation, useNavigate } from "#src/hooks/location"
+import { isResponseError } from "#src/utils/api"
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query"
 import { TokenEndpointResponse } from "oauth4webapi"
 import {
@@ -162,8 +162,18 @@ export const createSignIn = (clientId = JS_CLIENT_ID): SignInState => {
           navigate(-1)
         }
       } else {
-        createInitialRefreshToken
-          .mutateAsync(accessToken.access_token)
+        Promise.resolve(
+          accessToken.refresh_token
+            ? accessToken
+            : createInitialRefreshToken.mutateAsync(accessToken.access_token),
+        )
+          .catch((err) => {
+            if (isResponseError(err) && err.status == 403) {
+              // just use access token on error
+              return accessToken
+            }
+            throw err
+          })
           .then((finalToken) => {
             auth.authInfo = AuthInfo.createFromResponse(finalToken)
 
@@ -186,6 +196,13 @@ export const createSignIn = (clientId = JS_CLIENT_ID): SignInState => {
       setSavedWebAuthnCredentialId(credentialId)
       createInitialRefreshToken
         .mutateAsync(token.access_token)
+        .catch((err) => {
+          if (isResponseError(err) && err.status == 403) {
+            // just use access token on error
+            return token
+          }
+          throw err
+        })
         .then((finalToken) => {
           auth.authInfo = AuthInfo.createFromResponse(finalToken)
         })
@@ -196,21 +213,4 @@ export const createSignIn = (clientId = JS_CLIENT_ID): SignInState => {
         })
     },
   }
-}
-
-/**
- * Get whether WebAuthn is available.
- */
-export const getWebAuthnAvailability = async (): Promise<
-  "platform" | boolean
-> => {
-  let available: "platform" | boolean = false
-  if (browserSupportsWebAuthn()) {
-    if (await platformAuthenticatorIsAvailable()) {
-      available = "platform"
-    } else {
-      available = true
-    }
-  }
-  return available
 }

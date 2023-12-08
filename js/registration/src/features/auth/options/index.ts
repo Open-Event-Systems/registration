@@ -1,20 +1,42 @@
+import {
+  getSavedWebAuthnCredentialId,
+  getWebAuthnAvailability,
+} from "#src/features/auth/webauthn"
 import { ComponentType } from "react"
 
 export const signInOptions: Record<
   string,
   () => Promise<ComponentType | null>
 > = {
-  guest: async () => {
-    const { GuestSignInOption } = await import(
-      "#src/features/auth/options/Guest"
-    )
-    return GuestSignInOption
+  webAuthn: async () => {
+    const support = await getWebAuthnAvailability()
+    const credentialId = getSavedWebAuthnCredentialId()
+    if (support && credentialId) {
+      const { WebAuthnSignInOption } = await import(
+        "#src/features/auth/options/WebAuthn"
+      )
+      return WebAuthnSignInOption
+    } else {
+      return null
+    }
   },
   email: async () => {
     const { EmailSignInOption } = await import(
       "#src/features/auth/options/Email"
     )
     return EmailSignInOption
+  },
+  guest: async () => {
+    const { GuestSignInOption } = await import(
+      "#src/features/auth/options/Guest"
+    )
+    return GuestSignInOption
+  },
+  device: async () => {
+    const { DeviceAuthOption } = await import(
+      "#src/features/auth/options/Device"
+    )
+    return DeviceAuthOption
   },
 }
 
@@ -25,5 +47,11 @@ export const signInComponents: Record<
   email: async () => {
     const { EmailSignIn } = await import("#src/features/auth/options/Email")
     return EmailSignIn
+  },
+  device: async () => {
+    const { DeviceAuthComponent } = await import(
+      "#src/features/auth/options/Device"
+    )
+    return DeviceAuthComponent
   },
 }

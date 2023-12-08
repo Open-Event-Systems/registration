@@ -1,3 +1,7 @@
+import {
+  browserSupportsWebAuthn,
+  platformAuthenticatorIsAvailable,
+} from "@simplewebauthn/browser"
 import { IconBrandWindows, IconFingerprint, IconKey } from "@tabler/icons-react"
 import { ComponentType } from "react"
 
@@ -71,4 +75,21 @@ export const setSavedWebAuthnCredentialId = (value: string | null) => {
   } else {
     window.localStorage.setItem(WEBAUTHN_CREDENTIAL_ID_LOCAL_STORAGE_KEY, value)
   }
+}
+
+/**
+ * Get whether WebAuthn is available.
+ */
+export const getWebAuthnAvailability = async (): Promise<
+  "platform" | boolean
+> => {
+  let available: "platform" | boolean = false
+  if (browserSupportsWebAuthn()) {
+    if (await platformAuthenticatorIsAvailable()) {
+      available = "platform"
+    } else {
+      available = true
+    }
+  }
+  return available
 }

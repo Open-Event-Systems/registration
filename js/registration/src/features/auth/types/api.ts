@@ -56,4 +56,8 @@ export type AuthAPI = {
       require_webauthn?: boolean
     }
   >
+  completeDeviceAuth(
+    clientId: string,
+    deviceCode: string,
+  ): UndefinedInitialDataOptions<oauth.TokenEndpointResponse>
 }

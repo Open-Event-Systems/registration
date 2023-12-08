@@ -45,10 +45,7 @@ enum Step {
 }
 
 export const EmailSignInOption = () => {
-  const auth = useAuth()
-  const api = useAuthAPI()
-  const loc = useLocation()
-  const navigate = useNavigate()
+  const state = useSignInState()
 
   return (
     <SignInOptionsOption
@@ -56,7 +53,7 @@ export const EmailSignInOption = () => {
       description="Use your email address to sign in"
       leftSection={<IconAt />}
       onClick={() => {
-        navigate(loc, { state: { ...loc.state, signInOption: "email" } })
+        state.selectOptionId("email")
       }}
     />
   )
