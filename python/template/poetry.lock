@@ -252,8 +252,8 @@ loguru = ["loguru (>=0.7.0,<0.8.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/Open-Event-Systems/registration.git"
-reference = "207f35e3f4eff0822bb727b7cffca7156929d97b"
-resolved_reference = "207f35e3f4eff0822bb727b7cffca7156929d97b"
+reference = "39ac369f1817d847062c738db59011ea1ee9ab77"
+resolved_reference = "39ac369f1817d847062c738db59011ea1ee9ab77"
 subdirectory = "python/util"
 
 [[package]]
@@ -347,4 +347,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "9a8126759fd239cde7b42b23c833088104cb00c4a5926e578fd4e059e301fd39"
+content-hash = "006b83ada78c29770bca3a72981f1a56854c7e9707ca9191a6796718f0509ff2"
