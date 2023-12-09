@@ -36,6 +36,9 @@ class Registration:
     last_name: Optional[str] = None
     preferred_name: Optional[str] = None
 
+    checked_in: Optional[bool] = None
+    check_in_count: Optional[int] = None
+
     extra_data: dict[str, Any] = {}
 
 
@@ -79,6 +82,8 @@ READ_ONLY_FIELDS = frozenset(
         "version",
         "date_created",
         "date_updated",
+        "checked_in",
+        "check_in_count",
     }
 )
 """Field names of read-only fields."""

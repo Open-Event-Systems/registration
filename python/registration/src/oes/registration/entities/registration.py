@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import copy
+import uuid
+from collections.abc import Mapping
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
 from oes.registration.entities.base import (
@@ -27,9 +29,11 @@ from oes.registration.util import get_now, merge_dict
 from sqlalchemy import ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from oes.registration.auth.entities import AccountEntity
+    from oes.registration.auth.user import User
     from oes.registration.cart.models import CartRegistration, InvalidChangeError
 
 
@@ -96,6 +100,9 @@ class RegistrationEntity(Base):
     preferred_name: Mapped[Optional[str]]
     """The registration preferred name."""
 
+    checked_in: Mapped[int] = mapped_column(default=0)
+    """The number of times the registration has been checked in."""
+
     extra_data: Mapped[JSONData]
     """Additional data."""
 
@@ -105,6 +112,11 @@ class RegistrationEntity(Base):
         back_populates="registrations",
     )
     """Accounts associated with this registration."""
+
+    check_ins: Mapped[list[RegistrationCheckInEntity]] = relationship(
+        "RegistrationCheckInEntity",
+        back_populates="registration",
+    )
 
     _updated: bool = False
 
@@ -173,6 +185,8 @@ class RegistrationEntity(Base):
             first_name=self.first_name,
             last_name=self.last_name,
             preferred_name=self.preferred_name,
+            checked_in=(self.checked_in or 0) > 0,
+            check_in_count=self.checked_in,
             extra_data=copy.deepcopy(self.extra_data) if self.extra_data else {},
         )
 
@@ -371,3 +385,64 @@ class RegistrationAccount(Base):
 
     account_id: Mapped[UUID] = mapped_column(ForeignKey("account.id"), primary_key=True)
     """The account ID."""
+
+
+class RegistrationCheckInEntity(Base):
+    """Entity tracking check-ins of registrations."""
+
+    __tablename__ = "registration_check_in"
+
+    id: Mapped[PKUUID]
+    registration_id: Mapped[UUID] = mapped_column(
+        ForeignKey("registration.id"), index=True
+    )
+    date: Mapped[datetime] = mapped_column(default=lambda: get_now())
+
+    account_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("account.id"))
+    """The account ID that performed the check-in."""
+
+    email: Mapped[Optional[str]]
+    """The email that performed the check-in."""
+
+    data: Mapped[JSONData]
+    """Data associated with the check-in."""
+
+    registration: Mapped[RegistrationEntity] = relationship(
+        "RegistrationEntity",
+        back_populates="check_ins",
+    )
+
+    @classmethod
+    def create(
+        cls,
+        registration: Union[RegistrationEntity, Registration, UUID],
+        /,
+        data: Optional[Mapping[str, Any]] = None,
+        date: Optional[datetime] = None,
+        user: Optional[User] = None,
+    ) -> Self:
+        """Create a check-in entity.
+
+        Args:
+            registration: The registration or ID.
+            data: Data associated with the check-in.
+            date: The date of the check in.
+            user: The user performing the check-in.
+        """
+        entity = RegistrationCheckInEntity(
+            id=uuid.uuid4(),
+            registration_id=registration.id
+            if isinstance(registration, (RegistrationEntity, Registration))
+            else registration,
+            date=date if date is not None else get_now(),
+            data=dict(data) or {},
+        )
+
+        if isinstance(registration, RegistrationEntity):
+            entity.registration = registration
+
+        if user is not None:
+            entity.account_id = user.id
+            entity.email = user.email
+
+        return entity

@@ -29,6 +29,9 @@
     - id: http://localhost:8001/interviews/upgrade
       when: "'vip' not in registration.option_ids"
 
+  # The interview to use for check-in
+  check_in_interview: http://localhost:8001/interviews/check-in
+
   # Basic pricing rules
   pricing_rules:
     - type_id: standard

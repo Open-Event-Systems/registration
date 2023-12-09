@@ -1,22 +1,30 @@
 """Registration views."""
-from typing import Optional, Union
+import uuid
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from attrs import Factory, field, frozen
-from blacksheep import Content, HTTPException, Request, Response, auth, json
+from blacksheep import Content, FromJSON, HTTPException, Request, Response, auth, json
+from blacksheep.exceptions import BadRequest, NotFound
+from blacksheep.messages import get_absolute_url_to_path
 from blacksheep.server.openapi.common import (
     ContentInfo,
     ParameterInfo,
     ParameterSource,
+    RequestBodyInfo,
     ResponseInfo,
 )
+from blacksheep.url import build_absolute_url
+from loguru import logger
 from oes.registration.app import app
 from oes.registration.auth.handlers import RequireAdmin
+from oes.registration.auth.user import User
 from oes.registration.database import transaction
-from oes.registration.docs import docs, docs_helper
+from oes.registration.docs import docs, docs_helper, serialize
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
+from oes.registration.interview.service import InterviewService
 from oes.registration.log import AuditLogType, audit_log
 from oes.registration.models.event import EventConfig
 from oes.registration.models.registration import (
@@ -29,9 +37,13 @@ from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import json_loads
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
+from oes.registration.services.registration import (
+    check_in_registration as _check_in_registration,
+)
 from oes.registration.util import check_not_found
 from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import RegistrationListResponse
+from oes.util.blacksheep import FromAttrs
 
 
 @frozen(kw_only=True)
@@ -281,6 +293,96 @@ async def cancel_registration(
         raise HTTPException(409, str(e))
 
     return registration_response(reg.get_model())
+
+
+# TODO: check-in scope
+@app.router.get("/registrations/{id}/check-in")
+@docs(
+    responses={
+        200: ResponseInfo(
+            "An interview state response",
+        )
+    },
+    tags=["Registration"],
+)
+@serialize(dict[str, Any])
+async def read_check_in_interview(
+    id: UUID,
+    request: Request,
+    service: RegistrationService,
+    interview_service: InterviewService,
+    events: EventConfig,
+):
+    """Get a check-in interview state for a registration."""
+
+    registration = check_not_found(await service.get_registration(id))
+
+    event = events.get_event(registration.event_id)
+    if not event:
+        # event config isn't available
+        raise NotFound
+
+    interview_id = event.check_in_interview
+    target_url = get_absolute_url_to_path(request, f"/registrations/{id}/check-in")
+
+    context = {
+        "registration": get_converter().unstructure(registration.get_model()),
+    }
+
+    response = await interview_service.start_interview(
+        interview_id,
+        target_url=target_url.value.decode(),
+        context=context,
+    )
+    return response
+
+
+@app.router.post("/registrations/{id}/check-in")
+@docs(
+    request_body=RequestBodyInfo(
+        "The interview state from the check-in interview.",
+        examples={
+            "Example": {
+                "state": "...",
+            }
+        },
+    ),
+    responses={204: ResponseInfo("The check-in was completed")},
+    tags=["Registration"],
+)
+@transaction
+async def check_in_registration(
+    id: UUID,
+    request: Request,
+    body: FromJSON[dict[str, Any]],
+    service: RegistrationService,
+    interview_service: InterviewService,
+    user: User,
+) -> Response:
+    """Check-in a registration."""
+    registration = check_not_found(
+        await service.get_registration(id, lock=True, include_check_ins=True)
+    )
+
+    state = body.value.get("state")
+    if not state:
+        raise BadRequest
+
+    current_url = build_absolute_url(
+        request.scheme.encode(),
+        request.host.encode(),
+        request.base_path.encode(),
+        request.url.path,
+    ).value.decode()
+
+    interview_result = await interview_service.get_result(state, target_url=current_url)
+    if not interview_result:
+        logger.debug("Interview result is not valid")
+        raise BadRequest
+
+    _check_in_registration(registration, user, interview_result.data)
+
+    return Response(204)
 
 
 # TODO: determine delete semantics

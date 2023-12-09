@@ -131,6 +131,9 @@ class Event:
     change_interviews: Sequence[EventInterviewOption] = ()
     """The interviews available for changing an existing registration."""
 
+    check_in_interview: str
+    """The interview to use for check-in."""
+
     pricing_rules: Sequence[LineItemRule] = ()
     """Line item pricing rules."""
 

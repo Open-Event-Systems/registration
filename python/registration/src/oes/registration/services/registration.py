@@ -1,13 +1,17 @@
 """Registration service."""
-from collections.abc import Iterable, Iterator, Sequence
-from typing import Optional, Union
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from oes.registration.access_code.models import AccessCodeInterview, AccessCodeSettings
 from oes.registration.auth.account_service import AccountService
 from oes.registration.auth.entities import AccountEntity
+from oes.registration.auth.user import User
 from oes.registration.entities.event_stats import EventStatsEntity
-from oes.registration.entities.registration import RegistrationEntity
+from oes.registration.entities.registration import (
+    RegistrationCheckInEntity,
+    RegistrationEntity,
+)
 from oes.registration.hook.models import HookEvent
 from oes.registration.hook.service import HookSender
 from oes.registration.log import AuditLogType, audit_log
@@ -63,7 +67,12 @@ class RegistrationService:
             )
 
     async def get_registration(
-        self, id: UUID, *, lock: bool = False, include_accounts: bool = False
+        self,
+        id: UUID,
+        *,
+        lock: bool = False,
+        include_accounts: bool = False,
+        include_check_ins: bool = False,
     ) -> Optional[RegistrationEntity]:
         """Get a :class:`RegistrationEntity` by ID.
 
@@ -71,11 +80,15 @@ class RegistrationService:
             id: The registration ID.
             lock: Whether to lock the row.
             include_accounts: Include related :class:`AccountEntity` rows.
+            include_check_ins: Include related :class:`RegistrationCheckInEntity` rows.
         """
         opts = []
 
         if include_accounts:
             opts.append(selectinload(RegistrationEntity.accounts))
+
+        if include_check_ins:
+            opts.append(selectinload(RegistrationEntity.check_ins))
 
         return await self.db.get(
             RegistrationEntity, id, with_for_update=lock, options=opts
@@ -295,6 +308,22 @@ async def add_account_to_registration(
     account = await account_service.get_account(account_id)
     if account:
         registration.accounts.append(account)
+
+
+def check_in_registration(
+    registration: RegistrationEntity,
+    user: Optional[User] = None,
+    data: Optional[Mapping[str, Any]] = None,
+) -> RegistrationCheckInEntity:
+    """Check in a registration.
+
+    Returns:
+        The created check-in entity.
+    """
+    check_in = RegistrationCheckInEntity.create(registration, data=data, user=user)
+    registration.check_ins.append(check_in)
+    registration.checked_in += 1
+    return check_in
 
 
 def _build_search_params(q: str) -> Iterator[ColumnElement]:
