@@ -1,0 +1,16 @@
+.CheckinPage-left {
+    display: grid;
+    grid-template:
+        "title" auto
+        "badge" minmax(1rem, 1fr)
+        / minmax(1rem, 1fr);
+    gap: var(--mantine-spacing-xs);
+}
+
+.CheckinPage-right {
+    display: grid;
+    grid-template:
+        "error" auto
+        "interview" minmax(1rem, 1fr)
+        / minmax(1rem, 1fr);
+}

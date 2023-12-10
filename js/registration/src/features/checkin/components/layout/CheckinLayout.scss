@@ -1,21 +1,22 @@
 
 .CheckinLayout-root {
-    min-width: 100vw;
+    width: 100vw;
     min-height: 100vh;
     display: grid;
     grid-template:
-        "header header" 2.25rem
-        "left right" minmax(1rem, 1fr)
-        / [body-start] auto minmax(1rem, 1fr) [body-end];
+        "header header header" 2.25rem
+        "left center right" minmax(1rem, 1fr)
+        / [body-start] minmax(1rem, 1fr) minmax(1rem, 1fr) minmax(1rem, 1fr) [body-end];
 
 
-    @media (max-width: 36em) {
+    @media (max-width: 48em) {
 
         grid-template:
-            "header header" 2.25rem
-            "left left" auto
-            "right right" minmax(1rem, 1fr)
-            / [body-start] auto minmax(1rem, 1fr) [body-end];
+            "header header header" 2.25rem
+            "left left left" minmax(1rem, max-content)
+            "center center center" auto
+            "right right right" minmax(1rem, 1fr)
+            / [body-start] auto auto minmax(1rem, 1fr) [body-end];
     }
 
     background-color: var(--mantine-color-gray-1);
@@ -31,23 +32,54 @@
 
 .CheckinLayout-left {
     grid-area: left;
-    padding: var(--mantine-spacing-xs);
     display: grid;
     grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+    padding: var(--mantine-spacing-xs);
+
+    overflow: auto;
+
+    @media (max-width: 48em) {
+        overflow: visible;
+    }
+}
+
+.CheckinLayout-center {
+    grid-area: center;
+    display: grid;
+    grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+    padding: var(--mantine-spacing-xs);
+
+    overflow: auto;
+
+    @media (max-width: 48em) {
+        overflow: visible;
+    }
 }
 
 .CheckinLayout-right {
     grid-area: right;
-    padding: var(--mantine-spacing-xs);
     display: grid;
     grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+    padding: var(--mantine-spacing-xs);
+
+    overflow: auto;
+
+    @media (max-width: 48em) {
+        overflow: visible;
+    }
 }
 
 .CheckinLayout-body {
     grid-column: body;
-    padding: var(--mantine-spacing-xs);
     display: grid;
     grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+    padding: var(--mantine-spacing-xs);
     max-width: 800px;
     justify-self: center;
+
+    overflow: auto;
+
+    @media (max-width: 48em) {
+        overflow: visible;
+    }
 }

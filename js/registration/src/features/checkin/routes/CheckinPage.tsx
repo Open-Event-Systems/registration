@@ -1,3 +1,4 @@
+import { Badge } from "#src/features/checkin/components/badge/Badge"
 import { CheckinLayout } from "#src/features/checkin/components/layout/CheckinLayout"
 import { Registration } from "#src/features/checkin/components/registration/Registration"
 import { useEventAPI } from "#src/features/event/hooks"
@@ -8,11 +9,11 @@ import {
 import { useRegistrationAPI } from "#src/features/registration/hooks"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { isAPIError } from "#src/utils/api"
-import { Alert, Box } from "@mantine/core"
+import { Alert, Anchor, Box } from "@mantine/core"
 import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useEffect } from "react"
-import { useParams } from "react-router-dom"
+import { Link, useParams } from "react-router-dom"
 
 export const CheckinPage = () => {
   const { eventId = "", registrationId = "" } = useParams()
@@ -63,24 +64,32 @@ export const CheckinPage = () => {
 
   return (
     <>
-      <CheckinLayout.Left>
-        <Box>
-          {registration.isSuccess ? (
+      <CheckinLayout.Left className="CheckinPage-left">
+        <Anchor component={Link} to={`/check-in/${eventId}`}>
+          &laquo; Back
+        </Anchor>
+        {registration.isSuccess ? <Badge badgeUrl="/" /> : undefined}
+      </CheckinLayout.Left>
+      <CheckinLayout.Center className="CheckinPage-center">
+        {registration.isSuccess ? (
+          <Box>
             <Registration
               registration={registration.data}
               eventsMap={events.data}
             />
-          ) : undefined}
+          </Box>
+        ) : undefined}
+      </CheckinLayout.Center>
+      <CheckinLayout.Right className="CheckinPage-right">
+        <Box>
+          {completeCheckin.isError && (
+            <Alert color="red">
+              {isAPIError(completeCheckin.error)
+                ? completeCheckin.error.json.detail
+                : completeCheckin.error.message}
+            </Alert>
+          )}
         </Box>
-      </CheckinLayout.Left>
-      <CheckinLayout.Right>
-        {completeCheckin.isError && (
-          <Alert color="red">
-            {isAPIError(completeCheckin.error)
-              ? completeCheckin.error.json.detail
-              : completeCheckin.error.message}
-          </Alert>
-        )}
         <InterviewContent.Manager
           onComplete={async (record) => {
             completeCheckin.reset()

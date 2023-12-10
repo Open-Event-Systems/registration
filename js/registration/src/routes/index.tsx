@@ -272,6 +272,12 @@ makeApp(() => {
                         "#src/features/checkin/components/search/Search.css"
                       ), // TODO: import styles.css instead
                       await import(
+                        "#src/features/checkin/components/badge/Badge.css"
+                      ), // TODO: import styles.css instead
+                      await import(
+                        "#src/features/checkin/routes/CheckinPage.css"
+                      ), // TODO: import styles.css instead
+                      await import(
                         "#src/features/registration/components/registration/fields/RegistrationFields.scss"
                       ), // TODO: import styles.css instead
                     ])

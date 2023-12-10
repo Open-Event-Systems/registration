@@ -16,6 +16,7 @@ export const Search = (props: SearchProps) => {
     <Grid>
       <Grid.Col>
         <TextInput
+          autoFocus
           title="Search"
           placeholder="Search"
           leftSection={<IconSearch />}

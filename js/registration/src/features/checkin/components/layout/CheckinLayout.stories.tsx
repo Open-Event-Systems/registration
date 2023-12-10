@@ -2,7 +2,7 @@ import { CheckinLayout } from "#src/features/checkin/components/layout/CheckinLa
 import { Meta, StoryObj } from "@storybook/react"
 
 import "#src/components/styles.css"
-import "./CheckinLayout.css"
+import "./CheckinLayout.scss"
 
 const meta: Meta<typeof CheckinLayout> = {
   component: CheckinLayout,
