@@ -323,6 +323,7 @@ def check_in_registration(
     check_in = RegistrationCheckInEntity.create(registration, data=data, user=user)
     registration.check_ins.append(check_in)
     registration.checked_in += 1
+    registration.mark_updated()
     return check_in
 
 

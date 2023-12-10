@@ -1,7 +1,12 @@
 import { Event, EventAPI } from "#src/features/event/types"
+import { NotFoundError } from "#src/utils/api"
+import { QueryClient } from "@tanstack/react-query"
 import { Wretch } from "wretch"
 
-export const createEventAPI = (wretch: Wretch): EventAPI => ({
+export const createEventAPI = (
+  wretch: Wretch,
+  client: QueryClient,
+): EventAPI => ({
   list: () => ({
     queryKey: ["events"],
     initialData: new Map(),
@@ -12,4 +17,19 @@ export const createEventAPI = (wretch: Wretch): EventAPI => ({
       return new Map(events.map((e) => [e.id, e]))
     },
   }),
+  read(id) {
+    return {
+      queryKey: ["events", id],
+      queryFn: async () => {
+        const events = await client.ensureQueryData<Map<string, Event>>(
+          this.list(),
+        )
+        const result = events.get(id)
+        if (!result) {
+          throw new NotFoundError()
+        }
+        return result
+      },
+    }
+  },
 })

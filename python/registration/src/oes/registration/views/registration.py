@@ -1,5 +1,4 @@
 """Registration views."""
-import uuid
 from typing import Any, Optional, Union
 from uuid import UUID
 
@@ -43,7 +42,7 @@ from oes.registration.services.registration import (
 from oes.registration.util import check_not_found
 from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import RegistrationListResponse
-from oes.util.blacksheep import FromAttrs
+from oes.util.blacksheep import Conflict
 
 
 @frozen(kw_only=True)
@@ -312,9 +311,8 @@ async def read_check_in_interview(
     service: RegistrationService,
     interview_service: InterviewService,
     events: EventConfig,
-):
+) -> dict[str, Any]:
     """Get a check-in interview state for a registration."""
-
     registration = check_not_found(await service.get_registration(id))
 
     event = events.get_event(registration.event_id)
@@ -379,6 +377,10 @@ async def check_in_registration(
     if not interview_result:
         logger.debug("Interview result is not valid")
         raise BadRequest
+
+    current_ver = interview_result.context["registration"]["version"]
+    if current_ver != registration.version:
+        raise Conflict("Registration has been updated during check-in")
 
     _check_in_registration(registration, user, interview_result.data)
 

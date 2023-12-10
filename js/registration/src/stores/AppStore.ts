@@ -41,7 +41,7 @@ export class AppStore {
     const authWretch = this.authStore.authWretch
 
     this.authAPI = createAuthAPI(wretch, authWretch, queryClient)
-    this.eventAPI = createEventAPI(authWretch)
+    this.eventAPI = createEventAPI(authWretch, queryClient)
     this.cartAPI = createCartAPI(authWretch, queryClient)
     this.registrationAPI = createRegistrationAPI(authWretch)
     this.checkoutAPI = createCheckoutAPI(authWretch, queryClient)

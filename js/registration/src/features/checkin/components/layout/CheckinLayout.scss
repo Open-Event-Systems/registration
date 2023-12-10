@@ -1,0 +1,53 @@
+
+.CheckinLayout-root {
+    min-width: 100vw;
+    min-height: 100vh;
+    display: grid;
+    grid-template:
+        "header header" 2.25rem
+        "left right" minmax(1rem, 1fr)
+        / [body-start] auto minmax(1rem, 1fr) [body-end];
+
+
+    @media (max-width: 36em) {
+
+        grid-template:
+            "header header" 2.25rem
+            "left left" auto
+            "right right" minmax(1rem, 1fr)
+            / [body-start] auto minmax(1rem, 1fr) [body-end];
+    }
+
+    background-color: var(--mantine-color-gray-1);
+}
+
+.CheckinLayout-header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    padding: var(--mantine-spacing-xs);
+    border-bottom: var(--mantine-color-gray-4) solid 1px;
+}
+
+.CheckinLayout-left {
+    grid-area: left;
+    padding: var(--mantine-spacing-xs);
+    display: grid;
+    grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+}
+
+.CheckinLayout-right {
+    grid-area: right;
+    padding: var(--mantine-spacing-xs);
+    display: grid;
+    grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+}
+
+.CheckinLayout-body {
+    grid-column: body;
+    padding: var(--mantine-spacing-xs);
+    display: grid;
+    grid-template: minmax(1rem, 1fr) / minmax(1rem, 1fr);
+    max-width: 800px;
+    justify-self: center;
+}

@@ -1,4 +1,7 @@
-import { DefinedInitialDataOptions } from "@tanstack/react-query"
+import {
+  DefinedInitialDataOptions,
+  UndefinedInitialDataOptions,
+} from "@tanstack/react-query"
 
 export interface Event {
   id: string
@@ -18,4 +21,5 @@ export interface RegistrationOption {
 
 export type EventAPI = {
   list(): DefinedInitialDataOptions<Map<string, Event>>
+  read(eventId: string): UndefinedInitialDataOptions<Event>
 }

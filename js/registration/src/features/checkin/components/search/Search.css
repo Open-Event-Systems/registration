@@ -1,0 +1,8 @@
+
+.CheckinSearchResults-root tbody tr {
+    cursor: pointer;
+}
+
+.CheckinSearchResults-noResults {
+    text-align: center;
+}

@@ -1,4 +1,8 @@
 import {
+  InterviewStateRecord,
+  StateResponse,
+} from "@open-event-systems/interview-lib"
+import {
   UndefinedInitialDataInfiniteOptions,
   UndefinedInitialDataOptions,
   UseMutationOptions,
@@ -65,4 +69,8 @@ export type RegistrationAPI = {
   update(): UseMutationOptions<Registration, Error, Registration>
   complete(id: string): UseMutationOptions<Registration, Error>
   cancel(id: string): UseMutationOptions<Registration, Error>
+  readCheckinInterview(id: string): UndefinedInitialDataOptions<StateResponse>
+  completeCheckinInterview(
+    id: string,
+  ): UseMutationOptions<void, Error, InterviewStateRecord>
 }

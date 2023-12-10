@@ -25,7 +25,7 @@ export const isResponseError = (e: unknown): e is { status: number } =>
 export const isNotFoundError = (
   e: unknown,
 ): e is NotFoundError | { status: 404 } =>
-  e instanceof NotFoundError || isResponseError(e)
+  e instanceof NotFoundError || (isResponseError(e) && e.status == 404)
 
 /**
  * Test if an error is an error from the backend with "detail" as a property.
