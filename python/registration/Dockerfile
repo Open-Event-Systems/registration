@@ -11,7 +11,7 @@ RUN poetry export -E stripe | grep -v ^oes- > requirements.txt
 RUN pip wheel --no-cache-dir -w deps -r requirements.txt
 RUN /app/bin/pip install --no-cache-dir deps/*
 COPY src/ src/
-RUN /app/bin/pip install --no-cache-dir .[stripe]
+RUN /app/bin/pip install --no-cache-dir .[square]
 
 FROM python AS target
 RUN adduser -h /app -H -D python \
