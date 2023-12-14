@@ -36,7 +36,7 @@ export const RadioSelectField = observer((props: RadioSelectFieldProps) => {
       withAsterisk={!nullable}
       label={state.schema.title}
       {...other}
-      error={hasError ? state.error : undefined}
+      error={hasError ? state.error?.message : undefined}
       value={value || undefined}
       onChange={(e) => {
         state.setValue(e)

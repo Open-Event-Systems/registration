@@ -46,7 +46,7 @@ export const NumberField = observer((props: NumberFieldProps) => {
       step={1}
       {...other}
       value={value}
-      error={hasError ? error : undefined}
+      error={hasError ? error?.message : undefined}
       onChange={(e) => {
         if (typeof e == "string") {
           const trimmed = e.trim()

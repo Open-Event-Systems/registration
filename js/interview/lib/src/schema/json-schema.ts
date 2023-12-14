@@ -7,7 +7,7 @@
 import { handleDate } from "#src/schema/date"
 import { JSONSchema, JSONSchemaOf } from "#src/types"
 import { JSONSchema7TypeName } from "json-schema"
-import { z } from "zod"
+import { ZodErrorMap, z } from "zod"
 
 /**
  * Create a Zod schema from a JSON schema.
@@ -56,8 +56,13 @@ export const createSchema = (schema: JSONSchema): z.ZodType<unknown> => {
   }
 
   // other constraints
+
+  // check const values
   if (schema.const !== undefined) {
     // only handles primitives...
+    if (schema.const !== null) {
+      zs = zs.refine((v) => v != null, "Required")
+    }
     zs = zs.refine((v) => v === schema.const, "Invalid value")
   }
 
@@ -95,14 +100,14 @@ const handleArray = (schema: JSONSchemaOf<"array">): z.ZodType<unknown[]> => {
     itemsSchema = z.unknown()
   }
 
-  let zs = z.array(itemsSchema)
+  let zs = z.array(itemsSchema, { errorMap: errorMap })
 
   if (schema.minItems != null) {
-    zs = zs.min(schema.minItems)
+    zs = zs.min(schema.minItems, `Choose at least ${schema.minItems}`)
   }
 
   if (schema.maxItems != null) {
-    zs = zs.max(schema.maxItems)
+    zs = zs.max(schema.maxItems, `Choose at most ${schema.maxItems}`)
   }
 
   let ze
@@ -144,7 +149,7 @@ const handleObject = (
     }
   }
 
-  const zs = z.object(obj)
+  const zs = z.object(obj, { errorMap: errorMap })
 
   return zs
 }
@@ -153,7 +158,7 @@ const handleObject = (
  * String schema.
  */
 const handleString = (schema: JSONSchemaOf<"string">): z.ZodType<string> => {
-  let zs = z.string()
+  let zs = z.string({ errorMap: errorMap })
 
   if (schema.minLength != null) {
     zs = zs.min(schema.minLength)
@@ -207,7 +212,7 @@ const coerceEmptyStrings = (v: unknown): unknown => {
 const handleNumber = (
   schema: JSONSchemaOf<"integer" | "number">,
 ): z.ZodNumber => {
-  let zs = z.number()
+  let zs = z.number({ errorMap: errorMap })
 
   if (schema.minimum != null) {
     zs = zs.min(schema.minimum)
@@ -228,7 +233,7 @@ const handleNumber = (
  * Boolean schema.
  */
 const handleBoolean = (_schema: JSONSchemaOf<"boolean">): z.ZodBoolean => {
-  return z.boolean()
+  return z.boolean({ errorMap: errorMap })
 }
 
 /**
@@ -251,4 +256,12 @@ export const isType = <T extends JSONSchema7TypeName>(
     (schema.type === t ||
       (Array.isArray(schema.type) && schema.type.includes(t)))
   )
+}
+
+const errorMap: ZodErrorMap = (issue, ctx) => {
+  if (issue.code == "invalid_type" && issue.received == "null") {
+    return { message: "Required" }
+  } else {
+    return { message: ctx.defaultError }
+  }
 }

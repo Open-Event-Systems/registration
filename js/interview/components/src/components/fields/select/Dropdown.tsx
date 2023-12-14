@@ -27,7 +27,7 @@ export const DropdownSelectField = observer(
         clearable
         {...other}
         data={options}
-        error={hasError ? state.error : undefined}
+        error={hasError ? state.error?.message : undefined}
         value={value || null}
         onChange={(e) => {
           state.setValue(e)

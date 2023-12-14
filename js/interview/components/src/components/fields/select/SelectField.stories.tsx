@@ -106,3 +106,22 @@ export const Checkbox: StoryObj<typeof SelectField> = {
     return <SelectField state={state as FieldState<string | string[]>} />
   },
 }
+
+export const Checkbox_as_Boolean: StoryObj<typeof SelectField> = {
+  render() {
+    const [[state]] = useState(() =>
+      createState({
+        title: "Boolean",
+        "x-component": "checkbox",
+        oneOf: [
+          {
+            const: "1",
+            title: "True",
+          },
+        ],
+      }),
+    )
+
+    return <SelectField state={state as FieldState<string | string[]>} />
+  },
+}

@@ -34,7 +34,7 @@ export const DateField = observer((props: DateFieldProps) => {
       autoComplete={state.schema["x-autocomplete"]}
       {...other}
       value={value}
-      error={hasError ? state.error : undefined}
+      error={hasError ? state.error?.message : undefined}
       onChange={(e) => {
         if (e) {
           state.setValue(dayjs(e).format("YYYY-MM-DD"))

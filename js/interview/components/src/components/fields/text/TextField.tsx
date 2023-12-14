@@ -29,7 +29,7 @@ export const TextField = observer((props: TextFieldProps) => {
       }
       inputMode={state.schema["x-input-mode"] as TextFieldProps["inputMode"]}
       {...other}
-      error={hasError ? error : undefined}
+      error={hasError ? error?.message : undefined}
       value={value || ""}
       onChange={(e) => {
         state.setValue(e.target.value)

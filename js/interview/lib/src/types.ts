@@ -158,9 +158,9 @@ export interface FieldState<T> {
   setValue(v: T | null): void
 
   /**
-   * The error message for the current value, or undefined if valid.
+   * The error for the current value, or null if valid.
    */
-  get error(): string | undefined
+  get error(): Error | null
 
   /**
    * Whether the current value is valid.

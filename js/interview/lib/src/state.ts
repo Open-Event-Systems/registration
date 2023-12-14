@@ -7,12 +7,10 @@ import {
 } from "#src/types"
 import { JSONSchema7 } from "json-schema"
 import { computed, makeAutoObservable, observable, toJS } from "mobx"
+import { ZodError } from "zod"
+import { fromZodError } from "zod-validation-error"
 
-type ErrorObj = {
-  [key in string]?: ErrorObj
-} & { _errors?: string[] }
-
-type GetErrors = () => ErrorObj | undefined
+type GetErrors = () => ZodError | null
 
 /**
  * Normal field state.
@@ -23,10 +21,16 @@ class ScalarFieldState<T> implements FieldState<T> {
 
   get error() {
     const obj = this.getErrors()
-    if (obj?._errors && obj._errors.length > 0) {
-      return obj._errors[0]
+
+    if (obj && obj.issues.length > 0) {
+      const formatted = fromZodError(obj, {
+        maxIssuesInMessage: 1,
+        prefix: null,
+        includePath: false,
+      })
+      return formatted
     } else {
-      return undefined
+      return null
     }
   }
 
@@ -95,20 +99,25 @@ class ObjectFieldStateImpl implements ObjectFieldState {
 
   get error() {
     const obj = this.getErrors()
-    if (obj?._errors && obj._errors.length > 0) {
-      return obj._errors[0]
+
+    if (obj && obj.issues.length > 0) {
+      const filtered = new ZodError(
+        obj.issues.filter((i) => i.path.length == 0),
+      )
+      const formatted = fromZodError(filtered, {
+        maxIssuesInMessage: 1,
+        prefix: null,
+        includePath: false,
+      })
+      return formatted
     } else {
-      return undefined
+      return null
     }
   }
 
   get isValid() {
     const errors = this.getErrors()
-
-    return (
-      (!errors?._errors || errors._errors.length == 0) &&
-      Object.entries(errors ?? {}).filter(([p]) => p != "_errors").length == 0
-    )
+    return !errors || errors.issues.length == 0
   }
 
   constructor(
@@ -202,7 +211,14 @@ class ObjectFieldStateImpl implements ObjectFieldState {
   ) {
     const getErrors = () => {
       const parentErr = this.getErrors()
-      return parentErr ? parentErr[prop] : undefined
+      if (!parentErr) {
+        return null
+      }
+
+      const filtered = parentErr.issues.filter((i) => i.path[0] == prop)
+      const updated = filtered.map((i) => ({ ...i, path: i.path.slice(1) }))
+
+      return updated.length > 0 ? new ZodError(updated) : null
     }
 
     return _createState(schema, getErrors, initialValue ?? null)
@@ -232,7 +248,7 @@ const _createState = (
 ): FieldState<unknown> => {
   if (typeof schema == "boolean") {
     // not a supported case...
-    return new ScalarFieldState({}, () => undefined)
+    return new ScalarFieldState({}, () => null)
   } else if (isType("object", schema)) {
     return new ObjectFieldStateImpl(
       schema,
@@ -256,6 +272,8 @@ export const createState = (
 ): [FieldState<unknown>, () => unknown] => {
   const zodSchema = createSchema(schema)
 
+  // need to store a nullable reference to the state. it hasn't been created yet
+  // but we need a reference for getErrors, etc.
   const stateBox = observable.box<FieldState<unknown> | null>(null)
 
   const validationResult = computed(() => {
@@ -270,9 +288,9 @@ export const createState = (
   const errors = computed(() => {
     const res = validationResult.get()
     if (!res || res.success) {
-      return undefined
+      return null
     } else {
-      return res.error.format() as ErrorObj
+      return res.error
     }
   })
 

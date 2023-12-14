@@ -44,7 +44,7 @@ export const CheckboxSelectField = observer(
         withAsterisk={!nullable}
         label={state.schema.title}
         {...other}
-        error={hasError ? state.error : undefined}
+        error={hasError ? state.error?.message : undefined}
         value={value || []}
         onChange={(e) => {
           if (arrayValue) {
