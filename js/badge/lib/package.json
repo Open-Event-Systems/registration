@@ -1,0 +1,20 @@
+{
+  "name": "@open-event-systems/badge-lib",
+  "version": "0.1.0",
+  "description": "OES badge library",
+  "type": "module",
+  "exports": {
+    ".": "./dist/src/index.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.2"
+  }
+}

@@ -1,7 +1,14 @@
 {
   "files": [],
   "references": [
-    { "path": "./interview/lib" },
-    { "path": "./interview/components" }
+    {
+      "path": "./interview/lib"
+    },
+    {
+      "path": "./interview/components"
+    },
+    {
+      "path": "./badge/lib"
+    }
   ]
 }

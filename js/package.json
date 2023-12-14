@@ -2,6 +2,7 @@
   "workspaces": [
     "interview/lib",
     "interview/components",
+    "badge/lib",
     "registration"
   ],
   "scripts": {
