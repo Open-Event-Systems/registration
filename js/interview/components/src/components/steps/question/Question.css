@@ -1,14 +1,18 @@
-:global .OESIExit-root {
+.OESIQuestion-root {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: var(--mantine-spacing-xs);
 }
 
-:global .OESIExit-text {
+.OESIQuestion-fields {
     flex: auto;
 }
 
-:global .OESIExit-button {
+.OESIQuestion-defaultButton {
+    align-self: flex-end;
+}
+
+.OESIQuestion-buttons {
     align-self: flex-end;
 }

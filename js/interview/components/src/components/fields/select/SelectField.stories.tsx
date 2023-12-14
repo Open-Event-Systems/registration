@@ -4,8 +4,8 @@ import { FieldState, createState } from "@open-event-systems/interview-lib"
 import { Meta, StoryObj } from "@storybook/react"
 import { useState } from "react"
 
-import "./Checkbox.module.css"
-import "./Radio.module.css"
+import "./Checkbox.css"
+import "./Radio.css"
 
 const meta: Meta<typeof SelectField> = {
   component: SelectField,

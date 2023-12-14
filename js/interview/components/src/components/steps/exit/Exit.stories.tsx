@@ -1,7 +1,7 @@
 import { Exit } from "#src/components/steps/exit/Exit"
 import { Meta, StoryObj } from "@storybook/react"
 
-import "./Exit.module.css"
+import "./Exit.css"
 import { Box } from "@mantine/core"
 
 const meta: Meta<typeof Exit> = {

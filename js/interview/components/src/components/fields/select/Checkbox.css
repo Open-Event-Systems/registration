@@ -1,4 +1,4 @@
-:global .OESIRadioSelectField-group {
+.OESICheckboxSelectField-group {
     margin-top: var(--mantine-spacing-xs);
     margin-bottom: var(--mantine-spacing-xs);
 }
