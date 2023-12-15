@@ -1,5 +1,5 @@
 import { RegistrationSearchResult } from "#src/features/registration"
-import { Grid, Table, Text, TextInput } from "@mantine/core"
+import { Anchor, Grid, Table, Text, TextInput } from "@mantine/core"
 import { IconSearch } from "@tabler/icons-react"
 
 export type SearchProps = {
@@ -50,8 +50,7 @@ export const Results = (props: ResultsProps) => {
       <Table highlightOnHover striped>
         <Table.Thead>
           <Table.Tr>
-            <Table.Th>First (Pref)</Table.Th>
-            <Table.Th>Last</Table.Th>
+            <Table.Th>Name</Table.Th>
             <Table.Th>Email</Table.Th>
           </Table.Tr>
         </Table.Thead>
@@ -59,10 +58,17 @@ export const Results = (props: ResultsProps) => {
           {registrations.map((r) => (
             <Table.Tr key={r.id} onClick={() => onSelect && onSelect(r.id)}>
               <Table.Td>
-                {r.first_name}
-                {r.preferred_name ? " (" + r.preferred_name + ")" : undefined}
+                <Anchor
+                  component="button"
+                  className="CheckinSearchResults-button"
+                >
+                  {r.first_name}
+                  {r.preferred_name
+                    ? " (" + r.preferred_name + ")"
+                    : undefined}{" "}
+                  {r.last_name}
+                </Anchor>
               </Table.Td>
-              <Table.Td>{r.last_name}</Table.Td>
               <Table.Td>{r.email}</Table.Td>
             </Table.Tr>
           ))}

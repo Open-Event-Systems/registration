@@ -33,6 +33,13 @@ export const signInOptions: Record<
     return GuestSignInOption
   },
   device: async () => {
+    const loc = new URL(window.location.href)
+
+    // hack: don't show device auth on self-service routes
+    if (loc.pathname.startsWith("/events")) {
+      return null
+    }
+
     const { DeviceAuthOption } = await import(
       "#src/features/auth/options/Device"
     )

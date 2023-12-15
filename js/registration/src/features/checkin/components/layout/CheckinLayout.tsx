@@ -2,13 +2,19 @@ import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { useApp } from "#src/hooks/app"
 import { Box, BoxProps } from "@mantine/core"
 import clsx from "clsx"
-import { ComponentPropsWithoutRef, ReactNode } from "react"
+import {
+  ComponentPropsWithRef,
+  ComponentPropsWithoutRef,
+  ReactNode,
+  createContext,
+  useCallback,
+  useState,
+} from "react"
 
 export const CheckinLayout = ({ children }: { children?: ReactNode }) => {
   const app = useApp()
   return (
     <Box className="CheckinLayout-root">
-      <CheckinLayout.Header>Header</CheckinLayout.Header>
       {children}
       <SignInDialog.Manager authStore={app.authStore} wretch={app.wretch} />
     </Box>
@@ -16,12 +22,20 @@ export const CheckinLayout = ({ children }: { children?: ReactNode }) => {
 }
 
 const CheckinLayoutHeader = (
-  props: BoxProps & ComponentPropsWithoutRef<"div">,
+  props: BoxProps & ComponentPropsWithRef<"div">,
 ) => {
   return <Box className="CheckinLayout-header" {...props} />
 }
 
 CheckinLayout.Header = CheckinLayoutHeader
+
+const CheckinLayoutSpacer = (
+  props: BoxProps & ComponentPropsWithRef<"div">,
+) => {
+  return <Box className="CheckinLayout-spacer" {...props} />
+}
+
+CheckinLayout.Spacer = CheckinLayoutSpacer
 
 const CheckinLayoutLeft = (
   props: BoxProps & ComponentPropsWithoutRef<"div">,

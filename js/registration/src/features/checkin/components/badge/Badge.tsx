@@ -9,7 +9,7 @@ export const Badge = (props: BadgeProps) => {
   return (
     <Stack className="Badge-root">
       <Box className="Badge-container">
-        <iframe className="Badge-frame" src={badgeUrl}></iframe>
+        <iframe className="Badge-frame" tabIndex={-1} src={badgeUrl}></iframe>
       </Box>
       <Button variant="outline">Print</Button>
     </Stack>

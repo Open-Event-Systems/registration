@@ -1,3 +1,5 @@
+import { UserMenu } from "#src/components"
+import { useAuth } from "#src/features/auth/hooks"
 import { CheckinLayout } from "#src/features/checkin/components/layout/CheckinLayout"
 import { Search } from "#src/features/checkin/components/search/Search"
 import { useEventAPI } from "#src/features/event/hooks"
@@ -12,6 +14,7 @@ import { useParams } from "react-router-dom"
 
 export const SearchPage = observer(() => {
   const { eventId = "" } = useParams()
+  const auth = useAuth()
   const eventAPI = useEventAPI()
   const navigate = useNavigate()
 
@@ -53,30 +56,43 @@ export const SearchPage = observer(() => {
   }, [query])
 
   return (
-    <CheckinLayout.Body>
-      <Box
-        component="form"
-        onSubmit={(e) => {
-          e.preventDefault()
-          if (
-            state.query.trim() == state.throttled.trim() &&
-            search.isSuccess &&
-            search.data.length == 1
-          ) {
-            navigate(`/check-in/${eventId}/registrations/${search.data[0].id}`)
-          }
-        }}
-      >
-        <Search
-          query={query}
-          onChange={action((q) => (state.query = q))}
-          registrations={search.data}
-          onSelect={(id) => {
-            navigate(`/check-in/${eventId}/registrations/${id}`)
+    <>
+      <CheckinLayout.Header>
+        <CheckinLayout.Spacer />
+        <UserMenu
+          username={auth.authInfo?.email || "Guest"}
+          onSignOut={() => {
+            auth.signOut()
           }}
         />
-        <input type="submit" style={{ display: "none" }} />
-      </Box>
-    </CheckinLayout.Body>
+      </CheckinLayout.Header>
+      <CheckinLayout.Body>
+        <Box
+          component="form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (
+              state.query.trim() == state.throttled.trim() &&
+              search.isSuccess &&
+              search.data.length == 1
+            ) {
+              navigate(
+                `/check-in/${eventId}/registrations/${search.data[0].id}`,
+              )
+            }
+          }}
+        >
+          <Search
+            query={query}
+            onChange={action((q) => (state.query = q))}
+            registrations={search.data}
+            onSelect={(id) => {
+              navigate(`/check-in/${eventId}/registrations/${id}`)
+            }}
+          />
+          <input type="submit" style={{ display: "none" }} />
+        </Box>
+      </CheckinLayout.Body>
+    </>
   )
 })

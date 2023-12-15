@@ -6,3 +6,9 @@
 .CheckinSearchResults-noResults {
     text-align: center;
 }
+
+.CheckinSearchResults-button {
+    color: inherit;
+    text-decoration: none;
+    font-size: inherit;
+}
