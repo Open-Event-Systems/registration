@@ -4,6 +4,7 @@ import {
   Subtitle,
   Title,
 } from "#src/components"
+import { ConfirmationDialog } from "#src/components/confirm/ConfirmDialog"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
 import { useAuth } from "#src/features/auth/hooks"
 import { useEventAPI } from "#src/features/event/hooks"
@@ -25,6 +26,7 @@ export const RegistrationLayout = ({ children }: { children?: ReactNode }) => {
           <SignInDialog.Manager authStore={auth} wretch={app.wretch} />
         </Subtitle>
       </Title>
+      <ConfirmationDialog />
     </SimpleLayout>
   )
 }

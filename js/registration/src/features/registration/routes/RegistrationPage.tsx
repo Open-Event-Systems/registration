@@ -10,6 +10,7 @@ import {
 } from "#src/features/registration"
 import { Registration } from "#src/features/registration/components/registration/registration/Registration"
 import { useRegistrationAPI } from "#src/features/registration/hooks"
+import { useConfirm } from "#src/hooks/confirm"
 import { Anchor, Button, Group, Skeleton, Stack, Table } from "@mantine/core"
 import { IconCheck, IconEdit, IconTrash } from "@tabler/icons-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -24,6 +25,8 @@ export const RegistrationPage = observer(() => {
   const eventAPI = useEventAPI()
   const registrationAPI = useRegistrationAPI()
   const checkoutAPI = useCheckoutAPI()
+
+  const confirm = useConfirm()
 
   const authStore = useAuth()
   const editable = !!authStore.authInfo?.hasScope(Scope.registrationEdit)
@@ -70,7 +73,7 @@ export const RegistrationPage = observer(() => {
   return (
     <Title title={formatName(reg)}>
       <Subtitle subtitle="View registration">
-        <Anchor component={Link} to="/">
+        <Anchor component={Link} to="/registrations">
           &laquo; Back to registrations
         </Anchor>
         {editable && !edit && (
@@ -99,7 +102,11 @@ export const RegistrationPage = observer(() => {
                 variant="outline"
                 color="red"
                 onClick={() => {
-                  cancel.mutate()
+                  confirm("Confirm", "Cancel registration?").then((res) => {
+                    if (res) {
+                      cancel.mutate()
+                    }
+                  })
                 }}
               >
                 Cancel Registration

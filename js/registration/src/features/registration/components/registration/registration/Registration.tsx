@@ -64,7 +64,7 @@ export const Registration = (props: RegistrationProps) => {
               setEditState(observable(registration))
             }}
           >
-            Cancel
+            Discard Changes
           </Button>
         </Group>
       )}
