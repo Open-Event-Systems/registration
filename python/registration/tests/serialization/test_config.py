@@ -1,10 +1,10 @@
 from collections.abc import Sequence
-from typing import Union
 
 import pytest
 from cattrs import Converter
 from oes.registration.models.config import Base64Bytes
-from oes.template import Expression, LogicAnd, Template, ValueOrEvaluable
+from oes.registration.models.logic import WhenCondition
+from oes.template import Expression, LogicAnd, Template
 
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def converter():
         ),
         (
             ["1 + 1 == 2", {"and": [True, "false"]}],
-            Union[ValueOrEvaluable, Sequence[ValueOrEvaluable]],
+            WhenCondition,
             (Expression("1 + 1 == 2"), LogicAnd((True, Expression("false")))),
         ),
         (

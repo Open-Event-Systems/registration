@@ -1,5 +1,6 @@
 import uuid
 
+import oes.registration.auth.entities  # noqa
 import pytest
 from oes.registration.cart.models import (
     CART_HASH_SIZE,
@@ -121,6 +122,7 @@ def test_create_cart_registration_none():
             "version": 1,
             "date_created": dc,
             "option_ids": {"opt1"},
+            "checked_in": False,
         },
     )
 

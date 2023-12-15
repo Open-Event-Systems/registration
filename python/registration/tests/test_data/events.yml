@@ -30,3 +30,5 @@
       price: 2500
       when:
         - "'vip' in added_option_ids"
+
+  check_in_interview: http://example.net/interview

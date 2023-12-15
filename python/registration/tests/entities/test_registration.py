@@ -1,5 +1,6 @@
 import uuid
 
+import oes.registration.auth.entities  # noqa
 import pytest
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.models.registration import Registration, RegistrationState
@@ -59,6 +60,7 @@ def test_get_model():
         date_created=reg.date_created,
         option_ids={"test1"},
         extra_data={"extra": 123},
+        checked_in=False,
     )
 
     # mutable properties should have been copied
