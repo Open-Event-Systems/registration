@@ -289,6 +289,19 @@ class SquarePaymentService(PaymentService, CheckoutUpdater):
             },
         )
 
+    def get_url(
+        self,
+        id: str,
+        /,
+        *,
+        checkout_data: Optional[CheckoutData] = None,
+    ) -> Optional[str]:
+        if checkout_data.get("sandbox") is True:
+            base = "https://squareupsandbox.com/dashboard/sales/transactions/"
+        else:
+            base = "https://squareup.com/dashboard/sales/transactions/"
+        return base + id
+
     async def get_checkout(
         self, id: str, /, *, checkout_data: Optional[CheckoutData] = None
     ) -> Optional[PaymentServiceCheckout]:

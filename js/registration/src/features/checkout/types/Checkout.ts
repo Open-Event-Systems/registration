@@ -35,6 +35,8 @@ export interface CheckoutListResponse {
   state: CheckoutState
   date: string
   url?: string
+  receipt_id?: string
+  receipt_url?: string
 }
 
 export type Checkout<ID extends string = string> = {

@@ -130,6 +130,7 @@ export const RegistrationPage = observer(() => {
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Service</Table.Th>
+                <Table.Th>Receipt</Table.Th>
                 <Table.Th>ID</Table.Th>
                 <Table.Th>State</Table.Th>
                 <Table.Th>Date</Table.Th>
@@ -139,6 +140,15 @@ export const RegistrationPage = observer(() => {
               {checkouts.data.map((c) => (
                 <Table.Tr key={c.id}>
                   <Table.Td>{c.service}</Table.Td>
+                  <Table.Td>
+                    {c.receipt_url ? (
+                      <Anchor href={c.receipt_url} target={c.receipt_id}>
+                        {c.receipt_id}
+                      </Anchor>
+                    ) : (
+                      c.receipt_id
+                    )}
+                  </Table.Td>
                   <Table.Td>
                     {c.url ? <Anchor href={c.url}>{c.id}</Anchor> : c.id}
                   </Table.Td>

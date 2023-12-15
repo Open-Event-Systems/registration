@@ -13,8 +13,11 @@ from oes.registration.cart.models import (
     PricingResultRegistration,
 )
 from oes.registration.payment.base import CreateCheckoutRequest, PaymentService
+from oes.registration.payment.services.square import (
+    SquarePaymentConfig,
+    SquarePaymentService,
+)
 from oes.registration.payment.services.stripe import StripeConfig, StripePaymentService
-from oes.registration.payment.square import SquareConfig, SquarePaymentService
 
 
 def make_stripe_service():
@@ -58,7 +61,7 @@ def make_square_service():
         pytest.skip("squareup library not installed")
 
     return SquarePaymentService(
-        SquareConfig(
+        SquarePaymentConfig(
             application_id="changeit",
             access_token=access_token,
             location_id=location_id,

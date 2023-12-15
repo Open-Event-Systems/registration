@@ -76,6 +76,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 )
 async def list_checkouts(
     checkout_service: CheckoutService,
+    config: Config,
     registration_id: Optional[UUID] = None,
     before: Optional[str] = None,
 ) -> list[CheckoutListResponse]:
@@ -94,7 +95,7 @@ async def list_checkouts(
         try:
             service = checkout_service.get_payment_service(e.service)
             service_name = service.name
-            url = service.get_url(e.external_id, e.external_data)
+            url = service.get_url(e.external_id, checkout_data=e.external_data)
         except LookupError:
             service_name = e.service
             url = None
@@ -106,6 +107,10 @@ async def list_checkouts(
                 date=e.date_closed if e.date_closed is not None else e.date_created,
                 service=service_name,
                 url=url,
+                receipt_id=e.receipt_id,
+                receipt_url=_make_receipt_url(e.receipt_id, config)
+                if e.receipt_id
+                else None,
             )
         )
 

@@ -135,6 +135,8 @@ class CheckoutListResponse:
     state: CheckoutState
     date: datetime
     url: Optional[str]
+    receipt_id: Optional[str]
+    receipt_url: Optional[str]
 
 
 @frozen
