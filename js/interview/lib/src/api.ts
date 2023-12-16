@@ -31,7 +31,6 @@ export const defaultAPI: InterviewAPI = {
       },
       body: JSON.stringify(body),
       mode: "cors",
-      credentials: "include",
     })
 
     // TODO: more detailed error handling
