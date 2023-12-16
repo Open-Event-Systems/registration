@@ -1,0 +1,6 @@
+node_modules
+.cache
+dist
+registration/config.json
+registration/theme.ts
+registration/logo.svg
