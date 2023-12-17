@@ -4,12 +4,6 @@
     flex-direction: column;
 }
 
-:global .ModalDialog-fullscreenContent {
-    /* Avoid issue w/ app shell cuttong off the header */
-    height: 100%;
-    min-width: initial;
-}
-
 :global .ModalDialog-header {
     z-index: initial;
 }
