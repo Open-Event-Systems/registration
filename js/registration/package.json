@@ -70,6 +70,7 @@
     "@mantine/hooks": "^7.1.7",
     "@open-event-systems/interview-components": "^0.2.0",
     "@open-event-systems/interview-lib": "^0.2.0",
+    "@open-event-systems/badge-lib": "^0.1.0",
     "@simplewebauthn/browser": "^8.3.4",
     "@stripe/stripe-js": "^1.52.1",
     "@tabler/icons-react": "^2.16.0",

@@ -4,8 +4,9 @@
     flex-direction: column;
     align-items: stretch;
     min-height: 250px;
+    position: relative;
 }
 
-.InterviewContent-root > * {
+.InterviewContent-root > *:nth-child(2) {
     flex: auto;
 }

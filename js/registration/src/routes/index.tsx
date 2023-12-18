@@ -72,7 +72,7 @@ makeApp(() => {
             {
               path: "/auth/authorize-device",
               async lazy() {
-                const [_styles, { DeviceAuthPage }] = await Promise.all([
+                const [{ DeviceAuthPage }] = await Promise.all([
                   import("#src/features/auth/routes/DeviceAuthPage"),
                 ])
 
