@@ -8,7 +8,7 @@ import {
 import { Meta, StoryObj } from "@storybook/react"
 import { useState } from "react"
 
-import "./Question.module.css"
+import "./Question.css"
 
 const meta: Meta<typeof Question> = {
   component: Question,

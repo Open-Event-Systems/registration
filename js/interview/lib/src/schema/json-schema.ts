@@ -8,6 +8,7 @@ import { handleDate } from "#src/schema/date"
 import { JSONSchema, JSONSchemaOf } from "#src/types"
 import { JSONSchema7TypeName } from "json-schema"
 import { ZodErrorMap, z } from "zod"
+import psl from "psl"
 
 /**
  * Create a Zod schema from a JSON schema.
@@ -161,24 +162,33 @@ const handleString = (schema: JSONSchemaOf<"string">): z.ZodType<string> => {
   let zs = z.string({ errorMap: errorMap })
 
   if (schema.minLength != null) {
-    zs = zs.min(schema.minLength)
+    zs = zs.min(
+      schema.minLength,
+      `Must be at least ${schema.minLength} characters`,
+    )
   }
 
   if (schema.maxLength != null) {
-    zs = zs.max(schema.maxLength)
+    zs = zs.max(
+      schema.maxLength,
+      `Must be at most ${schema.maxLength} characters`,
+    )
   }
 
   if (schema.pattern != null) {
     const regexp = new RegExp(schema.pattern)
-    zs = zs.regex(regexp)
+    zs = zs.regex(regexp, "Invalid value")
   }
 
   let ze: z.ZodType<string>
 
   switch (schema.format) {
     case "email":
-      // TODO: more email validation
-      ze = zs.email()
+      ze = zs.email("Enter a valid email")
+      ze = ze.refine(
+        (v): v is string => validateEmail(v),
+        "Enter a valid email",
+      )
       break
     case "date":
       ze = handleDate(zs, schema)
@@ -206,6 +216,16 @@ const coerceEmptyStrings = (v: unknown): unknown => {
   }
 }
 
+const validateEmail = (email: string): boolean => {
+  const idx = email.indexOf("@")
+  if (idx == -1) {
+    return false
+  }
+
+  const domain = email.slice(idx + 1)
+  return psl.isValid(domain)
+}
+
 /**
  * Number schema.
  */
@@ -215,15 +235,15 @@ const handleNumber = (
   let zs = z.number({ errorMap: errorMap })
 
   if (schema.minimum != null) {
-    zs = zs.min(schema.minimum)
+    zs = zs.min(schema.minimum, `Must be at least ${schema.minimum}`)
   }
 
   if (schema.maximum != null) {
-    zs = zs.max(schema.maximum)
+    zs = zs.max(schema.maximum, `Must be at most ${schema.maximum}`)
   }
 
   if (isType("integer", schema)) {
-    zs = zs.int()
+    zs = zs.int("Must be a whole number")
   }
 
   return zs

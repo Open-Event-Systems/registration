@@ -31,3 +31,17 @@ export const Default: StoryObj<typeof TextField> = {
     return <TextField state={state as FieldState<string>} />
   },
 }
+
+export const Email: StoryObj<typeof TextField> = {
+  render() {
+    const [[state]] = useState(() =>
+      createState({
+        type: "string",
+        title: "Email",
+        format: "email",
+      }),
+    )
+
+    return <TextField state={state as FieldState<string>} />
+  },
+}
