@@ -1,3 +1,9 @@
+import "@mantine/core/styles.css"
+import "@open-event-systems/interview-components/styles.css"
+import "#src/components/styles.css"
+import "#src/features/auth/styles.css"
+import theme from "#src/config/theme"
+
 import {
   LoadingOverlay,
   ShowLoadingOverlay,
@@ -16,10 +22,6 @@ import {
 } from "@tanstack/react-query"
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom"
 
-import "@mantine/core/styles.css"
-import "@open-event-systems/interview-components/styles.css"
-import "#src/components/styles.css"
-import theme from "#src/config/theme"
 import { FullScreenLayout } from "#src/components/layout/FullScreenLayout"
 import { useAuth } from "#src/features/auth/hooks"
 import { useApp } from "#src/hooks/app"
@@ -71,7 +73,6 @@ makeApp(() => {
               path: "/auth/authorize-device",
               async lazy() {
                 const [_styles, { DeviceAuthPage }] = await Promise.all([
-                  import("#src/features/auth/styles.css"),
                   import("#src/features/auth/routes/DeviceAuthPage"),
                 ])
 
@@ -87,7 +88,6 @@ makeApp(() => {
         {
           async lazy() {
             await Promise.all([
-              import("#src/features/auth/styles.css"),
               import("#src/features/interview/styles.css"),
               import("#src/features/cart/styles.css"),
             ])
@@ -171,7 +171,6 @@ makeApp(() => {
           path: "/registrations",
           async lazy() {
             await Promise.all([
-              import("#src/features/auth/styles.css"),
               import(
                 "#src/features/registration/components/registration/fields/RegistrationFields.scss"
               ),
