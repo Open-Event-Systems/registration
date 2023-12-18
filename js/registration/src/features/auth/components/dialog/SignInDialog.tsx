@@ -9,7 +9,6 @@ import {
   createSignIn,
 } from "#src/features/auth/hooks"
 import { AuthStore } from "#src/features/auth/stores/AuthStore"
-import { useLocation, useNavigate } from "#src/hooks/location"
 import { Skeleton, Stack, useProps } from "@mantine/core"
 import clsx from "clsx"
 import { observer } from "mobx-react-lite"
@@ -100,9 +99,7 @@ SignInDialog.Manager = observer((props: SignInDialogManagerProps) => {
       <SignInDialog
         opened={show}
         loading={state.updating}
-        classNames={{
-          body: clsx({ "SignInDialog-padding": usePadding }),
-        }}
+        noPadding={!usePadding}
       >
         {content}
       </SignInDialog>
