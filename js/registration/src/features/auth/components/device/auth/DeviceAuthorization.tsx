@@ -32,6 +32,10 @@ export const DeviceAuthorization = (props: DeviceAuthorizationProps) => {
     <Stack className="DeviceAuthorization-root">
       <Title order={3}>Authorize Device</Title>
       <Text>
+        You are authorizing another device to sign in to the registration
+        dashboard.
+      </Text>
+      <Text>
         <b>Application:</b> {client}
       </Text>
       {showOptions && (

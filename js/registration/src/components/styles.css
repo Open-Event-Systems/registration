@@ -6,4 +6,5 @@
 @import "./layout/user-menu/UserMenu.module.css";
 @import "./layout/ContainerLayout.module.css";
 @import "./layout/StackLayout.module.css";
+@import "./layout/FullScreenLayout.css";
 @import "./loading-overlay/LoadingOverlay.module.css";
