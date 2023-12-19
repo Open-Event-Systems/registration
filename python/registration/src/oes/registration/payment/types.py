@@ -155,6 +155,7 @@ class CheckoutUpdater(Protocol):
         ...
 
 
+@runtime_checkable
 class WebhookHandler(Protocol):
     """A payment service that receives webhook updates."""
 

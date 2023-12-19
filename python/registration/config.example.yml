@@ -50,6 +50,9 @@ payment:
     #   # The access token
     #   access_token:
 
+    #   # The webhook signing key
+    #   webhook_signing_key:
+
     #   # The location ID
     #   location_id:
 

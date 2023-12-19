@@ -79,6 +79,21 @@ class CheckoutService:
         obj = await self.db.get(CheckoutEntity, id, with_for_update=lock)
         return obj
 
+    async def get_checkout_by_external_id(
+        self, service: str, external_id: str, /, *, lock: bool = False
+    ) -> Optional[CheckoutEntity]:
+        """Get a checkout by external ID."""
+        q = (
+            select(CheckoutEntity)
+            .where(
+                CheckoutEntity.service == service,
+                CheckoutEntity.external_id == external_id,
+            )
+            .options(with_for_update=lock)
+        )
+        res = await self.db.execute(q)
+        return res.scalar()
+
     async def get_checkout_by_receipt_id(
         self, receipt_id: str
     ) -> Optional[CheckoutEntity]:

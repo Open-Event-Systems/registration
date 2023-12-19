@@ -52,7 +52,7 @@ class WebhookRequestInfo:
     body: bytes
     """The body bytes."""
 
-    url: bytes
+    url: str
     """The request URL."""
 
     headers: Mapping[str, str]
@@ -69,8 +69,8 @@ class WebhookResult:
     body: Optional[bytes] = None
     """The body bytes."""
 
-    content_type: bytes = b"application/json"
+    content_type: Optional[bytes] = None
     """The response content type."""
 
-    status: int = 200
+    status: int = 204
     """The response status."""

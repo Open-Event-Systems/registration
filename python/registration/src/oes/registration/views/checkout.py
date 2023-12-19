@@ -10,11 +10,13 @@ from blacksheep import (
     FromJSON,
     FromQuery,
     HTTPException,
+    Request,
     Response,
     allow_anonymous,
     auth,
 )
-from blacksheep.exceptions import NotFound
+from blacksheep.exceptions import BadRequest, NotFound
+from blacksheep.messages import get_request_absolute_url
 from blacksheep.server.openapi.common import ContentInfo, ResponseInfo
 from loguru import logger
 from oes.registration.access_code.entities import AccessCodeEntity
@@ -49,6 +51,8 @@ from oes.registration.payment.config import (
     is_payment_method_available,
 )
 from oes.registration.payment.errors import CheckoutStateError, ValidationError
+from oes.registration.payment.models import WebhookRequestInfo, WebhookResult
+from oes.registration.payment.types import PaymentService, WebhookHandler
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.common import structure_datetime
 from oes.registration.services.event import EventService
@@ -360,6 +364,146 @@ async def update_checkout(
             f"after updating the checkout. This may need to be resolved manually."
         )
         raise
+
+
+@allow_anonymous()
+@app.router.post("/webhooks/{service_id}")
+@docs(
+    tags=["Checkout"],
+)
+async def handle_payment_webhook(
+    service_id: str,
+    request: Request,
+    checkout_service: CheckoutService,
+    registration_service: RegistrationService,
+    access_code_service: AccessCodeService,
+    account_service: AccountService,
+    event_service: EventService,
+    hook_sender: HookSender,
+    db: AsyncSession,
+) -> Response:
+    """Payment webhook handler."""
+    service = check_not_found(checkout_service.get_payment_service(service_id))
+    if not isinstance(service, WebhookHandler):
+        raise NotFound
+
+    hook_url = str(get_request_absolute_url(request))
+    body = await request.content.read()
+    headers = {
+        k.decode().lower(): v.decode() for k, v in request.headers.items()
+    }  # does not handle multiple header values
+
+    webhook_req = WebhookRequestInfo(
+        body=body,
+        url=hook_url,
+        headers=headers,
+    )
+
+    try:
+        result = await service.handle_webhook(webhook_req)
+    except ValidationError:
+        raise BadRequest
+
+    if result.updated_checkout:
+        err_resp = await _handle_checkout_update_webhook(
+            service,
+            result,
+            checkout_service,
+            registration_service,
+            access_code_service,
+            account_service,
+            event_service,
+            hook_sender,
+            db,
+        )
+        if err_resp is not None:
+            return err_resp
+
+    return Response(
+        result.status,
+        content=Content(content_type=result.content_type, data=result.body)
+        if result.content_type and result.body
+        else None,
+    )
+
+
+async def _handle_checkout_update_webhook(
+    service: PaymentService,
+    result: WebhookResult,
+    checkout_service: CheckoutService,
+    registration_service: RegistrationService,
+    access_code_service: AccessCodeService,
+    account_service: AccountService,
+    event_service: EventService,
+    hook_sender: HookSender,
+    db: AsyncSession,
+) -> Optional[Response]:
+    checkout = await checkout_service.get_checkout_by_external_id(
+        service.id, result.updated_checkout.id, lock=True
+    )
+
+    if checkout is None:
+        logger.debug(
+            f"Unknown checkout, service={service.id}, id={result.updated_checkout.id}"
+        )
+        await db.rollback()
+        return Response(204)
+
+    if (
+        result.updated_checkout.state == CheckoutState.complete
+        and checkout.state != CheckoutState.canceled
+    ):
+        checkout.state = result.updated_checkout.state
+        checkout.date_closed = (
+            result.updated_checkout.date_closed or checkout.date_closed
+        )
+        checkout.external_data = {
+            **checkout.external_data,
+            **result.updated_checkout.checkout_data,
+        }
+
+        # lock rows and verify changes can be applied before completing the checkout
+        if not checkout.changes_applied:
+            cart_data = checkout.get_cart_data()
+            (
+                registration_entities,
+                access_codes,
+                error_response,
+            ) = await _validate_changes(
+                cart_data, registration_service, access_code_service, True
+            )
+            if error_response:
+                await db.rollback()
+                return error_response
+
+            event_stats = await event_service.get_event_stats(
+                cart_data.event_id, lock=True
+            )
+
+            await _apply_changes(
+                checkout,
+                registration_entities,
+                access_codes,
+                event_stats,
+                registration_service,
+                account_service,
+                hook_sender,
+            )
+            checkout.changes_applied = True
+    elif (
+        result.updated_checkout.state == CheckoutState.canceled
+        and checkout.state != CheckoutState.complete
+    ):
+        checkout.state = result.updated_checkout.state
+        checkout.date_closed = (
+            result.updated_checkout.date_closed or checkout.date_closed
+        )
+        checkout.external_data = {
+            **checkout.external_data,
+            **result.updated_checkout.checkout_data,
+        }
+
+    await db.commit()
 
 
 def _validate_checkout_and_event(

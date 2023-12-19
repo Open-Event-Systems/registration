@@ -6,9 +6,10 @@ from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from datetime import datetime
 from enum import Enum
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar, Literal, Optional, Union
 from uuid import UUID
 
+import orjson
 from attrs import Factory, frozen
 from cattrs.preconf.orjson import make_converter
 from loguru import logger
@@ -25,10 +26,21 @@ from oes.registration.payment.errors import (
     CheckoutStateError,
     ValidationError,
 )
-from oes.registration.payment.models import CreateCheckoutRequest, UpdateRequest
-from oes.registration.payment.types import CheckoutData, CheckoutUpdater, PaymentService
-from oes.registration.serialization import get_config_converter
+from oes.registration.payment.models import (
+    CreateCheckoutRequest,
+    UpdateRequest,
+    WebhookRequestInfo,
+    WebhookResult,
+)
+from oes.registration.payment.types import (
+    CheckoutData,
+    CheckoutUpdater,
+    PaymentService,
+    WebhookHandler,
+)
+from oes.registration.serialization import get_config_converter, get_converter
 from oes.registration.serialization.common import structure_datetime
+from square.utilities.webhooks_helper import is_valid_webhook_event_signature
 
 try:
     import square
@@ -74,6 +86,9 @@ class SquarePaymentConfig:
 
     access_token: str
     """The application secret key."""
+
+    webhook_signing_key: Optional[str] = None
+    """The webhook signing key."""
 
     location_id: str
     """The location ID."""
@@ -221,7 +236,43 @@ class SquareCustomer:
     email_address: Optional[str] = None
 
 
-class SquarePaymentService(PaymentService, CheckoutUpdater):
+@frozen(kw_only=True)
+class SquareOrderUpdatedEventProperties:
+    order_id: str
+    version: int
+    location_id: str
+    state: SquareOrderState
+    created_at: datetime
+    updated_at: datetime
+
+
+@frozen(kw_only=True)
+class SquareOrderUpdatedEventObject:
+    order_updated: SquareOrderUpdatedEventProperties
+
+
+@frozen(kw_only=True)
+class SquareOrderUpdatedEventData:
+    type: Literal["order_updated"]
+    id: str
+    object: SquareOrderUpdatedEventObject
+
+
+@frozen(kw_only=True)
+class SquareOrderUpdatedEvent:
+    merchant_id: str
+    type: Literal["order.updated"]
+    event_id: str
+    created_at: datetime
+    data: SquareOrderUpdatedEventData
+
+
+@frozen(kw_only=True)
+class SquareWebhookEvent:
+    type: str
+
+
+class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
     """Square payment service."""
 
     _sem: ClassVar[Semaphore] = Semaphore(1)  # limit concurrency
@@ -409,6 +460,32 @@ class SquarePaymentService(PaymentService, CheckoutUpdater):
             state=_get_state(complete_order.state),
             date_created=order.created_at,
             date_closed=order.closed_at,
+        )
+
+    async def handle_webhook(
+        self, request_info: WebhookRequestInfo, /
+    ) -> WebhookResult:
+        if not self._config.webhook_signing_key:
+            raise ValidationError
+
+        validated = _validate_webhook(
+            request_info, key=self._config.webhook_signing_key
+        )
+        parsed = _parse_webhook(validated)
+        if parsed is None:
+            return WebhookResult()
+
+        data = parsed.data.object.order_updated
+
+        return WebhookResult(
+            updated_checkout=PaymentServiceCheckout(
+                self.id,
+                data.order_id,
+                _get_state(data.state),
+                date_closed=data.updated_at
+                if data.state != SquareOrderState.open
+                else None,
+            )
         )
 
     def _get_order(self, id: str) -> Optional[SquareOrder]:
@@ -768,6 +845,30 @@ def _make_square_discount(
     )
 
     return square_discount, applied
+
+
+def _validate_webhook(req: WebhookRequestInfo, *, key: str) -> dict[str, Any]:
+    try:
+        body_str = req.body.decode()
+    except Exception:
+        raise ValidationError
+    signature = req.headers.get("x-square-hmacsha256-signature")
+    if not signature or not is_valid_webhook_event_signature(
+        body_str, signature, key, req.url
+    ):
+        logger.warning("Invalid Square webhook signature")
+        raise ValidationError
+
+    return orjson.loads(body_str)
+
+
+def _parse_webhook(body: Mapping[str, Any]) -> Optional[SquareOrderUpdatedEvent]:
+    base = get_converter().structure(body, SquareWebhookEvent)
+    if base.type == "order.updated":
+        return get_converter().structure(body, SquareOrderUpdatedEvent)
+    else:
+        logger.warning(f"Unsupported Square webhook: {base.type}")
+        return None
 
 
 def _format_currency_str(amount: int) -> str:
