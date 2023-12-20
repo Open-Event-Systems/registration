@@ -357,6 +357,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
         res = await asyncio.to_thread(
             self._client.terminal.create_terminal_checkout,
             {
+                "idempotency_key": f"terminal:{created_order.id[:55]}",
                 "checkout": {
                     "amount_money": {
                         "amount": request.pricing_result.total_price,
@@ -369,7 +370,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
                     "device_options": {
                         "device_id": device_id,
                     },
-                }
+                },
             },
         )
 
