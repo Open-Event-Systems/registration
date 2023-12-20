@@ -83,14 +83,14 @@ class CheckoutService:
         self, service: str, external_id: str, /, *, lock: bool = False
     ) -> Optional[CheckoutEntity]:
         """Get a checkout by external ID."""
-        q = (
-            select(CheckoutEntity)
-            .where(
-                CheckoutEntity.service == service,
-                CheckoutEntity.external_id == external_id,
-            )
-            .options(with_for_update=lock)
+        q = select(CheckoutEntity).where(
+            CheckoutEntity.service == service,
+            CheckoutEntity.external_id == external_id,
         )
+
+        if lock:
+            q = q.with_for_update()
+
         res = await self.db.execute(q)
         return res.scalar()
 
