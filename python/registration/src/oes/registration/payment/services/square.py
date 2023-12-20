@@ -357,13 +357,19 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
         res = await asyncio.to_thread(
             self._client.terminal.create_terminal_checkout,
             {
-                "order_id": created_order.id,
-                "payment_options": {
-                    "autocomplete": True,
-                },
-                "device_options": {
-                    "device_id": device_id,
-                },
+                "checkout": {
+                    "amount_money": {
+                        "amount": request.pricing_result.total_price,
+                        "currency": request.pricing_result.currency,
+                    },
+                    "order_id": created_order.id,
+                    "payment_options": {
+                        "autocomplete": True,
+                    },
+                    "device_options": {
+                        "device_id": device_id,
+                    },
+                }
             },
         )
 
