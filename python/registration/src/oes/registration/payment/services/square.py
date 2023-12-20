@@ -71,10 +71,11 @@ class SquareError(RuntimeError):
             return "Square error"
 
 
-class SquarePaymentMethod(str, Enum):
-    """Square payment methods."""
+class SquareCheckoutType(str, Enum):
+    """Square checkout types."""
 
-    card = "card"
+    web = "web"
+    terminal = "terminal"
 
 
 @frozen(kw_only=True)
@@ -295,12 +296,113 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
     async def create_checkout(
         self, request: CreateCheckoutRequest, checkout_id: Optional[UUID] = None, /
     ) -> PaymentServiceCheckout:
+        checkout_type = request.method.config.get("type", SquareCheckoutType.web)
+        if checkout_type == SquareCheckoutType.web:
+            return await self._create_web_checkout(request, checkout_id)
+        elif checkout_type == SquareCheckoutType.terminal:
+            device_id = request.method.config.get("device_id")
+            if not device_id:
+                raise ValueError(f"Invalid Square Terminal device ID: {device_id}")
+            return await self._create_terminal_checkout(request, device_id, checkout_id)
+        else:
+            raise ValueError(f"Invalid Square checkout type: {checkout_type}")
+
+    async def _create_web_checkout(
+        self, request: CreateCheckoutRequest, checkout_id: Optional[UUID]
+    ) -> PaymentServiceCheckout:
+        created_order = await self._create_checkout(request, None, checkout_id)
+
+        email, first_name, last_name = self._get_customer_info(request)
+
+        return PaymentServiceCheckout(
+            service=self.id,
+            id=created_order.id,
+            state=_get_state(created_order.state),
+            date_created=created_order.created_at,
+            checkout_data={
+                "type": SquareCheckoutType.web.value,
+                "email": email,
+                "first_name": first_name,
+                "last_name": last_name,
+            },
+            response_data={
+                "application_id": self._config.application_id,
+                "location_id": self._config.location_id,
+                "amount": _format_currency_str(request.pricing_result.total_price),
+                "currency": request.pricing_result.currency,
+                "sandbox": self._config.environment != "production",
+            },
+        )
+
+    async def _create_terminal_checkout(
+        self,
+        request: CreateCheckoutRequest,
+        device_id: str,
+        checkout_id: Optional[UUID],
+    ) -> PaymentServiceCheckout:
+        email, first_name, last_name = self._get_customer_info(request)
+
+        try:
+            customer = await asyncio.to_thread(
+                self._get_or_create_customer, email, first_name, last_name
+            )
+        except Exception:
+            customer = None
+            pass
+
+        created_order = await self._create_checkout(
+            request, customer.id if customer is not None else None, checkout_id
+        )
+
+        res = await asyncio.to_thread(
+            self._client.terminal.create_terminal_checkout,
+            {
+                "order_id": created_order.id,
+                "payment_options": {
+                    "autocomplete": True,
+                },
+                "device_options": {
+                    "device_id": device_id,
+                },
+            },
+        )
+
+        if res.is_success():
+            return PaymentServiceCheckout(
+                service=self.id,
+                id=created_order.id,
+                state=_get_state(created_order.state),
+                date_created=created_order.created_at,
+                checkout_data={
+                    "type": SquareCheckoutType.terminal.value,
+                    "email": email,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                },
+                response_data={
+                    "application_id": self._config.application_id,
+                    "location_id": self._config.location_id,
+                    "amount": _format_currency_str(request.pricing_result.total_price),
+                    "currency": request.pricing_result.currency,
+                    "sandbox": self._config.environment != "production",
+                },
+            )
+        else:
+            raise SquareError(res.errors)
+
+    async def _create_checkout(
+        self,
+        request: CreateCheckoutRequest,
+        customer_id: Optional[str],
+        checkout_id: Optional[UUID],
+    ) -> SquareOrder:
         order = _make_square_order(
             request.pricing_result,
             self._config.location_id,
             catalog_item_mapping=self._config.catalog_item_mapping,
             modifier_mapping=self._config.modifier_mapping,
             checkout_id=checkout_id,
+            customer_id=customer_id,
         )
 
         async with self._sem:
@@ -319,26 +421,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
                 f"{request.pricing_result.currency})"
             )
 
-        email, first_name, last_name = self._get_customer_info(request)
-
-        return PaymentServiceCheckout(
-            service=self.id,
-            id=created_order.id,
-            state=_get_state(created_order.state),
-            date_created=created_order.created_at,
-            checkout_data={
-                "email": email,
-                "first_name": first_name,
-                "last_name": last_name,
-            },
-            response_data={
-                "application_id": self._config.application_id,
-                "location_id": self._config.location_id,
-                "amount": _format_currency_str(request.pricing_result.total_price),
-                "currency": request.pricing_result.currency,
-                "sandbox": self._config.environment != "production",
-            },
-        )
+        return created_order
 
     def get_url(
         self,
@@ -404,6 +487,15 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
     async def update_checkout(
         self, update_request: UpdateRequest, /
     ) -> PaymentServiceCheckout:
+        checkout_type = update_request.checkout_data.get("type", SquareCheckoutType.web)
+        if checkout_type == SquareCheckoutType.terminal:
+            return await self._check_terminal_checkout(update_request.id)
+        else:
+            return await self._update_checkout(update_request)
+
+    async def _update_checkout(
+        self, update_request: UpdateRequest
+    ) -> PaymentServiceCheckout:
         source_id = update_request.body.get("source_id")
         idempotency_key = update_request.body.get("idempotency_key")
         verification_token = update_request.body.get("verification_token")
@@ -458,6 +550,21 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             service=self.id,
             id=order_id,
             state=_get_state(complete_order.state),
+            date_created=order.created_at,
+            date_closed=order.closed_at,
+        )
+
+    async def _check_terminal_checkout(self, id: str) -> PaymentServiceCheckout:
+        async with self._sem:
+            order = await asyncio.to_thread(self._get_order, id)
+
+        if not order:
+            raise CheckoutNotFoundError
+
+        return PaymentServiceCheckout(
+            service=self.id,
+            id=order.id,
+            state=_get_state(order.state),
             date_created=order.created_at,
             date_closed=order.closed_at,
         )
