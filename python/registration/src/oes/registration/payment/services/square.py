@@ -328,6 +328,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             response_data={
                 "application_id": self._config.application_id,
                 "location_id": self._config.location_id,
+                "type": SquareCheckoutType.web.value,
                 "amount": _format_currency_str(request.pricing_result.total_price),
                 "currency": request.pricing_result.currency,
                 "sandbox": self._config.environment != "production",
@@ -389,6 +390,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
                 response_data={
                     "application_id": self._config.application_id,
                     "location_id": self._config.location_id,
+                    "type": SquareCheckoutType.terminal.value,
                     "amount": _format_currency_str(request.pricing_result.total_price),
                     "currency": request.pricing_result.currency,
                     "sandbox": self._config.environment != "production",
@@ -574,6 +576,13 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             state=_get_state(order.state),
             date_created=order.created_at,
             date_closed=order.closed_at,
+            response_data={
+                "application_id": self._config.application_id,
+                "location_id": self._config.location_id,
+                "type": SquareCheckoutType.terminal.value,
+                # amount/currency unavailable here... will this cause an issue?
+                "sandbox": self._config.environment != "production",
+            },
         )
 
     async def handle_webhook(

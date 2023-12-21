@@ -87,16 +87,7 @@ export const createCheckoutAPI = (
                 old ? { ...old, state: CheckoutState.complete } : undefined,
             )
           } else {
-            client.setQueryData(
-              this.read(checkoutId).queryKey,
-              (old: Checkout | undefined): Checkout | undefined =>
-                old
-                  ? {
-                      ...result,
-                      state: CheckoutState.complete,
-                    }
-                  : result,
-            )
+            client.setQueryData(this.read(checkoutId).queryKey, result)
           }
         },
       }

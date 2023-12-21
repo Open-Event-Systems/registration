@@ -1,13 +1,12 @@
 """Checkout views."""
 from collections.abc import Iterable, Mapping
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from attrs import evolve
 from blacksheep import (
     Content,
     FromBytes,
-    FromJSON,
     FromQuery,
     HTTPException,
     Request,
@@ -300,7 +299,6 @@ async def cancel_checkout(id: UUID, checkout_service: CheckoutService) -> Respon
 )
 async def update_checkout(
     id: UUID,
-    body: FromJSON[dict],
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
     access_code_service: AccessCodeService,
@@ -309,9 +307,11 @@ async def update_checkout(
     events: EventConfig,
     hook_sender: HookSender,
     db: AsyncSession,
+    request: Request,
     user: Optional[User] = None,
 ) -> Response:
     """Update a checkout."""
+    body = await _optional_json(request)
     checkout = check_not_found(await checkout_service.get_checkout(id, lock=True))
 
     payment_service = checkout.service
@@ -335,7 +335,7 @@ async def update_checkout(
         registration_entities = {}
         access_codes = {}
 
-    result = await _update_checkout(body.value, checkout, checkout_service)
+    result = await _update_checkout(body, checkout, checkout_service)
 
     # After this point, any error will roll back the database but will not cancel or
     # refund the transaction
@@ -355,8 +355,9 @@ async def update_checkout(
                 hook_sender,
             )
 
+        response = _make_checkout_update_response(result, checkout)
         await db.commit()
-        return _make_checkout_update_response(result, checkout)
+        return response
     except Exception:
         # TODO: use a specific logger?
         logger.opt(exception=True).error(
@@ -364,6 +365,10 @@ async def update_checkout(
             f"after updating the checkout. This may need to be resolved manually."
         )
         raise
+
+
+async def _optional_json(request: Request) -> dict[str, Any]:
+    return await request.json() or {}
 
 
 @allow_anonymous()
@@ -619,6 +624,7 @@ def _make_checkout_update_response(
                         id=checkout_entity.id,
                         service=checkout_entity.service,
                         external_id=checkout_result.id,
+                        state=checkout_result.state,
                         data=checkout_result.response_data,
                     )
                 ),

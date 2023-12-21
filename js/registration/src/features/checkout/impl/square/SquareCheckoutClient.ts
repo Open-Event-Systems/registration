@@ -7,9 +7,15 @@ declare module "#src/features/checkout/types/Checkout" {
   }
 }
 
+export enum SquareCheckoutType {
+  web = "web",
+  terminal = "terminal",
+}
+
 export interface SquareCheckoutData {
   application_id: string
   location_id: string
+  type?: SquareCheckoutType
   amount: string
   currency: string
   sandbox?: boolean
