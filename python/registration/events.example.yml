@@ -73,3 +73,12 @@
         {%- else -%}
         Standard registration.
         {%- endif %}
+
+  # Queue config
+  queue:
+    tags:
+      standard: "'standard' in registration.option_ids"
+      vip: "'vip' in registration.option_ids"
+    features:
+      standard: "1 if 'standard' in registration.option_ids else 0"
+      vip: "1 if 'vip' in registration.option_ids else 0"

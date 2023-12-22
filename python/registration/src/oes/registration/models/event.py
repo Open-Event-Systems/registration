@@ -1,14 +1,14 @@
 """Event models."""
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date  # noqa
 from typing import TYPE_CHECKING, Optional
 
 from attrs import Factory, field, frozen
 from oes.registration.models.identifier import validate_identifier
 from oes.registration.models.logic import Whenable, WhenCondition
-from oes.template import Template
+from oes.template import Template, ValueOrEvaluable
 from typing_extensions import Self
 
 if TYPE_CHECKING:
@@ -100,6 +100,20 @@ class EventInterviewOption(Whenable):
     """The condition."""
 
 
+@frozen
+class QueueConfig:
+    """Queue configuration."""
+
+    priority: ValueOrEvaluable = 1
+    """Expression for a registration's priority."""
+
+    tags: Mapping[str, WhenCondition] = field(factory=dict)
+    """Mapping of tags to ``when`` conditions."""
+
+    features: Mapping[str, ValueOrEvaluable] = field(factory=dict)
+    """Mapping of registration features to expressions of their weights."""
+
+
 @frozen(kw_only=True)
 class Event:
     """Event class."""
@@ -139,6 +153,9 @@ class Event:
 
     display_options: EventDisplayOptions = EventDisplayOptions()
     """Display options."""
+
+    queue: QueueConfig = QueueConfig()
+    """Queue configuration."""
 
     def is_visible_to(self, user: Optional[User]) -> bool:
         """Get whether the event is visible to the given user."""
