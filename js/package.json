@@ -3,6 +3,7 @@
     "interview/lib",
     "interview/components",
     "badge/lib",
+    "badge/print-daemon",
     "registration"
   ],
   "scripts": {
