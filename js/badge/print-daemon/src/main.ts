@@ -1,7 +1,5 @@
-import { BrowserWindow, app } from "electron"
+import { BrowserWindow, app, dialog } from "electron"
 import { makeApp } from "./api"
-
-let mainWindow: BrowserWindow
 
 app.whenReady().then(() => {
   const wnd = new BrowserWindow({
@@ -10,16 +8,26 @@ app.whenReady().then(() => {
       preload: RENDERER_PRELOAD_WEBPACK_ENTRY,
     },
   })
-  mainWindow = wnd
 
-  // wnd.loadURL(RENDERER_WEBPACK_ENTRY).then(() => {
-  wnd.loadFile("index.html").then(() => {
-    const app = makeApp(wnd.webContents)
-    const server = app.listen(8090)
-    wnd.on("close", () => {
-      server.close()
+  const badgeUrl = process.env.BADGE_URL || "badge.html"
+
+  wnd
+    .loadURL(badgeUrl)
+    .catch((err: Error) => {
+      dialog.showErrorBox(
+        "Badge File Error",
+        `Could not load the badge file "${badgeUrl}": ${err.message}`,
+      )
+      app.quit()
+      throw err
     })
-  })
+    .then(() => {
+      const app = makeApp(wnd.webContents)
+      const server = app.listen(8631)
+      wnd.on("close", () => {
+        server.close()
+      })
+    })
 
   wnd.on("close", () => {
     app.quit()

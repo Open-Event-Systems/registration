@@ -1,5 +1,7 @@
 module.exports = {
-  packagerConfig: {},
+  packagerConfig: {
+    name: "print-daemon",
+  },
   makers: [],
   plugins: [
     {
@@ -13,8 +15,6 @@ module.exports = {
           entryPoints: [
             {
               name: "renderer",
-              html: "./src/renderer.html",
-              js: "./src/renderer.ts",
               preload: {
                 js: "./src/preload.ts",
               },
