@@ -39,6 +39,7 @@ oauthlib = "^3.2.2"
 typed-settings = "^23.0.1"
 yarl = "^1.9.2"
 pyomo = "^6.7.0"
+numpy = "^1.26.2"
 
 
 [tool.poetry.group.dev.dependencies]

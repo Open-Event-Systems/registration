@@ -5,11 +5,11 @@ from datetime import datetime
 from typing import Optional
 
 from oes.registration.entities.base import PKUUID, Base, JSONData
-from oes.registration.queue.models import QueueItemData, QueueItemGroup, StationSettings
+from oes.registration.queue.models import QueueItemData, StationSettings
 from oes.registration.serialization import get_converter
 from oes.util import get_now
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class StationEntity(Base):
@@ -17,13 +17,13 @@ class StationEntity(Base):
 
     __tablename__ = "queue_station"
 
-    id: str = mapped_column(primary_key=True)
+    id: Mapped[str] = mapped_column(primary_key=True)
     """The station ID."""
 
-    group: str
+    group: Mapped[str]
     """The group."""
 
-    settings: JSONData
+    settings: Mapped[JSONData]
     """Settings data."""
 
     def get_settings(self) -> StationSettings:
@@ -40,12 +40,12 @@ class QueueItemGroupEntity(Base):
 
     __tablename__ = "queue_item_group"
 
-    id: PKUUID
+    id: Mapped[PKUUID]
 
-    group: str
+    group: Mapped[str]
     """The **configuration** group ID."""
 
-    items: list[QueueItemEntity] = relationship(
+    items: Mapped[list[QueueItemEntity]] = relationship(
         "QueueItemEntity", back_populates="group"
     )
 
@@ -55,25 +55,25 @@ class QueueItemEntity(Base):
 
     __tablename__ = "queue_item"
 
-    id: PKUUID
-    queue_item_group_id: str = mapped_column(ForeignKey("queue_item_group.id"))
+    id: Mapped[PKUUID]
+    queue_item_group_id: Mapped[str] = mapped_column(ForeignKey("queue_item_group.id"))
 
-    complete: bool = mapped_column(default=False, index=True)
+    complete: Mapped[bool] = mapped_column(default=False, index=True)
     """Whether the entry is complete."""
 
-    success: Optional[bool] = mapped_column(default=None)
+    success: Mapped[Optional[bool]] = mapped_column(default=None)
     """Whether the check-in was successful."""
 
-    date_created: datetime = mapped_column(default_factory=get_now)
+    date_created: Mapped[datetime] = mapped_column(default=lambda: get_now())
     """The date the item was created."""
 
-    date_complete: Optional[datetime] = mapped_column(default=None)
+    date_completed: Mapped[Optional[datetime]] = mapped_column(default=None)
     """The date the item was completed."""
 
-    data: JSONData
+    data: Mapped[JSONData]
     """Queue item data."""
 
-    group: QueueItemGroupEntity = relationship(
+    group: Mapped[QueueItemGroupEntity] = relationship(
         "QueueItemGroupEntity", back_populates="items"
     )
 
@@ -84,3 +84,10 @@ class QueueItemEntity(Base):
     def set_data(self, data: QueueItemData, /):
         """Set the queue item data."""
         self.data = get_converter().unstructure(data)
+
+    @property
+    def duration(self) -> float:
+        """The duration of the check-in."""
+        if not self.date_completed:
+            raise ValueError("Check-in is not complete")
+        return (self.date_completed - self.date_created).total_seconds()
