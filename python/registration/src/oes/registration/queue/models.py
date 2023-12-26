@@ -13,6 +13,8 @@ class StationSettings:
     open: bool = False
     max_queue_length: int = 1
     tags: Set[str] = frozenset()
+    feature_intercept: float = 1.0
+    feature_coefficients: Mapping[str, float] = {}
 
 
 @frozen
@@ -24,6 +26,7 @@ class QueueItemData:
     features: Mapping[str, float] = field(factory=dict)
     scan_data: Optional[str] = None
     registration: Optional[Registration] = None
+    duration: Optional[float] = None
 
 
 @frozen

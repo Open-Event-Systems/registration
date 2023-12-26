@@ -1,17 +1,40 @@
 """Queue functions."""
+import asyncio
 import re
 import uuid
 from typing import Optional, cast
 
+from attrs import evolve
 from oes.registration.checkout.service import CheckoutService
 from oes.registration.entities.registration import RegistrationEntity
 from oes.registration.models.event import QueueConfig
 from oes.registration.models.registration import Registration
-from oes.registration.queue.entities import QueueItemEntity
+from oes.registration.queue.entities import QueueItemEntity, StationEntity
 from oes.registration.queue.models import QueueItemData
+from oes.registration.queue.service import QueueService
+from oes.registration.queue.solver import solve_features
 from oes.registration.serialization import get_converter
 from oes.registration.services.registration import RegistrationService
 from oes.template import evaluate
+
+
+async def add_to_queue(
+    scan_data: Optional[str] = None,
+    /,
+    *,
+    config: QueueConfig,
+    queue_service: QueueService,
+    checkout_service: CheckoutService,
+    registration_service: RegistrationService,
+) -> QueueItemEntity:
+    """Add an item to the queue."""
+    queue_item = await make_queue_item(
+        scan_data,
+        config=config,
+        checkout_service=checkout_service,
+        registration_service=registration_service,
+    )
+    return await queue_service.save_queue_item(queue_item)
 
 
 async def make_queue_item(
@@ -125,6 +148,18 @@ def get_tags(
     return frozenset(
         tag for tag, when in config.tags.items() if evaluate(when, context)
     )
+
+
+async def compute_station_stats(
+    station: StationEntity, /, *, config: QueueConfig, queue_service: QueueService
+):
+    """Update a :class:`StationEntity` with stats from recent check-ins."""
+    stats = await queue_service.get_queue_stats(station.id)
+    features = list(config.features.keys())
+    intercept, coefs = await asyncio.to_thread(solve_features, features, stats)
+    data = station.get_settings()
+    data = evolve(data, feature_intercept=intercept, feature_coefficients=coefs)
+    station.set_settings(data)
 
 
 def _parse_receipt_url(url: str) -> tuple[str, int]:

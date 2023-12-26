@@ -24,6 +24,16 @@ class QueueService:
         await self.db.flush()
         return item
 
+    async def get_queue_items(self) -> Sequence[QueueItemEntity]:
+        """Get current queue items."""
+        q = (
+            select(QueueItemEntity)
+            .where(QueueItemEntity.date_completed == null())
+            .order_by(QueueItemEntity.date_started)
+        )
+        res = await self.db.execute(q)
+        return res.scalars().all()
+
     async def get_queue_stats(
         self, station_id: Optional[str] = None, /, *, limit: int = 100
     ) -> Sequence[QueueItemEntity]:

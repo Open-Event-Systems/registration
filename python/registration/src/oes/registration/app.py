@@ -56,6 +56,7 @@ from oes.registration.interview.service import InterviewService
 from oes.registration.log import setup_logging
 from oes.registration.models.config import Config
 from oes.registration.payment.config import create_payment_services
+from oes.registration.queue.service import QueueService
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import (
     JSONEncoder,
@@ -90,6 +91,7 @@ app.services.add_scoped(CartService)
 app.services.add_scoped(CheckoutService)
 app.services.add_scoped(InterviewService)
 app.services.add_scoped(AccessCodeService)
+app.services.add_scoped(QueueService)
 
 
 # TODO: put all these in a dedicated configuration function.
