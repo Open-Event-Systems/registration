@@ -97,6 +97,7 @@ RequireEvent = "require_event"
 RequireSelfService = "require_self_service"
 RequireRegistration = "require_registration"
 RequireRegistrationEdit = "require_registration_edit"
+RequireCheckIn = "require_check_in"
 
 require_admin = Policy(RequireAdmin, ScopeRequirement(Scope.admin))
 require_cart = Policy(RequireCart, ScopeRequirement(Scope.cart))
@@ -107,6 +108,7 @@ require_registration = Policy(RequireRegistration, ScopeRequirement(Scope.regist
 require_registration_edit = Policy(
     RequireRegistrationEdit, ScopeRequirement(Scope.registration_edit)
 )
+require_check_in = Policy(RequireRegistration, ScopeRequirement(Scope.check_in))
 
 
 class RequestUser(BoundValue[User]):

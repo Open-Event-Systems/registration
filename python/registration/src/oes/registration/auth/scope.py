@@ -31,6 +31,9 @@ class Scope(str, Enum):
     registration_edit = "registration:edit"
     """May edit registrations."""
 
+    check_in = "check_in"
+    """May check in registrations."""
+
 
 @frozen(init=False, repr=False, order=False)
 class Scopes(Set[str]):

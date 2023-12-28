@@ -16,7 +16,11 @@ from blacksheep.server.openapi.common import (
 from blacksheep.url import build_absolute_url
 from loguru import logger
 from oes.registration.app import app
-from oes.registration.auth.handlers import RequireAdmin
+from oes.registration.auth.handlers import (
+    RequireCheckIn,
+    RequireRegistration,
+    RequireRegistrationEdit,
+)
 from oes.registration.auth.user import User
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper, serialize
@@ -71,7 +75,7 @@ class UpdateRegistrationRequest:
     preferred_name: Optional[str] = None
 
 
-@auth(RequireAdmin)
+@auth(RequireRegistration)
 @app.router.get("/registrations")
 @docs_helper(
     response_type=list[RegistrationListResponse],
@@ -103,7 +107,7 @@ async def list_registrations(
     return response
 
 
-@auth(RequireAdmin)
+@auth(RequireRegistrationEdit)
 @app.router.post("/registrations")
 @docs(
     responses={
@@ -151,7 +155,7 @@ async def create_registration(
     return registration_response(entity.get_model())
 
 
-@auth(RequireAdmin)
+@auth(RequireRegistration)
 @app.router.get("/registrations/{id}")
 @docs(
     responses={
@@ -173,11 +177,11 @@ async def read_registration(
     return registration_response(reg.get_model())
 
 
-@auth(RequireAdmin)
+@auth(RequireRegistrationEdit)
 @app.router.put("/registrations/{id}")
 @docs(
     parameters={
-        "ETag": ParameterInfo(
+        "If-Match": ParameterInfo(
             "The ETag of the current version of the registration",
             value_type=str,
             source=ParameterSource.HEADER,
@@ -202,7 +206,6 @@ async def update_registration(
     _body: AttrsBody[CreateRegistrationRequest],
 ) -> Response:
     """Update a registration."""
-    # TODO: permissions
     reg = check_not_found(await service.get_registration(id, lock=True))
 
     check_etag(request, reg)
@@ -229,7 +232,7 @@ async def update_registration(
     return registration_response(reg.get_model())
 
 
-@auth(RequireAdmin)
+@auth(RequireRegistrationEdit)
 @app.router.put("/registrations/{id}/complete")
 @docs(
     responses={
@@ -261,7 +264,7 @@ async def complete_registration(
     return registration_response(reg.get_model())
 
 
-@auth(RequireAdmin)
+@auth(RequireRegistrationEdit)
 @app.router.put("/registrations/{id}/cancel")
 @docs(
     responses={
@@ -294,7 +297,7 @@ async def cancel_registration(
     return registration_response(reg.get_model())
 
 
-# TODO: check-in scope
+@auth(RequireCheckIn)
 @app.router.get("/registrations/{id}/check-in")
 @docs(
     responses={
@@ -335,6 +338,7 @@ async def read_check_in_interview(
     return response
 
 
+@auth(RequireCheckIn)
 @app.router.post("/registrations/{id}/check-in")
 @docs(
     request_body=RequestBodyInfo(
