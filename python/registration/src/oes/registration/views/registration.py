@@ -198,7 +198,7 @@ async def get_registration_create_interview(
 
     model = Registration(
         id=uuid.uuid4(),
-        state=RegistrationState.created,
+        state=RegistrationState.pending,
         event_id=event_id.value,
         version=1,
         date_created=get_now(),
@@ -638,6 +638,7 @@ async def complete_registration(
     id: UUID,
     service: RegistrationService,
     hook_sender: HookSender,
+    event_service: EventService,
 ) -> Response:
     """Complete a pending registration."""
     reg = check_not_found(await service.get_registration(id, lock=True))
@@ -645,9 +646,11 @@ async def complete_registration(
     # TODO: permissions
 
     try:
+        stats = await event_service.get_event_stats(reg.event_id, lock=True)
         reg.complete() and await hook_sender.schedule_hooks_for_event(
             HookEvent.registration_created, reg.get_model()
         )
+        reg.assign_number(stats)
     except ValueError as e:
         raise HTTPException(409, str(e))
 

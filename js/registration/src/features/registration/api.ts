@@ -38,6 +38,32 @@ export const createRegistrationAPI = (wretch: Wretch): RegistrationAPI => {
         },
       }
     },
+    listAddInterviews(eventId: string) {
+      return {
+        queryKey: ["registrations", "interviews", eventId],
+        async queryFn() {
+          return await wretch
+            .url("/interviews")
+            .addon(queryString)
+            .query({ event_id: eventId })
+            .get()
+            .json<InterviewOption[]>()
+        },
+      }
+    },
+    readAddInterview(eventId, interviewId) {
+      return {
+        queryKey: ["registrations", "new-interview", { eventId, interviewId }],
+        async queryFn() {
+          return await wretch
+            .url("/new-interview")
+            .addon(queryString)
+            .query({ event_id: eventId, interview_id: interviewId })
+            .get()
+            .json<StateResponse>()
+        },
+      }
+    },
     read(id) {
       const req = wretch.url(`/${id}`)
 
@@ -89,11 +115,11 @@ export const createRegistrationAPI = (wretch: Wretch): RegistrationAPI => {
         },
       }
     },
-    getChangeInterview(id, interviewId) {
+    readChangeInterview(id, interviewId) {
       return {
         queryKey: ["registrations", id, "interviews", interviewId],
         async queryFn() {
-          let req = wretch
+          const req = wretch
             .url(`/${id}/new-interview`)
             .addon(queryString)
             .query({ interview_id: interviewId })

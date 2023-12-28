@@ -72,6 +72,13 @@ export type RegistrationAPI = {
     query?: string,
     options?: { event_id?: string | null; all?: boolean },
   ): UndefinedInitialDataInfiniteOptions<RegistrationSearchResult[]>
+  listAddInterviews(
+    eventId: string,
+  ): UndefinedInitialDataOptions<InterviewOption[]>
+  readAddInterview(
+    eventId: string,
+    interviewId: string,
+  ): UndefinedInitialDataOptions<StateResponse>
   read(id: string): UndefinedInitialDataOptions<Registration>
   update(): UseMutationOptions<Registration, Error, Registration>
   complete(id: string): UseMutationOptions<Registration, Error>
@@ -79,7 +86,7 @@ export type RegistrationAPI = {
   listChangeInterviews(
     id: string,
   ): UndefinedInitialDataOptions<InterviewOption[]>
-  getChangeInterview(
+  readChangeInterview(
     id: string,
     interviewId: string,
   ): UndefinedInitialDataOptions<StateResponse>

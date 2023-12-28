@@ -199,7 +199,7 @@ export const RegistrationPage = observer(() => {
                 }
 
                 const state = await client.ensureQueryData(
-                  registrationAPI.getChangeInterview(registrationId, id),
+                  registrationAPI.readChangeInterview(registrationId, id),
                 )
                 const record = await startInterview(
                   interviewStore,
@@ -236,8 +236,9 @@ export const RegistrationPage = observer(() => {
                 .json()
 
               client.invalidateQueries({
-                queryKey: registrationAPI.read(r.metadata.registrationId)
-                  .queryKey,
+                queryKey: registrationAPI.listChangeInterviews(
+                  r.metadata.registrationId,
+                ).queryKey,
               })
               client.setQueryData(
                 registrationAPI.read(registrationId).queryKey,
