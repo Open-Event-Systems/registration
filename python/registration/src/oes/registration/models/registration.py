@@ -8,6 +8,7 @@ from uuid import UUID
 
 from attrs import Factory, define, field, frozen
 from cattrs import ClassValidationError, Converter
+from oes.util import get_now
 
 
 class RegistrationState(str, Enum):
@@ -26,7 +27,7 @@ class Registration:
     state: RegistrationState
     event_id: str
     version: int
-    date_created: datetime
+    date_created: datetime = field(factory=get_now)
     date_updated: Optional[datetime] = None
 
     number: Optional[int] = None
