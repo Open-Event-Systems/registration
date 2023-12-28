@@ -4,7 +4,7 @@ from uuid import UUID
 
 from attrs import Factory, field, frozen
 from blacksheep import Content, FromJSON, HTTPException, Request, Response, auth, json
-from blacksheep.exceptions import BadRequest, NotFound
+from blacksheep.exceptions import BadRequest, Forbidden, NotFound
 from blacksheep.messages import get_absolute_url_to_path
 from blacksheep.server.openapi.common import (
     ContentInfo,
@@ -14,13 +14,16 @@ from blacksheep.server.openapi.common import (
     ResponseInfo,
 )
 from blacksheep.url import build_absolute_url
+from cattrs import BaseValidationError
 from loguru import logger
 from oes.registration.app import app
 from oes.registration.auth.handlers import (
     RequireCheckIn,
     RequireRegistration,
     RequireRegistrationEdit,
+    RequireRegistrationEditOrAction,
 )
+from oes.registration.auth.scope import Scope
 from oes.registration.auth.user import User
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper, serialize
@@ -45,7 +48,10 @@ from oes.registration.services.registration import (
 )
 from oes.registration.util import check_not_found
 from oes.registration.views.parameters import AttrsBody
-from oes.registration.views.responses import RegistrationListResponse
+from oes.registration.views.responses import (
+    BodyValidationError,
+    RegistrationListResponse,
+)
 from oes.util.blacksheep import Conflict
 
 
@@ -177,7 +183,7 @@ async def read_registration(
     return registration_response(reg.get_model())
 
 
-@auth(RequireRegistrationEdit)
+@auth(RequireRegistrationEditOrAction)
 @app.router.put("/registrations/{id}")
 @docs(
     parameters={
@@ -189,6 +195,18 @@ async def read_registration(
             example='W/"asdf1234"',
         )
     },
+    request_body=RequestBodyInfo(
+        description="The new data or interview state",
+        examples={
+            "Direct update": {
+                "first_name": "NewFirst",
+                "last_name": "NewLast",
+                "number": 123,
+                "nickname": "Nickname",
+            },
+            "Interview state": {"state": "<interview state>"},
+        },
+    ),
     responses={
         200: ResponseInfo(
             "The updated registration",
@@ -203,19 +221,30 @@ async def update_registration(
     id: UUID,
     service: RegistrationService,
     hook_sender: HookSender,
-    _body: AttrsBody[CreateRegistrationRequest],
+    body: FromJSON[dict[str, Any]],
+    user: User,
+    interview_service: InterviewService,
 ) -> Response:
     """Update a registration."""
     reg = check_not_found(await service.get_registration(id, lock=True))
 
-    check_etag(request, reg)
-
-    # should already be loaded
-    body_json = await request.json(loads=json_loads)
-    writable = get_converter().structure(body_json, WritableRegistration)
     old_data = reg.get_model()
-    reg.update_properties_from_model(writable)
-    new_data = reg.get_model()
+
+    if (
+        len(body.value) == 1
+        and "state" in body.value
+        and (
+            user.has_scope(Scope.registration_action)
+            or user.has_scope(Scope.registration_edit)
+        )
+    ):
+        new_data = await _update_registration_from_interview(
+            body.value["state"], request, reg, interview_service
+        )
+    elif user.has_scope(Scope.registration_edit):
+        new_data = _update_registration_from_request(request, reg, body.value)
+    else:
+        raise Forbidden
 
     await hook_sender.schedule_hooks_for_event(
         HookEvent.registration_updated,
@@ -230,6 +259,63 @@ async def update_registration(
     )
 
     return registration_response(reg.get_model())
+
+
+def _update_registration_from_request(
+    request: Request,
+    registration: RegistrationEntity,
+    body: dict[str, Any],
+) -> Registration:
+    check_etag(request, registration)
+
+    # should already be loaded
+    writable = get_converter().structure(body, WritableRegistration)
+    registration.update_properties_from_model(writable)
+    new_data = registration.get_model()
+    return new_data
+
+
+async def _update_registration_from_interview(
+    state: str,
+    request: Request,
+    registration: RegistrationEntity,
+    interview_service: InterviewService,
+) -> Registration:
+    current_url = build_absolute_url(
+        request.scheme.encode(),
+        request.host.encode(),
+        request.base_path.encode(),
+        request.url.path,
+    ).value.decode()
+    interview_result = await interview_service.get_result(state, target_url=current_url)
+    if not interview_result:
+        logger.debug("Interview result is not valid")
+        raise HTTPException(409)
+
+    new_reg_data = _parse_registration_data(
+        interview_result.data.get("registration", {})
+    )
+    if new_reg_data.version != registration.version:
+        raise HTTPException(409)
+
+    registration.update_properties_from_model(new_reg_data)
+    return registration.get_model()
+
+
+def _parse_registration_update_data(data: dict[str, Any]) -> WritableRegistration:
+    try:
+        reg = get_converter().structure(data, WritableRegistration)
+    except BaseValidationError as e:
+        raise BodyValidationError(e)
+    return reg
+
+
+def _parse_registration_data(data: dict[str, Any]) -> Registration:
+    try:
+        registration = get_converter().structure(data, Registration)
+    except BaseValidationError as e:
+        raise BodyValidationError(e)
+    return registration
 
 
 @auth(RequireRegistrationEdit)

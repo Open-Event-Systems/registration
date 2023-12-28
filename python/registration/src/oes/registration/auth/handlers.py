@@ -97,6 +97,8 @@ RequireEvent = "require_event"
 RequireSelfService = "require_self_service"
 RequireRegistration = "require_registration"
 RequireRegistrationEdit = "require_registration_edit"
+RequireRegistrationEditOrAction = "require_registration_edit_or_action"
+RequireRegistrationAction = "require_registration_action"
 RequireCheckIn = "require_check_in"
 
 require_admin = Policy(RequireAdmin, ScopeRequirement(Scope.admin))
@@ -107,6 +109,16 @@ require_self_service = Policy(RequireSelfService, ScopeRequirement(Scope.self_se
 require_registration = Policy(RequireRegistration, ScopeRequirement(Scope.registration))
 require_registration_edit = Policy(
     RequireRegistrationEdit, ScopeRequirement(Scope.registration_edit)
+)
+require_registration_action = Policy(
+    RequireRegistrationAction, ScopeRequirement(Scope.registration_action)
+)
+require_registration_edit_or_action = Policy(
+    RequireRegistrationEditOrAction,
+    ScopeRequirement(
+        Scope.registration_edit,
+        Scope.registration_action,
+    ),
 )
 require_check_in = Policy(RequireRegistration, ScopeRequirement(Scope.check_in))
 

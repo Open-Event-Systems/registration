@@ -31,6 +31,9 @@ class Scope(str, Enum):
     registration_edit = "registration:edit"
     """May edit registrations."""
 
+    registration_action = "registration:action"
+    """May use pre-defined registration actions."""
+
     check_in = "check_in"
     """May check in registrations."""
 
