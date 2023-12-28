@@ -1,3 +1,4 @@
+import { InterviewOption } from "#src/features/cart/types"
 import { Registration, RegistrationAPI } from "#src/features/registration"
 import { StateResponse } from "@open-event-systems/interview-lib"
 import { Wretch } from "wretch"
@@ -74,6 +75,30 @@ export const createRegistrationAPI = (wretch: Wretch): RegistrationAPI => {
         mutationKey: ["registrations", id, "cancel"],
         async mutationFn() {
           return await wretch.url(`/${id}/cancel`).put().json<Registration>()
+        },
+      }
+    },
+    listChangeInterviews(id) {
+      return {
+        queryKey: ["registrations", id, "interviews"],
+        async queryFn() {
+          return await wretch
+            .url(`/${id}/interviews`)
+            .get()
+            .json<InterviewOption[]>()
+        },
+      }
+    },
+    getChangeInterview(id, interviewId) {
+      return {
+        queryKey: ["registrations", id, "interviews", interviewId],
+        async queryFn() {
+          let req = wretch
+            .url(`/${id}/new-interview`)
+            .addon(queryString)
+            .query({ interview_id: interviewId })
+
+          return await req.get().json<StateResponse>()
         },
       }
     },

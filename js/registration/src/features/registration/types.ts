@@ -1,3 +1,4 @@
+import { InterviewOption } from "#src/features/cart/types"
 import {
   InterviewStateRecord,
   StateResponse,
@@ -60,6 +61,12 @@ export interface CreateRegistration {
   [prop: string]: unknown
 }
 
+declare module "@open-event-systems/interview-lib" {
+  interface InterviewStateMetadata {
+    registrationId?: string
+  }
+}
+
 export type RegistrationAPI = {
   list(
     query?: string,
@@ -69,6 +76,13 @@ export type RegistrationAPI = {
   update(): UseMutationOptions<Registration, Error, Registration>
   complete(id: string): UseMutationOptions<Registration, Error>
   cancel(id: string): UseMutationOptions<Registration, Error>
+  listChangeInterviews(
+    id: string,
+  ): UndefinedInitialDataOptions<InterviewOption[]>
+  getChangeInterview(
+    id: string,
+    interviewId: string,
+  ): UndefinedInitialDataOptions<StateResponse>
   readCheckinInterview(id: string): UndefinedInitialDataOptions<StateResponse>
   completeCheckinInterview(
     id: string,

@@ -228,18 +228,6 @@ async def get_registration_create_interview(
     return state
 
 
-async def _get_interview_titles(service: InterviewService) -> dict[str, Optional[str]]:
-    interviews = await service.get_interviews()
-    return {i.id: i.title for i in interviews}
-
-
-def _get_interview_title(titles: dict[str, Optional[str]], id: str) -> str:
-    title = titles.get(id)
-    if not title:
-        _, _, title = id.rpartition("/")
-    return title
-
-
 @auth(RequireRegistrationEdit)
 @app.router.post("/registrations")
 @docs(
@@ -372,8 +360,131 @@ async def read_registration(
     """Read a registration."""
     reg = check_not_found(await service.get_registration(id))
 
-    # TODO: permissions
     return registration_response(reg.get_model())
+
+
+@auth(RequireRegistrationEditOrAction)
+@app.router.get("/registrations/{id}/interviews")
+@docs_helper(
+    response_type=list[InterviewOption],
+    response_summary="The available interviews.",
+    tags=["Registration"],
+)
+async def list_registration_change_interviews(
+    id: UUID,
+    registration_service: RegistrationService,
+    interview_service: InterviewService,
+    events: EventConfig,
+    user: User,
+) -> list[InterviewOption]:
+    """List registration change interviews."""
+    reg = check_not_found(await registration_service.get_registration(id))
+    event = events.get_event(reg.event_id)
+
+    if not event:
+        return []
+
+    context = {
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+        },
+        "registration": get_converter().unstructure(reg.get_model()),
+    }
+
+    titles = await _get_interview_titles(interview_service)
+
+    options = []
+    for interview in event.admin_change_interviews:
+        if when_matches(interview, context):
+            options.append(
+                InterviewOption(
+                    interview.id, _get_interview_title(titles, interview.id)
+                )
+            )
+
+    return options
+
+
+@auth(RequireRegistrationEditOrAction)
+@app.router.get("/registrations/{id}/new-interview")
+@docs(
+    responses={
+        200: ResponseInfo(
+            "The interview state response",
+        ),
+    },
+    tags=["Registration"],
+)
+async def get_registration_change_interview(
+    id: UUID,
+    request: Request,
+    interview_id: FromQuery[str],
+    events: EventConfig,
+    user: User,
+    interview_service: InterviewService,
+    registration_service: RegistrationService,
+) -> Mapping[str, Any]:
+    """Get an interview state to change a registration."""
+    reg = check_not_found(await registration_service.get_registration(id))
+    event = check_not_found(events.get_event(reg.event_id))
+
+    interview = check_not_found(
+        next(
+            (i for i in event.admin_change_interviews if i.id == interview_id.value),
+            None,
+        )
+    )
+
+    reg_model = reg.get_model()
+
+    context = {
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+        },
+        "registration": get_converter().unstructure(reg_model),
+    }
+    if not when_matches(interview, context):
+        raise NotFound
+
+    context = {
+        "event": get_converter().unstructure(SimpleEventInfo.create(event)),
+        # cart interviews have this in data... maybe needs to be moved?
+        "meta": {
+            "account_id": str(user.id),
+            "email": user.email,
+        },
+    }
+
+    initial_data = {
+        "registration": get_converter().unstructure(reg.get_model()),
+    }
+
+    if not when_matches(interview, context):
+        raise NotFound
+
+    target_url = get_absolute_url_to_path(request, f"/registrations/{id}")
+
+    state = await interview_service.start_interview(
+        interview_id.value,
+        target_url=target_url.value.decode(),
+        context=context,
+        initial_data=initial_data,
+    )
+    return state
+
+
+async def _get_interview_titles(service: InterviewService) -> dict[str, Optional[str]]:
+    interviews = await service.get_interviews()
+    return {i.id: i.title for i in interviews}
+
+
+def _get_interview_title(titles: dict[str, Optional[str]], id: str) -> str:
+    title = titles.get(id)
+    if not title:
+        _, _, title = id.rpartition("/")
+    return title
 
 
 @auth(RequireRegistrationEditOrAction)

@@ -27,7 +27,9 @@ from oes.registration.auth.handlers import (
     require_checkout,
     require_event,
     require_registration,
+    require_registration_action,
     require_registration_edit,
+    require_registration_edit_or_action,
     require_self_service,
 )
 from oes.registration.auth.oauth.server import CustomServer
@@ -289,6 +291,8 @@ def app_factory():
     authorization.add(require_self_service)
     authorization.add(require_registration)
     authorization.add(require_registration_edit)
+    authorization.add(require_registration_action)
+    authorization.add(require_registration_edit_or_action)
 
     # set up CORS
     configure_cors(
