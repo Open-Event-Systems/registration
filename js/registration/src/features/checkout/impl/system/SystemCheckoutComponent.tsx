@@ -1,4 +1,5 @@
-import { CheckoutImplComponentProps } from "#src/features/checkout/components/checkout/CheckoutComponent"
+import { useCheckout } from "#src/features/checkout/hooks"
+import { Checkout } from "#src/features/checkout/types/Checkout"
 import { Button, Stack, Text } from "@mantine/core"
 
 declare module "#src/features/checkout/types/Checkout" {
@@ -7,12 +8,8 @@ declare module "#src/features/checkout/types/Checkout" {
   }
 }
 
-export type SystemCheckoutComponentProps = CheckoutImplComponentProps<"system">
-
-export const SystemCheckoutComponent = (
-  props: SystemCheckoutComponentProps,
-) => {
-  const { update } = props
+export const SystemCheckoutComponent = () => {
+  const { update } = useCheckout()
 
   return (
     <form

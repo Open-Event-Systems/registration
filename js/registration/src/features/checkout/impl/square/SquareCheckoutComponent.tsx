@@ -5,7 +5,7 @@ import { SquareTerminalCheckoutComponent } from "#src/features/checkout/impl/squ
 import { Checkout } from "#src/features/checkout/types/Checkout"
 
 export const SquareCheckoutComponent = () => {
-  const { checkout } = useCheckout()
+  const { checkout, update } = useCheckout()
 
   const squareCheckout = checkout as Checkout<"square">
 

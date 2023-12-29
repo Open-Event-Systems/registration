@@ -20,6 +20,12 @@ export const getCheckoutImplComponentType = async <T extends string = string>(
       )
       Component = SystemCheckoutComponent
       break
+    case "suspend":
+      const { SuspendCheckoutComponent } = await import(
+        "#src/features/checkout/impl/suspend/SuspendCheckoutComponent"
+      )
+      Component = SuspendCheckoutComponent
+      break
     case "square":
       const { SquareCheckoutComponent } = await import(
         "#src/features/checkout/impl/square/SquareCheckoutComponent"

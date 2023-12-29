@@ -9,6 +9,7 @@ from loguru import logger
 from oes.registration.cart.models import CartData, PricingResult
 from oes.registration.models.config import PaymentConfig, PaymentMethodConfigMapping
 from oes.registration.models.logic import WhenCondition, when_matches
+from oes.registration.payment.services.suspend import SuspendPaymentService
 from oes.template import Expression
 
 if TYPE_CHECKING:
@@ -104,6 +105,7 @@ def create_payment_services(payment_config: PaymentConfig) -> PaymentServices:
             services[id] = res
 
     services["system"] = SystemPaymentService()
+    services["suspend"] = SuspendPaymentService()
 
     methods = {}
 
