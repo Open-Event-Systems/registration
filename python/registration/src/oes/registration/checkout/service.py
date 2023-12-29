@@ -1,6 +1,6 @@
 """Checkout service."""
 import copy
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from datetime import datetime
 from typing import Any, Mapping, Optional, Union, overload
 from uuid import UUID
@@ -22,7 +22,7 @@ from oes.registration.payment.models import CreateCheckoutRequest, UpdateRequest
 from oes.registration.payment.types import CheckoutUpdater, PaymentService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import get_now
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -45,6 +45,7 @@ class CheckoutService:
 
     async def list_checkouts(
         self,
+        query: Optional[str] = None,
         *,
         registration_id: Optional[UUID] = None,
         before: Optional[datetime] = None,
@@ -62,6 +63,9 @@ class CheckoutService:
                     }
                 )
             )
+
+        if query:
+            q = q.where(or_(*(_get_search_query(query))))
 
         if before is not None:
             q = q.where(CheckoutEntity.date_created < before)
@@ -384,3 +388,66 @@ async def apply_checkout_changes(
 
     checkout_entity.changes_applied = True
     return results
+
+
+def _get_search_query(query: Optional[str]) -> Iterator[ColumnElement]:
+    query = query.strip() if query else None
+    if not query:
+        return
+
+    yield from _get_name_query(query)
+    yield from _get_email_query(query)
+
+
+def _get_name_query(query: str) -> Iterator[ColumnElement]:
+    if " " not in query:
+        return
+
+    first, _, last = query.partition(" ")
+    yield and_(
+        or_(
+            func.lower(
+                CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                    "first_name"
+                ].as_string()
+            ).startswith(first.lower()),
+            func.lower(
+                CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                    "preferred_name"
+                ].as_string()
+            ).startswith(first.lower()),
+        ),
+        func.lower(
+            CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                "last_name"
+            ].as_string()
+        ).startswith(last.lower()),
+    )
+    yield and_(
+        or_(
+            func.lower(
+                CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                    "first_name"
+                ].as_string()
+            ).startswith(last.lower()),
+            func.lower(
+                CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                    "preferred_name"
+                ].as_string()
+            ).startswith(last.lower()),
+        ),
+        func.lower(
+            CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                "last_name"
+            ].as_string()
+        ).startswith(first.lower()),
+    )
+
+
+def _get_email_query(query: str) -> Iterator[ColumnElement]:
+    if " " in query:
+        return
+
+    yield func.lower(
+        CheckoutEntity.cart_data["registrations"][0]["new_data"]["email"].as_string()
+    ).startswith(query.lower())

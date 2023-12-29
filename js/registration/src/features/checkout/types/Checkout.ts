@@ -29,12 +29,18 @@ declare module "#src/hooks/location" {
     }
   }
 }
+
 export interface CheckoutListResponse {
   id: string
   service: string
   state: CheckoutState
   date: string
+  event_id?: string
+  first_name?: string
+  last_name?: string
+  email?: string
   url?: string
+  cart_id?: string
   receipt_id?: string
   receipt_url?: string
 }

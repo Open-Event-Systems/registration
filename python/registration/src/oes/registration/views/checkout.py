@@ -78,6 +78,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
     tags=["Checkout"],
 )
 async def list_checkouts(
+    q: FromQuery[Optional[str]],
     checkout_service: CheckoutService,
     config: Config,
     registration_id: Optional[UUID] = None,
@@ -90,7 +91,7 @@ async def list_checkouts(
         before_date = None
 
     entities = await checkout_service.list_checkouts(
-        registration_id=registration_id, before=before_date
+        q.value, registration_id=registration_id, before=before_date
     )
 
     results = []
@@ -103,6 +104,14 @@ async def list_checkouts(
             service_name = e.service
             url = None
 
+        first_reg = next(iter(e.cart_data.get("registrations", [])), {})
+        new_data = first_reg.get("new_data", {})
+        event_id = new_data.get("event_id")
+        fname = new_data.get("first_name")
+        lname = new_data.get("last_name")
+        pname = new_data.get("preferred_name")
+        email = new_data.get("email")
+
         results.append(
             CheckoutListResponse(
                 id=e.external_id,
@@ -110,6 +119,11 @@ async def list_checkouts(
                 date=e.date_closed if e.date_closed is not None else e.date_created,
                 service=service_name,
                 url=url,
+                event_id=event_id,
+                cart_id=e.cart_id,
+                first_name=pname or fname,
+                last_name=lname,
+                email=email,
                 receipt_id=e.receipt_id,
                 receipt_url=_make_receipt_url(e.receipt_id, config)
                 if e.receipt_id

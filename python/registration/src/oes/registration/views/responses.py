@@ -134,7 +134,12 @@ class CheckoutListResponse:
     service: str
     state: CheckoutState
     date: datetime
+    event_id: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    email: Optional[str]
     url: Optional[str]
+    cart_id: Optional[str]
     receipt_id: Optional[str]
     receipt_url: Optional[str]
 
