@@ -330,6 +330,7 @@ def check_in_registration(
 def _build_search_params(q: str) -> Iterator[ColumnElement]:
     yield from _get_name_search_clause(q)
     yield from _get_email_search_clause(q)
+    yield from _get_nickname_search_clause(q)
     yield from _get_number_search_clause(q)
 
 
@@ -364,6 +365,13 @@ def _get_name_search_clause(q: str) -> Iterator[ColumnElement]:
 def _get_email_search_clause(q: str) -> Iterator[ColumnElement]:
     if " " not in q:
         yield func.lower(RegistrationEntity.email).startswith(q.lower())
+
+
+def _get_nickname_search_clause(q: str) -> Iterator[ColumnElement]:
+    if " " not in q:
+        yield func.lower(
+            RegistrationEntity.extra_data["nickname"].as_string()
+        ).startswith(q.lower())
 
 
 def _get_number_search_clause(q: str) -> Iterator[ColumnElement]:

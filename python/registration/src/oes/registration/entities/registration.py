@@ -55,6 +55,22 @@ class RegistrationEntity(Base):
             "ix_registration_email",
             text("lower(email)"),
         ),
+        Index(
+            "ix_registration_first_name",
+            text("lower(first_name)"),
+        ),
+        Index(
+            "ix_registration_last_name",
+            text("lower(last_name)"),
+        ),
+        Index(
+            "ix_registration_pref_name",
+            text("lower(preferred_name)"),
+        ),
+        Index(
+            "ix_registration_nickname",
+            text("lower(extra_data ->> 'nickname')"),
+        ),
     )
 
     id: Mapped[PKUUID]
