@@ -25,5 +25,6 @@ RUN chmod u=rw,g=r,o= /etc/nginx/nginx.conf \
     && mkdir /var/run/nginx \
     && chown nginx:nginx /var/run/nginx /var/cache/nginx
 COPY --from=node /build/registration/dist/ /usr/share/nginx/html/
+RUN chmod -R u=rwX,g=rX,o=rX /usr/share/nginx/html
 USER nginx
 EXPOSE 9000

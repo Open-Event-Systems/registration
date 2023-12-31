@@ -52,9 +52,7 @@ makeApp(() => {
 
   const router = createBrowserRouter([
     {
-      element: (
-        <AppRoute queryClient={client} fallback={<ShowLoadingOverlay />} />
-      ),
+      element: <AppRoute queryClient={client} />,
       children: [
         // Auth routes
         {
