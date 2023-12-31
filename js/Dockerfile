@@ -16,6 +16,8 @@ COPY badge/lib/ badge/lib/
 RUN npm run build
 
 COPY registration/ registration/
+COPY registration/config.example.ts config.ts
+COPY registration/theme.example.ts theme.ts
 RUN npm run -w registration build
 
 
