@@ -31,5 +31,6 @@ export enum Scope {
   selfService = "self-service",
   registration = "registration",
   registrationEdit = "registration:edit",
+  checkIn = "check-in",
   admin = "admin",
 }

@@ -71,7 +71,9 @@ export class AuthStore {
           const obj = JSON.parse(e.newValue)
           const loaded = AuthInfo.createFromObject(obj)
           if (loaded && !loaded.getIsExpired()) {
-            this._authInfo = loaded
+            runInAction(() => {
+              this._authInfo = loaded
+            })
           }
         } catch (_) {
           // ignore
@@ -168,12 +170,17 @@ export class AuthStore {
         const refreshed = await this._refresh(loaded)
         if (refreshed) {
           result = refreshed
+          runInAction(() => {
+            this._authInfo = refreshed
+          })
           this._authInfo = result
           saveAuthInfo(result)
         }
       } else {
         result = loaded
-        this._authInfo = result
+        runInAction(() => {
+          this._authInfo = loaded
+        })
         saveAuthInfo(result)
       }
     }

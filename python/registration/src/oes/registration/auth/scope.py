@@ -34,7 +34,7 @@ class Scope(str, Enum):
     registration_action = "registration:action"
     """May use pre-defined registration actions."""
 
-    check_in = "check_in"
+    check_in = "check-in"
     """May check in registrations."""
 
 
