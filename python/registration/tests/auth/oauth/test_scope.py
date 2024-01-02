@@ -30,4 +30,4 @@ def test_scopes_str():
 
 def test_scopes_enum():
     s = Scopes((Scope.event, Scope.cart))
-    assert str(s) == "cart event"
+    assert str(s) == "cart event:view"
