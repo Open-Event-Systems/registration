@@ -12,22 +12,16 @@ import {
 import { AppRoute } from "#src/routes/AppRoute"
 import { LayoutRoute } from "#src/routes/LayoutRoute"
 import { NotFoundErrorBoundary, NotFoundPage } from "#src/routes/NotFoundPage"
-import { NotFoundError, isNotFoundError } from "#src/utils/api"
+import { isNotFoundError } from "#src/utils/api"
 import { makeApp } from "#src/utils/react"
 import { MantineProvider } from "@mantine/core"
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import { FullScreenLayout } from "#src/components/layout/FullScreenLayout"
 import { useAuth } from "#src/features/auth/hooks"
 import { useApp } from "#src/hooks/app"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
-import { useEventAPI } from "#src/features/event/hooks"
-import { Scope } from "#src/features/auth/types/AccountInfo"
 
 makeApp(() => {
   const client = new QueryClient({

@@ -70,7 +70,11 @@ export class AuthStore {
         try {
           const obj = JSON.parse(e.newValue)
           const loaded = AuthInfo.createFromObject(obj)
-          if (loaded && !loaded.getIsExpired()) {
+          if (
+            loaded &&
+            !loaded.getIsExpired() &&
+            loaded.accessToken != this.authInfo?.accessToken
+          ) {
             runInAction(() => {
               this._authInfo = loaded
             })
@@ -173,7 +177,6 @@ export class AuthStore {
           runInAction(() => {
             this._authInfo = refreshed
           })
-          this._authInfo = result
           saveAuthInfo(result)
         }
       } else {
@@ -200,7 +203,11 @@ export class AuthStore {
 
     this.authInfoPromise = curPromise
       .then(async (curInfo) => {
-        if (curInfo && curInfo == refreshInfo) {
+        if (
+          curInfo &&
+          (!curInfo?.accessToken ||
+            curInfo.accessToken == refreshInfo?.accessToken)
+        ) {
           const refreshed = await this._refresh(curInfo)
           if (refreshed) {
             runInAction(() => {
