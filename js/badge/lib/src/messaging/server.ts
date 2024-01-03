@@ -34,6 +34,10 @@ class ServerImpl {
     }
 
     window.addEventListener("message", this.handler)
+    const parent = window.opener || window.parent
+    if (parent) {
+      parent.postMessage({ ready: window.name }, "*")
+    }
   }
 
   private async format(sender: MessageEventSource, request: FormatRequest) {

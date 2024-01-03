@@ -11,6 +11,7 @@ export interface Event {
   open: boolean
   visible: boolean
   registration_options: RegistrationOption[]
+  badge_url: string
 }
 
 export interface RegistrationOption {

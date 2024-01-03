@@ -40,6 +40,9 @@
   # The interview to use for check-in
   check_in_interview: http://localhost:8001/interviews/check-in
 
+  # The badge document URL.
+  badge_url: http://localhost
+
   # Basic pricing rules
   pricing_rules:
     - type_id: standard
