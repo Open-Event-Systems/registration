@@ -1,4 +1,4 @@
-import { makeAutoObservable, runInAction, when } from "mobx"
+import { action, makeAutoObservable, runInAction, when } from "mobx"
 import * as oauth from "oauth4webapi"
 import { Wretch } from "wretch"
 import { getRetryMiddleware } from "#src/features/auth/authMiddleware"
@@ -76,7 +76,13 @@ export class AuthStore {
             loaded.accessToken != this.authInfo?.accessToken
           ) {
             runInAction(() => {
-              this._authInfo = loaded
+              const curPromise = this.authInfoPromise ?? Promise.resolve(null)
+              this.authInfoPromise = curPromise.then(
+                action(() => {
+                  this._authInfo = loaded
+                  return loaded
+                }),
+              )
             })
           }
         } catch (_) {
@@ -184,7 +190,6 @@ export class AuthStore {
         runInAction(() => {
           this._authInfo = loaded
         })
-        saveAuthInfo(result)
       }
     }
 
@@ -201,31 +206,30 @@ export class AuthStore {
     const curPromise = this.authInfoPromise ?? Promise.resolve(null)
     const refreshInfo = this._authInfo
 
-    this.authInfoPromise = curPromise
-      .then(async (curInfo) => {
-        if (
-          curInfo &&
-          (!curInfo?.accessToken ||
-            curInfo.accessToken == refreshInfo?.accessToken)
-        ) {
-          const refreshed = await this._refresh(curInfo)
-          if (refreshed) {
-            runInAction(() => {
-              saveAuthInfo(refreshed)
-            })
-          }
-          return refreshed
+    this.authInfoPromise = curPromise.then(async (curInfo) => {
+      if (
+        curInfo &&
+        (!curInfo?.accessToken ||
+          curInfo.accessToken == refreshInfo?.accessToken)
+      ) {
+        const refreshed = await this._refresh(curInfo)
+        if (refreshed) {
+          runInAction(() => {
+            this._authInfo = refreshed
+            saveAuthInfo(refreshed)
+          })
         } else {
-          // don't refresh if something else updated the authinfo in the meantime
-          return curInfo
+          runInAction(() => {
+            this._authInfo = null // refresh failed, discard auth info
+            saveAuthInfo(null)
+          })
         }
-      })
-      .then((res) => {
-        runInAction(() => {
-          this._authInfo = res
-        })
-        return res
-      })
+        return refreshed
+      } else {
+        // don't refresh if something else updated the authinfo in the meantime
+        return curInfo
+      }
+    })
 
     return await this.authInfoPromise
   }
