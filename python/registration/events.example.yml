@@ -29,8 +29,19 @@
     - id: http://localhost:8001/interviews/upgrade
       when: "'vip' not in registration.option_ids"
 
+  # Interviews available for adding a registration via the admin interface
+  admin_add_interviews:
+    - id: http://localhost:8001/interviews/new-registration
+
+  # Interviews to change interviews via the admin interface
+  admin_change_interviews:
+    - id: http://localhost:8001/interviews/update-name
+
   # The interview to use for check-in
   check_in_interview: http://localhost:8001/interviews/check-in
+
+  # The badge document URL.
+  badge_url: http://localhost
 
   # Basic pricing rules
   pricing_rules:

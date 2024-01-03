@@ -113,6 +113,10 @@ const getFields = (r: IRegistration, editable: boolean, event?: Event) => {
       "Options",
       <OptionsField key="option_ids" name="option_ids" editable={editable} />,
     ],
+    [
+      "Nickname",
+      <TextField key="nickname" name="nickname" editable={editable} />,
+    ],
     (r.note || editable) && [
       "Note",
       <NoteField key="note" name="note" editable={editable} />,

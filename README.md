@@ -17,6 +17,7 @@ This repository includes the following software components:
 - [ ] Update GitHub Actions
 - [ ] Update Docker Compose example
 - [ ] Write documentation
+- [ ] Figure out what features and configurations are scoped to events vs. global
 
 ### Web UI
 
@@ -51,6 +52,9 @@ This repository includes the following software components:
 - [ ] Move common code into the `util` library.
 - [ ] Investigate how to handle DB schema/migrations if moving functionality
       into individual services.
+- [ ] Define a standard API for the context available to different template
+      expressions.
+- [ ] Standardize interactions with the interview service.
 
 ### Interview Service
 

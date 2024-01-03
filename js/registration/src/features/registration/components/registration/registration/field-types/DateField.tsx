@@ -52,7 +52,7 @@ export const DateField = createField<string>(
         value={displayValue}
         onChange={(v) => {
           if (v != null) {
-            setValue(dayjs(v).toISOString())
+            setValue(dayjs(v).toISOString().slice(0, 10))
           } else {
             setValue(undefined)
           }

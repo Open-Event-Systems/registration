@@ -5,13 +5,28 @@ import { useCheckoutAPI } from "#src/features/checkout/hooks"
 import { CheckoutState } from "#src/features/checkout/types/Checkout"
 import { useEventAPI } from "#src/features/event/hooks"
 import {
+  InterviewDialog,
+  useInterviewRecordStore,
+} from "#src/features/interview"
+import {
   Registration as IRegistration,
   RegistrationState,
 } from "#src/features/registration"
 import { Registration } from "#src/features/registration/components/registration/registration/Registration"
 import { useRegistrationAPI } from "#src/features/registration/hooks"
+import { useWretch } from "#src/hooks/api"
 import { useConfirm } from "#src/hooks/confirm"
-import { Anchor, Button, Group, Skeleton, Stack, Table } from "@mantine/core"
+import { useLocation, useNavigate } from "#src/hooks/location"
+import {
+  Anchor,
+  Button,
+  Group,
+  Select,
+  Skeleton,
+  Stack,
+  Table,
+} from "@mantine/core"
+import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 import { IconCheck, IconEdit, IconTrash } from "@tabler/icons-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import dayjs from "dayjs"
@@ -27,8 +42,12 @@ export const RegistrationPage = observer(() => {
   const checkoutAPI = useCheckoutAPI()
 
   const confirm = useConfirm()
+  const loc = useLocation()
+  const navigate = useNavigate()
+  const interviewStore = useInterviewRecordStore()
 
   const authStore = useAuth()
+  const wretch = useWretch()
   const editable = !!authStore.authInfo?.hasScope(Scope.registrationEdit)
   const viewCheckouts = !!authStore.authInfo?.hasScope(Scope.checkout)
 
@@ -40,6 +59,10 @@ export const RegistrationPage = observer(() => {
     ...checkoutAPI.list({ registrationId: registrationId }),
     enabled: viewCheckouts,
   })
+
+  const changeInterviews = useQuery(
+    registrationAPI.listChangeInterviews(registrationId),
+  )
 
   const update = useMutation({
     ...registrationAPI.update(),
@@ -161,6 +184,72 @@ export const RegistrationPage = observer(() => {
             </Table.Tbody>
           </Table>
         )}
+        {changeInterviews.isSuccess && changeInterviews.data.length > 0 && (
+          <Group>
+            <Select
+              placeholder="Choose Action"
+              data={changeInterviews.data.map((opt) => ({
+                label: opt.name,
+                value: opt.id,
+              }))}
+              value={null}
+              onChange={async (id) => {
+                if (!id) {
+                  return
+                }
+
+                const state = await client.ensureQueryData(
+                  registrationAPI.readChangeInterview(registrationId, id),
+                )
+                const record = await startInterview(
+                  interviewStore,
+                  defaultAPI,
+                  state,
+                  {
+                    registrationId: registrationId,
+                  },
+                )
+                navigate(loc, {
+                  state: {
+                    ...loc.state,
+                    showInterviewDialog: {
+                      recordId: record.id,
+                    },
+                  },
+                })
+              }}
+            />
+          </Group>
+        )}
+        <InterviewDialog.Manager
+          onComplete={async (r) => {
+            const response = r.stateResponse
+            if (
+              response.complete &&
+              response.target_url &&
+              r.metadata.registrationId
+            ) {
+              const res = await wretch
+                .url(response.target_url, true)
+                .json({ state: response.state })
+                .put()
+                .json()
+
+              client.invalidateQueries({
+                queryKey: registrationAPI.listChangeInterviews(
+                  r.metadata.registrationId,
+                ).queryKey,
+              })
+              client.setQueryData(
+                registrationAPI.read(registrationId).queryKey,
+                res,
+              )
+              navigate(loc, {
+                state: { ...loc.state, showInterviewDialog: undefined },
+              })
+            }
+          }}
+        />
       </Subtitle>
     </Title>
   )

@@ -83,7 +83,10 @@ const config: StorybookConfig = {
           ],
 
           // config.json
-          "config.json$": path.resolve("./config.json"),
+          "#src/config/config$": [
+            path.resolve("./config.ts"),
+            path.resolve("./src/config/config.ts"),
+          ],
         },
       },
     }

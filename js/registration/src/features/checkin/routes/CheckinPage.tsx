@@ -80,8 +80,11 @@ export const CheckinPage = () => {
         />
       </CheckinLayout.Header>
       <CheckinLayout.Left className="CheckinPage-left">
-        {registration.isSuccess ? (
-          <Badge badgeUrl="/" badgeData={registration.data} />
+        {event.data && registration.isSuccess ? (
+          <Badge
+            badgeUrl={event.data.badge_url}
+            badgeData={registration.data}
+          />
         ) : undefined}
       </CheckinLayout.Left>
       <CheckinLayout.Center className="CheckinPage-center">

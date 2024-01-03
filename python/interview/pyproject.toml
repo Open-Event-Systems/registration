@@ -24,7 +24,7 @@ publicsuffixlist =  "^0.10.0.20230617"
 email-validator =  "^2.0.0.post2"
 httpx = { version = "^0.23.3" }
 typed-settings = "^23.0.0"
-blacksheep = "^1.2.18"
+blacksheep = "^1.2.18,!=1.2.19"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 
 oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", rev = "39ac369f1817d847062c738db59011ea1ee9ab77", subdirectory = "python/util" }

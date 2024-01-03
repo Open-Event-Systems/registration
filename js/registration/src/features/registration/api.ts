@@ -1,3 +1,4 @@
+import { InterviewOption } from "#src/features/cart/types"
 import { Registration, RegistrationAPI } from "#src/features/registration"
 import { StateResponse } from "@open-event-systems/interview-lib"
 import { Wretch } from "wretch"
@@ -34,6 +35,32 @@ export const createRegistrationAPI = (wretch: Wretch): RegistrationAPI => {
           const res = await pageReq.get().res()
           const data = res.json()
           return data
+        },
+      }
+    },
+    listAddInterviews(eventId: string) {
+      return {
+        queryKey: ["registrations", "interviews", eventId],
+        async queryFn() {
+          return await wretch
+            .url("/interviews")
+            .addon(queryString)
+            .query({ event_id: eventId })
+            .get()
+            .json<InterviewOption[]>()
+        },
+      }
+    },
+    readAddInterview(eventId, interviewId) {
+      return {
+        queryKey: ["registrations", "new-interview", { eventId, interviewId }],
+        async queryFn() {
+          return await wretch
+            .url("/new-interview")
+            .addon(queryString)
+            .query({ event_id: eventId, interview_id: interviewId })
+            .get()
+            .json<StateResponse>()
         },
       }
     },
@@ -74,6 +101,30 @@ export const createRegistrationAPI = (wretch: Wretch): RegistrationAPI => {
         mutationKey: ["registrations", id, "cancel"],
         async mutationFn() {
           return await wretch.url(`/${id}/cancel`).put().json<Registration>()
+        },
+      }
+    },
+    listChangeInterviews(id) {
+      return {
+        queryKey: ["registrations", id, "interviews"],
+        async queryFn() {
+          return await wretch
+            .url(`/${id}/interviews`)
+            .get()
+            .json<InterviewOption[]>()
+        },
+      }
+    },
+    readChangeInterview(id, interviewId) {
+      return {
+        queryKey: ["registrations", id, "interviews", interviewId],
+        async queryFn() {
+          const req = wretch
+            .url(`/${id}/new-interview`)
+            .addon(queryString)
+            .query({ interview_id: interviewId })
+
+          return await req.get().json<StateResponse>()
         },
       }
     },

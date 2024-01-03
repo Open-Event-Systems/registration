@@ -145,8 +145,17 @@ class Event:
     change_interviews: Sequence[EventInterviewOption] = ()
     """The interviews available for changing an existing registration."""
 
+    admin_add_interviews: Sequence[EventInterviewOption] = ()
+    """Interviews available to add registrations via the admin interface."""
+
+    admin_change_interviews: Sequence[EventInterviewOption] = ()
+    """Interviews available to edit registrations via the admin interface."""
+
     check_in_interview: str
     """The interview to use for check-in."""
+
+    badge_url: str = ""
+    """The badge document URL."""
 
     pricing_rules: Sequence[LineItemRule] = ()
     """Line item pricing rules."""

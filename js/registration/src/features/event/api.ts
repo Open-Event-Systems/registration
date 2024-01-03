@@ -21,9 +21,7 @@ export const createEventAPI = (
     return {
       queryKey: ["events", id],
       queryFn: async () => {
-        const events = await client.ensureQueryData<Map<string, Event>>(
-          this.list(),
-        )
+        const events = await client.fetchQuery<Map<string, Event>>(this.list())
         const result = events.get(id)
         if (!result) {
           throw new NotFoundError()
