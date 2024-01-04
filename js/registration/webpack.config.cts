@@ -60,14 +60,14 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         },
         {
           oneOf: [
-            // consistent name for ./styles.scss
+            // specific handling of ./theme.scss
             {
-              test: path.resolve("./styles.scss"),
-              use: ["sass-loader"],
-              type: "asset/resource",
-              generator: {
-                filename: "styles.css"
-              }
+              test: path.resolve("./theme.scss"),
+              use: ["style-loader", "css-loader", "sass-loader"],
+              // type: "asset/resource",
+              // generator: {
+              //   filename: "theme.css"
+              // }
             },
             {
               test: /\.s[ca]ss$/,
@@ -105,6 +105,12 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         "#src/config/theme$": [
           path.resolve("./theme.ts"),
           path.resolve("./src/config/theme.ts"),
+        ],
+
+        // overridable theme styles
+        "#src/config/theme.scss$": [
+          path.resolve("./theme.scss"),
+          path.resolve("./src/config/theme.scss"),
         ],
 
         // logo
@@ -184,6 +190,11 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
             enforce: true,
             name: "theme",
             filename: "theme.js"
+          },
+          themeStyles: {
+            test: path.resolve("./theme.scss"),
+            enforce: true,
+            name: "theme",
           },
           config: {
             test: path.resolve("./config.ts"),

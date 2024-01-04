@@ -18,6 +18,7 @@ RUN npm run build
 COPY registration/ registration/
 COPY registration/config.example.ts registration/config.ts
 COPY registration/theme.example.ts registration/theme.ts
+COPY registration/theme.example.scss registration/theme.scss
 RUN npm run -w registration build
 
 
