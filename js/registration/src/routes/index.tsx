@@ -142,11 +142,11 @@ makeApp(() => {
                         {
                           index: true,
                           async lazy() {
-                            const { EventRoute } = await import(
-                              "#src/features/selfservice/routes/EventRoute"
+                            const { EventPage } = await import(
+                              "#src/features/selfservice/routes/EventPage"
                             )
                             return {
-                              element: <EventRoute />,
+                              element: <EventPage />,
                             }
                           },
                         },
