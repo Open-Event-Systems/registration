@@ -68,5 +68,6 @@ def import_entities():
     import oes.registration.auth.entities  # noqa
     import oes.registration.cart.entities  # noqa
     import oes.registration.checkout.entities  # noqa
+    import oes.registration.queue.entities  # noqa
     from oes.registration.entities import event_stats  # noqa
     from oes.registration.entities import registration  # noqa

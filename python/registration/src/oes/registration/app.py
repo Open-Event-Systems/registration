@@ -420,5 +420,6 @@ import oes.registration.views.auth.webauthn  # noqa
 import oes.registration.views.cart  # noqa
 import oes.registration.views.checkout  # noqa
 import oes.registration.views.event  # noqa
+import oes.registration.views.queue  # noqa
 import oes.registration.views.registration  # noqa
 import oes.registration.views.selfservice  # noqa

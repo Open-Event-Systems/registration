@@ -7,7 +7,7 @@ from typing import Optional, cast
 from attrs import evolve
 from oes.registration.checkout.service import CheckoutService
 from oes.registration.entities.registration import RegistrationEntity
-from oes.registration.models.event import QueueConfig
+from oes.registration.models.config import QueueGroupConfig
 from oes.registration.models.registration import Registration
 from oes.registration.queue.entities import QueueItemEntity, StationEntity
 from oes.registration.queue.models import QueueItemData
@@ -19,16 +19,18 @@ from oes.template import evaluate
 
 
 async def add_to_queue(
+    group_id: str,
     scan_data: Optional[str] = None,
     /,
     *,
-    config: QueueConfig,
+    config: QueueGroupConfig,
     queue_service: QueueService,
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
 ) -> QueueItemEntity:
     """Add an item to the queue."""
     queue_item = await make_queue_item(
+        group_id,
         scan_data,
         config=config,
         checkout_service=checkout_service,
@@ -38,16 +40,18 @@ async def add_to_queue(
 
 
 async def make_queue_item(
+    group_id: str,
     scan_data: Optional[str] = None,
     /,
     *,
-    config: QueueConfig,
+    config: QueueGroupConfig,
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
 ) -> QueueItemEntity:
     """Make a :class:`QueueItemEntity` from scan data.
 
     Args:
+        group_id: The group ID.
         scan_data: The scanned data.
         config: The checkout config.
         checkout_service: The checkout service.
@@ -66,6 +70,7 @@ async def make_queue_item(
 
     entity = QueueItemEntity(
         id=uuid.uuid4(),
+        group_id=group_id,
     )
     entity.set_data(item_data)
     return entity
@@ -102,7 +107,7 @@ def get_queue_item_data(
     /,
     *,
     scan_data: Optional[str] = None,
-    config: QueueConfig,
+    config: QueueGroupConfig,
 ) -> QueueItemData:
     """Get a :class:`QueueItemData` for a registration."""
     priority = get_priority(registration, config=config)
@@ -117,7 +122,7 @@ def get_queue_item_data(
     )
 
 
-def get_priority(registration: Registration, /, *, config: QueueConfig) -> int:
+def get_priority(registration: Registration, /, *, config: QueueGroupConfig) -> int:
     """Get the priority for a registration."""
     context = {"registration": get_converter().unstructure(registration)}
     return cast(int, evaluate(config.priority, context))
@@ -127,7 +132,7 @@ def get_features(
     registration: Registration,
     /,
     *,
-    config: QueueConfig,
+    config: QueueGroupConfig,
 ) -> dict[str, float]:
     """Get the features and scores for a registration."""
     context = {"registration": get_converter().unstructure(registration)}
@@ -141,7 +146,7 @@ def get_tags(
     registration: Registration,
     /,
     *,
-    config: QueueConfig,
+    config: QueueGroupConfig,
 ) -> frozenset[str]:
     """Get the tags for a registration."""
     context = {"registration": get_converter().unstructure(registration)}
@@ -151,7 +156,7 @@ def get_tags(
 
 
 async def compute_station_stats(
-    station: StationEntity, /, *, config: QueueConfig, queue_service: QueueService
+    station: StationEntity, /, *, config: QueueGroupConfig, queue_service: QueueService
 ):
     """Update a :class:`StationEntity` with stats from recent check-ins."""
     stats = await queue_service.get_queue_stats(station.id)
@@ -163,7 +168,7 @@ async def compute_station_stats(
 
 
 def _parse_receipt_url(url: str) -> tuple[str, int]:
-    match = re.match(r"/([a-z0-9]+)(?:#r([0-9]+))?$", url, re.I)
+    match = re.search(r"/([a-z0-9]+)(?:#r([0-9]+))?$", url, re.I)
     if not match:
         return "", 0
     elif match.group(2):

@@ -8,7 +8,22 @@ from oes.registration.entities.base import PKUUID, Base, JSONData
 from oes.registration.queue.models import QueueItemData, StationSettings
 from oes.registration.serialization import get_converter
 from oes.util import get_now
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
+
+
+class QueueGroupEntity(Base):
+    """Queue group entity."""
+
+    __tablename__ = "queue_group"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    """Group ID."""
+
+    stations: Mapped[list[StationEntity]] = relationship(
+        "StationEntity",
+        back_populates="group",
+        primaryjoin=lambda: foreign(StationEntity.group_id) == QueueGroupEntity.id,
+    )
 
 
 class StationEntity(Base):
@@ -19,14 +34,28 @@ class StationEntity(Base):
     id: Mapped[str] = mapped_column(primary_key=True)
     """The station ID."""
 
-    group: Mapped[str]
-    """The group."""
+    group_id: Mapped[str]
+    """The group ID."""
 
     settings: Mapped[JSONData]
     """Settings data."""
 
     queue_items: Mapped[list[QueueItemEntity]] = relationship(
-        "QueueItemEntity", back_populates="station"
+        "QueueItemEntity",
+        back_populates="station",
+        primaryjoin=lambda: foreign(QueueItemEntity.station_id) == StationEntity.id,
+    )
+
+    group: Mapped[Optional[QueueGroupEntity]] = relationship(
+        "QueueGroupEntity",
+        back_populates="stations",
+        primaryjoin=lambda: foreign(StationEntity.group_id) == QueueGroupEntity.id,
+    )
+
+    print_requests: Mapped[list[PrintRequestEntity]] = relationship(
+        "PrintRequestEntity",
+        back_populates="station",
+        primaryjoin=lambda: foreign(PrintRequestEntity.station_id) == StationEntity.id,
     )
 
     def get_settings(self) -> StationSettings:
@@ -44,6 +73,9 @@ class QueueItemEntity(Base):
     __tablename__ = "queue_item"
 
     id: Mapped[PKUUID]
+
+    group_id: Mapped[str]
+    """The group ID."""
 
     station_id: Mapped[Optional[str]] = mapped_column(default=None)
     """The assigned station ID."""
@@ -66,7 +98,7 @@ class QueueItemEntity(Base):
     station: Mapped[Optional[StationEntity]] = relationship(
         "StationEntity",
         back_populates="queue_items",
-        primaryjoin=lambda: QueueItemEntity.station_id == StationEntity.id,
+        primaryjoin=lambda: foreign(QueueItemEntity.station_id) == StationEntity.id,
     )
 
     def get_data(self) -> QueueItemData:
@@ -83,3 +115,32 @@ class QueueItemEntity(Base):
         if not self.date_started or not self.date_completed:
             raise ValueError("Check-in is not complete")
         return (self.date_completed - self.date_started).total_seconds()
+
+
+class PrintRequestEntity(Base):
+    """Print request entity."""
+
+    __tablename__ = "queue_station_print_request"
+
+    id: Mapped[PKUUID]
+    """The request ID."""
+
+    station_id: Mapped[str]
+    """The station ID."""
+
+    date_created: Mapped[datetime] = mapped_column(
+        default=lambda: get_now(), index=True
+    )
+    """The date the request was created."""
+
+    date_completed: Mapped[Optional[datetime]]
+    """The date the request was accepted."""
+
+    data: Mapped[JSONData]
+    """Registration data."""
+
+    station: Mapped[StationEntity] = relationship(
+        "StationEntity",
+        back_populates="print_requests",
+        primaryjoin=lambda: foreign(PrintRequestEntity.station_id) == StationEntity.id,
+    )
