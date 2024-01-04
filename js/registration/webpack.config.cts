@@ -5,6 +5,7 @@ import MiniCssExtractPlugin from "mini-css-extract-plugin"
 import "webpack-dev-server"
 import CssMinimizerPlugin from "css-minimizer-webpack-plugin"
 
+
 const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Configuration => {
   const prod = argv.mode !== "development"
 
@@ -58,8 +59,21 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
           use: [MiniCssExtractPlugin.loader, "css-loader"],
         },
         {
-          test: /\.s[ca]ss$/,
-          use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+          oneOf: [
+            // consistent name for ./styles.scss
+            {
+              test: path.resolve("./styles.scss"),
+              use: ["sass-loader"],
+              type: "asset/resource",
+              generator: {
+                filename: "styles.css"
+              }
+            },
+            {
+              test: /\.s[ca]ss$/,
+              use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+            },
+          ]
         },
 
         // resources
@@ -112,7 +126,9 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         "process.env.DELAY": JSON.stringify(process.env.DELAY),
       }),
       new MiniCssExtractPlugin({
-        ...(prod ? { filename: "assets/css/[name].[contenthash].css" } : {})
+        ...(prod ? {
+          filename: "assets/css/[name].[contenthash].css",
+        } : {})
       }),
       // html page for each entry point
       new HtmlWebpackPlugin({
@@ -164,17 +180,17 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         cacheGroups: {
           // keep theme and config as a separate chunk
           theme: {
-            test: /\/theme\.ts$/,
+            test: path.resolve("./theme.ts"),
             enforce: true,
             name: "theme",
             filename: "theme.js"
           },
           config: {
-            test: /\/config\.ts$/,
+            test: path.resolve("./config.ts"),
             enforce: true,
             name: "config",
             filename: "config.js"
-          }
+          },
         },
       },
     },
