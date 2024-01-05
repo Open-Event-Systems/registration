@@ -276,11 +276,19 @@ async def _create_registration_direct(
     if not event:
         raise HTTPException(422, "Event ID not found")
 
-    data = _parse_registration_data(body)
+    data = _parse_registration_data(
+        {
+            "state": RegistrationState.pending.value,
+            **body,
+            "id": uuid.uuid4(),
+            "version": 1,
+        }
+    )
 
     event_stats = await event_service.get_event_stats(event.id, lock=True)
 
     entity = RegistrationEntity(
+        id=data.id,
         state=data.state,
         event_id=event.id,
         number=data.number,
