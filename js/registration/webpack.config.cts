@@ -1,6 +1,6 @@
 import path from "path"
 import HtmlWebpackPlugin from "html-webpack-plugin"
-import { Configuration, DefinePlugin } from "webpack"
+import { Chunk, Configuration, DefinePlugin, Module, NormalModule } from "webpack"
 import MiniCssExtractPlugin from "mini-css-extract-plugin"
 import "webpack-dev-server"
 import CssMinimizerPlugin from "css-minimizer-webpack-plugin"
@@ -17,7 +17,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
     },
     output: {
       publicPath: "/", // TODO: make configurable
-      filename: prod ? "assets/js/[name].[contenthash].bundle.js" : undefined,
+      filename: prod ? "assets/js/[name].[contenthash].js" : undefined,
       path: path.resolve("./dist"),
       clean: prod,
     },
@@ -60,14 +60,16 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         },
         {
           oneOf: [
-            // specific handling of ./theme.scss
             {
-              test: path.resolve("./theme.scss"),
-              use: ["style-loader", "css-loader", "sass-loader"],
-              // type: "asset/resource",
-              // generator: {
-              //   filename: "theme.css"
-              // }
+              test: [
+                path.resolve("./theme.scss"),
+                path.resolve("./src/config/theme.scss"),
+              ],
+              use: "sass-loader",
+              type: "asset/resource",
+              generator: {
+                filename: "theme.css"
+              }
             },
             {
               test: /\.s[ca]ss$/,
@@ -80,7 +82,10 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
 
         // consistent name for logo
         {
-          test: /\/(logo|example-logo)\.svg$/,
+          test: [
+            path.resolve("./logo.svg"),
+            path.resolve("./resources/example-logo.svg"),
+          ],
           generator: {
             filename: "logo.svg",
           }
@@ -142,12 +147,14 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
         template: "./src/index.html",
         chunks: ["main"],
         filename: "index.html",
+        inject: false
       }),
       new HtmlWebpackPlugin({
         title: "Receipt",
         template: "./src/index.html",
         chunks: ["receipt"],
         filename: "receipt/index.html",
+        inject: false
       }),
     ],
     // source map config
@@ -184,25 +191,26 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       splitChunks: {
         chunks: prod ? "all" : undefined,
         cacheGroups: {
-          // keep theme and config as a separate chunk
-          theme: {
-            test: path.resolve("./theme.ts"),
-            enforce: true,
-            name: "theme",
-            filename: "theme.js"
-          },
-          themeStyles: {
-            test: path.resolve("./theme.scss"),
-            enforce: true,
-            name: "theme",
-          },
+          // specific names for config/theme
           config: {
-            test: path.resolve("./config.ts"),
+            test: (module: Module) => {
+              return module instanceof NormalModule && module.rawRequest == "#src/config/config"
+            },
+            usedExports: false,
             enforce: true,
             name: "config",
             filename: "config.js"
           },
-        },
+          theme: {
+            test: (module: Module) => {
+              return module instanceof NormalModule && module.rawRequest == "#src/config/theme"
+            },
+            usedExports: false,
+            enforce: true,
+            name: "theme",
+            filename: "theme.js"
+          },
+        }
       },
     },
   }

@@ -3,6 +3,7 @@ import "@open-event-systems/interview-components/styles.css"
 import "#src/components/styles.css"
 import "#src/features/auth/styles.css"
 import theme from "#src/config/theme"
+
 import "#src/config/theme.scss"
 
 import {
