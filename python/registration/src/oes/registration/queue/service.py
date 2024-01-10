@@ -26,6 +26,12 @@ class QueueService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def get_group(
+        self, id: str, /, *, lock: bool = False
+    ) -> Optional[QueueGroupEntity]:
+        """Get a :class:`QueueGroupEntity` by ID."""
+        return await self.db.get(QueueGroupEntity, id, with_for_update=lock)
+
     async def ensure_group_exists(self, id: str, /):
         """Ensure the row for a group exists."""
         res = await self.db.get(QueueGroupEntity, id)
@@ -103,7 +109,12 @@ class QueueService:
         return await self.db.get(QueueItemEntity, id, with_for_update=lock)
 
     async def get_queue_items(
-        self, group_id: str, /, *, station_id: Optional[str] = None
+        self,
+        group_id: str,
+        /,
+        *,
+        station_id: Optional[str] = None,
+        lock: bool = False,
     ) -> Sequence[QueueItemEntity]:
         """Get current queue items."""
         q = select(QueueItemEntity).where(
@@ -113,6 +124,8 @@ class QueueService:
         if station_id:
             q = q.where(QueueItemEntity.station_id == station_id)
         q = q.order_by(QueueItemEntity.date_started)
+        if lock:
+            q = q.with_for_update()
         res = await self.db.execute(q)
         return res.scalars().all()
 

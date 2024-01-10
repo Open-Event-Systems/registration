@@ -82,6 +82,7 @@ def solve_queue(
     stations: Sequence[StationInfo],
     items: Sequence[QueueItemInfo],
 ) -> dict[UUID, str]:
+    """Solve queue assignments."""
     stations = [s for s in stations if s.slots > 0]
     model = _build_queue_model(features, stations, items)
     model.maximize_assignments.deactivate()
@@ -103,7 +104,9 @@ def solve_queue(
 
     solver.solve(model)
 
-    num_assignments = sum(int(pyo.value(var)) for var in model.assignments.values())
+    num_assignments = sum(
+        int(pyo.value(var)) for var in model.assignment_values.values()
+    )
 
     model.maximize_assignments.deactivate()
     model.minimize_service_time_increase.activate()
@@ -134,6 +137,9 @@ def _build_queue_model(
     model.valid_assignments = pyo.Set(dimen=3, initialize=_init_valid_assignments)
 
     model.assignments = pyo.Var(model.valid_assignments, domain=pyo.Boolean)
+    model.assignment_values = pyo.Expression(
+        model.valid_assignments, rule=_init_assignment_values
+    )
 
     model.station_not_empty = pyo.Var(model.stations, domain=pyo.Boolean)
     model.station_not_empty_constraint = pyo.Constraint(
@@ -164,13 +170,13 @@ def _build_queue_model(
     )
 
     model.maximize_assignments = pyo.Objective(
-        expr=pyo.summation(model.assignments, index=model.valid_assignments),
+        expr=pyo.summation(model.assignment_values, index=model.valid_assignments),
         sense=pyo.maximize,
     )
 
     model.num_assignments = pyo.Param(domain=pyo.Integers, mutable=True, default=0)
     model.num_assignments_constraint = pyo.Constraint(
-        expr=pyo.summation(model.assignments, index=model.valid_assignments)
+        expr=pyo.summation(model.assignment_values, index=model.valid_assignments)
         == model.num_assignments,
     )
 
@@ -195,11 +201,17 @@ def _init_valid_assignments(model):
                 yield from ((station, slot, item) for slot in range(station.slots))
 
 
+def _init_assignment_values(model, station, slot, item):
+    return model.assignments[station, slot, item] * item.priority
+
+
 def _init_item_constraint(model, item):
     vars = []
     for station, slot in model.station_slots:
         if (station, slot, item) in model.valid_assignments:
             vars.append(model.assignments[station, slot, item])
+    if not vars:
+        return pyo.Constraint.Skip
     return pyo.quicksum(vars) <= 1
 
 

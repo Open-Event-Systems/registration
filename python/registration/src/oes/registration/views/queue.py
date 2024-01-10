@@ -12,7 +12,7 @@ from oes.registration.checkout.service import CheckoutService
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.models.config import Config
-from oes.registration.queue.functions import add_to_queue
+from oes.registration.queue.functions import add_to_queue, solve
 from oes.registration.queue.models import StationSettings
 from oes.registration.queue.service import QueueService
 from oes.registration.serialization import get_converter
@@ -65,6 +65,7 @@ class QueueItemResponse:
     last_name: Optional[str] = None
     date_started: Optional[datetime] = None
     duration: Optional[float] = None
+    station_id: Optional[str] = None
 
 
 @frozen
@@ -148,7 +149,7 @@ async def update_station_config(
 
 
 # TODO: auth
-@app.router.get("/queue/{group_id}")
+@app.router.get("/queues/{group_id}")
 @docs_helper(
     response_type=list[QueueItemResponse],
     response_summary="The queue items.",
@@ -178,7 +179,7 @@ async def get_queue_items(
 
 
 # TODO: auth
-@app.router.post("/queue/{group_id}")
+@app.router.post("/queues/{group_id}/add")
 @docs_helper(
     response_type=QueueItemResponse,
     response_summary="The added queue item",
@@ -211,10 +212,11 @@ async def add_queue_item(
         data.registration.last_name if data.registration else None,
         item.date_started,
         data.duration,
+        item.station_id,
     )
 
 
-@app.router.put("/queue/{item_id}/start")
+@app.router.put("/queue-items/{item_id}/start")
 @docs(tags=["Queue"])
 @transaction
 async def start_queue_item(
@@ -229,7 +231,7 @@ async def start_queue_item(
     return Response(status=204)
 
 
-@app.router.put("/queue/{item_id}/complete")
+@app.router.put("/queue-items/{item_id}/complete")
 @docs(tags=["Queue"])
 @transaction
 async def complete_queue_item(
@@ -245,7 +247,7 @@ async def complete_queue_item(
     return Response(status=204)
 
 
-@app.router.put("/queue/{item_id}/cancel")
+@app.router.put("/queue-items/{item_id}/cancel")
 @docs(tags=["Queue"])
 @transaction
 async def cancel_queue_item(
@@ -259,6 +261,37 @@ async def cancel_queue_item(
     item.date_completed = get_now()
     item.success = False
     return Response(status=204)
+
+
+@app.router.post("/queues/{group_id}/solve")
+@docs_helper(
+    response_type=list[QueueItemResponse],
+    response_summary="The queue items.",
+    tags=["Queue"],
+)
+@transaction
+async def solve_queue(
+    group_id: str,
+    queue_service: QueueService,
+    config: Config,
+) -> list[QueueItemResponse]:
+    """Solve queue assignments."""
+    results = await solve(config.queue, group_id, queue_service)
+    items = []
+    for it in results.values():
+        data = it.get_data()
+        items.append(
+            QueueItemResponse(
+                id=it.id,
+                date_created=it.date_created,
+                first_name=data.registration.first_name if data.registration else None,
+                last_name=data.registration.last_name if data.registration else None,
+                date_started=it.date_started,
+                duration=data.duration,
+                station_id=it.station_id,
+            )
+        )
+    return items
 
 
 # TODO: auth

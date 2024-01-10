@@ -27,9 +27,9 @@ def make_item():
     end = now + timedelta(seconds=dur)
 
     return QueueItemEntity(
-        complete=True,
         success=True,
         date_created=now,
+        date_started=now,
         date_completed=end,
         data={"priority": 1, "tags": frozenset(), "features": features},
     )
@@ -83,6 +83,21 @@ def test_model_chooses_fastest_station():
     assert res == {
         e1.id: "1",
         e2.id: "2",
+    }
+
+
+def test_model_maximizes_priority():
+    e1 = QueueItemInfo(id=uuid.uuid4(), priority=1, tags={"a"}, features={"a": 0})
+    e2 = QueueItemInfo(id=uuid.uuid4(), priority=2, tags={"a"}, features={"a": 1})
+
+    s1 = StationInfo(
+        id="1", slots=1, intercept=5, coefs={"a": 10.0}, wait_time=0, tags={"a"}
+    )
+
+    res = solve_queue(("a",), (s1,), (e1, e2))
+
+    assert res == {
+        e2.id: "1",
     }
 
 

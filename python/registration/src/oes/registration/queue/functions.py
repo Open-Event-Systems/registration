@@ -2,17 +2,24 @@
 import asyncio
 import re
 import uuid
+from collections.abc import Iterable, Mapping
 from typing import Optional, cast
+from uuid import UUID
 
 from attrs import evolve
 from oes.registration.checkout.service import CheckoutService
 from oes.registration.entities.registration import RegistrationEntity
-from oes.registration.models.config import QueueGroupConfig
+from oes.registration.models.config import QueueConfig, QueueGroupConfig
 from oes.registration.models.registration import Registration
 from oes.registration.queue.entities import QueueItemEntity, StationEntity
 from oes.registration.queue.models import QueueItemData
 from oes.registration.queue.service import QueueService
-from oes.registration.queue.solver import solve_features
+from oes.registration.queue.solver import (
+    QueueItemInfo,
+    StationInfo,
+    solve_features,
+    solve_queue,
+)
 from oes.registration.serialization import get_converter
 from oes.registration.services.registration import RegistrationService
 from oes.template import evaluate
@@ -186,3 +193,102 @@ async def _get_reg_id_by_receipt(receipt_id: str, index: int, service: CheckoutS
         return cart_data.registrations[index].id
     except IndexError:
         return None
+
+
+async def solve(
+    config: QueueConfig,
+    group_id: str,
+    queue_service: QueueService,
+) -> dict[UUID, QueueItemEntity]:
+    """Solve queue assignments."""
+    await queue_service.get_group(group_id, lock=True)
+    group_config = config.groups[group_id]
+    features = list(group_config.features.keys())
+    stations = await _get_stations(group_id, config, queue_service)
+
+    queue_items = await _get_queue_items(group_id, queue_service)
+    item_info = _get_queue_item_info(queue_items.values())
+    station_info = {
+        s.id: await _get_station_info(queue_items, s) for s in stations.values()
+    }
+
+    to_solve = {
+        it.id: it for it in item_info.values() if queue_items[it.id].station_id is None
+    }
+
+    res = await asyncio.to_thread(
+        solve_queue, features, list(station_info.values()), list(to_solve.values())
+    )
+    for id, assignment in res.items():
+        # Set station_id it was assigned to
+        item = queue_items[id]
+        item.station_id = assignment
+
+        # set predicted service duration
+        station = station_info[assignment]
+        info = item_info[id]
+        duration = info.get_service_time(station)
+        item_data = item.get_data()
+        updated_data = evolve(item_data, duration=duration)
+        item.set_data(updated_data)
+
+    # increase priority of all passed-over items
+    for item in queue_items.values():
+        if item.id not in res:
+            item_data = item.get_data()
+            updated_data = evolve(item_data, priority=item_data.priority + 1)
+            item.set_data(updated_data)
+
+    return queue_items
+
+
+async def _get_stations(
+    group_id: str, config: QueueConfig, queue_service: QueueService
+) -> dict[str, StationEntity]:
+    entities = {}
+    for station_id, station_config in config.stations.items():
+        if station_config.group == group_id:
+            station_entity = await queue_service.get_station(station_id)
+            entities[station_entity.id] = station_entity
+    return entities
+
+
+async def _get_station_info(
+    queue_items: Mapping[UUID, QueueItemEntity], station_entity: StationEntity
+) -> StationInfo:
+    settings = station_entity.get_settings()
+    queue_items = [
+        it for it in queue_items.values() if it.station_id == station_entity.id
+    ]
+    n_slots = max(settings.max_queue_length - len(queue_items), 0)
+    wait_time = sum(it.get_data().duration or 0 for it in queue_items)
+    return StationInfo(
+        id=station_entity.id,
+        slots=n_slots,
+        intercept=settings.feature_intercept,
+        coefs=settings.feature_coefficients,
+        wait_time=wait_time,
+        tags=settings.tags,
+    )
+
+
+async def _get_queue_items(
+    group_id: str, queue_service: QueueService
+) -> dict[UUID, QueueItemEntity]:
+    items = await queue_service.get_queue_items(group_id, lock=True)
+    return {it.id: it for it in items}
+
+
+def _get_queue_item_info(
+    queue_items: Iterable[QueueItemEntity],
+) -> dict[UUID, QueueItemInfo]:
+    results = {}
+    for item in queue_items:
+        item_data = item.get_data()
+        results[item.id] = QueueItemInfo(
+            id=item.id,
+            priority=item_data.priority,
+            tags=item_data.tags,
+            features=item_data.features,
+        )
+    return results
