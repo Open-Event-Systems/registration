@@ -39,9 +39,11 @@ class QueueService:
             self.db.add(QueueGroupEntity(id=id))
             await self.db.flush()
 
-    async def get_station(self, id: str, /) -> Optional[StationEntity]:
+    async def get_station(
+        self, id: str, /, *, lock: bool = False
+    ) -> Optional[StationEntity]:
         """Get a station by ID."""
-        return await self.db.get(StationEntity, id)
+        return await self.db.get(StationEntity, id, with_for_update=lock)
 
     async def create_station(
         self,
@@ -147,7 +149,6 @@ class QueueService:
 
         q = q.options(
             Load(QueueItemEntity).selectinload(QueueItemEntity.station),
-            Load(QueueItemEntity).contains_eager(StationEntity.queue_items),
         )
         q = q.execution_options(populate_existing=True)
 

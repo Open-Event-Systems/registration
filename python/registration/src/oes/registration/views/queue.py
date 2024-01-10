@@ -1,4 +1,5 @@
 """Queue views."""
+import asyncio
 from collections.abc import Mapping, Set
 from datetime import datetime
 from typing import Any, Optional
@@ -15,11 +16,13 @@ from oes.registration.models.config import Config
 from oes.registration.queue.functions import add_to_queue, solve
 from oes.registration.queue.models import StationSettings
 from oes.registration.queue.service import QueueService
+from oes.registration.queue.solver import solve_features
 from oes.registration.serialization import get_converter
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import check_not_found
 from oes.util import get_now
 from oes.util.blacksheep import Conflict, FromAttrs
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @frozen
@@ -235,8 +238,7 @@ async def start_queue_item(
 @docs(tags=["Queue"])
 @transaction
 async def complete_queue_item(
-    item_id: UUID,
-    queue_service: QueueService,
+    item_id: UUID, queue_service: QueueService, config: Config, db: AsyncSession
 ) -> Response:
     """Complete a queue item."""
     item = check_not_found(await queue_service.get_queue_item(item_id, lock=True))
@@ -244,6 +246,29 @@ async def complete_queue_item(
         raise Conflict
     item.date_completed = get_now()
     item.success = True
+
+    group_id = item.group_id
+    station_id = item.station_id
+
+    await db.commit()
+
+    group = config.queue.groups.get(group_id)
+
+    # update times
+    if station_id and group:
+        station = await queue_service.get_station(station_id, lock=True)
+        if station:
+            features = list(group.features.keys())
+            items = await queue_service.get_queue_stats(station_id)
+            intercept, coefs = await asyncio.to_thread(solve_features, features, items)
+            settings = station.get_settings()
+            updated = evolve(
+                settings,
+                feature_intercept=intercept,
+                feature_coefficients=coefs,
+            )
+            station.set_settings(updated)
+
     return Response(status=204)
 
 

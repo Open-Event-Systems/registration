@@ -30,7 +30,7 @@ def solve_features(
     durations = np.fromiter(_get_durations(data), dtype=float)
     solution, _, _, _ = np.linalg.lstsq(coefs, durations, rcond=None)
     intercept = solution[0]
-    return intercept, dict(zip(features, solution[1:]))
+    return float(intercept), dict(zip(features, (float(s) for s in solution[1:])))
 
 
 def _get_coefs(
