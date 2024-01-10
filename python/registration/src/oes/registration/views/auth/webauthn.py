@@ -28,7 +28,7 @@ from oes.registration.database import transaction
 from oes.registration.docs import docs_helper
 from oes.registration.models.config import Config
 from oes.registration.util import check_not_found, get_now, get_origin, origin_to_rp_id
-from oes.registration.views.parameters import AttrsBody
+from oes.util.blacksheep import FromAttrs
 
 
 @frozen
@@ -85,7 +85,7 @@ async def get_webauthn_registration_challenge(
 @transaction
 async def complete_webauthn_registration(
     request: Request,
-    body: AttrsBody[WebAuthnChallengeResult],
+    body: FromAttrs[WebAuthnChallengeResult],
     config: Config,
     account_service: AccountService,
     credential_service: CredentialService,
@@ -159,7 +159,7 @@ async def get_webauthn_authentication_challenge(
 @transaction
 async def complete_webauthn_authentication(
     request: Request,
-    body: AttrsBody[WebAuthnChallengeResult],
+    body: FromAttrs[WebAuthnChallengeResult],
     account_service: AccountService,
     credential_service: CredentialService,
     config: Config,

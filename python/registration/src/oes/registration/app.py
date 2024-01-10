@@ -70,7 +70,7 @@ from oes.registration.serialization.json import (
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.views.responses import BodyValidationError, ExceptionDetails
-from oes.util.blacksheep import configure_cors
+from oes.util.blacksheep import AttrsBinder, configure_cors
 from rodi import GetServiceContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -280,6 +280,9 @@ def app_factory():
     app.services.add_instance(cmd_config)
     app.services.add_instance(default_encoder, JSONEncoder)
     app.services.add_instance(get_converter(), Converter)
+
+    # Set attrs body converter, hacky
+    AttrsBinder.cattrs_converter = get_converter()
 
     # set up authentication
     app.use_authentication().add(TokenAuthHandler(config))

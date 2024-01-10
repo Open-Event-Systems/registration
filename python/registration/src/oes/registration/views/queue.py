@@ -13,7 +13,8 @@ from oes.registration.checkout.service import CheckoutService
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.models.config import Config
-from oes.registration.queue.functions import add_to_queue, solve
+from oes.registration.queue.entities import QueueItemEntity
+from oes.registration.queue.functions import add_to_queue, get_queue_item_data, solve
 from oes.registration.queue.models import StationSettings
 from oes.registration.queue.service import QueueService
 from oes.registration.queue.solver import solve_features
@@ -77,6 +78,15 @@ class PrintRequestResponse:
 
     id: UUID
     data: Mapping[str, Any]
+
+
+@frozen
+class LogQueueItemRequest:
+    """Request to log a queue item."""
+
+    station_id: str
+    registration_id: UUID
+    date_started: datetime
 
 
 @app.router.get("/stations")
@@ -285,6 +295,57 @@ async def cancel_queue_item(
         raise Conflict
     item.date_completed = get_now()
     item.success = False
+    return Response(status=204)
+
+
+@app.router.post("/queue-items")
+@docs_helper(
+    tags=["Queue"],
+)
+@transaction
+async def log_queue_item(
+    body: FromAttrs[LogQueueItemRequest],
+    queue_service: QueueService,
+    config: Config,
+    registration_service: RegistrationService,
+    db: AsyncSession,
+) -> Response:
+    """Log a new, completed queue item."""
+    station_id = body.value.station_id
+    station = check_not_found(await queue_service.get_station(station_id, lock=True))
+    group_id = station.group_id
+    group = check_not_found(config.queue.groups.get(group_id))
+    registration_entity = check_not_found(
+        await registration_service.get_registration(body.value.registration_id)
+    )
+    registration = registration_entity.get_model()
+    item_data = get_queue_item_data(registration, config=group)
+    item = QueueItemEntity(
+        group_id=station.group_id,
+        station_id=station.id,
+        date_created=body.value.date_started,
+        date_started=body.value.date_started,
+        date_completed=get_now(),
+        success=True,
+    )
+    item.set_data(item_data)
+    await queue_service.save_queue_item(item)
+    await db.commit()
+
+    # update times
+    station = await queue_service.get_station(station_id, lock=True)
+    if station:
+        features = list(group.features.keys())
+        items = await queue_service.get_queue_stats(station_id)
+        intercept, coefs = await asyncio.to_thread(solve_features, features, items)
+        settings = station.get_settings()
+        updated = evolve(
+            settings,
+            feature_intercept=intercept,
+            feature_coefficients=coefs,
+        )
+        station.set_settings(updated)
+
     return Response(status=204)
 
 

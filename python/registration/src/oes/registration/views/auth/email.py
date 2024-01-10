@@ -13,8 +13,8 @@ from oes.registration.auth.user import User
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.models.config import Config
-from oes.registration.views.parameters import AttrsBody
 from oes.util import get_now
+from oes.util.blacksheep import FromAttrs
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -44,7 +44,7 @@ class EmailVerificationCodeBody:
 )
 @transaction
 async def send_email_verification(
-    body: AttrsBody[EmailVerificationBody],
+    body: FromAttrs[EmailVerificationBody],
     email_auth_service: EmailAuthService,
     config: Config,
     user: User,
@@ -67,7 +67,7 @@ async def send_email_verification(
     tags=["Account"],
 )
 async def verify_email(
-    body: AttrsBody[EmailVerificationCodeBody],
+    body: FromAttrs[EmailVerificationCodeBody],
     email_auth_service: EmailAuthService,
     account_service: AccountService,
     db: AsyncSession,
