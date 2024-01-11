@@ -1,23 +1,18 @@
 import { QueueItem } from "#src/features/queue/types"
 import { Box, Menu, Text } from "@mantine/core"
-import {
-  IconArrowDown,
-  IconArrowsMoveHorizontal,
-  IconTrash,
-} from "@tabler/icons-react"
+import { IconArrowDown, IconTrash } from "@tabler/icons-react"
 
 export type QueueItemProps = {
   queueItem: QueueItem
   canHide?: boolean
   onHide?: () => void
-  onAssign?: () => void
   onRemove?: () => void
 }
 
 export const QueueItemComponent = (props: QueueItemProps) => {
-  const { queueItem, canHide, onHide, onAssign, onRemove } = props
+  const { queueItem, canHide, onHide, onRemove } = props
   return (
-    <Menu>
+    <Menu position="bottom-end">
       <Menu.Target>
         <Box className="QueueItem-root">
           {((!!queueItem.first_name || !!queueItem.last_name) && (
@@ -47,15 +42,10 @@ export const QueueItemComponent = (props: QueueItemProps) => {
             leftSection={<IconArrowDown />}
             onClick={() => onHide && onHide()}
           >
-            Hide
+            Move Down
           </Menu.Item>
         )}
-        <Menu.Item
-          leftSection={<IconArrowsMoveHorizontal />}
-          onClick={() => onAssign && onAssign()}
-        >
-          Assign
-        </Menu.Item>
+        {canHide && <Menu.Divider />}
         <Menu.Item
           leftSection={<IconTrash />}
           c="red"

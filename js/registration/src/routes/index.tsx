@@ -280,6 +280,46 @@ makeApp(() => {
           ],
         },
 
+        // queue
+        {
+          ErrorBoundary() {
+            return (
+              <SimpleLayout>
+                <NotFoundErrorBoundary />
+              </SimpleLayout>
+            )
+          },
+          children: [
+            {
+              async lazy() {
+                const res = await Promise.all([
+                  await import(
+                    "#src/features/queue/components/layout/QueueLayout"
+                  ),
+                  await import("#src/features/queue/styles.scss"),
+                ])
+                const [{ QueueLayout }] = res
+                return {
+                  element: <LayoutRoute Layout={QueueLayout} />,
+                }
+              },
+              children: [
+                {
+                  path: "/queue/:groupId",
+                  async lazy() {
+                    const { QueuePage } = await import(
+                      "#src/features/queue/routes/QueuePage"
+                    )
+                    return {
+                      element: <QueuePage />,
+                    }
+                  },
+                },
+              ],
+            },
+          ],
+        },
+
         {
           element: <LayoutRoute Layout={SimpleLayout} />,
           children: [

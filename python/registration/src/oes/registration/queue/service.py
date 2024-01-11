@@ -125,7 +125,7 @@ class QueueService:
         )
         if station_id:
             q = q.where(QueueItemEntity.station_id == station_id)
-        q = q.order_by(QueueItemEntity.date_started)
+        q = q.order_by(QueueItemEntity.date_created)
         if lock:
             q = q.with_for_update()
         res = await self.db.execute(q)

@@ -12,6 +12,7 @@ import { Context, ReactNode, useLayoutEffect, useState } from "react"
 
 import config from "#src/config/config"
 import { defaultWretch } from "#src/config/api"
+import { QueueAPIContext } from "#src/features/queue/hooks"
 
 export const AppProvider = ({
   children,
@@ -40,6 +41,7 @@ export const AppProvider = ({
         RegistrationAPIContext,
         CheckoutAPIContext,
         SelfServiceAPIContext,
+        QueueAPIContext,
       ]}
       values={[
         app,
@@ -51,6 +53,7 @@ export const AppProvider = ({
         app.registrationAPI,
         app.checkoutAPI,
         app.selfServiceAPI,
+        app.queueAPI,
       ]}
     >
       {children}

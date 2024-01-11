@@ -5,6 +5,9 @@ import "./QueueItem.scss"
 
 const meta: Meta<typeof QueueItemComponent> = {
   component: QueueItemComponent,
+  parameters: {
+    layout: "centered",
+  },
 }
 
 export default meta

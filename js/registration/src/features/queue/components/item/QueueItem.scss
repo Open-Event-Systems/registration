@@ -6,6 +6,7 @@
         [name-end] "duration assignment" auto //
         / [name-start] minmax(1rem, 1fr) [name-end] auto;
     gap: 4px;
+    min-height: 3rem;
     align-items: center;
     cursor: pointer;
 }

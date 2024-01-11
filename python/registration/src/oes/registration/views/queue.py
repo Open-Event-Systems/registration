@@ -187,6 +187,7 @@ async def get_queue_items(
                 data.registration.last_name if data.registration else None,
                 item.date_started,
                 data.duration,
+                item.station_id,
             )
         )
 

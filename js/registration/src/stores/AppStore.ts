@@ -18,6 +18,8 @@ import { AuthAPI } from "#src/features/auth/types/api"
 import { createAuthAPI } from "#src/features/auth/api"
 
 import config from "#src/config/config"
+import { QueueAPI } from "#src/features/queue/types"
+import { createQueueAPI } from "#src/features/queue/api"
 
 export class AppStore {
   authStore: AuthStore
@@ -27,6 +29,7 @@ export class AppStore {
   registrationAPI: RegistrationAPI
   checkoutAPI: CheckoutAPI
   selfServiceAPI: SelfServiceAPI
+  queueAPI: QueueAPI
 
   constructor(
     public wretch: Wretch,
@@ -43,6 +46,7 @@ export class AppStore {
     this.registrationAPI = createRegistrationAPI(authWretch)
     this.checkoutAPI = createCheckoutAPI(authWretch, queryClient)
     this.selfServiceAPI = createSelfServiceAPI(authWretch, queryClient)
+    this.queueAPI = createQueueAPI(authWretch, queryClient)
   }
 }
 

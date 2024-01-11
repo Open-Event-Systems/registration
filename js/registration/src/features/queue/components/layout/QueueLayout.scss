@@ -1,0 +1,6 @@
+.QueueLayout-root {
+    padding: var(--mantine-spacing-xs);
+    display: grid;
+    grid-template-columns: minmax(1rem, 1fr);
+    gap: 8px;
+}
