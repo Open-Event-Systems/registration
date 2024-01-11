@@ -181,7 +181,9 @@ async def get_queue_items(
             QueueItemResponse(
                 item.id,
                 item.date_created,
-                data.registration.first_name if data.registration else None,
+                (data.registration.preferred_name or data.registration.first_name)
+                if data.registration
+                else None,
                 data.registration.last_name if data.registration else None,
                 item.date_started,
                 data.duration,
@@ -370,7 +372,11 @@ async def solve_queue(
             QueueItemResponse(
                 id=it.id,
                 date_created=it.date_created,
-                first_name=data.registration.first_name if data.registration else None,
+                first_name=(
+                    data.registration.preferred_name or data.registration.first_name
+                )
+                if data.registration
+                else None,
                 last_name=data.registration.last_name if data.registration else None,
                 date_started=it.date_started,
                 duration=data.duration,
