@@ -1,6 +1,6 @@
 import path from "path"
 import HtmlWebpackPlugin from "html-webpack-plugin"
-import { Chunk, Configuration, DefinePlugin, Module, NormalModule } from "webpack"
+import { Configuration, DefinePlugin, Module, NormalModule } from "webpack"
 import MiniCssExtractPlugin from "mini-css-extract-plugin"
 import "webpack-dev-server"
 import CssMinimizerPlugin from "css-minimizer-webpack-plugin"
@@ -48,7 +48,42 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
             {
               test: /\.js$/,
               exclude: /node_modules/,
-              use: "babel-loader",
+              use: {
+                loader: "babel-loader",
+                options: {
+                  presets: [
+                    "@babel/preset-env",
+                    [
+                      "@babel/preset-react",
+                      {
+                        runtime: "automatic",
+                      },
+                    ],
+                    "@babel/preset-typescript",
+                  ],
+                  plugins: ["@babel/plugin-transform-runtime"],
+                },
+              },
+            },
+            // do transpile tanstack
+            {
+              test: /@tanstack.*\.js$/,
+              use: {
+                loader: "babel-loader",
+                options: {
+                  presets: [
+                    "@babel/preset-env",
+                    [
+                      "@babel/preset-react",
+                      {
+                        runtime: "automatic",
+                      },
+                    ],
+                    "@babel/preset-typescript",
+                  ],
+                  plugins: ["@babel/plugin-transform-runtime"],
+                },
+              },
             },
           ],
         },
