@@ -310,6 +310,7 @@ def app_factory():
         allow_headers=(
             "Authorization",
             "Content-Type",
+            "If-Match",
         ),
     )
 

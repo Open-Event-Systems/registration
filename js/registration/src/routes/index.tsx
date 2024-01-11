@@ -4,6 +4,8 @@ import "#src/components/styles.css"
 import "#src/features/auth/styles.css"
 import theme from "#src/config/theme"
 
+import "#src/config/theme.scss"
+
 import {
   LoadingOverlay,
   ShowLoadingOverlay,
@@ -142,11 +144,11 @@ makeApp(() => {
                         {
                           index: true,
                           async lazy() {
-                            const { EventRoute } = await import(
-                              "#src/features/selfservice/routes/EventRoute"
+                            const { EventPage } = await import(
+                              "#src/features/selfservice/routes/EventPage"
                             )
                             return {
-                              element: <EventRoute />,
+                              element: <EventPage />,
                             }
                           },
                         },

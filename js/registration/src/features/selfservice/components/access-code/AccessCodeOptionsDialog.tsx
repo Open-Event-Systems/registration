@@ -126,6 +126,7 @@ const AccessCodeOptionsDialogManager = observer(
               const response = await client.fetchQuery(
                 cartAPI.readAddInterview(cartId, interviewId, {
                   accessCode: accessCode,
+                  registrationId: registrationId,
                 }),
               )
               const record = await startInterview(
