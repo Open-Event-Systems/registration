@@ -1,12 +1,12 @@
-import { UserMenu } from "#src/components"
-import { useAuth } from "#src/features/auth/hooks"
 import { CheckinLayout } from "#src/features/checkin/components/layout/CheckinLayout"
 import { Search } from "#src/features/checkin/components/search/Search"
+import { useCheckInStore } from "#src/features/checkin/hooks"
 import { useEventAPI } from "#src/features/event/hooks"
+import { useQueueAPI } from "#src/features/queue/hooks"
 import { useRegistrationAPI } from "#src/features/registration/hooks"
 import { useNavigate } from "#src/hooks/location"
 import { Box } from "@mantine/core"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { action } from "mobx"
 import { observer, useLocalObservable } from "mobx-react-lite"
 import { useEffect } from "react"
@@ -14,9 +14,11 @@ import { useParams } from "react-router-dom"
 
 export const SearchPage = observer(() => {
   const { eventId = "" } = useParams()
-  const auth = useAuth()
   const eventAPI = useEventAPI()
   const navigate = useNavigate()
+
+  const checkInStore = useCheckInStore()
+  const queueAPI = useQueueAPI()
 
   const event = useQuery(eventAPI.read(eventId))
 
@@ -55,17 +57,11 @@ export const SearchPage = observer(() => {
     }
   }, [query])
 
+  const removeItem = useMutation(queueAPI.cancelQueueItem())
+
   return (
     <>
-      <CheckinLayout.Header>
-        <CheckinLayout.Spacer />
-        <UserMenu
-          username={auth.authInfo?.email || "Guest"}
-          onSignOut={() => {
-            auth.signOut()
-          }}
-        />
-      </CheckinLayout.Header>
+      <CheckinLayout.Header />
       <CheckinLayout.Body>
         <Box
           component="form"
@@ -89,6 +85,20 @@ export const SearchPage = observer(() => {
             onSelect={(id) => {
               navigate(`/check-in/${eventId}/registrations/${id}`)
             }}
+            nextInLine={checkInStore.queueItems}
+            onSelectNextInLine={(item) => {
+              if (item.registration_id) {
+                navigate(
+                  `/check-in/${eventId}/registrations/${item.registration_id}`,
+                )
+              }
+            }}
+            onRemoveNextInLine={action((item) => {
+              removeItem.mutate(item.id)
+              checkInStore.queueItems = checkInStore.queueItems.filter(
+                (it) => it.id != item.id,
+              )
+            })}
           />
           <input type="submit" style={{ display: "none" }} />
         </Box>

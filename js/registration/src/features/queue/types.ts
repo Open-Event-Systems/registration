@@ -8,9 +8,22 @@ export type StationListResponse = {
   group_id: string
 }
 
+export type StationInfo = {
+  id: string
+  group_id: string
+  settings: StationSettings
+}
+
+export type StationSettings = {
+  open: boolean
+  max_queue_length: number
+  tags: string[]
+}
+
 export type QueueItem = {
   id: string
   date_created: string
+  registration_id?: string
   first_name?: string
   last_name?: string
   date_started?: string
@@ -20,7 +33,11 @@ export type QueueItem = {
 
 export type QueueAPI = {
   listStations: () => UndefinedInitialDataOptions<StationListResponse[]>
-  listQueueItems: (groupId: string) => UndefinedInitialDataOptions<QueueItem[]>
+  getStation: (stationId: string) => UndefinedInitialDataOptions<StationInfo>
+  listQueueItems: (
+    groupId: string,
+    stationId?: string,
+  ) => UndefinedInitialDataOptions<QueueItem[]>
   addQueueItem: (
     groupId: string,
   ) => UseMutationOptions<QueueItem, Error, { scanData?: string }>

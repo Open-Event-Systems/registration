@@ -1,4 +1,4 @@
-import { QueueItem } from "#src/features/checkin/types"
+import { QueueItem } from "#src/features/queue/types"
 import { RegistrationSearchResult } from "#src/features/registration"
 import {
   ActionIcon,
@@ -135,28 +135,22 @@ export const NextInLineResults = (props: NextInLineResultsProps) => {
         <Table.Thead>
           <Table.Tr>
             <Table.Th>Name</Table.Th>
-            <Table.Th>Email</Table.Th>
             <Table.Th className="CheckinSearchResults-removeColumn"></Table.Th>
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
           {items.map((item) => (
             <Table.Tr key={item.id} onClick={() => onSelect && onSelect(item)}>
-              {item.registration ? (
+              {item.registration_id ? (
                 <>
                   <Table.Td>
                     <Anchor
                       component="button"
                       className="CheckinSearchResults-button"
                     >
-                      {item.registration.first_name}
-                      {item.registration.preferred_name
-                        ? " (" + item.registration.preferred_name + ")"
-                        : undefined}{" "}
-                      {item.registration.last_name}
+                      {item.first_name} {item.last_name}
                     </Anchor>
                   </Table.Td>
-                  <Table.Td>{item.registration.email}</Table.Td>
                   <Table.Td className="CheckinSearchResults-removeColumn">
                     <Anchor
                       component="button"
@@ -181,7 +175,6 @@ export const NextInLineResults = (props: NextInLineResultsProps) => {
                       Unknown Person
                     </Anchor>
                   </Table.Td>
-                  <Table.Td></Table.Td>
                   <Table.Td className="CheckinSearchResults-removeColumn">
                     <Anchor
                       component="button"

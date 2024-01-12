@@ -239,6 +239,9 @@ makeApp(() => {
                     "#src/features/checkin/components/layout/CheckinLayout.scss"
                   ), // TODO: import styles.css instead
                   await import(
+                    "#src/features/checkin/components/station-select/StationSelect.css"
+                  ), // TODO: import styles.css instead
+                  await import(
                     "#src/features/checkin/components/search/Search.css"
                   ), // TODO: import styles.css instead
                   await import(
@@ -302,7 +305,11 @@ makeApp(() => {
                 ])
                 const [{ QueueLayout }] = res
                 return {
-                  element: <LayoutRoute Layout={QueueLayout} />,
+                  element: (
+                    <MantineProvider defaultColorScheme="dark">
+                      <LayoutRoute Layout={QueueLayout} />
+                    </MantineProvider>
+                  ),
                 }
               },
               children: [

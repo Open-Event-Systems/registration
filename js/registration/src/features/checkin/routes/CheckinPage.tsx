@@ -1,5 +1,3 @@
-import { UserMenu } from "#src/components"
-import { useAuth } from "#src/features/auth/hooks"
 import { Badge } from "#src/features/checkin/components/badge/Badge"
 import { CheckinLayout } from "#src/features/checkin/components/layout/CheckinLayout"
 import { Registration } from "#src/features/checkin/components/registration/Registration"
@@ -20,7 +18,6 @@ import { Link, useParams } from "react-router-dom"
 export const CheckinPage = () => {
   const { eventId = "", registrationId = "" } = useParams()
 
-  const auth = useAuth()
   const loc = useLocation()
   const navigate = useNavigate()
 
@@ -71,13 +68,6 @@ export const CheckinPage = () => {
         <Anchor component={Link} to={`/check-in/${eventId}`}>
           &laquo; Back
         </Anchor>
-        <CheckinLayout.Spacer />
-        <UserMenu
-          username={auth.authInfo?.email || "Guest"}
-          onSignOut={() => {
-            auth.signOut()
-          }}
-        />
       </CheckinLayout.Header>
       <CheckinLayout.Left className="CheckinPage-left">
         {event.data && registration.isSuccess ? (

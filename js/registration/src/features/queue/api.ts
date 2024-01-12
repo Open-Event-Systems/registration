@@ -5,6 +5,7 @@ import {
 } from "#src/features/queue/types"
 import { QueryClient } from "@tanstack/react-query"
 import { Wretch } from "wretch"
+import queryString from "wretch/addons/queryString"
 
 export const createQueueAPI = (
   wretch: Wretch,
@@ -23,14 +24,25 @@ export const createQueueAPI = (
         staleTime: 60000,
       }
     },
-    listQueueItems(groupId) {
+    getStation(stationId) {
       return {
-        queryKey: ["queues", groupId],
+        queryKey: ["stations", stationId],
         async queryFn() {
-          return await wretch
-            .url(`/queues/${groupId}`)
-            .get()
-            .json<QueueItem[]>()
+          return await wretch.url(`/stations/${stationId}`).get().json()
+        },
+      }
+    },
+    listQueueItems(groupId, stationId) {
+      return {
+        queryKey: ["queues", groupId, { stationId: stationId }],
+        async queryFn() {
+          let req = wretch.url(`/queues/${groupId}`).addon(queryString)
+
+          if (stationId) {
+            req = req.query({ station_id: stationId })
+          }
+
+          return await req.get().json<QueueItem[]>()
         },
       }
     },
@@ -47,15 +59,18 @@ export const createQueueAPI = (
           return res
         },
         onSuccess(res) {
-          queryClient.setQueryData<QueueItem[]>(["queues", groupId], (cur) => {
-            if (!cur) {
-              return [res]
-            }
+          queryClient.setQueryData<QueueItem[]>(
+            ["queues", groupId, {}],
+            (cur) => {
+              if (!cur) {
+                return [res]
+              }
 
-            const filtered = cur.filter((item) => item.id != res.id)
-            filtered.push(res)
-            return filtered
-          })
+              const filtered = cur.filter((item) => item.id != res.id)
+              filtered.push(res)
+              return filtered
+            },
+          )
         },
       }
     },
@@ -90,17 +105,20 @@ export const createQueueAPI = (
         },
         onSuccess(data) {
           const updateMap = new Map(data.map((item) => [item.id, item]))
-          queryClient.setQueryData<QueueItem[]>(["queues", groupId], (cur) => {
-            if (!cur) {
-              return data
-            }
+          queryClient.setQueryData<QueueItem[]>(
+            ["queues", groupId, {}],
+            (cur) => {
+              if (!cur) {
+                return data
+              }
 
-            const newValues = cur.map((item) => {
-              const updated = updateMap.get(item.id)
-              return updated ?? item
-            })
-            return newValues
-          })
+              const newValues = cur.map((item) => {
+                const updated = updateMap.get(item.id)
+                return updated ?? item
+              })
+              return newValues
+            },
+          )
         },
       }
     },

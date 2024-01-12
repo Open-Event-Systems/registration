@@ -65,6 +65,7 @@ class QueueItemResponse:
 
     id: UUID
     date_created: datetime
+    registration_id: Optional[UUID] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     date_started: Optional[datetime] = None
@@ -181,6 +182,7 @@ async def get_queue_items(
             QueueItemResponse(
                 item.id,
                 item.date_created,
+                data.registration.id if data.registration else None,
                 (data.registration.preferred_name or data.registration.first_name)
                 if data.registration
                 else None,
@@ -224,7 +226,10 @@ async def add_queue_item(
     return QueueItemResponse(
         item.id,
         item.date_created,
-        data.registration.first_name if data.registration else None,
+        data.registration.id if data.registration else None,
+        (data.registration.preferred_name or data.registration.first_name)
+        if data.registration
+        else None,
         data.registration.last_name if data.registration else None,
         item.date_started,
         data.duration,
@@ -373,6 +378,7 @@ async def solve_queue(
             QueueItemResponse(
                 id=it.id,
                 date_created=it.date_created,
+                registration_id=data.registration.id if data.registration else None,
                 first_name=(
                     data.registration.preferred_name or data.registration.first_name
                 )
