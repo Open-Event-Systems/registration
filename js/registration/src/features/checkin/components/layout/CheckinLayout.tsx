@@ -13,7 +13,7 @@ import { useQueueAPI } from "#src/features/queue/hooks"
 import { QueueItem, StationSettings } from "#src/features/queue/types"
 import { useRegistrationAPI } from "#src/features/registration/hooks"
 import { useApp } from "#src/hooks/app"
-import { NotFoundError } from "#src/utils/api"
+import { NotFoundError, isResponseError } from "#src/utils/api"
 import { ActionIcon, Box, BoxProps, Switch } from "@mantine/core"
 import { IconSettings } from "@tabler/icons-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -50,6 +50,7 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
     ...queueAPI.getStation(checkInStore.stationId ?? ""),
     refetchOnMount: false,
     enabled: !!checkInStore.stationId,
+    throwOnError: false,
   })
 
   // refetch queue items
@@ -63,34 +64,85 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
     refetchInterval: 5000,
   })
 
+  // print requests
+  const printRequests = useQuery({
+    ...queueAPI.listPrintRequests(stationInfo.data?.id ?? ""),
+    enabled: !!stationInfo.data,
+    staleTime: 5000,
+    refetchInterval: 5000,
+  })
+
+  const delegatedPrint = useMutation(queueAPI.createPrintRequest())
+
   const registrationAPI = useRegistrationAPI()
 
   const prevItems = useRef<QueueItem[]>(queueItems.data ?? [])
 
   // trigger printing
   useEffect(() => {
+    const stationId = stationInfo.data?.id
     const printUrl = stationInfo.data?.settings.auto_print_url
     const printer = checkInStore.printer
+    const delegated = stationInfo.data?.settings.delegate_print_station
+
     if (queueItems.data && printUrl && printer) {
       for (const item of queueItems.data) {
+        const registrationId = item.registration_id
         if (prevItems.current.find((it) => it.id == item.id)) {
           continue
         }
 
-        if (
-          item.registration_id &&
-          !checkInStore.printIds.has(item.registration_id)
-        ) {
+        if (registrationId) {
           queryClient
-            .fetchQuery(registrationAPI.read(item.registration_id))
+            .fetchQuery(registrationAPI.read(registrationId))
             .then((reg) => {
-              return checkInStore.print(printUrl, printer, reg)
+              if (!checkInStore.printIds.has(registrationId)) {
+                return checkInStore.print(printUrl, printer, reg)
+              }
+            })
+        }
+      }
+    } else if (stationId && queueItems.data && delegated) {
+      for (const item of queueItems.data) {
+        const registrationId = item.registration_id
+        if (prevItems.current.find((it) => it.id == item.id)) {
+          continue
+        }
+
+        if (registrationId) {
+          queryClient
+            .fetchQuery(registrationAPI.read(registrationId))
+            .then((reg) => {
+              if (!checkInStore.printIds.has(registrationId)) {
+                checkInStore.printIds.add(reg.id)
+                return delegatedPrint.mutateAsync({
+                  stationId: delegated,
+                  data: reg,
+                })
+              }
             })
         }
       }
     }
     prevItems.current = queueItems.data ?? []
   }, [queueItems.data])
+
+  // trigger delegated printing
+  useEffect(() => {
+    if (
+      printRequests.data &&
+      stationInfo.data?.settings.auto_print_url &&
+      checkInStore.printer
+    ) {
+      for (const req of printRequests.data) {
+        checkInStore.print(
+          stationInfo.data.settings.auto_print_url,
+          checkInStore.printer,
+          req.data,
+        )
+      }
+    }
+  }, [printRequests.data])
 
   return (
     <Box className="CheckinLayout-root">
@@ -124,7 +176,27 @@ const CheckinLayoutHeader = observer(
       ...queueAPI.getStation(checkInStore.stationId ?? ""),
       staleTime: Infinity,
       enabled: !!checkInStore.stationId,
+      throwOnError: false,
     })
+
+    const updateStationSettings = useMutation(
+      queueAPI.setStationSettings(checkInStore.stationId ?? ""),
+    )
+
+    useEffect(() => {
+      if (
+        stationInfo.isError &&
+        checkInStore.stationId &&
+        isResponseError(stationInfo.error) &&
+        stationInfo.error.status == 404
+      ) {
+        updateStationSettings.mutate({
+          open: false,
+          max_queue_length: 0,
+          tags: [],
+        })
+      }
+    }, [checkInStore.stationId, stationInfo.isError])
 
     const setStationSettings = useMutation(
       queueAPI.setStationSettings(checkInStore.stationId ?? ""),

@@ -62,4 +62,14 @@ export type QueueAPI = {
   logQueueItem: () => UseMutationOptions<void, Error, LogQueueItemRequest>
   cancelQueueItem: () => UseMutationOptions<void, Error, string>
   solveQueue: (groupId: string) => UseMutationOptions<QueueItem[]>
+  createPrintRequest: () => UseMutationOptions<
+    void,
+    Error,
+    { stationId: string; data: Record<string, unknown> }
+  >
+  listPrintRequests: (
+    stationId: string,
+  ) => UndefinedInitialDataOptions<
+    { id: string; data: Record<string, unknown> }[]
+  >
 }

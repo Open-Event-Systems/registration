@@ -7,7 +7,7 @@ from uuid import UUID
 
 from attr import evolve
 from attrs import frozen
-from blacksheep import FromQuery, Response
+from blacksheep import FromJSON, FromQuery, Response
 from oes.registration.app import app
 from oes.registration.checkout.service import CheckoutService
 from oes.registration.database import transaction
@@ -18,7 +18,6 @@ from oes.registration.queue.functions import add_to_queue, get_queue_item_data, 
 from oes.registration.queue.models import StationSettings
 from oes.registration.queue.service import QueueService
 from oes.registration.queue.solver import solve_features
-from oes.registration.serialization import get_converter
 from oes.registration.services.registration import RegistrationService
 from oes.registration.util import check_not_found
 from oes.util import get_now
@@ -50,7 +49,7 @@ class StationSettingsRequestBody:
     open: bool
     max_queue_length: int
     tags: Set[str]
-    delegate_printing_station: Optional[str] = None
+    delegate_print_station: Optional[str] = None
     auto_print_url: Optional[str] = None
 
 
@@ -154,7 +153,7 @@ async def update_station_config(
         open=update.value.open,
         max_queue_length=update.value.max_queue_length,
         tags=update.value.tags,
-        delegate_printing_station=update.value.delegate_printing_station,
+        delegate_print_station=update.value.delegate_print_station,
         auto_print_url=update.value.auto_print_url,
     )
     entity.set_settings(updated)
@@ -428,16 +427,10 @@ async def get_print_requests(
 @transaction
 async def create_print_request(
     station_id: str,
-    registration_id: FromQuery[UUID],
+    body: FromJSON[dict[str, Any]],
     queue_service: QueueService,
-    registration_service: RegistrationService,
 ) -> Response:
     """Create a print request."""
-    reg = check_not_found(
-        await registration_service.get_registration(registration_id.value)
-    )
-    model = reg.get_model()
-    data = get_converter().unstructure(model)
-    await queue_service.create_print_request(station_id, data)
+    await queue_service.create_print_request(station_id, body.value)
 
     return Response(status=204)

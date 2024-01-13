@@ -68,6 +68,7 @@ export const SearchPage = observer(() => {
     ...queueAPI.getStation(checkInStore.stationId ?? ""),
     enabled: !!checkInStore.stationId,
     staleTime: Infinity,
+    throwOnError: false,
   })
 
   const queueItems = useQuery({

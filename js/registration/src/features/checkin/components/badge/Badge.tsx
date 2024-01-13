@@ -7,7 +7,7 @@ import {
   createClient,
   waitUntilReady,
 } from "@open-event-systems/badge-lib"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { action } from "mobx"
 import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
@@ -43,6 +43,8 @@ export const Badge = observer((props: BadgeProps) => {
     enabled: !!stationInfo.data?.settings.auto_print_url,
   })
 
+  const delegatedPrint = useMutation(queueAPI.createPrintRequest())
+
   useEffect(() => {
     let cancel = false
 
@@ -77,6 +79,15 @@ export const Badge = observer((props: BadgeProps) => {
         checkInStore.printer,
         badgeData,
       )
+    } else if (
+      stationInfo.data?.settings.delegate_print_station &&
+      !checkInStore.printIds.has(badgeData.id)
+    ) {
+      checkInStore.printIds.add(badgeData.id)
+      delegatedPrint.mutate({
+        stationId: stationInfo.data?.settings.delegate_print_station,
+        data: badgeData,
+      })
     }
   }, [badgeData.id])
 
@@ -105,6 +116,12 @@ export const Badge = observer((props: BadgeProps) => {
                 checkInStore.printer,
                 badgeData,
               )
+            } else if (stationInfo.data?.settings.delegate_print_station) {
+              checkInStore.printIds.add(badgeData.id)
+              delegatedPrint.mutate({
+                stationId: stationInfo.data?.settings.delegate_print_station,
+                data: badgeData,
+              })
             } else {
               badgeAPI && badgeAPI.print(badgeData ?? {})
             }

@@ -183,5 +183,28 @@ export const createQueueAPI = (
         },
       }
     },
+    createPrintRequest() {
+      return {
+        mutationKey: ["print-requests"],
+        async mutationFn({ stationId, data }) {
+          await wretch
+            .url(`/stations/${stationId}/print-requests`)
+            .json(data)
+            .post()
+            .res()
+        },
+      }
+    },
+    listPrintRequests(stationId) {
+      return {
+        queryKey: ["stations", stationId, "print-requests"],
+        async queryFn() {
+          return await wretch
+            .url(`/stations/${stationId}/print-requests`)
+            .get()
+            .json<{ id: string; data: Record<string, unknown> }[]>()
+        },
+      }
+    },
   }
 }
