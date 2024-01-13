@@ -2,11 +2,12 @@ import { Select } from "@mantine/core"
 
 export type StationSelectProps = {
   options: string[]
+  value?: string | null
   onChange?: (value: string | null) => void
 }
 
 export const StationSelect = (props: StationSelectProps) => {
-  const { options, onChange } = props
+  const { options, value, onChange } = props
   return (
     <Select
       classNames={{
@@ -14,6 +15,7 @@ export const StationSelect = (props: StationSelectProps) => {
       }}
       size="xs"
       placeholder="Station ID"
+      value={value}
       data={options.map((o) => ({
         label: `Station ${o}`,
         value: o,

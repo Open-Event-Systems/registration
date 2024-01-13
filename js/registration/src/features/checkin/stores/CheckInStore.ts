@@ -1,79 +1,37 @@
-import { defaultQueryClient, placeholderWretch } from "#src/config/api"
-import { createQueueAPI } from "#src/features/queue/api"
-import { QueueAPI, QueueItem, StationInfo } from "#src/features/queue/types"
-import { QueryClient } from "@tanstack/react-query"
-import { makeAutoObservable, reaction, runInAction } from "mobx"
+import { placeholderWretch } from "#src/config/api"
+import { makeAutoObservable } from "mobx"
 import { createContext } from "react"
+import { Wretch } from "wretch"
 
 export class CheckInStore {
   stationId: string | null = null
-  stationInfo: StationInfo | null = null
-  queueItems: QueueItem[] = []
+  printer: string | null = null
 
-  constructor(
-    private queryClient: QueryClient,
-    private queueAPI: QueueAPI,
-  ) {
+  constructor(private wretch: Wretch) {
     makeAutoObservable(this)
-
-    let interval: number | null = null
-
-    reaction(
-      () => this.stationId,
-      (cur) => {
-        if (cur) {
-          this.loadStation(cur)
-        } else {
-          this.stationInfo = null
-          this.queueItems = []
-        }
-      },
-    )
-
-    reaction(
-      () => this.stationInfo,
-      (cur) => {
-        if (interval) {
-          window.clearInterval(interval)
-          interval = null
-        }
-
-        if (cur) {
-          this.update(cur.group_id, cur.id)
-          interval = window.setInterval(() => {
-            this.update(cur.group_id, cur.id)
-          }, 5000)
-        }
-      },
-    )
   }
 
-  private async loadStation(stationId: string) {
-    const res = await this.queryClient.fetchQuery(
-      this.queueAPI.getStation(stationId),
-    )
-    runInAction(() => {
-      if (this.stationId == stationId) {
-        this.stationInfo = res
-      }
-    })
+  async getPrinters(printUrl: string): Promise<string[]> {
+    return await this.wretch
+      .url(printUrl, true)
+      .url("/printers")
+      .get()
+      .json<string[]>()
   }
 
-  private async update(groupId: string, stationId: string) {
-    const queueItems = await this.queryClient.fetchQuery(
-      this.queueAPI.listQueueItems(groupId, stationId),
-    )
-    runInAction(() => {
-      if (this.stationInfo?.id == stationId) {
-        this.queueItems = queueItems
-      }
-    })
+  async print(
+    printUrl: string,
+    printer: string,
+    data: Record<string, unknown>,
+  ) {
+    await this.wretch
+      .url(printUrl, true)
+      .url(`/printers/${printer}/print`)
+      .json(data)
+      .post().res
   }
 }
 
 export const CheckInStoreContext = createContext(
-  new CheckInStore(
-    defaultQueryClient,
-    createQueueAPI(placeholderWretch, defaultQueryClient),
-  ),
+  new CheckInStore(placeholderWretch),
 )

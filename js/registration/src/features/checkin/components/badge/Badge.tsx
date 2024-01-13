@@ -1,10 +1,15 @@
-import { Box, Button, Stack } from "@mantine/core"
+import { useCheckInStore } from "#src/features/checkin/hooks"
+import { useQueueAPI } from "#src/features/queue/hooks"
+import { Box, Button, Group, Select, Stack } from "@mantine/core"
 import {
   BadgeData,
   Client,
   createClient,
   waitUntilReady,
 } from "@open-event-systems/badge-lib"
+import { useQuery } from "@tanstack/react-query"
+import { action } from "mobx"
+import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
 
 export type BadgeProps = {
@@ -13,10 +18,30 @@ export type BadgeProps = {
   badgeData: BadgeData
 }
 
-export const Badge = (props: BadgeProps) => {
+export const Badge = observer((props: BadgeProps) => {
   const { windowName = "badge", badgeUrl, badgeData } = props
   const [badgeAPI, setBadgeAPI] = useState<Client | null>(null)
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
+
+  const checkInStore = useCheckInStore()
+  const queueAPI = useQueueAPI()
+
+  const stationInfo = useQuery({
+    ...queueAPI.getStation(checkInStore.stationId ?? ""),
+    staleTime: Infinity,
+    enabled: !!checkInStore.stationId,
+  })
+
+  const printers = useQuery({
+    queryKey: ["printers"],
+    async queryFn() {
+      return await checkInStore.getPrinters(
+        stationInfo.data?.settings.auto_print_url ?? "",
+      )
+    },
+    staleTime: Infinity,
+    enabled: !!stationInfo.data?.settings.auto_print_url,
+  })
 
   useEffect(() => {
     let cancel = false
@@ -49,26 +74,31 @@ export const Badge = (props: BadgeProps) => {
           className="Badge-frame"
           tabIndex={-1}
           ref={iframeRef}
-          // onLoad={(e) => {
-          //   const wnd = e.target as HTMLIFrameElement
-          //   if (!wnd.contentWindow) {
-          //     return
-          //   }
-
-          //   const origin = new URL(badgeUrl, window.location.href).origin
-          //   setBadgeAPI(createClient(wnd.contentWindow, origin))
-          // }}
           src={badgeUrl}
         ></iframe>
       </Box>
-      <Button
-        variant="outline"
-        onClick={() => {
-          badgeAPI && badgeAPI.print(badgeData ?? {})
-        }}
-      >
-        🖨️ Print
-      </Button>
+      <Group>
+        <Button
+          variant="outline"
+          onClick={() => {
+            badgeAPI && badgeAPI.print(badgeData ?? {})
+          }}
+        >
+          🖨️ Print
+        </Button>
+        {!!stationInfo.data?.settings.auto_print_url && printers.isSuccess && (
+          <Select
+            label="Printer"
+            value={checkInStore.printer}
+            data={printers.data ?? []}
+            onChange={action((value) => {
+              checkInStore.printer = value
+            })}
+          />
+        )}
+      </Group>
     </Stack>
   )
-}
+})
+
+Badge.displayName = "Badge"

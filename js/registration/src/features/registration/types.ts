@@ -90,7 +90,10 @@ export type RegistrationAPI = {
     id: string,
     interviewId: string,
   ): UndefinedInitialDataOptions<StateResponse>
-  readCheckinInterview(id: string): UndefinedInitialDataOptions<StateResponse>
+  readCheckinInterview(
+    id: string,
+    stationId?: string,
+  ): UndefinedInitialDataOptions<StateResponse>
   completeCheckinInterview(
     id: string,
   ): UseMutationOptions<void, Error, InterviewStateRecord>

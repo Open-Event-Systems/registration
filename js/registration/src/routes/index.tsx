@@ -239,9 +239,6 @@ makeApp(() => {
                     "#src/features/checkin/components/layout/CheckinLayout.scss"
                   ), // TODO: import styles.css instead
                   await import(
-                    "#src/features/checkin/components/station-select/StationSelect.css"
-                  ), // TODO: import styles.css instead
-                  await import(
                     "#src/features/checkin/components/search/Search.css"
                   ), // TODO: import styles.css instead
                   await import(

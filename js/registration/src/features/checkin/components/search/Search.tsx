@@ -148,7 +148,11 @@ export const NextInLineResults = (props: NextInLineResultsProps) => {
                       component="button"
                       className="CheckinSearchResults-button"
                     >
-                      {item.first_name} {item.last_name}
+                      {item.first_name}
+                      {item.preferred_name
+                        ? ` (${item.preferred_name})`
+                        : undefined}
+                      {item.last_name}
                     </Anchor>
                   </Table.Td>
                   <Table.Td className="CheckinSearchResults-removeColumn">

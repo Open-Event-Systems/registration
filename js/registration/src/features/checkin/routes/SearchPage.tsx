@@ -26,6 +26,13 @@ export const SearchPage = observer(() => {
   const state = useLocalObservable(() => ({
     query: "",
     throttled: "",
+    get startTime(): Date | null {
+      if (this.query) {
+        return new Date()
+      } else {
+        return null
+      }
+    },
   }))
 
   const { query, throttled } = state
@@ -57,6 +64,25 @@ export const SearchPage = observer(() => {
     }
   }, [query])
 
+  const stationInfo = useQuery({
+    ...queueAPI.getStation(checkInStore.stationId ?? ""),
+    enabled: !!checkInStore.stationId,
+    staleTime: Infinity,
+  })
+
+  const queueItems = useQuery({
+    ...queueAPI.listQueueItems(
+      stationInfo.data?.group_id ?? "",
+      stationInfo.data?.id,
+    ),
+    enabled: stationInfo.isSuccess,
+    staleTime: Infinity,
+  })
+
+  const [firstUnknownQueueItem] =
+    queueItems.data?.filter((it) => !it.registration_id) ?? []
+
+  const startItem = useMutation(queueAPI.startQueueItem())
   const removeItem = useMutation(queueAPI.cancelQueueItem())
 
   return (
@@ -72,8 +98,18 @@ export const SearchPage = observer(() => {
               search.isSuccess &&
               search.data.length == 1
             ) {
+              firstUnknownQueueItem &&
+                startItem.mutate(firstUnknownQueueItem.id)
               navigate(
                 `/check-in/${eventId}/registrations/${search.data[0].id}`,
+                {
+                  state: {
+                    checkInQueueItemId: firstUnknownQueueItem?.id,
+                    checkInStartTime: (
+                      state.startTime ?? new Date()
+                    ).toISOString(),
+                  },
+                },
               )
             }
           }}
@@ -83,21 +119,36 @@ export const SearchPage = observer(() => {
             onChange={action((q) => (state.query = q))}
             registrations={search.data}
             onSelect={(id) => {
-              navigate(`/check-in/${eventId}/registrations/${id}`)
+              firstUnknownQueueItem &&
+                startItem.mutate(firstUnknownQueueItem.id)
+              navigate(`/check-in/${eventId}/registrations/${id}`, {
+                state: {
+                  checkInQueueItemId: firstUnknownQueueItem?.id,
+                  checkInStartTime: (
+                    state.startTime ?? new Date()
+                  ).toISOString(),
+                },
+              })
             }}
-            nextInLine={checkInStore.queueItems}
+            nextInLine={queueItems.isSuccess ? queueItems.data : undefined}
             onSelectNextInLine={(item) => {
               if (item.registration_id) {
+                startItem.mutate(item.id)
                 navigate(
                   `/check-in/${eventId}/registrations/${item.registration_id}`,
+                  {
+                    state: {
+                      checkInQueueItemId: item.id,
+                      checkInStartTime: (
+                        state.startTime ?? new Date()
+                      ).toISOString(),
+                    },
+                  },
                 )
               }
             }}
             onRemoveNextInLine={action((item) => {
               removeItem.mutate(item.id)
-              checkInStore.queueItems = checkInStore.queueItems.filter(
-                (it) => it.id != item.id,
-              )
             })}
           />
           <input type="submit" style={{ display: "none" }} />

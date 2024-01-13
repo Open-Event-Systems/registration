@@ -13,6 +13,8 @@ class StationSettings:
     open: bool = False
     max_queue_length: int = 1
     tags: Set[str] = frozenset()
+    delegate_printing_station: Optional[str] = None
+    auto_print_url: Optional[str] = None
     feature_intercept: float = 1.0
     feature_coefficients: Mapping[str, float] = {}
 

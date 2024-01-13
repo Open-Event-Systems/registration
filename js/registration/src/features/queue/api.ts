@@ -1,6 +1,7 @@
 import {
   QueueAPI,
   QueueItem,
+  StationInfo,
   StationListResponse,
 } from "#src/features/queue/types"
 import { QueryClient } from "@tanstack/react-query"
@@ -29,6 +30,21 @@ export const createQueueAPI = (
         queryKey: ["stations", stationId],
         async queryFn() {
           return await wretch.url(`/stations/${stationId}`).get().json()
+        },
+      }
+    },
+    setStationSettings(stationId) {
+      return {
+        mutationKey: ["stations", stationId],
+        async mutationFn(settings) {
+          return await wretch
+            .url(`/stations/${stationId}`)
+            .json(settings)
+            .put()
+            .json<StationInfo>()
+        },
+        onSuccess(data) {
+          queryClient.setQueryData(["stations", stationId], data)
         },
       }
     },
@@ -71,6 +87,51 @@ export const createQueueAPI = (
               return filtered
             },
           )
+        },
+      }
+    },
+    startQueueItem() {
+      return {
+        mutationKey: ["queue-items", "start"],
+        async mutationFn(itemId) {
+          let req = wretch.url(`/queue-items/${itemId}/start`)
+          await req.put().res()
+        },
+      }
+    },
+    completeQueueItem() {
+      return {
+        mutationKey: ["queue-items", "complete"],
+        async mutationFn({ itemId, registrationId }) {
+          let req = wretch
+            .url(`/queue-items/${itemId}/complete`)
+            .addon(queryString)
+
+          if (registrationId) {
+            req = req.query({ registration_id: registrationId })
+          }
+
+          await req.put().res()
+        },
+        onSuccess(_data, { itemId }) {
+          queryClient.setQueriesData<QueueItem[]>(
+            { queryKey: ["queues"] },
+            (cur) => {
+              if (!cur || !Array.isArray(cur)) {
+                return
+              }
+
+              return cur.filter((item) => item.id != itemId)
+            },
+          )
+        },
+      }
+    },
+    logQueueItem() {
+      return {
+        mutationKey: ["queue-items"],
+        async mutationFn(data) {
+          await wretch.url("/queue-items").json(data).post().res()
         },
       }
     },

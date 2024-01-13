@@ -3,14 +3,14 @@
     min-height: 100vh;
     display: grid;
     grid-template:
-        "header header header" 2.25rem
+        "header header header" minmax(2.25rem, auto)
         "left center right" minmax(1rem, 1fr) / [body-start] minmax(1rem, 1fr) minmax(1rem, 1fr) minmax(1rem, 1fr) [body-end];
 
 
     @media (max-width: 48em) {
 
         grid-template:
-            "header header header" 2.25rem
+            "header header header" minmax(2.25rem, auto)
             "left left left" minmax(1rem, max-content) "center center center" auto
             "right right right" minmax(1rem, 1fr) / [body-start] auto auto minmax(1rem, 1fr) [body-end];
     }
@@ -21,9 +21,15 @@
 .CheckinLayout-header {
     grid-area: header;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    padding: var(--mantine-spacing-xs);
+    justify-content: flex-end;
+    padding: 4px;
     border-bottom: var(--mantine-color-gray-4) solid 1px;
+}
+
+.CheckinLayout-header > * {
+    margin: 0 8px;
 }
 
 .CheckinLayout-spacer {

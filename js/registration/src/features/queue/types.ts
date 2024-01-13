@@ -18,6 +18,8 @@ export type StationSettings = {
   open: boolean
   max_queue_length: number
   tags: string[]
+  delegate_print_station?: string
+  auto_print_url?: string
 }
 
 export type QueueItem = {
@@ -25,15 +27,25 @@ export type QueueItem = {
   date_created: string
   registration_id?: string
   first_name?: string
+  preferred_name?: string
   last_name?: string
   date_started?: string
   duration?: number
   station_id?: string
 }
 
+export type LogQueueItemRequest = {
+  station_id: string
+  registration_id: string
+  date_started: string
+}
+
 export type QueueAPI = {
   listStations: () => UndefinedInitialDataOptions<StationListResponse[]>
   getStation: (stationId: string) => UndefinedInitialDataOptions<StationInfo>
+  setStationSettings: (
+    stationId: string,
+  ) => UseMutationOptions<StationInfo, Error, StationSettings>
   listQueueItems: (
     groupId: string,
     stationId?: string,
@@ -41,6 +53,13 @@ export type QueueAPI = {
   addQueueItem: (
     groupId: string,
   ) => UseMutationOptions<QueueItem, Error, { scanData?: string }>
+  startQueueItem: () => UseMutationOptions<void, Error, string>
+  completeQueueItem: () => UseMutationOptions<
+    void,
+    Error,
+    { itemId: string; registrationId?: string }
+  >
+  logQueueItem: () => UseMutationOptions<void, Error, LogQueueItemRequest>
   cancelQueueItem: () => UseMutationOptions<void, Error, string>
   solveQueue: (groupId: string) => UseMutationOptions<QueueItem[]>
 }

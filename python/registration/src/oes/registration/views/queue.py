@@ -47,9 +47,11 @@ class StationResponse:
 class StationSettingsRequestBody:
     """Station settings update request."""
 
-    open: Optional[bool] = None
-    max_queue_length: Optional[int] = None
-    tags: Optional[Set[str]] = None
+    open: bool
+    max_queue_length: int
+    tags: Set[str]
+    delegate_printing_station: Optional[str] = None
+    auto_print_url: Optional[str] = None
 
 
 @frozen
@@ -67,6 +69,7 @@ class QueueItemResponse:
     date_created: datetime
     registration_id: Optional[UUID] = None
     first_name: Optional[str] = None
+    preferred_name: Optional[str] = None
     last_name: Optional[str] = None
     date_started: Optional[datetime] = None
     duration: Optional[float] = None
@@ -137,7 +140,7 @@ async def update_station_config(
 ) -> StationResponse:
     """Update station settings."""
     station_config = check_not_found(config.queue.stations.get(station_id))
-    entity = await queue_service.get_station(station_id)
+    entity = await queue_service.get_station(station_id, lock=True)
     if entity is None:
         entity = await queue_service.create_station(
             station_id, group_id=station_config.group, settings=StationSettings()
@@ -148,13 +151,11 @@ async def update_station_config(
     cur_settings = entity.get_settings()
     updated = evolve(
         cur_settings,
-        open=update.value.open if update.value.open is not None else cur_settings.open,
-        max_queue_length=update.value.max_queue_length
-        if update.value.max_queue_length is not None
-        else cur_settings.max_queue_length,
-        tags=update.value.tags
-        if update.value.tags is not None
-        else station_config.tags,
+        open=update.value.open,
+        max_queue_length=update.value.max_queue_length,
+        tags=update.value.tags,
+        delegate_printing_station=update.value.delegate_printing_station,
+        auto_print_url=update.value.auto_print_url,
     )
     entity.set_settings(updated)
     entity.group_id = station_config.group
@@ -183,9 +184,8 @@ async def get_queue_items(
                 item.id,
                 item.date_created,
                 data.registration.id if data.registration else None,
-                (data.registration.preferred_name or data.registration.first_name)
-                if data.registration
-                else None,
+                data.registration.first_name if data.registration else None,
+                data.registration.preferred_name if data.registration else None,
                 data.registration.last_name if data.registration else None,
                 item.date_started,
                 data.duration,
@@ -227,9 +227,8 @@ async def add_queue_item(
         item.id,
         item.date_created,
         data.registration.id if data.registration else None,
-        (data.registration.preferred_name or data.registration.first_name)
-        if data.registration
-        else None,
+        data.registration.first_name if data.registration else None,
+        data.registration.preferred_name if data.registration else None,
         data.registration.last_name if data.registration else None,
         item.date_started,
         data.duration,
@@ -256,7 +255,12 @@ async def start_queue_item(
 @docs(tags=["Queue"])
 @transaction
 async def complete_queue_item(
-    item_id: UUID, queue_service: QueueService, config: Config, db: AsyncSession
+    item_id: UUID,
+    registration_id: FromQuery[Optional[UUID]],
+    queue_service: QueueService,
+    config: Config,
+    db: AsyncSession,
+    registration_service: RegistrationService,
 ) -> Response:
     """Complete a queue item."""
     item = check_not_found(await queue_service.get_queue_item(item_id, lock=True))
@@ -264,13 +268,22 @@ async def complete_queue_item(
         raise Conflict
     item.date_completed = get_now()
     item.success = True
+    cur_item_data = item.get_data()
 
     group_id = item.group_id
     station_id = item.station_id
+    group = config.queue.groups.get(group_id)
+
+    if registration_id.value is not None and cur_item_data.registration is None:
+        registration_entity = await registration_service.get_registration(
+            registration_id.value
+        )
+        if registration_entity:
+            registration = registration_entity.get_model()
+            item_data = get_queue_item_data(registration, config=group)
+            item.set_data(item_data)
 
     await db.commit()
-
-    group = config.queue.groups.get(group_id)
 
     # update times
     if station_id and group:
@@ -379,9 +392,8 @@ async def solve_queue(
                 id=it.id,
                 date_created=it.date_created,
                 registration_id=data.registration.id if data.registration else None,
-                first_name=(
-                    data.registration.preferred_name or data.registration.first_name
-                )
+                first_name=data.registration.first_name if data.registration else None,
+                preferred_name=data.registration.preferred_name
                 if data.registration
                 else None,
                 last_name=data.registration.last_name if data.registration else None,
