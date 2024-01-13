@@ -4,13 +4,10 @@ import { ipcRenderer } from "electron"
 const client = createClient(window)
 
 ipcRenderer.on("format", (_e, id: string, data: BadgeData) => {
-  // window.setTimeout(() => {
-  //   ipcRenderer.send("format", id)
-  // }, 1000)
   client
     .format(data)
+    .then(() => new Promise<void>((r) => window.setTimeout(r, 200)))
     .then(() => {
-      console.log("Format")
       ipcRenderer.send("format", id)
     })
     .catch((err: Error) => {

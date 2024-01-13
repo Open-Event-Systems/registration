@@ -5,6 +5,7 @@
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
+    "build": "electron-forge package",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Wes <wes@anthronewengland.com>",
