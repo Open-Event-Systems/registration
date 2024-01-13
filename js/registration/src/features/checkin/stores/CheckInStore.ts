@@ -6,17 +6,18 @@ import { Wretch } from "wretch"
 export class CheckInStore {
   stationId: string | null = null
   printer: string | null = null
+  printIds = new Set<string>()
 
   constructor(private wretch: Wretch) {
     makeAutoObservable(this)
   }
 
-  async getPrinters(printUrl: string): Promise<string[]> {
+  async getPrinters(printUrl: string): Promise<{ id: string; name: string }[]> {
     return await this.wretch
       .url(printUrl, true)
       .url("/printers")
       .get()
-      .json<string[]>()
+      .json<{ id: string; name: string }[]>()
   }
 
   async print(
@@ -24,6 +25,11 @@ export class CheckInStore {
     printer: string,
     data: Record<string, unknown>,
   ) {
+    const id = data.id
+    if (typeof id == "string") {
+      this.printIds.add(id)
+    }
+
     await this.wretch
       .url(printUrl, true)
       .url(`/printers/${printer}/print`)

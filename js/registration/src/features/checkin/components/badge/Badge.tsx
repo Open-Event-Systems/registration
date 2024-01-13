@@ -81,16 +81,32 @@ export const Badge = observer((props: BadgeProps) => {
         <Button
           variant="outline"
           onClick={() => {
-            badgeAPI && badgeAPI.print(badgeData ?? {})
+            if (
+              stationInfo.data?.settings.auto_print_url &&
+              checkInStore.printer
+            ) {
+              checkInStore.print(
+                stationInfo.data.settings.auto_print_url,
+                checkInStore.printer,
+                badgeData,
+              )
+            } else {
+              badgeAPI && badgeAPI.print(badgeData ?? {})
+            }
           }}
         >
           🖨️ Print
         </Button>
         {!!stationInfo.data?.settings.auto_print_url && printers.isSuccess && (
           <Select
-            label="Printer"
+            placeholder="Printer"
             value={checkInStore.printer}
-            data={printers.data ?? []}
+            data={
+              printers.data?.map((p) => ({
+                label: p.name,
+                value: p.id,
+              })) ?? []
+            }
             onChange={action((value) => {
               checkInStore.printer = value
             })}
