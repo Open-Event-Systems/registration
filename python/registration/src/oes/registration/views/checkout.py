@@ -79,6 +79,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 )
 async def list_checkouts(
     q: FromQuery[Optional[str]],
+    show_all: FromQuery[Optional[bool]],
     checkout_service: CheckoutService,
     config: Config,
     registration_id: Optional[UUID] = None,
@@ -91,7 +92,10 @@ async def list_checkouts(
         before_date = None
 
     entities = await checkout_service.list_checkouts(
-        q.value, registration_id=registration_id, before=before_date
+        q.value,
+        registration_id=registration_id,
+        show_all=show_all.value or False,
+        before=before_date,
     )
 
     results = []

@@ -218,6 +218,54 @@ makeApp(() => {
           ],
         },
 
+        // Admin checkout management
+        {
+          ErrorBoundary() {
+            return (
+              <SimpleLayout>
+                <NotFoundErrorBoundary />
+              </SimpleLayout>
+            )
+          },
+          path: "/checkouts",
+          async lazy() {
+            await Promise.all([
+              import("#src/features/checkout/styles.scss"),
+              import("#src/features/cart/styles.css"),
+            ])
+            const { CheckoutLayout } = await import(
+              "#src/features/checkout/components/layout/CheckoutLayout"
+            )
+            return {
+              element: <LayoutRoute Layout={CheckoutLayout} />,
+            }
+          },
+          children: [
+            {
+              index: true,
+              async lazy() {
+                const { CheckoutSearchPage } = await import(
+                  "#src/features/checkout/routes/search/CheckoutSearchPage"
+                )
+                return {
+                  element: <CheckoutSearchPage />,
+                }
+              },
+            },
+            {
+              path: "/checkouts/cart/:cartId",
+              async lazy() {
+                const { CheckoutCartPage } = await import(
+                  "#src/features/checkout/routes/search/CheckoutCartPage"
+                )
+                return {
+                  element: <CheckoutCartPage />,
+                }
+              },
+            },
+          ],
+        },
+
         // check-in
         {
           ErrorBoundary() {

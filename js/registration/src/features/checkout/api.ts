@@ -17,11 +17,19 @@ export const createCheckoutAPI = (
   const checkoutWretch = wretch.url("/checkouts")
   const cartWretch = wretch.url("/carts")
   return {
-    list(options = {}) {
+    list(query, options = {}) {
       let req = checkoutWretch.addon(queryString)
+
+      if (query) {
+        req = req.query({ q: query })
+      }
 
       if (options.registrationId) {
         req = req.query({ registration_id: options.registrationId })
+      }
+
+      if (!!options.showAll) {
+        req = req.query({ show_all: true })
       }
 
       if (options.before) {
@@ -29,7 +37,7 @@ export const createCheckoutAPI = (
       }
 
       return {
-        queryKey: ["checkouts", options],
+        queryKey: ["checkouts", { query: query, ...options }],
         async queryFn() {
           return await req.get().json<CheckoutListResponse[]>()
         },

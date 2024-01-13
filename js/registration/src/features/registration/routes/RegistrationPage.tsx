@@ -56,7 +56,10 @@ export const RegistrationPage = observer(() => {
   const regQuery = registrationAPI.read(registrationId)
   const registration = useQuery(regQuery)
   const checkouts = useQuery({
-    ...checkoutAPI.list({ registrationId: registrationId }),
+    ...checkoutAPI.list(undefined, {
+      registrationId: registrationId,
+      showAll: true,
+    }),
     enabled: viewCheckouts,
   })
 

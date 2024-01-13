@@ -48,6 +48,7 @@ class CheckoutService:
         query: Optional[str] = None,
         *,
         registration_id: Optional[UUID] = None,
+        show_all: bool = False,
         before: Optional[datetime] = None,
     ) -> Sequence[CheckoutEntity]:
         """List checkouts."""
@@ -66,6 +67,14 @@ class CheckoutService:
 
         if query:
             q = q.where(or_(*(_get_search_query(query))))
+
+        if not show_all:
+            q = q.where(
+                or_(
+                    CheckoutEntity.state == CheckoutState.pending,
+                    CheckoutEntity.state == CheckoutState.canceled,
+                )
+            )
 
         if before is not None:
             q = q.where(CheckoutEntity.date_created < before)
@@ -396,10 +405,36 @@ def _get_search_query(query: Optional[str]) -> Iterator[ColumnElement]:
         return
 
     yield from _get_name_query(query)
+    yield from _get_full_name_query(query)
     yield from _get_email_query(query)
 
 
 def _get_name_query(query: str) -> Iterator[ColumnElement]:
+    if " " in query:
+        return
+
+    name = query.lower()
+
+    yield or_(
+        func.lower(
+            CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                "first_name"
+            ].as_string()
+        ).startswith(name),
+        func.lower(
+            CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                "preferred_name"
+            ].as_string()
+        ).startswith(name),
+        func.lower(
+            CheckoutEntity.cart_data["registrations"][0]["new_data"][
+                "last_name"
+            ].as_string()
+        ).startswith(name),
+    )
+
+
+def _get_full_name_query(query: str) -> Iterator[ColumnElement]:
     if " " not in query:
         return
 

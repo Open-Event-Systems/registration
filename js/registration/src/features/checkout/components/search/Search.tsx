@@ -55,6 +55,7 @@ const Input = (props: SearchInputProps) => {
       />
       <Checkbox
         label="Show all"
+        title="Include completed checkouts"
         className="CheckoutSearch-showAll"
         checked={showAll}
         onChange={(e) => {

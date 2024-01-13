@@ -9,10 +9,14 @@ import {
 } from "@tanstack/react-query"
 
 export type CheckoutAPI = {
-  list(options?: {
-    registrationId?: string
-    before?: string
-  }): DefinedInitialDataOptions<CheckoutListResponse[]>
+  list(
+    query?: string,
+    options?: {
+      registrationId?: string
+      before?: string
+      showAll?: boolean
+    },
+  ): DefinedInitialDataOptions<CheckoutListResponse[]>
   create(
     cartId: string,
   ): UseMutationOptions<Checkout, Error, { method: string }>
