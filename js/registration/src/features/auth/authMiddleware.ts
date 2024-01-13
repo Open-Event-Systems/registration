@@ -17,7 +17,10 @@ export const getRetryMiddleware =
       const response = await next(url, newOpts)
 
       if (response.status == 401) {
-        if (authInfo == authStore.authInfo) {
+        if (
+          !authStore.authInfo?.accessToken ||
+          authInfo.accessToken == authStore.authInfo?.accessToken
+        ) {
           await authStore.attemptRefresh()
         }
 

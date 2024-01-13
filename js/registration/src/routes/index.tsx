@@ -4,6 +4,8 @@ import "#src/components/styles.css"
 import "#src/features/auth/styles.css"
 import theme from "#src/config/theme"
 
+import "#src/config/theme.scss"
+
 import {
   LoadingOverlay,
   ShowLoadingOverlay,
@@ -15,18 +17,13 @@ import { NotFoundErrorBoundary, NotFoundPage } from "#src/routes/NotFoundPage"
 import { isNotFoundError } from "#src/utils/api"
 import { makeApp } from "#src/utils/react"
 import { MantineProvider } from "@mantine/core"
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Outlet, RouterProvider, createBrowserRouter } from "react-router-dom"
 
 import { FullScreenLayout } from "#src/components/layout/FullScreenLayout"
 import { useAuth } from "#src/features/auth/hooks"
 import { useApp } from "#src/hooks/app"
 import { SignInDialog } from "#src/features/auth/components/dialog/SignInDialog"
-import { useEventAPI } from "#src/features/event/hooks"
 
 makeApp(() => {
   const client = new QueryClient({
@@ -52,9 +49,7 @@ makeApp(() => {
 
   const router = createBrowserRouter([
     {
-      element: (
-        <AppRoute queryClient={client} fallback={<ShowLoadingOverlay />} />
-      ),
+      element: <AppRoute queryClient={client} />,
       children: [
         // Auth routes
         {
@@ -149,11 +144,11 @@ makeApp(() => {
                         {
                           index: true,
                           async lazy() {
-                            const { EventRoute } = await import(
-                              "#src/features/selfservice/routes/EventRoute"
+                            const { EventPage } = await import(
+                              "#src/features/selfservice/routes/EventPage"
                             )
                             return {
-                              element: <EventRoute />,
+                              element: <EventPage />,
                             }
                           },
                         },
@@ -168,6 +163,13 @@ makeApp(() => {
 
         // Registration
         {
+          ErrorBoundary() {
+            return (
+              <SimpleLayout>
+                <NotFoundErrorBoundary />
+              </SimpleLayout>
+            )
+          },
           path: "/registrations",
           async lazy() {
             await Promise.all([
@@ -190,33 +192,28 @@ makeApp(() => {
           },
           children: [
             {
-              errorElement: <NotFoundErrorBoundary />,
-              children: [
-                {
-                  index: true,
-                  async lazy() {
-                    const { SearchPage } = await import(
-                      "#src/features/registration/routes/SearchPage"
-                    )
+              index: true,
+              async lazy() {
+                const { SearchPage } = await import(
+                  "#src/features/registration/routes/SearchPage"
+                )
 
-                    return {
-                      element: <SearchPage />,
-                    }
-                  },
-                },
-                {
-                  path: ":registrationId",
-                  async lazy() {
-                    const { RegistrationPage } = await import(
-                      "#src/features/registration/routes/RegistrationPage"
-                    )
+                return {
+                  element: <SearchPage />,
+                }
+              },
+            },
+            {
+              path: ":registrationId",
+              async lazy() {
+                const { RegistrationPage } = await import(
+                  "#src/features/registration/routes/RegistrationPage"
+                )
 
-                    return {
-                      element: <RegistrationPage />,
-                    }
-                  },
-                },
-              ],
+                return {
+                  element: <RegistrationPage />,
+                }
+              },
             },
           ],
         },
@@ -232,83 +229,53 @@ makeApp(() => {
           },
           children: [
             {
-              Component() {
-                // TODO: move
-                const app = useApp()
-                const auth = useAuth()
-                const eventAPI = useEventAPI()
-                const events = useQuery(eventAPI.list())
-                if (!auth.authInfo || !events.isSuccess) {
-                  return (
-                    <SimpleLayout>
-                      <ShowLoadingOverlay />
-                      <SignInDialog.Manager
-                        authStore={auth}
-                        wretch={app.wretch}
-                      />
-                    </SimpleLayout>
-                  )
-                } else {
-                  // TODO: check-in scope
-                  // if (!auth.authInfo.hasScope("test")) {
-                  //   throw new NotFoundError()
-                  // }
-                  return <Outlet />
+              async lazy() {
+                const res = await Promise.all([
+                  await import(
+                    "#src/features/checkin/components/layout/CheckinLayout"
+                  ),
+                  await import("#src/features/interview/styles.css"),
+                  await import(
+                    "#src/features/checkin/components/layout/CheckinLayout.scss"
+                  ), // TODO: import styles.css instead
+                  await import(
+                    "#src/features/checkin/components/search/Search.css"
+                  ), // TODO: import styles.css instead
+                  await import(
+                    "#src/features/checkin/components/badge/Badge.css"
+                  ), // TODO: import styles.css instead
+                  await import("#src/features/checkin/routes/CheckinPage.css"), // TODO: import styles.css instead
+                  await import(
+                    "#src/features/registration/components/registration/fields/RegistrationFields.scss"
+                  ), // TODO: import styles.css instead
+                ])
+                const [{ CheckinLayout }] = res
+                return {
+                  element: <LayoutRoute Layout={CheckinLayout} />,
                 }
               },
               children: [
                 {
+                  path: "/check-in/:eventId",
                   async lazy() {
-                    const res = await Promise.all([
-                      await import(
-                        "#src/features/checkin/components/layout/CheckinLayout"
-                      ),
-                      await import("#src/features/interview/styles.css"),
-                      await import(
-                        "#src/features/checkin/components/layout/CheckinLayout.scss"
-                      ), // TODO: import styles.css instead
-                      await import(
-                        "#src/features/checkin/components/search/Search.css"
-                      ), // TODO: import styles.css instead
-                      await import(
-                        "#src/features/checkin/components/badge/Badge.css"
-                      ), // TODO: import styles.css instead
-                      await import(
-                        "#src/features/checkin/routes/CheckinPage.css"
-                      ), // TODO: import styles.css instead
-                      await import(
-                        "#src/features/registration/components/registration/fields/RegistrationFields.scss"
-                      ), // TODO: import styles.css instead
-                    ])
-                    const [{ CheckinLayout }] = res
+                    const { SearchPage } = await import(
+                      "#src/features/checkin/routes/SearchPage"
+                    )
                     return {
-                      element: <LayoutRoute Layout={CheckinLayout} />,
+                      element: <SearchPage />,
                     }
                   },
-                  children: [
-                    {
-                      path: "/check-in/:eventId",
-                      async lazy() {
-                        const { SearchPage } = await import(
-                          "#src/features/checkin/routes/SearchPage"
-                        )
-                        return {
-                          element: <SearchPage />,
-                        }
-                      },
-                    },
-                    {
-                      path: "/check-in/:eventId/registrations/:registrationId",
-                      async lazy() {
-                        const { CheckinPage } = await import(
-                          "#src/features/checkin/routes/CheckinPage"
-                        )
-                        return {
-                          element: <CheckinPage />,
-                        }
-                      },
-                    },
-                  ],
+                },
+                {
+                  path: "/check-in/:eventId/registrations/:registrationId",
+                  async lazy() {
+                    const { CheckinPage } = await import(
+                      "#src/features/checkin/routes/CheckinPage"
+                    )
+                    return {
+                      element: <CheckinPage />,
+                    }
+                  },
                 },
               ],
             },

@@ -120,7 +120,7 @@ require_registration_edit_or_action = Policy(
         Scope.registration_action,
     ),
 )
-require_check_in = Policy(RequireRegistration, ScopeRequirement(Scope.check_in))
+require_check_in = Policy(RequireCheckIn, ScopeRequirement(Scope.check_in))
 
 
 class RequestUser(BoundValue[User]):

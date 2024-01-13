@@ -1,8 +1,10 @@
 import path from "path"
 import HtmlWebpackPlugin from "html-webpack-plugin"
-import { Configuration, DefinePlugin } from "webpack"
+import { Configuration, DefinePlugin, Module, NormalModule } from "webpack"
 import MiniCssExtractPlugin from "mini-css-extract-plugin"
 import "webpack-dev-server"
+import CssMinimizerPlugin from "css-minimizer-webpack-plugin"
+
 
 const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Configuration => {
   const prod = argv.mode !== "development"
@@ -15,7 +17,7 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
     },
     output: {
       publicPath: "/", // TODO: make configurable
-      filename: prod ? "assets/js/[name].[contenthash].bundle.js" : undefined,
+      filename: prod ? "assets/js/[name].[contenthash].js" : undefined,
       path: path.resolve("./dist"),
       clean: prod,
     },
@@ -46,7 +48,42 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
             {
               test: /\.js$/,
               exclude: /node_modules/,
-              use: "babel-loader",
+              use: {
+                loader: "babel-loader",
+                options: {
+                  presets: [
+                    "@babel/preset-env",
+                    [
+                      "@babel/preset-react",
+                      {
+                        runtime: "automatic",
+                      },
+                    ],
+                    "@babel/preset-typescript",
+                  ],
+                  plugins: ["@babel/plugin-transform-runtime"],
+                },
+              },
+            },
+            // do transpile tanstack
+            {
+              test: /@tanstack.*\.js$/,
+              use: {
+                loader: "babel-loader",
+                options: {
+                  presets: [
+                    "@babel/preset-env",
+                    [
+                      "@babel/preset-react",
+                      {
+                        runtime: "automatic",
+                      },
+                    ],
+                    "@babel/preset-typescript",
+                  ],
+                  plugins: ["@babel/plugin-transform-runtime"],
+                },
+              },
             },
           ],
         },
@@ -57,20 +94,37 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
           use: [MiniCssExtractPlugin.loader, "css-loader"],
         },
         {
-          test: /\.s[ca]ss$/,
-          use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
-        },
-
-        // config.json
-        {
-          test: /config(\.example)?\.json$/,
-          type: "asset/resource",
-          generator: {
-            filename: "config.json",
-          },
+          oneOf: [
+            {
+              test: [
+                path.resolve("./theme.scss"),
+                path.resolve("./src/config/theme.scss"),
+              ],
+              use: "sass-loader",
+              type: "asset/resource",
+              generator: {
+                filename: "theme.css"
+              }
+            },
+            {
+              test: /\.s[ca]ss$/,
+              use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"],
+            },
+          ]
         },
 
         // resources
+
+        // consistent name for logo
+        {
+          test: [
+            path.resolve("./logo.svg"),
+            path.resolve("./resources/example-logo.svg"),
+          ],
+          generator: {
+            filename: "logo.svg",
+          }
+        },
 
         // svg files -> SVGO
         {
@@ -93,16 +147,22 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
           path.resolve("./src/config/theme.ts"),
         ],
 
+        // overridable theme styles
+        "#src/config/theme.scss$": [
+          path.resolve("./theme.scss"),
+          path.resolve("./src/config/theme.scss"),
+        ],
+
         // logo
         "logo.svg$": [
           path.resolve("./logo.svg"),
           path.resolve("./resources/example-logo.svg"),
         ],
 
-        // config.json
-        "config.json$": [
-          path.resolve("./config.json"),
-          path.resolve("./config.example.json"),
+        // overridable config file
+        "#src/config/config$": [
+          path.resolve("./config.ts"),
+          path.resolve("./src/config/config.ts"),
         ],
       },
     },
@@ -111,19 +171,25 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       new DefinePlugin({
         "process.env.DELAY": JSON.stringify(process.env.DELAY),
       }),
-      new MiniCssExtractPlugin(),
+      new MiniCssExtractPlugin({
+        ...(prod ? {
+          filename: "assets/css/[name].[contenthash].css",
+        } : {})
+      }),
       // html page for each entry point
       new HtmlWebpackPlugin({
         title: "Registration",
         template: "./src/index.html",
         chunks: ["main"],
         filename: "index.html",
+        inject: false
       }),
       new HtmlWebpackPlugin({
         title: "Receipt",
         template: "./src/index.html",
         chunks: ["receipt"],
         filename: "receipt/index.html",
+        inject: false
       }),
     ],
     // source map config
@@ -153,8 +219,33 @@ const config = (env: Record<string, unknown>, argv: Record<string, unknown>): Co
       cacheDirectory: path.resolve("./.cache/webpack"),
     },
     optimization: {
+      minimizer: [
+        "...",
+        new CssMinimizerPlugin(),
+      ],
       splitChunks: {
         chunks: prod ? "all" : undefined,
+        cacheGroups: {
+          // specific names for config/theme
+          config: {
+            test: (module: Module) => {
+              return module instanceof NormalModule && module.rawRequest == "#src/config/config"
+            },
+            usedExports: false,
+            enforce: true,
+            name: "config",
+            filename: "config.js"
+          },
+          theme: {
+            test: (module: Module) => {
+              return module instanceof NormalModule && module.rawRequest == "#src/config/theme"
+            },
+            usedExports: false,
+            enforce: true,
+            name: "theme",
+            filename: "theme.js"
+          },
+        }
       },
     },
   }

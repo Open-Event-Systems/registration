@@ -10,28 +10,23 @@ import { AppContext, AppStore } from "#src/stores/AppStore"
 import { QueryClient } from "@tanstack/react-query"
 import { Context, ReactNode, useLayoutEffect, useState } from "react"
 
+import config from "#src/config/config"
+import { defaultWretch } from "#src/config/api"
+
 export const AppProvider = ({
   children,
   queryClient,
-  fallback,
 }: {
   children?: ReactNode
   queryClient: QueryClient
   fallback?: ReactNode
 }) => {
-  const [app, setApp] = useState<AppStore | null>(null)
+  const [wretch] = useState(defaultWretch.url(config.apiUrl))
+  const [app] = useState(new AppStore(wretch, config, queryClient))
 
   useLayoutEffect(() => {
-    AppStore.fromConfig(queryClient)
-      .then((app) => {
-        return app.authStore.load().then(() => app)
-      })
-      .then((app) => setApp(app))
-  }, [])
-
-  if (!app) {
-    return fallback
-  }
+    app.authStore.load()
+  }, [app])
 
   return (
     <ContextProvider

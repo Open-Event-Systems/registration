@@ -11,22 +11,28 @@ class ClientImpl {
   async format(data: BadgeData): Promise<void> {
     const id = this.getId()
     const wait = this.wait(id)
-    this.target.postMessage({
-      type: "format",
-      id: id,
-      data: data,
-    } as FormatRequest)
+    this.target.postMessage(
+      {
+        type: "format",
+        id: id,
+        data: data,
+      } as FormatRequest,
+      this.targetOrigin,
+    )
     return wait
   }
 
   async print(data: BadgeData): Promise<void> {
     const id = this.getId()
     const wait = this.wait(id)
-    this.target.postMessage({
-      type: "print",
-      id: id,
-      data: data,
-    } as PrintRequest)
+    this.target.postMessage(
+      {
+        type: "print",
+        id: id,
+        data: data,
+      } as PrintRequest,
+      this.targetOrigin,
+    )
     return wait
   }
 
@@ -64,4 +70,26 @@ class ClientImpl {
  */
 export const createClient = (window: Window, targetOrigin = "*"): Client => {
   return new ClientImpl(window, targetOrigin)
+}
+
+/**
+ * Wait for a "ready" message.
+ * @param windowName - the window name
+ */
+export const waitUntilReady = (windowName: string): Promise<void> => {
+  return new Promise<void>((resolve) => {
+    const handler = (e: MessageEvent) => {
+      const data = e.data
+      if (
+        typeof data == "object" &&
+        data &&
+        "ready" in data &&
+        data.ready === windowName
+      ) {
+        window.removeEventListener("message", handler)
+        resolve()
+      }
+    }
+    window.addEventListener("message", handler)
+  })
 }

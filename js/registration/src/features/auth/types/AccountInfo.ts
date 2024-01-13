@@ -25,11 +25,13 @@ export interface EmailTokenResponse {
  * Scope values.
  */
 export enum Scope {
-  event = "event",
+  event = "event:view",
   cart = "cart",
   checkout = "checkout",
   selfService = "self-service",
   registration = "registration",
   registrationEdit = "registration:edit",
+  registrationAction = "registration:action",
+  checkIn = "check-in",
   admin = "admin",
 }

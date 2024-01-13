@@ -66,7 +66,7 @@ class HookStep(Step):
 
     def _set_result_info(self, state: InterviewState, res: Response):
         if not self.result:
-            return
+            return state
 
         info = {
             "status_code": res.status_code,

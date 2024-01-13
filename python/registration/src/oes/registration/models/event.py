@@ -140,6 +140,9 @@ class Event:
     check_in_interview: str
     """The interview to use for check-in."""
 
+    badge_url: str = ""
+    """The badge document URL."""
+
     pricing_rules: Sequence[LineItemRule] = ()
     """Line item pricing rules."""
 

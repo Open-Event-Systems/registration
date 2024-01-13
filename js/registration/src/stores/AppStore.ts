@@ -1,11 +1,6 @@
 import { Config } from "#src/types/config"
-import {
-  defaultQueryClient,
-  defaultWretch,
-  placeholderWretch,
-} from "#src/config/api"
+import { defaultQueryClient, placeholderWretch } from "#src/config/api"
 import { Wretch } from "wretch"
-import { fetchConfig } from "#src/config/config"
 import { AuthStore } from "#src/features/auth/stores/AuthStore"
 import { EventAPI } from "#src/features/event/types"
 import { RegistrationAPI } from "#src/features/registration"
@@ -21,6 +16,8 @@ import { createCartAPI } from "#src/features/cart/api"
 import { QueryClient } from "@tanstack/react-query"
 import { AuthAPI } from "#src/features/auth/types/api"
 import { createAuthAPI } from "#src/features/auth/api"
+
+import config from "#src/config/config"
 
 export class AppStore {
   authStore: AuthStore
@@ -47,19 +44,10 @@ export class AppStore {
     this.checkoutAPI = createCheckoutAPI(authWretch, queryClient)
     this.selfServiceAPI = createSelfServiceAPI(authWretch, queryClient)
   }
-
-  static async fromConfig(queryClient: QueryClient): Promise<AppStore> {
-    const config = await fetchConfig()
-    const wretch = defaultWretch.url(config.apiUrl, true)
-    return new AppStore(wretch, config, queryClient)
-  }
-}
-
-const defaultConfig: Config = {
-  apiUrl: "http://localhost:8000",
 }
 
 export const AppContext = createContext(
-  new AppStore(placeholderWretch, defaultConfig, defaultQueryClient),
+  new AppStore(placeholderWretch, config, defaultQueryClient),
 )
+
 export const AppStoreContext = AppContext

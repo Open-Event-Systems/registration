@@ -82,6 +82,7 @@ class EventResponse:
     date: date
     open: bool = False
     visible: bool = False
+    badge_url: str = ""
     registration_options: Sequence[RegistrationOption] = ()
 
 

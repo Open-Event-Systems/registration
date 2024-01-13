@@ -19,8 +19,8 @@ class Scope(str, Enum):
     checkout = "checkout"
     """May search and view checkouts."""
 
-    event = "event"
-    """May use event endpoints."""
+    event = "event:view"
+    """May view event configuration."""
 
     self_service = "self-service"
     """May use self-service endpoints and manage one's own registrations."""
@@ -34,7 +34,7 @@ class Scope(str, Enum):
     registration_action = "registration:action"
     """May use pre-defined registration actions."""
 
-    check_in = "check_in"
+    check_in = "check-in"
     """May check in registrations."""
 
 

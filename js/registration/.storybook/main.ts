@@ -76,6 +76,12 @@ const config: StorybookConfig = {
             path.resolve("./src/config/theme.ts"),
           ],
 
+          // overridable theme styles
+          "#src/config/theme.scss$": [
+            path.resolve("./theme.scss"),
+            path.resolve("./src/config/theme.scss"),
+          ],
+
           // logo
           "logo.svg$": [
             path.resolve("./logo.svg"),
@@ -83,7 +89,10 @@ const config: StorybookConfig = {
           ],
 
           // config.json
-          "config.json$": path.resolve("./config.json"),
+          "#src/config/config$": [
+            path.resolve("./config.ts"),
+            path.resolve("./src/config/config.ts"),
+          ],
         },
       },
     }
