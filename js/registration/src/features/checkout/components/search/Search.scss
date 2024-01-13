@@ -1,0 +1,17 @@
+
+.CheckoutSearch-query {
+    flex: auto;
+}
+
+.CheckoutSearch-table tr {
+    cursor: pointer;
+}
+
+.CheckoutSearch-cartButton {
+    vertical-align: middle;
+}
+
+.CheckoutSearch-noResults {
+    text-align: center;
+    margin: var(--mantine-spacing-md);
+}
