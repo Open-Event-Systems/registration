@@ -65,6 +65,21 @@ export const Badge = observer((props: BadgeProps) => {
     }
   }, [badgeAPI, badgeData])
 
+  // auto print
+  useEffect(() => {
+    if (
+      stationInfo.data?.settings.auto_print_url &&
+      checkInStore.printer &&
+      !checkInStore.printIds.has(badgeData.id)
+    ) {
+      checkInStore.print(
+        stationInfo.data.settings.auto_print_url,
+        checkInStore.printer,
+        badgeData,
+      )
+    }
+  }, [badgeData.id])
+
   return (
     <Stack className="Badge-root">
       <Box className="Badge-container">

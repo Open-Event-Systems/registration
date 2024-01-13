@@ -10,12 +10,13 @@ import {
   CheckInStoreContext,
 } from "#src/features/checkin/stores/CheckInStore"
 import { useQueueAPI } from "#src/features/queue/hooks"
-import { StationSettings } from "#src/features/queue/types"
+import { QueueItem, StationSettings } from "#src/features/queue/types"
+import { useRegistrationAPI } from "#src/features/registration/hooks"
 import { useApp } from "#src/hooks/app"
 import { NotFoundError } from "#src/utils/api"
 import { ActionIcon, Box, BoxProps, Switch } from "@mantine/core"
 import { IconSettings } from "@tabler/icons-react"
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import clsx from "clsx"
 import { action } from "mobx"
 import { observer } from "mobx-react-lite"
@@ -23,6 +24,8 @@ import {
   ComponentPropsWithRef,
   ComponentPropsWithoutRef,
   ReactNode,
+  useEffect,
+  useRef,
   useState,
 } from "react"
 
@@ -30,6 +33,7 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
   const app = useApp()
   const auth = useAuth()
   const queueAPI = useQueueAPI()
+  const queryClient = useQueryClient()
   const [checkInStore] = useState(() => new CheckInStore(app.wretch))
 
   if (auth.ready && !!auth.authInfo && !auth.authInfo.hasScope(Scope.checkIn)) {
@@ -49,7 +53,7 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
   })
 
   // refetch queue items
-  useQuery({
+  const queueItems = useQuery({
     ...queueAPI.listQueueItems(
       stationInfo.data?.group_id ?? "",
       stationInfo.data?.id,
@@ -58,6 +62,35 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
     staleTime: 5000,
     refetchInterval: 5000,
   })
+
+  const registrationAPI = useRegistrationAPI()
+
+  const prevItems = useRef<QueueItem[]>(queueItems.data ?? [])
+
+  // trigger printing
+  useEffect(() => {
+    const printUrl = stationInfo.data?.settings.auto_print_url
+    const printer = checkInStore.printer
+    if (queueItems.data && printUrl && printer) {
+      for (const item of queueItems.data) {
+        if (prevItems.current.find((it) => it.id == item.id)) {
+          continue
+        }
+
+        if (
+          item.registration_id &&
+          !checkInStore.printIds.has(item.registration_id)
+        ) {
+          queryClient
+            .fetchQuery(registrationAPI.read(item.registration_id))
+            .then((reg) => {
+              return checkInStore.print(printUrl, printer, reg)
+            })
+        }
+      }
+    }
+    prevItems.current = queueItems.data ?? []
+  }, [queueItems.data])
 
   return (
     <Box className="CheckinLayout-root">
