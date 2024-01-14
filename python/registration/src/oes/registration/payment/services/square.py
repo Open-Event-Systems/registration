@@ -76,6 +76,7 @@ class SquareCheckoutType(str, Enum):
 
     web = "web"
     terminal = "terminal"
+    cash = "cash"
 
 
 @frozen(kw_only=True)
@@ -296,9 +297,12 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
     async def create_checkout(
         self, request: CreateCheckoutRequest, checkout_id: Optional[UUID] = None, /
     ) -> PaymentServiceCheckout:
-        checkout_type = request.method.config.get("type", SquareCheckoutType.web)
-        if checkout_type == SquareCheckoutType.web:
-            return await self._create_web_checkout(request, checkout_id)
+        checkout_type = request.method.config.get("type", SquareCheckoutType.web.value)
+        if (
+            checkout_type == SquareCheckoutType.web
+            or checkout_type == SquareCheckoutType.cash
+        ):
+            return await self._create_web_checkout(request, checkout_id, checkout_type)
         elif checkout_type == SquareCheckoutType.terminal:
             device_id = request.method.config.get("device_id")
             if not device_id:
@@ -308,7 +312,10 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             raise ValueError(f"Invalid Square checkout type: {checkout_type}")
 
     async def _create_web_checkout(
-        self, request: CreateCheckoutRequest, checkout_id: Optional[UUID]
+        self,
+        request: CreateCheckoutRequest,
+        checkout_id: Optional[UUID],
+        type: SquareCheckoutType = SquareCheckoutType.web,
     ) -> PaymentServiceCheckout:
         created_order = await self._create_checkout(request, None, checkout_id)
 
@@ -320,7 +327,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             state=_get_state(created_order.state),
             date_created=created_order.created_at,
             checkout_data={
-                "type": SquareCheckoutType.web.value,
+                "type": type,
                 "email": email,
                 "first_name": first_name,
                 "last_name": last_name,
@@ -328,7 +335,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             response_data={
                 "application_id": self._config.application_id,
                 "location_id": self._config.location_id,
-                "type": SquareCheckoutType.web.value,
+                "type": type,
                 "amount": _format_currency_str(request.pricing_result.total_price),
                 "currency": request.pricing_result.currency,
                 "sandbox": self._config.environment != "production",
@@ -509,6 +516,11 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
         idempotency_key = update_request.body.get("idempotency_key")
         verification_token = update_request.body.get("verification_token")
 
+        checkout_type = update_request.checkout_data.get("type", SquareCheckoutType.web)
+        allow_cash = checkout_type == SquareCheckoutType.cash
+        cash_amount = update_request.body.get("cash_amount", 0)
+        cash_amount = cash_amount if isinstance(cash_amount, int) else 0
+
         if (
             not source_id
             or not idempotency_key
@@ -522,6 +534,8 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
         order_id = update_request.id
 
         email = update_request.checkout_data.get("email")
+        checkout_data = {}
+        response_data = {}
 
         async with self._sem:
             order: Optional[SquareOrder] = await asyncio.to_thread(
@@ -539,17 +553,37 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             assert order.total_money is not None
 
             with _transform_errors():
-                payment_id: str = await asyncio.to_thread(
-                    self._create_payment,
-                    order_id=order_id,
-                    source_id=source_id,
-                    idempotency_key=idempotency_key[:45],
-                    amount=order.total_money.amount,
-                    currency=order.total_money.currency,
-                    customer_id=customer_id,
-                    email=email,
-                    verification_token=verification_token,
-                )
+                payment_id: str
+
+                if source_id.lower() == "cash" and allow_cash:
+                    if cash_amount < order.total_money.amount:
+                        raise ValidationError("Insufficient funds")
+
+                    payment_id, change = await asyncio.to_thread(
+                        self._create_cash_payment,
+                        order_id=order_id,
+                        idempotency_key=idempotency_key[:45],
+                        amount=order.total_money.amount,
+                        provided_amount=cash_amount,
+                        currency=order.total_money.currency,
+                        customer_id=customer_id,
+                        email=email,
+                    )
+                    checkout_data["cash_amount"] = cash_amount
+                    checkout_data["change"] = change
+                    response_data["change"] = change
+                else:
+                    payment_id = await asyncio.to_thread(
+                        self._create_payment,
+                        order_id=order_id,
+                        source_id=source_id,
+                        idempotency_key=idempotency_key[:45],
+                        amount=order.total_money.amount,
+                        currency=order.total_money.currency,
+                        customer_id=customer_id,
+                        email=email,
+                        verification_token=verification_token,
+                    )
 
                 complete_order: SquareOrder = await asyncio.to_thread(
                     self._pay_order, order_id, payment_id
@@ -561,6 +595,8 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
             state=_get_state(complete_order.state),
             date_created=order.created_at,
             date_closed=order.closed_at,
+            checkout_data=checkout_data,
+            response_data=response_data,
         )
 
     async def _check_terminal_checkout(self, id: str) -> PaymentServiceCheckout:
@@ -707,7 +743,7 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
         verification_token: Optional[str] = None,
     ) -> str:
         # do not allow users to specify a special source_id
-        if source_id in ("CASH", "EXTERNAL"):
+        if source_id.lower() in ("cash", "external"):
             raise ValidationError
 
         res: ApiResponse = self._client.payments.create_payment(
@@ -729,6 +765,45 @@ class SquarePaymentService(PaymentService, CheckoutUpdater, WebhookHandler):
 
         if res.is_success():
             return res.body["payment"]["id"]
+        else:
+            raise SquareError(res.errors)
+
+    def _create_cash_payment(
+        self,
+        order_id: str,
+        idempotency_key: str,
+        amount: int,
+        provided_amount: int,
+        currency: str,
+        customer_id: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> tuple[str, int]:
+        res: ApiResponse = self._client.payments.create_payment(
+            {
+                "source_id": "CASH",
+                "idempotency_key": idempotency_key,
+                "amount_money": {
+                    "amount": amount,
+                    "currency": currency,
+                },
+                "cash_details": {
+                    "buyer_supplied_money": {
+                        "amount": provided_amount,
+                        "currency": currency,
+                    },
+                },
+                "autocomplete": False,
+                "order_id": order_id,
+                "customer_id": customer_id,
+                "location_id": self._config.location_id,
+                "buyer_email_address": email,
+            }
+        )
+
+        if res.is_success():
+            id = res.body["payment"]["id"]
+            change = res.body["payment"]["cash_details"]["change_back_money"]["amount"]
+            return id, change
         else:
             raise SquareError(res.errors)
 

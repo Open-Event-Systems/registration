@@ -1,4 +1,4 @@
-import { ComponentType } from "react"
+import { ComponentType, ReactNode } from "react"
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface PaymentServiceMap {}
@@ -82,6 +82,8 @@ export type CheckoutContextValue = {
   updating: boolean
   update: (body?: Record<string, unknown>) => Promise<Checkout | null>
   cancel: () => Promise<void>
+  completeMessage?: ReactNode
+  setCompleteMessage: (message: ReactNode) => void
 } & (
   | { ready: true; checkout: Checkout }
   | { ready: false; checkout?: Checkout }

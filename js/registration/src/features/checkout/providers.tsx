@@ -37,6 +37,7 @@ export const CheckoutProvider = ({
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [completeMessage, setCompleteMessage] = useState<ReactNode>(undefined)
 
   const ctxValue = useMemo(() => {
     const ctx: CheckoutContextValue = {
@@ -77,6 +78,10 @@ export const CheckoutProvider = ({
           await cancelMutation.mutateAsync()
         }
       },
+      completeMessage: completeMessage,
+      setCompleteMessage(message) {
+        setCompleteMessage(message)
+      },
     }
     return ctx
   }, [
@@ -86,6 +91,7 @@ export const CheckoutProvider = ({
     updateCount,
     submitting,
     error,
+    completeMessage,
   ])
 
   return (

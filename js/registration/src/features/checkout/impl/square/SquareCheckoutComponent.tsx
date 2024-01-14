@@ -1,15 +1,18 @@
 import { useCheckout } from "#src/features/checkout/hooks"
 import { SquareCardCheckoutComponent } from "#src/features/checkout/impl/square/Card"
+import { SquareCashCheckoutComponent } from "#src/features/checkout/impl/square/Cash"
 import { SquareCheckoutType } from "#src/features/checkout/impl/square/SquareCheckoutClient"
 import { SquareTerminalCheckoutComponent } from "#src/features/checkout/impl/square/Terminal"
 import { Checkout } from "#src/features/checkout/types/Checkout"
 
 export const SquareCheckoutComponent = () => {
-  const { checkout, update } = useCheckout()
+  const { checkout } = useCheckout()
 
   const squareCheckout = checkout as Checkout<"square">
 
-  if (squareCheckout.data.type == SquareCheckoutType.terminal) {
+  if (squareCheckout.data.type == SquareCheckoutType.cash) {
+    return <SquareCashCheckoutComponent />
+  } else if (squareCheckout.data.type == SquareCheckoutType.terminal) {
     return <SquareTerminalCheckoutComponent />
   } else {
     return <SquareCardCheckoutComponent />

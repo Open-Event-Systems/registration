@@ -632,7 +632,7 @@ async def _assign_registration_numbers(
 def _make_checkout_update_response(
     checkout_result: PaymentServiceCheckout, checkout_entity: CheckoutEntity
 ):
-    if checkout_result.is_open:
+    if checkout_result.is_open or checkout_result.response_data:
         return Response(
             200,
             content=Content(

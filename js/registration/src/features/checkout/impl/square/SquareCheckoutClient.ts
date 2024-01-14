@@ -10,6 +10,7 @@ declare module "#src/features/checkout/types/Checkout" {
 export enum SquareCheckoutType {
   web = "web",
   terminal = "terminal",
+  cash = "cash",
 }
 
 export interface SquareCheckoutData {
@@ -19,6 +20,7 @@ export interface SquareCheckoutData {
   amount: string
   currency: string
   sandbox?: boolean
+  change?: number
 }
 
 export interface SquareCheckoutUpdate {
