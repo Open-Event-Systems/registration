@@ -100,6 +100,7 @@ RequireRegistrationEdit = "require_registration_edit"
 RequireRegistrationEditOrAction = "require_registration_edit_or_action"
 RequireRegistrationAction = "require_registration_action"
 RequireCheckIn = "require_check_in"
+RequireQueue = "require_queue"
 
 require_admin = Policy(RequireAdmin, ScopeRequirement(Scope.admin))
 require_cart = Policy(RequireCart, ScopeRequirement(Scope.cart))
@@ -121,6 +122,7 @@ require_registration_edit_or_action = Policy(
     ),
 )
 require_check_in = Policy(RequireCheckIn, ScopeRequirement(Scope.check_in))
+require_queue = Policy(RequireQueue, ScopeRequirement(Scope.queue))
 
 
 class RequestUser(BoundValue[User]):

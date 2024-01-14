@@ -7,8 +7,9 @@ from uuid import UUID
 
 from attr import evolve
 from attrs import frozen
-from blacksheep import FromJSON, FromQuery, Response
+from blacksheep import FromJSON, FromQuery, Response, auth
 from oes.registration.app import app
+from oes.registration.auth.handlers import RequireQueue
 from oes.registration.checkout.service import CheckoutService
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
@@ -92,6 +93,7 @@ class LogQueueItemRequest:
     date_started: datetime
 
 
+@auth(RequireQueue)
 @app.router.get("/stations")
 @docs_helper(
     response_type=list[StationListResponse],
@@ -106,6 +108,7 @@ async def list_stations(config: Config) -> list[StationListResponse]:
     ]
 
 
+@auth(RequireQueue)
 @app.router.get("/stations/{station_id}")
 @docs_helper(
     response_type=StationResponse,
@@ -124,6 +127,7 @@ async def get_station(
     )
 
 
+@auth(RequireQueue)
 @app.router.put("/stations/{station_id}")
 @docs_helper(
     response_type=StationResponse,
@@ -162,7 +166,7 @@ async def update_station_config(
     return StationResponse(id=entity.id, group_id=entity.group_id, settings=updated)
 
 
-# TODO: auth
+@auth(RequireQueue)
 @app.router.get("/queues/{group_id}")
 @docs_helper(
     response_type=list[QueueItemResponse],
@@ -195,7 +199,7 @@ async def get_queue_items(
     return results
 
 
-# TODO: auth
+@auth(RequireQueue)
 @app.router.post("/queues/{group_id}/add")
 @docs_helper(
     response_type=QueueItemResponse,
@@ -235,6 +239,7 @@ async def add_queue_item(
     )
 
 
+@auth(RequireQueue)
 @app.router.put("/queue-items/{item_id}/start")
 @docs(tags=["Queue"])
 @transaction
@@ -250,6 +255,7 @@ async def start_queue_item(
     return Response(status=204)
 
 
+@auth(RequireQueue)
 @app.router.put("/queue-items/{item_id}/complete")
 @docs(tags=["Queue"])
 @transaction
@@ -302,6 +308,7 @@ async def complete_queue_item(
     return Response(status=204)
 
 
+@auth(RequireQueue)
 @app.router.put("/queue-items/{item_id}/cancel")
 @docs(tags=["Queue"])
 @transaction
@@ -318,6 +325,7 @@ async def cancel_queue_item(
     return Response(status=204)
 
 
+@auth(RequireQueue)
 @app.router.post("/queue-items")
 @docs_helper(
     tags=["Queue"],
@@ -369,6 +377,7 @@ async def log_queue_item(
     return Response(status=204)
 
 
+@auth(RequireQueue)
 @app.router.post("/queues/{group_id}/solve")
 @docs_helper(
     response_type=list[QueueItemResponse],
@@ -404,7 +413,7 @@ async def solve_queue(
     return items
 
 
-# TODO: auth
+@auth(RequireQueue)
 @app.router.get("/stations/{station_id}/print-requests")
 @docs_helper(
     response_type=list[PrintRequestResponse],
@@ -421,7 +430,7 @@ async def get_print_requests(
     return [PrintRequestResponse(r.id, r.data) for r in requests]
 
 
-# TODO: auth
+@auth(RequireQueue)
 @app.router.post("/stations/{station_id}/print-requests")
 @docs(tags=["Queue"])
 @transaction

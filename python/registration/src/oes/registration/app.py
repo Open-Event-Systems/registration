@@ -27,6 +27,7 @@ from oes.registration.auth.handlers import (
     require_check_in,
     require_checkout,
     require_event,
+    require_queue,
     require_registration,
     require_registration_action,
     require_registration_edit,
@@ -300,6 +301,7 @@ def app_factory():
     authorization.add(require_registration_action)
     authorization.add(require_registration_edit_or_action)
     authorization.add(require_check_in)
+    authorization.add(require_queue)
 
     # set up CORS
     configure_cors(

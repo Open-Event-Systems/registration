@@ -302,11 +302,7 @@ makeApp(() => {
                 ])
                 const [{ QueueLayout }] = res
                 return {
-                  element: (
-                    <MantineProvider defaultColorScheme="dark">
-                      <LayoutRoute Layout={QueueLayout} />
-                    </MantineProvider>
-                  ),
+                  element: <LayoutRoute Layout={QueueLayout} />,
                 }
               },
               children: [
