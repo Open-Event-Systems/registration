@@ -23,6 +23,7 @@ from oes.registration.queue.solver import (
 from oes.registration.serialization import get_converter
 from oes.registration.services.registration import RegistrationService
 from oes.template import evaluate
+from sqlalchemy import func, null, or_, select
 
 
 async def add_to_queue(
@@ -88,12 +89,72 @@ async def _parse_scan_data(
     checkout_service: CheckoutService,
     registration_service: RegistrationService,
 ) -> Optional[RegistrationEntity]:
-    if scan_data and (scan_data.startswith("http:") or scan_data.startswith("https:")):
-        receipt_id, index = _parse_receipt_url(scan_data)
-        return await _get_reg_by_receipt_id(
-            receipt_id, index, checkout_service, registration_service
-        )
+    if scan_data:
+        if scan_data.startswith("http:") or scan_data.startswith("https:"):
+            receipt_id, index = _parse_receipt_url(scan_data)
+            return await _get_reg_by_receipt_id(
+                receipt_id, index, checkout_service, registration_service
+            )
+        elif scan_data.startswith("@"):
+            id_data = _parse_id(scan_data)
+            return await _get_reg_by_id_data(id_data, registration_service)
+
     return None
+
+
+def _parse_id(data: str) -> dict[str, str]:
+    values = {}
+
+    entries = re.finditer(r"^D([A-Z]{2})(.*)$", data, re.M)
+    for match in entries:
+        key = match.group(1)
+        value = match.group(2)
+
+        if key == "AC":
+            values["first_name"] = value
+        elif key == "CS":
+            values["last_name"] = value
+        elif key == "BB":
+            mm = value[0:2]
+
+            if int(mm) > 12:
+                mm = value[4:6]
+                dd = value[6:8]
+                yyyy = value[0:4]
+            else:
+                dd = value[2:4]
+                yyyy = value[4:8]
+            values["birth_date"] = f"{yyyy}-{mm}-{dd}"
+
+    return values
+
+
+async def _get_reg_by_id_data(
+    data: Mapping[str, str],
+    registration_service: RegistrationService,
+) -> Optional[RegistrationEntity]:
+    if "first_name" not in data or "last_name" not in data:
+        return None
+
+    db = registration_service.db
+    q = select(RegistrationEntity).where(
+        func.lower(RegistrationEntity.first_name) == data["first_name"].lower(),
+        func.lower(RegistrationEntity.last_name) == data["last_name"].lower(),
+    )
+
+    if "birth_date" in data:
+        q = q.where(
+            or_(
+                RegistrationEntity.extra_data.contains(
+                    {"birth_date": data["birth_date"]}
+                ),
+                RegistrationEntity.extra_data["birth_date"].as_string() == null(),
+            )
+        )
+
+    res = await db.execute(q)
+
+    return res.scalar()
 
 
 async def _get_reg_by_receipt_id(
