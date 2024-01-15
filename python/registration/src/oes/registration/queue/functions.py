@@ -2,7 +2,7 @@
 import asyncio
 import re
 import uuid
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Set
 from typing import Optional, cast
 from uuid import UUID
 
@@ -67,14 +67,17 @@ async def make_queue_item(
     """
     reg = await _parse_scan_data(scan_data, checkout_service, registration_service)
 
-    # TODO: ID parsing
-
     if reg:
         item_data = get_queue_item_data(
             reg.get_model(), scan_data=scan_data, config=config
         )
     else:
-        item_data = QueueItemData(scan_data=scan_data)
+        if scan_data and scan_data.startswith("tags:"):
+            tags = _parse_tags_url(scan_data)
+            features = {t: 1 for t in tags}
+            item_data = QueueItemData(scan_data=scan_data, tags=tags, features=features)
+        else:
+            item_data = QueueItemData(scan_data=scan_data)
 
     entity = QueueItemEntity(
         id=uuid.uuid4(),
@@ -127,6 +130,11 @@ def _parse_id(data: str) -> dict[str, str]:
             values["birth_date"] = f"{yyyy}-{mm}-{dd}"
 
     return values
+
+
+def _parse_tags_url(data: str) -> Set[str]:
+    _, _, tags = data.partition("tags:")
+    return frozenset(t.strip() for t in tags.split(","))
 
 
 async def _get_reg_by_id_data(
@@ -310,6 +318,9 @@ async def _get_stations(
     for station_id, station_config in config.stations.items():
         if station_config.group == group_id:
             station_entity = await queue_service.get_station(station_id)
+            settings = station_entity.get_settings()
+            if not settings.open:
+                continue
             entities[station_entity.id] = station_entity
     return entities
 
