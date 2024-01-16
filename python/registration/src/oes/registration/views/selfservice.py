@@ -2,7 +2,7 @@
 from typing import Optional
 
 from blacksheep import FromQuery, auth
-from oes.registration.access_code.models import AccessCodeSettings
+from oes.registration.access_code.models import AccessCodeInterview, AccessCodeSettings
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
 from oes.registration.auth.handlers import RequireSelfServiceOrKiosk
@@ -101,7 +101,7 @@ async def list_self_service_registration(
                     [
                         InterviewOption(o.id, _get_interview_title(titles, o.id))
                         for o in change_options
-                        if not o.hidden
+                        if isinstance(o, AccessCodeInterview) or not o.hidden
                     ],
                 )
             )
@@ -111,7 +111,7 @@ async def list_self_service_registration(
         [
             InterviewOption(o.id, _get_interview_title(titles, o.id))
             for o in add_options
-            if not o.hidden
+            if isinstance(o, AccessCodeInterview) or not o.hidden
         ],
     )
 

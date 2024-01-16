@@ -93,7 +93,9 @@ async def _parse_scan_data(
     registration_service: RegistrationService,
 ) -> Optional[RegistrationEntity]:
     if scan_data:
-        if scan_data.startswith("http:") or scan_data.startswith("https:"):
+        if scan_data.lower().startswith("http:") or scan_data.lower().startswith(
+            "https:"
+        ):
             receipt_id, index = _parse_receipt_url(scan_data)
             return await _get_reg_by_receipt_id(
                 receipt_id, index, checkout_service, registration_service
