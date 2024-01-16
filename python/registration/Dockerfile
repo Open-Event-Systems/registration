@@ -16,6 +16,8 @@ RUN /app/bin/pip install --no-cache-dir .[square]
 FROM python AS target
 RUN adduser -h /app -H -D python \
     && mkdir /config
+RUN wget -O - "https://www.coin-or.org/download/binary/Cbc/Cbc-master-static-bionic-linux-x86_64-gcc7.tgz" \
+    | tar -C /usr/local -x -z
 COPY --from=build /app/ /app/
 COPY alembic/ /app/alembic/
 COPY alembic.ini /config/
