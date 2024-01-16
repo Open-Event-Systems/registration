@@ -152,7 +152,7 @@ export const NextInLineResults = (props: NextInLineResultsProps) => {
                       {item.preferred_name
                         ? ` (${item.preferred_name})`
                         : undefined}
-                      {item.last_name}
+                      {item.last_name ? " " + item.last_name : undefined}
                     </Anchor>
                   </Table.Td>
                   <Table.Td className="CheckinSearchResults-removeColumn">
