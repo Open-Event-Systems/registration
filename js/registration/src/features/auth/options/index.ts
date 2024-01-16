@@ -35,8 +35,8 @@ export const signInOptions: Record<
   device: async () => {
     const loc = new URL(window.location.href)
 
-    // hack: don't show device auth on self-service routes
-    if (loc.pathname.startsWith("/events")) {
+    // hack: don't show device auth on self-service routes, unless in kiosk mode
+    if (loc.pathname.startsWith("/events") && !loc.hash.includes("kiosk")) {
       return null
     }
 

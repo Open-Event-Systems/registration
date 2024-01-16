@@ -37,6 +37,9 @@ class Scope(str, Enum):
     check_in = "check-in"
     """May check in registrations."""
 
+    kiosk = "kiosk"
+    """May use kiosk features."""
+
 
 @frozen(init=False, repr=False, order=False)
 class Scopes(Set[str]):
@@ -79,6 +82,6 @@ def get_default_scopes(config: Optional[CommandLineConfig] = None) -> Scopes:
     """Get the default scopes."""
     if config and config.insecure and config.no_auth:
         # for debugging, return all scopes
-        return Scopes(Scope.__members__.values())
+        return Scopes(v for v in Scope if v != Scope.kiosk)
     else:
         return DEFAULT_SCOPES

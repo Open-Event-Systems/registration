@@ -10,4 +10,5 @@ export const scopeDescriptions = {
   [Scope.checkout]: "View and search checkouts",
   [Scope.registrationEdit]: "Create and edit registrations",
   [Scope.admin]: "Admin access",
+  [Scope.kiosk]: "Kiosk mode",
 } satisfies Record<string, string>

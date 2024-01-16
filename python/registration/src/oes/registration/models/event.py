@@ -96,6 +96,9 @@ class EventInterviewOption(Whenable):
     id: str
     """The interview ID."""
 
+    hidden: bool = False
+    """Whether to show the option to the client."""
+
     when: WhenCondition = ()
     """The condition."""
 

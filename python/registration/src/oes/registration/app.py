@@ -32,6 +32,7 @@ from oes.registration.auth.handlers import (
     require_registration_edit,
     require_registration_edit_or_action,
     require_self_service,
+    require_self_service_or_kiosk,
 )
 from oes.registration.auth.oauth.server import CustomServer
 from oes.registration.auth.scope import get_default_scopes
@@ -295,6 +296,7 @@ def app_factory():
     authorization.add(require_registration_action)
     authorization.add(require_registration_edit_or_action)
     authorization.add(require_check_in)
+    authorization.add(require_self_service_or_kiosk)
 
     # set up CORS
     configure_cors(

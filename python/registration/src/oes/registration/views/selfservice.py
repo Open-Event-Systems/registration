@@ -5,7 +5,8 @@ from blacksheep import FromQuery, auth
 from oes.registration.access_code.models import AccessCodeSettings
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
-from oes.registration.auth.handlers import RequireSelfService
+from oes.registration.auth.handlers import RequireSelfServiceOrKiosk
+from oes.registration.auth.scope import Scope
 from oes.registration.auth.user import User
 from oes.registration.docs import docs_helper
 from oes.registration.interview.service import InterviewService
@@ -25,7 +26,7 @@ from oes.registration.views.responses import (
 )
 
 
-@auth(RequireSelfService)
+@auth(RequireSelfServiceOrKiosk)
 @app.router.get("/self-service/events")
 @docs_helper(
     response_type=list[SelfServiceEventResponse],
@@ -40,7 +41,7 @@ async def list_self_service_events(
     return events
 
 
-@auth(RequireSelfService)
+@auth(RequireSelfServiceOrKiosk)
 @app.router.get("/self-service/registrations")
 @docs_helper(
     response_type=SelfServiceRegistrationListResponse,
@@ -67,18 +68,22 @@ async def list_self_service_registration(
     else:
         add_options = []
 
-    registrations = (
-        (
-            await service.list_self_service_registrations(
-                user.id,
-                event_id=event_id.value,
-                email=user.email,
-                access_code_settings=access_code_settings,
+    # kiosk clients will only see options to add registrations
+    if user.has_scope(Scope.self_service):
+        registrations = (
+            (
+                await service.list_self_service_registrations(
+                    user.id,
+                    event_id=event_id.value,
+                    email=user.email,
+                    access_code_settings=access_code_settings,
+                )
             )
+            if user.id
+            else []
         )
-        if user.id
-        else []
-    )
+    else:
+        registrations = []
 
     results = []
     titles = await _get_interview_titles(interview_service)
@@ -96,6 +101,7 @@ async def list_self_service_registration(
                     [
                         InterviewOption(o.id, _get_interview_title(titles, o.id))
                         for o in change_options
+                        if not o.hidden
                     ],
                 )
             )
@@ -105,6 +111,7 @@ async def list_self_service_registration(
         [
             InterviewOption(o.id, _get_interview_title(titles, o.id))
             for o in add_options
+            if not o.hidden
         ],
     )
 

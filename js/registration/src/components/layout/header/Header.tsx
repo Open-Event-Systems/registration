@@ -1,5 +1,6 @@
 import { UserMenu } from "#src/components/layout/user-menu/UserMenu"
 import { useAuth } from "#src/features/auth/hooks"
+import { Scope } from "#src/features/auth/types/AccountInfo"
 import {
   ActionIcon,
   ActionIconProps,
@@ -33,7 +34,10 @@ export const Header = observer((props: HeaderProps) => {
 
   let userMenu
 
-  if (authStore.accessToken) {
+  if (
+    authStore.accessToken &&
+    (!authStore.scope || !authStore.scope.includes(Scope.kiosk))
+  ) {
     userMenu = (
       <UserMenu
         username={authStore.email || "Guest"}
@@ -44,8 +48,10 @@ export const Header = observer((props: HeaderProps) => {
     )
   }
 
-  return (
-    <AppShell.Header className={clsx("Header-root", className)} {...other}>
+  let homeIcon
+
+  if (!authStore.scope || !authStore.scope.includes(Scope.kiosk)) {
+    homeIcon = (
       <ActionIcon
         className="Header-homeIcon"
         variant="transparent"
@@ -62,6 +68,12 @@ export const Header = observer((props: HeaderProps) => {
           <IconHome />
         )}
       </ActionIcon>
+    )
+  }
+
+  return (
+    <AppShell.Header className={clsx("Header-root", className)} {...other}>
+      {homeIcon}
       <Box className="Header-content">{children}</Box>
       {userMenu}
     </AppShell.Header>

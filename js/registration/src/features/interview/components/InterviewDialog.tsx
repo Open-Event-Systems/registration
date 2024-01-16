@@ -60,6 +60,8 @@ export const InterviewDialog = (props: InterviewDialogProps) => {
         body: clsx("InterviewDialog-body", classNames?.body),
       }}
       title={title}
+      closeOnClickOutside={false}
+      closeOnEscape={false}
       {...other}
     >
       {content && recordToShow && (

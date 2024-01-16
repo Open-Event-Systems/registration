@@ -22,7 +22,11 @@ from loguru import logger
 from oes.registration.access_code.models import AccessCodeSettings
 from oes.registration.access_code.service import AccessCodeService
 from oes.registration.app import app
-from oes.registration.auth.handlers import RequireAdmin, RequireCart, RequireSelfService
+from oes.registration.auth.handlers import (
+    RequireAdmin,
+    RequireCart,
+    RequireSelfServiceOrKiosk,
+)
 from oes.registration.auth.user import User
 from oes.registration.cart.entities import CartEntity
 from oes.registration.cart.models import (
@@ -331,7 +335,7 @@ async def remove_registration_from_cart(
     )
 
 
-@auth(RequireSelfService)
+@auth(RequireSelfServiceOrKiosk)
 @app.router.get("/carts/{id}/new-interview")
 @docs(
     responses={
