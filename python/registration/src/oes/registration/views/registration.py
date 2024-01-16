@@ -711,6 +711,7 @@ async def cancel_registration(
 @serialize(dict[str, Any])
 async def read_check_in_interview(
     id: UUID,
+    station_id: FromQuery[Optional[str]],
     request: Request,
     service: RegistrationService,
     interview_service: InterviewService,
@@ -728,6 +729,7 @@ async def read_check_in_interview(
     target_url = get_absolute_url_to_path(request, f"/registrations/{id}/check-in")
 
     context = {
+        "station_id": station_id.value,
         "registration": get_converter().unstructure(registration.get_model()),
     }
 

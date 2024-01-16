@@ -37,6 +37,9 @@ class Scope(str, Enum):
     check_in = "check-in"
     """May check in registrations."""
 
+    queue = "queue"
+    """May manage the queue."""
+
     kiosk = "kiosk"
     """May use kiosk features."""
 

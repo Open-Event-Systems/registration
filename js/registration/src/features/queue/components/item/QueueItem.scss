@@ -1,0 +1,48 @@
+.QueueItem-root {
+    display: grid;
+    grid-template:
+        [name-start] "fname assignment" auto //
+        "lname assignment" auto //
+        [name-end] "duration assignment" auto //
+        / [name-start] minmax(1rem, 1fr) [name-end] auto;
+    gap: 4px;
+    min-height: 3rem;
+    align-items: center;
+    cursor: pointer;
+}
+
+.QueueItem-firstName {
+    grid-area: fname;
+    text-align: right;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.QueueItem-unknown {
+    grid-area: name;
+    text-align: right;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.QueueItem-lastName {
+    grid-area: lname;
+    text-align: right;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.QueueItem-duration {
+    grid-area: duration;
+    text-align: right;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.QueueItem-assignment {
+    grid-area: assignment;
+    min-width: 4rem;
+    font-size: 26px;
+    font-weight: bold;
+    text-align: center;
+}

@@ -1,10 +1,11 @@
 """Config models."""
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping, Sequence, Set
 from typing import Any, NewType, Optional, TypedDict
 
 from attrs import Factory, field, frozen, validators
 from oes.registration.hook.models import HookConfig
 from oes.registration.models.logic import WhenCondition
+from oes.template import ValueOrEvaluable
 from typed_settings import Secret, option
 
 
@@ -105,6 +106,45 @@ class InterviewConfig:
 
 
 @frozen
+class QueueGroupConfig:
+    """Queue group configuration."""
+
+    priority: ValueOrEvaluable = 1
+    """Expression for a registration's priority."""
+
+    tags: Mapping[str, WhenCondition] = field(factory=dict)
+    """Mapping of tags to ``when`` conditions."""
+
+    features: Mapping[str, ValueOrEvaluable] = field(factory=dict)
+    """Mapping of registration features to expressions of their weights."""
+
+
+@frozen
+class StationConfig:
+    """Queue station config."""
+
+    group: str
+    """The group ID."""
+
+    tags: Set[str] = frozenset()
+    """The tags associated with this station."""
+
+    print_daemon_url: Optional[str] = None
+    """The print daemon URL."""
+
+
+@frozen
+class QueueConfig:
+    """Queue config."""
+
+    groups: Mapping[str, QueueGroupConfig] = field(factory=dict)
+    """Mapping of group IDs to configs."""
+
+    stations: Mapping[str, StationConfig] = field(factory=dict)
+    """Station config."""
+
+
+@frozen
 class Config:
     """The main config class."""
 
@@ -112,4 +152,5 @@ class Config:
     auth: AuthConfig
     payment: PaymentConfig
     interview: InterviewConfig
+    queue: QueueConfig
     hooks: HookConfig

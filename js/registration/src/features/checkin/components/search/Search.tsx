@@ -1,16 +1,36 @@
+import { QueueItem } from "#src/features/queue/types"
 import { RegistrationSearchResult } from "#src/features/registration"
-import { Anchor, Grid, Table, Text, TextInput } from "@mantine/core"
-import { IconSearch } from "@tabler/icons-react"
+import {
+  ActionIcon,
+  Anchor,
+  Grid,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core"
+import { IconSearch, IconTrash } from "@tabler/icons-react"
 
 export type SearchProps = {
   query?: string
   onChange?: (query: string) => void
   registrations?: RegistrationSearchResult[]
+  nextInLine?: QueueItem[]
   onSelect?: (id: string) => void
+  onSelectNextInLine?: (item: QueueItem) => void
+  onRemoveNextInLine?: (item: QueueItem) => void
 }
 
 export const Search = (props: SearchProps) => {
-  const { query, onChange, registrations, onSelect } = props
+  const {
+    query,
+    onChange,
+    registrations,
+    onSelect,
+    nextInLine,
+    onSelectNextInLine,
+    onRemoveNextInLine,
+  } = props
 
   return (
     <Grid>
@@ -29,6 +49,16 @@ export const Search = (props: SearchProps) => {
       <Grid.Col>
         <Results registrations={registrations} onSelect={onSelect} />
       </Grid.Col>
+      {nextInLine && nextInLine.length > 0 && (
+        <Grid.Col>
+          <Title order={5}>Next In Line</Title>
+          <NextInLineResults
+            items={nextInLine}
+            onSelect={onSelectNextInLine}
+            onRemove={onRemoveNextInLine}
+          />
+        </Grid.Col>
+      )}
     </Grid>
   )
 }
@@ -70,6 +100,100 @@ export const Results = (props: ResultsProps) => {
                 </Anchor>
               </Table.Td>
               <Table.Td>{r.email}</Table.Td>
+            </Table.Tr>
+          ))}
+        </Table.Tbody>
+      </Table>
+    )
+  } else {
+    content = <NoResults />
+  }
+
+  return (
+    <Table.ScrollContainer className="CheckinSearchResults-root" minWidth={500}>
+      {content}
+    </Table.ScrollContainer>
+  )
+}
+
+export type NextInLineResultsProps = {
+  items?: QueueItem[]
+  onSelect?: (item: QueueItem) => void
+  onRemove?: (item: QueueItem) => void
+}
+
+export const NextInLineResults = (props: NextInLineResultsProps) => {
+  const { items, onSelect, onRemove } = props
+
+  let content
+
+  if (!items) {
+    content = null
+  } else if (items.length > 0) {
+    content = (
+      <Table highlightOnHover striped>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Name</Table.Th>
+            <Table.Th className="CheckinSearchResults-removeColumn"></Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
+          {items.map((item) => (
+            <Table.Tr key={item.id} onClick={() => onSelect && onSelect(item)}>
+              {item.registration_id ? (
+                <>
+                  <Table.Td>
+                    <Anchor
+                      component="button"
+                      className="CheckinSearchResults-button"
+                    >
+                      {item.first_name}
+                      {item.preferred_name
+                        ? ` (${item.preferred_name})`
+                        : undefined}
+                      {item.last_name}
+                    </Anchor>
+                  </Table.Td>
+                  <Table.Td className="CheckinSearchResults-removeColumn">
+                    <Anchor
+                      component="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRemove && onRemove(item)
+                      }}
+                      variant="subtle"
+                      size="sm"
+                    >
+                      Remove
+                    </Anchor>
+                  </Table.Td>
+                </>
+              ) : (
+                <>
+                  <Table.Td>
+                    <Anchor
+                      component="button"
+                      className="CheckinSearchResults-button"
+                    >
+                      Unknown Person
+                    </Anchor>
+                  </Table.Td>
+                  <Table.Td className="CheckinSearchResults-removeColumn">
+                    <Anchor
+                      component="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onRemove && onRemove(item)
+                      }}
+                      variant="subtle"
+                      size="sm"
+                    >
+                      Remove
+                    </Anchor>
+                  </Table.Td>
+                </>
+              )}
             </Table.Tr>
           ))}
         </Table.Tbody>

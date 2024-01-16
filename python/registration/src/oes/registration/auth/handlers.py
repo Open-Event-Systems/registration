@@ -100,6 +100,7 @@ RequireRegistrationEdit = "require_registration_edit"
 RequireRegistrationEditOrAction = "require_registration_edit_or_action"
 RequireRegistrationAction = "require_registration_action"
 RequireCheckIn = "require_check_in"
+RequireQueue = "require_queue"
 RequireSelfServiceOrKiosk = "require_self_service_or_kiosk"
 
 require_admin = Policy(RequireAdmin, ScopeRequirement(Scope.admin))
@@ -122,6 +123,7 @@ require_registration_edit_or_action = Policy(
     ),
 )
 require_check_in = Policy(RequireCheckIn, ScopeRequirement(Scope.check_in))
+require_queue = Policy(RequireQueue, ScopeRequirement(Scope.queue))
 require_self_service_or_kiosk = Policy(
     RequireSelfServiceOrKiosk, ScopeRequirement(Scope.self_service, Scope.kiosk)
 )

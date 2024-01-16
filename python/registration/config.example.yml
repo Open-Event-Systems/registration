@@ -89,6 +89,21 @@ interview:
   url: http://localhost:8001
   update_url: http://localhost:8001/update
 
+# Queue config
+queue:
+  groups:
+    example-group:
+      tags:
+        standard: "'standard' in registration.option_ids"
+        vip: "'vip' in registration.option_ids"
+      features:
+        standard: "1 if 'standard' in registration.option_ids else 0"
+        vip: "1 if 'vip' in registration.option_ids else 0"
+
+  stations:
+    "1":
+      group: example-group
+
 # Hook configuration
 hooks:
   # Events and hooks

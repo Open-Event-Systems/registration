@@ -1,0 +1,6 @@
+.Station-root {
+    display: grid;
+    grid-template-columns: minmax(1rem, 1fr);
+    gap: 8px;
+    min-height: 3rem;
+}

@@ -128,11 +128,17 @@ export const createRegistrationAPI = (wretch: Wretch): RegistrationAPI => {
         },
       }
     },
-    readCheckinInterview(id) {
+    readCheckinInterview(id, stationId) {
       return {
-        queryKey: ["registrations", id, "check-in"],
+        queryKey: ["registrations", id, "check-in", { stationId: stationId }],
         async queryFn() {
-          return await wretch.url(`/${id}/check-in`).get().json<StateResponse>()
+          let req = wretch.url(`/${id}/check-in`).addon(queryString)
+
+          if (stationId) {
+            req = req.query({ station_id: stationId })
+          }
+
+          return await req.get().json<StateResponse>()
         },
       }
     },

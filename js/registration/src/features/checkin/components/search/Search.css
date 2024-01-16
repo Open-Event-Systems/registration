@@ -12,3 +12,7 @@
     text-decoration: none;
     font-size: inherit;
 }
+
+.CheckinSearchResults-removeColumn {
+    text-align: right;
+}

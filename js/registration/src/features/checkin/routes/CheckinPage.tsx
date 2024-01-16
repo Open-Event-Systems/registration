@@ -1,28 +1,30 @@
-import { UserMenu } from "#src/components"
-import { useAuth } from "#src/features/auth/hooks"
 import { Badge } from "#src/features/checkin/components/badge/Badge"
 import { CheckinLayout } from "#src/features/checkin/components/layout/CheckinLayout"
 import { Registration } from "#src/features/checkin/components/registration/Registration"
+import { useCheckInStore } from "#src/features/checkin/hooks"
 import { useEventAPI } from "#src/features/event/hooks"
 import {
   InterviewContent,
   useInterviewRecordStore,
 } from "#src/features/interview"
+import { useQueueAPI } from "#src/features/queue/hooks"
 import { useRegistrationAPI } from "#src/features/registration/hooks"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { isAPIError } from "#src/utils/api"
 import { Alert, Anchor, Box } from "@mantine/core"
 import { defaultAPI, startInterview } from "@open-event-systems/interview-lib"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { useEffect } from "react"
+import { action, runInAction } from "mobx"
+import { observer } from "mobx-react-lite"
+import { useEffect, useRef } from "react"
 import { Link, useParams } from "react-router-dom"
 
-export const CheckinPage = () => {
+export const CheckinPage = observer(() => {
   const { eventId = "", registrationId = "" } = useParams()
 
-  const auth = useAuth()
   const loc = useLocation()
   const navigate = useNavigate()
+  const queueItemId = loc.state?.checkInQueueItemId
 
   const interviewRecordStore = useInterviewRecordStore()
 
@@ -36,19 +38,30 @@ export const CheckinPage = () => {
   const events = useQuery(eventAPI.list())
   const event = useQuery(eventAPI.read(eventId))
 
+  const checkInStore = useCheckInStore()
+  const queueAPI = useQueueAPI()
+
   const registration = useQuery({
     ...registrationAPI.read(registrationId),
     enabled: event.isSuccess,
   })
 
   const checkinInterview = useQuery({
-    ...registrationAPI.readCheckinInterview(registrationId),
-    enabled: event.isSuccess && !curRecord,
+    ...registrationAPI.readCheckinInterview(
+      registrationId,
+      checkInStore.stationId ?? undefined,
+    ),
+    enabled: event.isSuccess,
   })
 
   const completeCheckin = useMutation(
     registrationAPI.completeCheckinInterview(registrationId),
   )
+
+  const completeItem = useMutation(queueAPI.completeQueueItem())
+  const cancelItem = useMutation(queueAPI.cancelQueueItem())
+  const logItem = useMutation(queueAPI.logQueueItem())
+  const successRef = useRef<boolean>(false)
 
   useEffect(() => {
     if (checkinInterview.isSuccess && !curRecord) {
@@ -65,19 +78,20 @@ export const CheckinPage = () => {
     }
   }, [checkinInterview.isSuccess, recordId])
 
+  useEffect(() => {
+    return action(() => {
+      if (!successRef.current && queueItemId) {
+        cancelItem.mutate(queueItemId)
+      }
+    })
+  }, [queueItemId])
+
   return (
     <>
       <CheckinLayout.Header>
         <Anchor component={Link} to={`/check-in/${eventId}`}>
           &laquo; Back
         </Anchor>
-        <CheckinLayout.Spacer />
-        <UserMenu
-          username={auth.authInfo?.email || "Guest"}
-          onSignOut={() => {
-            auth.signOut()
-          }}
-        />
       </CheckinLayout.Header>
       <CheckinLayout.Left className="CheckinPage-left">
         {event.data && registration.isSuccess ? (
@@ -111,6 +125,23 @@ export const CheckinPage = () => {
           onComplete={async (record) => {
             completeCheckin.reset()
             await completeCheckin.mutateAsync(record)
+            successRef.current = true
+            runInAction(() => {
+              if (queueItemId) {
+                completeItem.mutate({
+                  itemId: queueItemId,
+                  registrationId: registration.data?.id,
+                })
+              } else {
+                if (checkInStore.stationId && loc.state?.checkInStartTime) {
+                  logItem.mutate({
+                    station_id: checkInStore.stationId,
+                    registration_id: registrationId,
+                    date_started: loc.state?.checkInStartTime,
+                  })
+                }
+              }
+            })
             navigate(`/check-in/${eventId}`)
           }}
           onClose={() => {
@@ -120,4 +151,6 @@ export const CheckinPage = () => {
       </CheckinLayout.Right>
     </>
   )
-}
+})
+
+CheckinPage.displayName = "CheckinPage"

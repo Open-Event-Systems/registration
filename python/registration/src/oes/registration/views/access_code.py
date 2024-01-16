@@ -12,8 +12,8 @@ from oes.registration.auth.handlers import RequireAdmin, RequireCart
 from oes.registration.database import transaction
 from oes.registration.docs import docs, docs_helper
 from oes.registration.util import check_not_found
-from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import AccessCodeListResponse, AccessCodeResponse
+from oes.util.blacksheep import FromAttrs
 
 
 @frozen
@@ -81,7 +81,7 @@ async def check_access_code(
 @transaction
 async def create_access_code(
     service: AccessCodeService,
-    body: AttrsBody[CreateAccessCodeRequest],
+    body: FromAttrs[CreateAccessCodeRequest],
 ) -> AccessCodeResponse:
     """Create an access code."""
     create = body.value

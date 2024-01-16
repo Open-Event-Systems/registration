@@ -1,6 +1,6 @@
-import { Registration } from "#src/features/registration"
-
-export type QueueItem = {
-  id: string
-  registration?: Registration
+declare module "#src/hooks/location" {
+  interface LocationState {
+    checkInQueueItemId?: string
+    checkInStartTime?: string
+  }
 }

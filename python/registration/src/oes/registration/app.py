@@ -27,6 +27,7 @@ from oes.registration.auth.handlers import (
     require_check_in,
     require_checkout,
     require_event,
+    require_queue,
     require_registration,
     require_registration_action,
     require_registration_edit,
@@ -60,6 +61,7 @@ from oes.registration.interview.service import InterviewService
 from oes.registration.log import setup_logging
 from oes.registration.models.config import Config
 from oes.registration.payment.config import create_payment_services
+from oes.registration.queue.service import QueueService
 from oes.registration.serialization import get_converter
 from oes.registration.serialization.json import (
     JSONEncoder,
@@ -70,7 +72,7 @@ from oes.registration.serialization.json import (
 from oes.registration.services.event import EventService
 from oes.registration.services.registration import RegistrationService
 from oes.registration.views.responses import BodyValidationError, ExceptionDetails
-from oes.util.blacksheep import configure_cors
+from oes.util.blacksheep import AttrsBinder, configure_cors
 from rodi import GetServiceContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -94,6 +96,7 @@ app.services.add_scoped(CartService)
 app.services.add_scoped(CheckoutService)
 app.services.add_scoped(InterviewService)
 app.services.add_scoped(AccessCodeService)
+app.services.add_scoped(QueueService)
 
 
 # TODO: put all these in a dedicated configuration function.
@@ -280,6 +283,9 @@ def app_factory():
     app.services.add_instance(default_encoder, JSONEncoder)
     app.services.add_instance(get_converter(), Converter)
 
+    # Set attrs body converter, hacky
+    AttrsBinder.cattrs_converter = get_converter()
+
     # set up authentication
     app.use_authentication().add(TokenAuthHandler(config))
 
@@ -296,6 +302,7 @@ def app_factory():
     authorization.add(require_registration_action)
     authorization.add(require_registration_edit_or_action)
     authorization.add(require_check_in)
+    authorization.add(require_queue)
     authorization.add(require_self_service_or_kiosk)
 
     # set up CORS
@@ -421,5 +428,6 @@ import oes.registration.views.auth.webauthn  # noqa
 import oes.registration.views.cart  # noqa
 import oes.registration.views.checkout  # noqa
 import oes.registration.views.event  # noqa
+import oes.registration.views.queue  # noqa
 import oes.registration.views.registration  # noqa
 import oes.registration.views.selfservice  # noqa

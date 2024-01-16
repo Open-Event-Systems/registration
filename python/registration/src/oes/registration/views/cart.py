@@ -50,8 +50,8 @@ from oes.registration.services.registration import (
     get_allowed_change_interviews,
 )
 from oes.registration.util import check_not_found, get_now, merge_dict
-from oes.registration.views.parameters import AttrsBody
 from oes.registration.views.responses import BodyValidationError, PricingResultResponse
+from oes.util.blacksheep import FromAttrs
 
 
 @frozen
@@ -80,7 +80,7 @@ AddRegistrationRequest = Union[
 @transaction
 async def create_cart(
     request: Request,
-    body: AttrsBody[CartData],
+    body: FromAttrs[CartData],
     service: CartService,
     event_config: EventConfig,
 ) -> Response:
