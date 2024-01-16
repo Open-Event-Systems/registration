@@ -7,7 +7,7 @@ import { Checkout, CheckoutState } from "#src/features/checkout/types/Checkout"
 import { useLocation, useNavigate } from "#src/hooks/location"
 import { LoadingOverlay, Text } from "@mantine/core"
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useLayoutEffect, useState } from "react"
+import { ReactNode, useEffect, useLayoutEffect, useState } from "react"
 
 /**
  * Manage the checkout dialog and the checkout state.
@@ -79,7 +79,8 @@ export const CheckoutManager = ({
 }
 
 const CheckoutManagerCheckout = () => {
-  const { id, checkout, cancel, error, updating } = useCheckout()
+  const { id, checkout, cancel, error, updating, completeMessage } =
+    useCheckout()
   const checkoutAPI = useCheckoutAPI()
   const client = useQueryClient()
 
@@ -100,7 +101,7 @@ const CheckoutManagerCheckout = () => {
       content = <CheckoutManager.Canceled />
       break
     case CheckoutState.complete:
-      content = <CheckoutManager.Complete />
+      content = <CheckoutManager.Complete message={completeMessage} />
       break
     default:
       content = (
@@ -118,9 +119,8 @@ const CheckoutManagerCheckout = () => {
   )
 }
 
-CheckoutManager.Complete = () => (
-  <Text component="p">Your order is complete.</Text>
-)
+CheckoutManager.Complete = ({ message }: { message?: ReactNode }) =>
+  message ? message : <Text component="p">Your order is complete.</Text>
 
 CheckoutManager.Canceled = () => (
   <Text component="p">This checkout has been canceled.</Text>
