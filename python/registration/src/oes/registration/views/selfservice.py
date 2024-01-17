@@ -64,7 +64,7 @@ async def list_self_service_registration(
 
     if event_id.value:
         event = check_not_found(event_config.get_event(event_id.value))
-        add_options = get_allowed_add_interviews(event, access_code_settings)
+        add_options = get_allowed_add_interviews(event, user, access_code_settings)
     else:
         add_options = []
 
@@ -92,7 +92,7 @@ async def list_self_service_registration(
         event = event_config.get_event(reg.event_id)
         if event and event.is_visible_to(user):
             change_options = get_allowed_change_interviews(
-                event, reg, access_code_settings
+                event, reg, user, access_code_settings
             )
             model = render_self_service_registration(event, reg)
             results.append(
