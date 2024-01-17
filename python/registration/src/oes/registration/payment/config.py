@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from attrs import frozen
 from loguru import logger
+from oes.registration.auth.user import User
 from oes.registration.cart.models import CartData, PricingResult
 from oes.registration.models.config import PaymentConfig, PaymentMethodConfigMapping
 from oes.registration.models.logic import WhenCondition, when_matches
@@ -69,13 +70,17 @@ def get_available_payment_methods(
     *,
     cart_data: CartData,
     pricing_result: PricingResult,
+    user: User,
 ) -> Iterator[PaymentMethod]:
     """Get available payment methods for a cart."""
     yield from (
         m
         for m in methods
         if is_payment_method_available(
-            m, cart_data=cart_data, pricing_result=pricing_result
+            m,
+            cart_data=cart_data,
+            pricing_result=pricing_result,
+            user=user,
         )
     )
 
@@ -85,9 +90,15 @@ def is_payment_method_available(
     *,
     cart_data: CartData,
     pricing_result: PricingResult,
+    user: User,
 ) -> bool:
     """Return whether a payment method is available for the given cart."""
     ctx = {
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "scope": user.scope,
+        },
         "cart_data": cart_data,
         "pricing_result": pricing_result,
     }

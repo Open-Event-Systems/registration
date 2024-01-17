@@ -185,6 +185,7 @@ async def list_available_checkout_methods(
             payment_services.get_methods(),
             cart_data=cart_data,
             pricing_result=pricing_result,
+            user=user,
         )
     ]
 
@@ -250,7 +251,7 @@ async def create_checkout(
     cart_entity.set_pricing_result(pricing_result)
 
     method_obj = _validate_checkout_method(
-        method.value, cart, pricing_result, payment_services
+        method.value, cart, pricing_result, payment_services, user
     )
 
     if not method_obj:
@@ -657,10 +658,14 @@ def _validate_checkout_method(
     cart_data: CartData,
     pricing_result: PricingResult,
     payment_services: PaymentServices,
+    user: User,
 ) -> Optional[PaymentMethod]:
     method = payment_services.get_method(id)
     if not method or not is_payment_method_available(
-        method, cart_data=cart_data, pricing_result=pricing_result
+        method,
+        cart_data=cart_data,
+        pricing_result=pricing_result,
+        user=user,
     ):
         return None
 
