@@ -228,6 +228,7 @@ def render_self_service_registration(
 
 def get_allowed_add_interviews(
     event: Event,
+    user: User,
     access_code: Optional[AccessCodeSettings] = None,
 ) -> list[Union[EventInterviewOption, AccessCodeInterview]]:
     """Get the add interviews allowed for a registration."""
@@ -237,6 +238,11 @@ def get_allowed_add_interviews(
     event_dict = get_converter().unstructure(event)
 
     context = {
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "scope": user.scope,
+        },
         "event": event_dict,
     }
 
@@ -250,6 +256,7 @@ def get_allowed_add_interviews(
 def get_allowed_change_interviews(
     event: Event,
     registration: RegistrationEntity,
+    user: User,
     access_code: Optional[AccessCodeSettings] = None,
 ) -> list[Union[EventInterviewOption, AccessCodeInterview]]:
     """Get the change interviews allowed for a registration."""
@@ -267,6 +274,11 @@ def get_allowed_change_interviews(
     registration_dict = get_converter().unstructure(model)
 
     context = {
+        "user": {
+            "id": str(user.id),
+            "email": user.email,
+            "scope": user.scope,
+        },
         "event": event_dict,
         "registration": {
             "display_name": registration.display_name,

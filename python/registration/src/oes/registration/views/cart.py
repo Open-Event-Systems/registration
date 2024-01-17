@@ -277,6 +277,7 @@ async def add_registration_to_cart(
             event,
             add_obj.state,
             current_url,
+            user,
             service,
             reg_service,
             interview_service,
@@ -379,7 +380,7 @@ async def create_cart_add_interview_state(
         registration = None
 
     valid_interview_id = _check_interview_availability(
-        interview_id.value, event, registration, access_code_settings
+        interview_id.value, event, registration, access_code_settings, user
     )
     if not valid_interview_id:
         raise NotFound
@@ -513,6 +514,7 @@ async def _add_from_interview(
     event: Event,
     state: str,
     current_url: str,
+    user: User,
     service: CartService,
     reg_service: RegistrationService,
     interview_service: InterviewService,
@@ -550,6 +552,7 @@ async def _add_from_interview(
         event,
         cur_reg_entity,
         access_code_settings,
+        user,
     ):
         logger.debug("Interview is not available")
         raise HTTPException(409)
@@ -591,14 +594,15 @@ def _check_interview_availability(
     event: Event,
     registration: Optional[RegistrationEntity],
     access_code_settings: Optional[AccessCodeSettings],
+    user: User,
 ) -> Optional[str]:
     """Check if the interview is permitted."""
     if registration:
         allowed = get_allowed_change_interviews(
-            event, registration, access_code_settings
+            event, registration, user, access_code_settings
         )
     else:
-        allowed = get_allowed_add_interviews(event, access_code_settings)
+        allowed = get_allowed_add_interviews(event, user, access_code_settings)
 
     if interview_id not in [o.id for o in allowed]:
         return None
