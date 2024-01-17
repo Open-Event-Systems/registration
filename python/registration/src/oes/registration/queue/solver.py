@@ -91,6 +91,7 @@ def solve_queue(
     model.num_assignments_constraint.deactivate()
 
     solver = pyo.SolverFactory("cbc")
+    solver.options["sec"] = 5
     solver.solve(model)
 
     num_non_empty_stations = sum(
