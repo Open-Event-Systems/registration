@@ -21,6 +21,40 @@ export const getPrinters = async (
 }
 
 /**
+ * Print the given WebContents.
+ * @param webContents - the WebContents
+ * @param printerId - the printer ID
+ */
+export const printSystem = async (
+  webContents: WebContents,
+  printerId?: string,
+) => {
+  return new Promise<void>((resolve, reject) => {
+    webContents.print(
+      {
+        silent: true,
+        printBackground: true,
+        margins: {
+          marginType: "none",
+        },
+        pageSize: {
+          width: 56134,
+          height: 31750,
+        },
+        deviceName: printerId,
+      },
+      (success, error) => {
+        if (!success) {
+          reject(new Error(error))
+        } else {
+          resolve()
+        }
+      },
+    )
+  })
+}
+
+/**
  * Print the given WebContents via LP.
  * @param webContents - the WebContents
  * @param printerId - the printer ID
@@ -70,6 +104,6 @@ export const renderPDF = async (webContents: WebContents): Promise<Buffer> => {
   return await webContents.printToPDF({
     printBackground: true,
     preferCSSPageSize: true,
-    margins: { marginType: "default" },
+    margins: { marginType: "none" },
   })
 }

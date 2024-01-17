@@ -1,6 +1,6 @@
 import { BadgeData } from "@open-event-systems/badge-lib"
 import express from "express"
-import { getPrinters, print } from "./print"
+import { Printer, getPrinters, printSystem } from "./print"
 import { IpcMainEvent, WebContents, ipcMain } from "electron"
 
 export const makeApp = (webContents: WebContents): express.Express => {
@@ -30,11 +30,15 @@ export const makeApp = (webContents: WebContents): express.Express => {
     const printerId = req.params.printerId
     const body = req.body as BadgeData
 
-    const printers = await getPrinters(webContents)
-    const printer = printers.find((p) => p.id == printerId)
-    if (!printer) {
-      res.status(404).send()
-      return
+    let printer: Printer | undefined
+
+    if (printerId != "default") {
+      const printers = await getPrinters(webContents)
+      printer = printers.find((p) => p.id == printerId)
+      if (!printer) {
+        res.status(404).send()
+        return
+      }
     }
 
     const id = String(new Date().getTime())
@@ -67,7 +71,7 @@ export const makeApp = (webContents: WebContents): express.Express => {
           }),
       )
       .then(() => {
-        return print(webContents, printerId)
+        return printSystem(webContents, printer?.id)
       })
 
     return curPrintPromise
