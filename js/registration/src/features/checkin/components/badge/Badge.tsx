@@ -1,6 +1,6 @@
 import { useCheckInStore } from "#src/features/checkin/hooks"
 import { useQueueAPI } from "#src/features/queue/hooks"
-import { Box, Button, Group, Select, Stack } from "@mantine/core"
+import { Box, Button, Group, Stack } from "@mantine/core"
 import {
   BadgeData,
   Client,
@@ -8,7 +8,6 @@ import {
   waitUntilReady,
 } from "@open-event-systems/badge-lib"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { action } from "mobx"
 import { observer } from "mobx-react-lite"
 import { useEffect, useRef, useState } from "react"
 
@@ -30,17 +29,6 @@ export const Badge = observer((props: BadgeProps) => {
     ...queueAPI.getStation(checkInStore.stationId ?? ""),
     staleTime: Infinity,
     enabled: !!checkInStore.stationId,
-  })
-
-  const printers = useQuery({
-    queryKey: ["printers"],
-    async queryFn() {
-      return await checkInStore.getPrinters(
-        stationInfo.data?.settings.auto_print_url ?? "",
-      )
-    },
-    staleTime: Infinity,
-    enabled: !!stationInfo.data?.settings.auto_print_url,
   })
 
   const delegatedPrint = useMutation(queueAPI.createPrintRequest())
@@ -71,14 +59,9 @@ export const Badge = observer((props: BadgeProps) => {
   useEffect(() => {
     if (
       stationInfo.data?.settings.auto_print_url &&
-      checkInStore.printer &&
       !checkInStore.printIds.has(badgeData.id)
     ) {
-      checkInStore.print(
-        stationInfo.data.settings.auto_print_url,
-        checkInStore.printer,
-        badgeData,
-      )
+      checkInStore.print(stationInfo.data.settings.auto_print_url, badgeData)
     } else if (
       stationInfo.data?.settings.delegate_print_station &&
       !checkInStore.printIds.has(badgeData.id)
@@ -107,13 +90,9 @@ export const Badge = observer((props: BadgeProps) => {
         <Button
           variant="outline"
           onClick={() => {
-            if (
-              stationInfo.data?.settings.auto_print_url &&
-              checkInStore.printer
-            ) {
+            if (stationInfo.data?.settings.auto_print_url) {
               checkInStore.print(
                 stationInfo.data.settings.auto_print_url,
-                checkInStore.printer,
                 badgeData,
               )
             } else if (stationInfo.data?.settings.delegate_print_station) {
@@ -129,21 +108,6 @@ export const Badge = observer((props: BadgeProps) => {
         >
           🖨️ Print
         </Button>
-        {!!stationInfo.data?.settings.auto_print_url && printers.isSuccess && (
-          <Select
-            placeholder="Printer"
-            value={checkInStore.printer}
-            data={
-              printers.data?.map((p) => ({
-                label: p.name,
-                value: p.id,
-              })) ?? []
-            }
-            onChange={action((value) => {
-              checkInStore.printer = value
-            })}
-          />
-        )}
       </Group>
     </Stack>
   )
