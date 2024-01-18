@@ -62,14 +62,10 @@ async def authorize_device_auth(
     if not auth.is_valid() or auth.account_id is not None:
         return False
 
-    requested_scope = Scopes(auth.scope)
-    user_scope = user.scope
-
-    combined_scope = Scopes(requested_scope & user_scope)
+    # requested_scope = Scopes(auth.scope)
+    override_scope = Scopes(scope) if scope is not None else user.scope
 
     if user.is_admin:
-        override_scope = Scopes(scope) if scope is not None else combined_scope
-
         if new_account:
             account = await account_service.create_account(
                 email=email, scope=override_scope
@@ -82,6 +78,7 @@ async def authorize_device_auth(
 
         auth.scope = str(override_scope)
     else:
+        combined_scope = Scopes(user.scope & override_scope)
         auth.scope = str(combined_scope)
         auth.account_id = user.id
 

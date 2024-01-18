@@ -152,7 +152,7 @@ async def complete_device_auth_endpoint(
         account_service,
         body.value.new_account,
         body.value.email,
-        Scopes(body.value.scope) if body.value.scope is not None else None,
+        Scopes(body.value.scope) if body.value.scope is not None else user.scope,
         body.value.require_webauthn,
     ):
         raise Forbidden
