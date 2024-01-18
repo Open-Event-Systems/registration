@@ -82,10 +82,9 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
   useEffect(() => {
     const stationId = stationInfo.data?.id
     const printUrl = stationInfo.data?.settings.auto_print_url
-    const printer = checkInStore.printer
     const delegated = stationInfo.data?.settings.delegate_print_station
 
-    if (queueItems.data && printUrl && printer) {
+    if (queueItems.data && printUrl) {
       for (const item of queueItems.data) {
         const registrationId = item.registration_id
         if (prevItems.current.find((it) => it.id == item.id)) {
@@ -97,7 +96,7 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
             .fetchQuery(registrationAPI.read(registrationId))
             .then((reg) => {
               if (!checkInStore.printIds.has(registrationId)) {
-                return checkInStore.print(printUrl, printer, reg)
+                return checkInStore.print(printUrl, reg)
               }
             })
         }
@@ -129,17 +128,9 @@ const _CheckinLayout = observer(({ children }: { children?: ReactNode }) => {
 
   // trigger delegated printing
   useEffect(() => {
-    if (
-      printRequests.data &&
-      stationInfo.data?.settings.auto_print_url &&
-      checkInStore.printer
-    ) {
+    if (printRequests.data && stationInfo.data?.settings.auto_print_url) {
       for (const req of printRequests.data) {
-        checkInStore.print(
-          stationInfo.data.settings.auto_print_url,
-          checkInStore.printer,
-          req.data,
-        )
+        checkInStore.print(stationInfo.data.settings.auto_print_url, req.data)
       }
     }
   }, [printRequests.data])
