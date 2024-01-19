@@ -8,7 +8,7 @@
     max-height: 100dvh;
 }
 
-:global .ModalDialog-fullscreenContent, .ModalDialog-content.ModalDialog-fullscreenContent {
+:global .ModalDialog-fullscreenContent, :global .ModalDialog-content.ModalDialog-fullscreenContent {
     min-width: initial;
     display: flex;
     flex-direction: column;
