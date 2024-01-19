@@ -1,5 +1,5 @@
 import { TextInput } from "@mantine/core"
-import { ComponentPropsWithoutRef, Ref, useState } from "react"
+import { ComponentPropsWithoutRef, Ref, useRef, useState } from "react"
 
 export type ScanInputProps = Omit<
   ComponentPropsWithoutRef<"form">,
@@ -11,6 +11,8 @@ export type ScanInputProps = Omit<
 
 export const ScanInput = (props: ScanInputProps) => {
   const { onScan, inputRef, ...other } = props
+  const buffer = useRef("")
+  const timeout = useRef<number | null>(null)
   const [scanValue, setScanValue] = useState("")
   const [value, setValue] = useState("")
   return (
@@ -18,16 +20,23 @@ export const ScanInput = (props: ScanInputProps) => {
       className="ScanInput-root"
       onSubmit={(e) => {
         e.preventDefault()
-        const newScanValue = scanValue + value + "\n"
-        setScanValue(newScanValue)
-        setValue("")
 
-        const isIdStr = newScanValue.slice(0, 1) == "@"
-        const finished =
-          !isIdStr || (newScanValue.length > 4 && newScanValue.endsWith("\n\n"))
-        if (finished) {
-          onScan && onScan(newScanValue)
-          setScanValue("")
+        let curValue = value
+
+        if (curValue.startsWith("@") && buffer.current) {
+          onScan && onScan(buffer.current)
+          buffer.current = ""
+        }
+
+        buffer.current = buffer.current + "\n" + curValue
+
+        if (
+          buffer.current.startsWith("@") &&
+          buffer.current.length > 4 &&
+          buffer.current.endsWith("\n\n")
+        ) {
+          onScan && onScan(buffer.current)
+          buffer.current = ""
         }
       }}
       {...other}
@@ -39,6 +48,16 @@ export const ScanInput = (props: ScanInputProps) => {
         placeholder="Scan..."
         onChange={(e) => {
           setValue(e.target.value)
+          if (timeout.current) {
+            window.clearTimeout(timeout.current)
+          }
+
+          timeout.current = window.setTimeout(() => {
+            if (buffer.current.startsWith("@")) {
+              onScan && onScan(buffer.current)
+              buffer.current = ""
+            }
+          }, 200)
         }}
         ref={inputRef}
       />
