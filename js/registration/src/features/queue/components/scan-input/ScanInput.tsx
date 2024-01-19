@@ -27,16 +27,17 @@ export const ScanInput = (props: ScanInputProps) => {
           buffer.current = ""
         }
 
-        buffer.current = buffer.current + "\n" + curValue
+        buffer.current = buffer.current + curValue + "\n"
 
         if (
-          buffer.current.startsWith("@") &&
-          buffer.current.length > 4 &&
-          buffer.current.endsWith("\n\n")
+          !buffer.current.startsWith("@") ||
+          (buffer.current.length > 4 && buffer.current.endsWith("\n\n"))
         ) {
           onScan && onScan(buffer.current)
           buffer.current = ""
         }
+
+        setValue("")
       }}
       {...other}
     >
