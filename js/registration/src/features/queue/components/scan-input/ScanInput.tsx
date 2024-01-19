@@ -13,7 +13,6 @@ export const ScanInput = (props: ScanInputProps) => {
   const { onScan, inputRef, ...other } = props
   const buffer = useRef("")
   const timeout = useRef<number | null>(null)
-  const [scanValue, setScanValue] = useState("")
   const [value, setValue] = useState("")
   return (
     <form

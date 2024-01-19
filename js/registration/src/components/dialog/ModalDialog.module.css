@@ -2,6 +2,16 @@
     min-width: 300px;
     display: flex;
     flex-direction: column;
+    max-width: 100vh;
+    max-height: 100vh;
+    max-width: 100dvh;
+    max-height: 100dvh;
+}
+
+:global .ModalDialog-fullscreenContent, .ModalDialog-content.ModalDialog-fullscreenContent {
+    min-width: initial;
+    display: flex;
+    flex-direction: column;
 }
 
 :global .ModalDialog-header {
