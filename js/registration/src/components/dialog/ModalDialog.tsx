@@ -42,8 +42,10 @@ export const ModalDialog = (props: ModalDialogProps) => {
     ...other
   } = useProps("ModalDialog", {}, props)
 
+  // not great
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
   const queryResult = useMediaQuery(fullScreenMediaQuery)
-  const fullScreen = propFullScreen ?? queryResult
+  const fullScreen = propFullScreen ?? (queryResult && !iOS)
 
   const show = fullScreen !== undefined && opened
 

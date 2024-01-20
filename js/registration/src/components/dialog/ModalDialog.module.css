@@ -2,10 +2,6 @@
     min-width: 300px;
     display: flex;
     flex-direction: column;
-    max-width: 100vh;
-    max-height: 100vh;
-    max-width: 100dvh;
-    max-height: 100dvh;
 }
 
 :global .ModalDialog-fullscreenContent, :global .ModalDialog-content.ModalDialog-fullscreenContent {
