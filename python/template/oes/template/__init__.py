@@ -6,15 +6,16 @@ from oes.template.expression import (
     structure_expression,
     unstructure_expression,
 )
-from oes.template.functions import age_filter, date_filter, now_func, today_func
 from oes.template.logic import (
     LogicAnd,
     LogicNot,
+    LogicObject,
+    LogicObjectTypes,
     LogicOr,
     evaluate,
-    structure_logic,
-    structure_value_or_evaluable,
-    unstructure_logic,
+    make_logic_structure_fn,
+    make_logic_unstructure_fn,
+    make_value_or_evaluable_structure_fn,
 )
 from oes.template.template import Template, structure_template, unstructure_template
 from oes.template.types import Context, Evaluable, ValueOrEvaluable
@@ -28,18 +29,18 @@ __all__ = [
     "LogicAnd",
     "LogicOr",
     "LogicNot",
+    "LogicObject",
+    "LogicObjectTypes",
     "evaluate",
-    "structure_value_or_evaluable",
-    "structure_logic",
-    "unstructure_logic",
+    "make_value_or_evaluable_structure_fn",
+    "make_logic_structure_fn",
+    "make_logic_unstructure_fn",
     "Template",
     "structure_template",
     "unstructure_template",
     "Context",
     "Evaluable",
     "ValueOrEvaluable",
-    "age_filter",
-    "date_filter",
-    "today_func",
-    "now_func",
+    # modules
+    "filters",
 ]

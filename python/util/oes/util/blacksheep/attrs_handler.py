@@ -9,7 +9,7 @@ from collections.abc import (
     Sequence,
     Set,
 )
-from typing import Any, Literal, Type, TypeVar, Union, get_args, get_origin
+from typing import Any, Literal, TypeVar, Union, get_args, get_origin
 
 import orjson
 from attrs import Attribute, fields
@@ -18,8 +18,8 @@ from blacksheep.server.bindings import BodyBinder, BoundValue, InvalidRequestBod
 from blacksheep.server.openapi.v3 import FieldInfo, ObjectTypeHandler, OpenAPIHandler
 from cattrs import BaseValidationError, Converter
 from cattrs.preconf.orjson import make_converter
-from oes.util import is_attrs_class
-from openapidocs.v3 import Schema, ValueType
+from oes.util.attrs import is_attrs_class
+from openapidocs.v3 import Reference, Schema, ValueType
 
 _T = TypeVar("_T")
 
@@ -80,9 +80,7 @@ class AttrsBinder(BodyBinder):
             raise HTTPException(422, "Invalid request body")
 
 
-def _get_field_type(
-    docs: OpenAPIHandler, t: object, nullable: bool = False
-) -> Union[Schema, Type]:
+def _get_field_type(docs: OpenAPIHandler, t: Any, nullable: bool = False) -> Any:
     """Get a type or :class:`Schema` for the given type."""
     if _is_sequence(t):
         return _get_schema_for_sequence(docs, t, nullable)
@@ -98,7 +96,7 @@ def _get_field_type(
         return docs.get_schema_by_type(t, root_optional=nullable)
 
 
-def _get_schema_for_union(docs: OpenAPIHandler, t: object) -> Schema:
+def _get_schema_for_union(docs: OpenAPIHandler, t: Any) -> Union[Schema, Reference]:
     args = get_args(t)
 
     nullable = type(None) in args

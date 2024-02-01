@@ -1,14 +1,14 @@
 """Logic objects."""
+
 from __future__ import annotations
 
-import typing
-from collections.abc import Mapping, Sequence
-from typing import Any, Union
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from attrs import frozen
 from oes.template.expression import Expression
 from oes.template.types import Context, Evaluable, ValueOrEvaluable
-from typing_extensions import TYPE_CHECKING
+from typing_extensions import assert_never
 
 if TYPE_CHECKING:
     from cattrs import Converter
@@ -50,6 +50,13 @@ class LogicNot(Evaluable):
         return not evaluate(self.not_, context)
 
 
+LogicObject: TypeAlias = LogicAnd | LogicOr | LogicNot
+"""A logic object."""
+
+LogicObjectTypes = (LogicAnd, LogicOr, LogicNot)
+"""The logic object types."""
+
+
 def evaluate(obj: object, context: Context) -> object:
     """Evaluate an evaluable or value."""
     if isinstance(obj, Evaluable):
@@ -58,51 +65,62 @@ def evaluate(obj: object, context: Context) -> object:
         return obj
 
 
-def structure_value_or_evaluable(
-    c: Converter, v: object, t: object
-) -> ValueOrEvaluable:
-    """Structure an evaluable or value."""
-    if isinstance(v, str):
-        return c.structure(v, Expression)
-    elif (
-        isinstance(v, Mapping)
-        and len(v) == 1
-        and ("and" in v or "or" in v or "not" in v)
-    ):
-        return structure_logic(c, v, t)
-    else:
-        return v
+def make_value_or_evaluable_structure_fn(
+    converter: Converter,
+) -> Callable[[Any, Any], ValueOrEvaluable]:
+    """Get a function to structure a value or evaluable."""
+
+    def structure(v: Any, t: Any) -> ValueOrEvaluable:
+        if isinstance(v, str):
+            return converter.structure(v, Expression)
+        elif (
+            isinstance(v, Mapping)
+            and len(v) == 1
+            and ("and" in v or "or" in v or "not" in v)
+        ):
+            print("structure", v)
+            return converter.structure(v, LogicObject)  # type: ignore
+        else:
+            return v
+
+    return structure
 
 
-def structure_logic(c: Converter, v: object, t: object) -> Evaluable:
-    """Structure a logic object."""
-    exprs: Sequence[ValueOrEvaluable]
-    if isinstance(v, Mapping) and len(v) == 1:
-        if "and" in v:
-            exprs = c.structure(v["and"], tuple[ValueOrEvaluable, ...])
-            return LogicAnd(exprs)
-        elif "or" in v:
-            exprs = c.structure(v["or"], tuple[ValueOrEvaluable, ...])
-            return LogicOr(exprs)
-        elif "not" in v:
-            expr: ValueOrEvaluable = c.structure(
-                v["not"],
-                ValueOrEvaluable,  # type: ignore
-            )
-            return LogicNot(expr)
+def make_logic_structure_fn(converter: Converter) -> Callable[[Any, Any], LogicObject]:
+    """Get a function to structure a logic object."""
 
-    raise ValueError(f"Invalid logic expression: {v}")
+    def structure(v: Any, t: Any) -> LogicObject:
+        if isinstance(v, Mapping) and len(v) == 1:
+            if "and" in v:
+                exprs = converter.structure(v["and"], tuple[ValueOrEvaluable, ...])
+                return LogicAnd(exprs)
+            elif "or" in v:
+                exprs = converter.structure(v["or"], tuple[ValueOrEvaluable, ...])
+                return LogicOr(exprs)
+            elif "not" in v:
+                expr = converter.structure(
+                    v["not"],
+                    ValueOrEvaluable,  # type: ignore
+                )
+                return LogicNot(expr)
+        raise ValueError(f"Invalid logic expression: {v}")
+
+    return structure
 
 
-def unstructure_logic(
-    converter: Converter, v: Union[LogicAnd, LogicOr, LogicNot]
-) -> dict[str, object]:
-    """Unstructure a logic object."""
-    if isinstance(v, LogicAnd):
-        return {"and": converter.unstructure(v.and_)}
-    elif isinstance(v, LogicOr):
-        return {"or": converter.unstructure(v.or_)}
-    elif isinstance(v, LogicNot):
-        return {"not": converter.unstructure(v.not_)}
-    else:
-        typing.assert_never(v)
+def make_logic_unstructure_fn(
+    converter: Converter,
+) -> Callable[[LogicObject], dict[str, Any]]:
+    """Get a function to unstructure a logic object."""
+
+    def unstructure(v: LogicObject) -> dict[str, Any]:
+        if isinstance(v, LogicAnd):
+            return {"and": converter.unstructure(v.and_)}
+        elif isinstance(v, LogicOr):
+            return {"or": converter.unstructure(v.or_)}
+        elif isinstance(v, LogicNot):
+            return {"not": converter.unstructure(v.not_)}
+        else:
+            assert_never(v)
+
+    return unstructure

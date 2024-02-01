@@ -1,6 +1,6 @@
 """Interview error module."""
 
-from oes.util import ExceptionDetails, get_exception_details
+from oes.util.cattrs import ExceptionDetails, get_exception_details
 
 
 class InterviewError(ValueError):

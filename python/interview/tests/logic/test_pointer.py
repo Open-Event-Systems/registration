@@ -1,11 +1,11 @@
 import pytest
-from oes.interview.immutable_mapping import make_immutable
 from oes.interview.logic.pointer import (
     InvalidPointerError,
     PointerSegment,
     _Parsing,
     parse_pointer_impl,
 )
+from oes.util import make_immutable
 
 
 @pytest.mark.parametrize(

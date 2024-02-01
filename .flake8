@@ -6,6 +6,7 @@ suppress-dummy-args = true
 allow-untyped-defs = true
 allow-untyped-nested = true
 mypy-init-return = true
+max-cognitive-complexity = 10
 
 extend-ignore =
     E203

@@ -6,27 +6,30 @@ from oes.template.expression import (
     unstructure_expression,
 )
 from oes.template.logic import (
-    LogicAnd,
-    LogicNot,
-    LogicOr,
+    LogicObject,
+    LogicObjectTypes,
     evaluate,
-    structure_value_or_evaluable,
-    unstructure_logic,
+    make_logic_structure_fn,
+    make_logic_unstructure_fn,
+    make_value_or_evaluable_structure_fn,
 )
 from oes.template.types import ValueOrEvaluable
 
 converter = make_converter()
 converter.register_structure_hook(Expression, structure_expression)
 converter.register_structure_hook(
-    ValueOrEvaluable, lambda v, t: structure_value_or_evaluable(converter, v, t)
+    ValueOrEvaluable, make_value_or_evaluable_structure_fn(converter)
 )
 converter.register_unstructure_hook(
     Expression,
     unstructure_expression,
 )
+converter.register_structure_hook_func(
+    lambda cls: cls == LogicObject, make_logic_structure_fn(converter)
+)
 converter.register_unstructure_hook_func(
-    lambda cls: cls in (LogicAnd, LogicOr, LogicNot),
-    lambda v: unstructure_logic(converter, v),
+    lambda cls: cls in LogicObjectTypes,
+    make_logic_unstructure_fn(converter),
 )
 
 cases = [
@@ -113,7 +116,7 @@ cases = [
     cases,
 )
 def test_logic_parsing_and_eval(src, context, value):
-    condition = converter.structure(src, ValueOrEvaluable)
+    condition = converter.structure(src, ValueOrEvaluable)  # type: ignore
     result = evaluate(condition, context)
     assert result == value
 
@@ -127,6 +130,6 @@ def test_logic_parsing_and_eval(src, context, value):
     ],
 )
 def test_logic_parsing_unstructure(case):
-    condition = converter.structure(case, ValueOrEvaluable)
+    condition = converter.structure(case, ValueOrEvaluable)  # type: ignore
     back = converter.unstructure(condition, ValueOrEvaluable)
     assert back == case

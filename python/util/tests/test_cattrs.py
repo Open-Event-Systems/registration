@@ -1,10 +1,16 @@
+from datetime import datetime, timezone
 from typing import Optional
 
 import pytest
 from attrs import field, frozen, validators
 from cattrs import BaseValidationError
 from cattrs.preconf.json import make_converter
-from oes.util.cattrs import ExceptionDetails, get_exception_details
+from oes.util.cattrs import (
+    ExceptionDetails,
+    get_exception_details,
+    structure_datetime,
+    unstructure_datetime_isoformat,
+)
 
 pytest.importorskip("cattrs")
 
@@ -65,3 +71,22 @@ def test_get_exception_details(data, expected):
     details = get_exception_details(err.value)
 
     assert details == list(expected)
+
+
+@pytest.mark.parametrize(
+    "v, expected",
+    [
+        (datetime(2020, 1, 1, 12), datetime(2020, 1, 1, 12)),
+        (1577880000, datetime(2020, 1, 1, 12, tzinfo=timezone.utc)),
+        ("2020-01-01T07:00:00-05:00", datetime(2020, 1, 1, 12, tzinfo=timezone.utc)),
+    ],
+)
+def test_structure_datetime(v, expected):
+    assert structure_datetime(v, datetime) == expected
+
+
+def test_unstructure_datetime():
+    assert (
+        unstructure_datetime_isoformat(datetime(2020, 1, 1, 12, tzinfo=timezone.utc))
+        == "2020-01-01T12:00:00+00:00"
+    )

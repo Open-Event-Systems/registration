@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 
 attrs = "^23.1"
 cattrs = "^23.1"
@@ -19,7 +19,7 @@ jinja2 = "^3.1.2"
 pyparsing = "^3.0.9"
 importlib-metadata =  "^6.0.0"
 loguru = "^0.7.0"
-ruamel-yaml = "^0.17.21"
+ruamel-yaml = "^0.18.5"
 publicsuffixlist =  "^0.10.0.20230617"
 email-validator =  "^2.0.0.post2"
 httpx = { version = "^0.23.3" }
@@ -44,23 +44,9 @@ testpaths = [
     "tests",
 ]
 
-[tool.mypy]
-explicit_package_bases = true
-mypy_path = [
-    "$MYPY_CONFIG_FILE_DIR",
-    "$MYPY_CONFIG_FILE_DIR/../util",
-    "$MYPY_CONFIG_FILE_DIR/../template",
-]
-
-
-[[tool.mypy.overrides]]
-module = [
-    "openapidocs.v3",
-    "publicsuffixlist",
-    "ruamel",
-    "ruamel.yaml",
-]
-ignore_missing_imports = true
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
 
 # Console script entry point
 [tool.poetry.plugins."console_scripts"]

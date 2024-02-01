@@ -1,4 +1,5 @@
 """State module."""
+
 from __future__ import annotations
 
 import copy
@@ -13,12 +14,11 @@ import orjson
 from attrs import Factory, evolve, field, frozen
 from cattrs import Converter
 from nacl.secret import SecretBox
-from oes.interview.immutable_mapping import ImmutableMapping, make_immutable
 from oes.interview.interview.error import InvalidStateError
 from oes.interview.interview.interview import Interview
 from oes.interview.logic import ValuePointer
 from oes.template import Context
-from oes.util import merge_dict
+from oes.util import get_now, immutable_dict, make_immutable, merge_dict
 from typing_extensions import Self
 
 DEFAULT_INTERVIEW_EXPIRATION = timedelta(seconds=1800)
@@ -50,8 +50,7 @@ class InterviewState:
     """Whether the state is complete."""
 
     context: Context = field(
-        converter=lambda v: make_immutable(v),
-        factory=ImmutableMapping,
+        converter=lambda v: make_immutable(v), default=immutable_dict({})
     )
     """Context data."""
 
@@ -63,40 +62,31 @@ class InterviewState:
 
     data: Context = field(
         converter=lambda v: make_immutable(v),
-        factory=ImmutableMapping,
+        default=immutable_dict({}),
     )
     """Interview data."""
 
-    _template_context: Context = field(
-        # TODO: update merge_dict
+    template_context: Context = field(
         default=Factory(
             lambda s: make_immutable(merge_dict(s.data, s.context)), takes_self=True
         ),
         init=False,
         eq=False,
     )
-
-    @property
-    def template_context(self) -> Context:
-        """The context to use when evaluating templates."""
-        return self._template_context
+    """The context to use when evaluating templates."""
 
     def set_question(self, question_id: Optional[str]) -> Self:
         """Set or clear the current question ID.
 
         Updates :attr:`question_id` and :attr:`answered_question_ids`.
         """
-        if question_id is not None:
-            return evolve(
-                self,
-                question_id=question_id,
-                answered_question_ids=self.answered_question_ids | {question_id},
-            )
-        else:
-            return evolve(
-                self,
-                question_id=None,
-            )
+        return evolve(
+            self,
+            question_id=question_id,
+            answered_question_ids=(self.answered_question_ids | {question_id})
+            if question_id is not None
+            else self.answered_question_ids,
+        )
 
     def set_data(self, data: Context) -> Self:
         """Replace the :attr:`data` attribute."""
@@ -195,7 +185,7 @@ class InterviewState:
 
     def get_is_expired(self, *, now: Optional[datetime] = None) -> bool:
         """Return whether the state is expired."""
-        now = now if now is not None else datetime.now().astimezone()
+        now = now if now is not None else get_now()
         return now >= self.expiration_date
 
     def validate(self, *, now: Optional[datetime] = None):

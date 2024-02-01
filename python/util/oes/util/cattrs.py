@@ -1,17 +1,24 @@
 """Cattrs helpers."""
 from __future__ import annotations
 
-import contextlib
-from collections.abc import Iterator
-from typing import Union
+__all__ = [
+    "ExceptionDetails",
+    "structure_datetime",
+    "unstructure_datetime_isoformat",
+    "get_exception_details",
+]
 
-with contextlib.suppress(ImportError):
-    from attrs import frozen
-    from cattrs import (
-        BaseValidationError,
-        AttributeValidationNote,
-        IterableValidationNote,
-    )
+from collections.abc import Iterator
+from datetime import datetime, timezone
+from typing import Any, Union
+
+from attrs import frozen
+from cattrs import AttributeValidationNote, BaseValidationError, IterableValidationNote
+
+try:
+    from ruamel.yaml.timestamp import TimeStamp
+except ImportError:
+    TimeStamp = None
 
 from typing_extensions import TypeAlias
 
@@ -24,6 +31,42 @@ class ExceptionDetails:
 
     path: ExcPath = ()
     message: str = ""
+
+
+def structure_datetime(v: Any, t: Any) -> datetime:
+    """Structure a :class:`datetime`."""
+    if isinstance(v, datetime):
+        return _handle_yaml_datetime(v)
+    elif isinstance(v, str):
+        dt = datetime.fromisoformat(v)
+        return dt if dt.tzinfo is not None else dt.astimezone()
+    elif isinstance(v, (float, int)):
+        return datetime.fromtimestamp(v).astimezone()
+    else:
+        raise TypeError(f"Invalid datetime: {v}")
+
+
+def unstructure_datetime_isoformat(v: datetime) -> str:
+    """Unstructure a :class:`datetime` as an ISO string."""
+    return v.isoformat()
+
+
+def _handle_yaml_datetime(v: datetime) -> datetime:
+    if TimeStamp and isinstance(v, TimeStamp):
+        if "delta" in v._yaml and v._yaml.get("tz"):
+            tzinfo = timezone(v._yaml["delta"])
+            v = v.replace(tzinfo=timezone.utc)
+            return v.astimezone(tz=tzinfo)
+        else:
+            return v if v.tzinfo is not None else v.astimezone()
+    else:
+        return v
+
+
+def _handle_datetime_str(v: str) -> datetime:
+    if v.endswith("Z"):
+        v = v[:-1] + "+00:00"
+    return datetime.fromisoformat(v)
 
 
 def get_exception_details(exc: Exception) -> list[ExceptionDetails]:

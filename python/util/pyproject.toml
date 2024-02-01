@@ -8,13 +8,14 @@ packages = [{ include = "oes" }]
 license = "LGPL-3.0-or-later"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 typing-extensions = "^4.7.1"
 attrs = { version = "^23.1.0", optional = true }
 cattrs = { version = "^23.1.2", optional = true }
 orjson = { version = "^3.9.2", optional = true }
 blacksheep = { version = "^1.2.18", optional = true }
 loguru = { version = "^0.7.0", optional = true }
+ruamel-yaml = {version = "^0.18.5", optional = true}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -35,15 +36,7 @@ build-backend = "poetry.core.masonry.api"
 addopts = "--cov=oes.util"
 testpaths = ["tests"]
 
-[tool.mypy]
-packages = [
-    "oes.util",
-]
-mypy_path = "$MYPY_CONFIG_FILE_DIR"
-explicit_package_bases = true
-
-[[tool.mypy.overrides]]
-module = [
-    "openapidocs.v3",
-]
-ignore_missing_imports = true
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+reportUnsupportedDunderAll = false

@@ -10,7 +10,6 @@ from cattrs import Converter, override
 from cattrs.gen import make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import structure_question_or_path
-from oes.interview.immutable_mapping import ImmutableMapping
 from oes.interview.input.field import structure_field
 from oes.interview.input.question import (
     Question,
@@ -34,11 +33,11 @@ from oes.template import (
     Expression,
     Template,
     ValueOrEvaluable,
+    make_value_or_evaluable_structure_fn,
     structure_expression,
     structure_template,
-    structure_value_or_evaluable,
 )
-from oes.util import is_attrs_class, is_attrs_instance
+from oes.util.attrs import is_attrs_class, is_attrs_instance
 
 
 @singledispatch
@@ -58,11 +57,6 @@ def _(obj: datetime) -> str:
 @json_default.register
 def _(obj: date) -> str:
     return obj.isoformat()
-
-
-@json_default.register
-def _(obj: ImmutableMapping) -> dict:
-    return dict(obj)
 
 
 def configure_converter(converter: Converter):
@@ -106,7 +100,7 @@ def configure_converter(converter: Converter):
     # expression strings or literal values
     converter.register_structure_hook_func(
         lambda cls: cls == ValueOrEvaluable,
-        lambda v, t: structure_value_or_evaluable(converter, v, t),
+        make_value_or_evaluable_structure_fn(converter),
     )
 
     converter.register_structure_hook_func(

@@ -6,11 +6,18 @@ from typing import ContextManager
 
 import jinja2
 from jinja2.sandbox import ImmutableSandboxedEnvironment
-from oes.template.functions import age_filter, date_filter, now_func, today_func
+from oes.template.filters import (
+    age_filter,
+    date_filter,
+    datetime_filter,
+    now_func,
+    today_func,
+)
 
 _default_jinja2_env = ImmutableSandboxedEnvironment()
 """The default Jinja2 environment."""
 
+_default_jinja2_env.filters["datetime"] = datetime_filter
 _default_jinja2_env.filters["date"] = date_filter
 _default_jinja2_env.filters["age"] = age_filter
 _default_jinja2_env.globals["get_today"] = today_func

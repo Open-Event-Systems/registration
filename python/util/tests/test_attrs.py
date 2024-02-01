@@ -7,7 +7,7 @@ try:
 except ImportError:
     pytest.skip("attrs missing", allow_module_level=True)
 
-from oes.util import is_attrs_class, is_attrs_instance
+from oes.util.attrs import is_attrs_class, is_attrs_instance
 
 
 @define

@@ -1,7 +1,8 @@
 """Base types."""
+
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import Any, Union
+from typing import Any
 
 from typing_extensions import Protocol, TypeAlias, runtime_checkable
 
@@ -19,5 +20,5 @@ class Evaluable(Protocol):
         ...
 
 
-ValueOrEvaluable: TypeAlias = Union[Evaluable, object]
+ValueOrEvaluable: TypeAlias = Evaluable | object
 """A value or evaluable type."""

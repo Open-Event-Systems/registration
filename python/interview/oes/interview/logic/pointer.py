@@ -7,9 +7,9 @@ from typing import Union, cast, overload
 
 import pyparsing as pp
 from attrs import field, frozen
-from oes.interview.immutable_mapping import ImmutableMapping, make_immutable
 from oes.interview.logic.types import ValuePointer
 from oes.template import Context
+from oes.util import make_immutable
 
 
 class InvalidPointerError(ValueError):
@@ -138,56 +138,7 @@ def _set_arr(context: object, key: int, value: object) -> Sequence[object]:
 def _set_obj(context: object, key: str, value: object) -> Mapping[object, object]:
     if not isinstance(context, Mapping):
         raise TypeError(f"Not an object: {context}")
-    return ImmutableMapping(context) | {key: value}
-
-
-# def _walk(context: object, segments: Iterable[PointerSegment]) -> object:
-#     cur = context
-#     for segment in segments:
-#         cur = segment.evaluate(cur)
-#     return cur
-#
-#
-# def _set(context: object, key: object, value: object):
-#     if isinstance(key, str):
-#         _set_obj(context, key, value)
-#     elif isinstance(key, int) and not isinstance(key, bool):
-#         return _set_arr(context, key, value)
-#     else:
-#         raise TypeError(f"Invalid index: {key}")
-#
-#
-# def _set_arr(context: object, key: int, value: object):
-#     if not isinstance(context, MutableSequence):
-#         raise TypeError(f"Not an array: {context}")
-#     context[key] = value
-#
-#
-# def _set_obj(context: object, key: str, value: object):
-#     if not isinstance(context, MutableMapping):
-#         raise TypeError(f"Not an object: {context}")
-#     context[key] = value
-#
-#
-# def _get(context: object, key: object) -> object:
-#     if isinstance(key, str):
-#         return _get_obj(context, key)
-#     elif isinstance(key, int) and not isinstance(key, bool):
-#         return _get_arr(context, key)
-#     else:
-#         raise TypeError(f"Invalid index: {key}")
-#
-#
-# def _get_arr(context: object, key: int) -> object:
-#     if not isinstance(context, Sequence) or isinstance(context, str):
-#         raise TypeError(f"Not an array: {context}")
-#     return context[key]
-#
-#
-# def _get_obj(context: object, key: str) -> object:
-#     if not isinstance(context, Mapping):
-#         raise TypeError(f"Not an object: {context}")
-#     return context[key]
+    return make_immutable({**context, key: value})
 
 
 class _Parsing:

@@ -6,7 +6,7 @@ from blacksheep import Application, Response
 from blacksheep.server.openapi.common import ContentInfo, ResponseInfo
 from blacksheep.server.openapi.v3 import FieldInfo, OpenAPIHandler
 from cattrs.preconf.orjson import make_converter
-from oes.util import is_attrs_instance
+from oes.util.attrs import is_attrs_instance
 from oes.util.blacksheep import JSONResponseFunc
 from oes.util.blacksheep.attrs_handler import (
     AttrsTypeHandler,
