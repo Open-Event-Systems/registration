@@ -238,7 +238,7 @@ name = "oes-util"
 version = "0.1.0"
 description = "OES shared utilities library"
 optional = false
-python-versions = "^3.9"
+python-versions = "^3.10"
 files = []
 develop = false
 
@@ -253,8 +253,8 @@ loguru = ["loguru (>=0.7.0,<0.8.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/Open-Event-Systems/registration.git"
-reference = "39ac369f1817d847062c738db59011ea1ee9ab77"
-resolved_reference = "39ac369f1817d847062c738db59011ea1ee9ab77"
+reference = "fb8f27f42774aa57c63d622de8cd9f4328adc2c4"
+resolved_reference = "fb8f27f42774aa57c63d622de8cd9f4328adc2c4"
 subdirectory = "python/util"
 
 [[package]]
@@ -348,4 +348,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "4634193a7fc776132f948461f9f851b7b2670e109e7b2db1d845dcf1e4966600"
+content-hash = "d8cf69551e6507041e610d3b8271f3f319218fdc078f54a48b3b90d6d08dac1a"
