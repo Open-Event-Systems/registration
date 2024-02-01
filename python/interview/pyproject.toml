@@ -27,8 +27,8 @@ typed-settings = "^23.0.0"
 blacksheep = "^1.2.18,!=1.2.19"
 uvicorn = {extras = ["standard"], version = "^0.23.2"}
 
-oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", rev = "39ac369f1817d847062c738db59011ea1ee9ab77", subdirectory = "python/util" }
-oes-template = { git = "https://github.com/Open-Event-Systems/registration.git", rev= "0d8251ec6c5adb80a5d28f62a55c95d889e8758e", subdirectory = "python/template" }
+oes-util = { git = "https://github.com/Open-Event-Systems/registration.git", rev = "fb8f27f42774aa57c63d622de8cd9f4328adc2c4", subdirectory = "python/util" }
+oes-template = { git = "https://github.com/Open-Event-Systems/registration.git", rev= "df218d2a0362b3c42f13b5ce5701e58a2f052f1c", subdirectory = "python/template" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
