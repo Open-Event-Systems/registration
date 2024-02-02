@@ -10,6 +10,7 @@ from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
 from oes.interview.input.types import Field, ResponseParser, UserResponse
 from oes.interview.logic import ValuePointer
+from oes.template import Context
 
 AttrsT = TypeVar("AttrsT", bound=AttrsInstance)
 _T = TypeVar("_T")
@@ -34,9 +35,10 @@ def create_response_parser(
         n: f.set for n, f in by_name.items()
     }
 
-    attrs_cls = _create_attrs_class(_make_class_name(name), by_name)
-
-    def parser(response: UserResponse) -> Mapping[ValuePointer, object]:
+    def parser(
+        response: UserResponse, context: Context
+    ) -> Mapping[ValuePointer, object]:
+        attrs_cls = _create_attrs_class(_make_class_name(name), by_name, context)
         parsed_obj = _parse_response(response, attrs_cls, _response_converter)
         by_loc = _map_response_values_to_pointers(parsed_obj, name_to_loc)
         return by_loc
@@ -102,11 +104,12 @@ def _map_response_values_to_pointers(
 def _create_attrs_class(
     name: str,
     fields: Mapping[str, Field],
+    context: Context,
 ) -> Type[AttrsInstance]:
     """Create a class that :mod:`attrs` can use to parse responses."""
     cls = make_class(
         name,
-        {nm: f.field_info for nm, f in fields.items()},
+        {nm: f.get_field_info(context) for nm, f in fields.items()},
         frozen=True,
         slots=True,
     )

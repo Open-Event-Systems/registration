@@ -54,7 +54,7 @@ def test_number_field_schema_optional():
 def test_number_field_parse(val, expected):
     parser = create_response_parser("test", [field2])
 
-    result = parser({"field_0": val})
+    result = parser({"field_0": val}, {})
     assert result == {parse_pointer("value"): expected}
 
 
@@ -71,7 +71,7 @@ def test_number_field_parse_error(val):
     parser = create_response_parser("test", [field1])
 
     with pytest.raises(ClassValidationError):
-        parser({"field_0": val})
+        parser({"field_0": val}, {})
 
 
 @pytest.mark.parametrize(
@@ -82,4 +82,4 @@ def test_number_field_parse_error_2(val):
     parser = create_response_parser("test", [field2])
 
     with pytest.raises(ClassValidationError):
-        parser({"field_0": val})
+        parser({"field_0": val}, {})

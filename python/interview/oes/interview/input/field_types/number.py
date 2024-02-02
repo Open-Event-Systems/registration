@@ -1,5 +1,6 @@
 """Number field type."""
-from typing import Any, Callable, Literal, Optional, Type
+
+from typing import Any, Callable, Literal, Type
 
 import attr
 from attr import Attribute
@@ -13,21 +14,21 @@ class NumberField(FieldBase):
     """A number field."""
 
     type: Literal[FieldType.number] = FieldType.number
-    default: Optional[float] = None
+    default: float | None = None
 
     integer: bool = False
     """Restrict to integers."""
 
-    min: Optional[float] = None
+    min: float | None = None
     """The minimum value."""
 
-    max: Optional[float] = None
+    max: float | None = None
     """The maximum value."""
 
-    input_mode: Optional[str] = None
+    input_mode: str | None = None
     """The HTML input mode for this field."""
 
-    autocomplete: Optional[str] = None
+    autocomplete: str | None = None
     """The autocomplete type for this field's input."""
 
     @property
@@ -47,8 +48,7 @@ class NumberField(FieldBase):
 
         return [*validators_, validators.optional(extra_validators)]
 
-    @property
-    def field_info(self) -> Any:
+    def get_field_info(self, context: Context) -> Any:
         return attr.ib(
             type=self.optional_type,
             converter=self._converter,

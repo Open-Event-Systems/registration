@@ -34,7 +34,7 @@ def test_date_field_schema():
 def test_date_field_parse(val, expected):
     parser = create_response_parser("test", [field])
 
-    result = parser({"field_0": val})
+    result = parser({"field_0": val}, {})
     assert result == {parse_pointer("value"): expected}
 
 
@@ -50,4 +50,4 @@ def test_date_field_parse_error(val):
     parser = create_response_parser("test", [field])
 
     with pytest.raises(ClassValidationError):
-        parser({"field_0": val})
+        parser({"field_0": val}, {})

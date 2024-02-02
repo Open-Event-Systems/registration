@@ -1,13 +1,17 @@
 import pytest
 from cattrs import BaseValidationError
-from oes.interview.input.field_types.select import SelectField, SelectFieldOption
+from oes.interview.input.field_types.select import (
+    SelectComponentType,
+    SelectField,
+    SelectFieldOption,
+)
 from oes.interview.input.response import create_response_parser
 from oes.interview.logic import parse_pointer
-from oes.template import Template
+from oes.template import Expression, Template
 
 field_single = SelectField(
     set=parse_pointer("option"),
-    component="radio",
+    component=SelectComponentType.radio,
     options=(
         SelectFieldOption(
             label=Template("Option 1"),
@@ -24,7 +28,7 @@ field_single = SelectField(
 field_single_optional = SelectField(
     set=parse_pointer("option"),
     min=0,
-    component="checkbox",
+    component=SelectComponentType.checkbox,
     options=(
         SelectFieldOption(
             label=Template("Option 1"),
@@ -193,7 +197,7 @@ def test_multi_select_optional_schema():
 def test_select_field(field, val, expected):
     parser = create_response_parser("test", [field])
 
-    result = parser({"field_0": val})
+    result = parser({"field_0": val}, {})
     assert result == {parse_pointer("option"): expected}
 
 
@@ -215,14 +219,14 @@ def test_select_field_invalid(field, val):
     parser = create_response_parser("test", [field])
 
     with pytest.raises(BaseValidationError):
-        parser({"field_0": val})
+        parser({"field_0": val}, {})
 
 
 def test_boolean_schema():
     field = SelectField(
         min=0,
         max=1,
-        component="checkbox",
+        component=SelectComponentType.checkbox,
         options=[
             SelectFieldOption(
                 label=Template("Enable"),
@@ -272,7 +276,41 @@ def test_boolean(val, valid, expected):
     )
 
     if valid:
-        assert parser({"field_0": val}) == {parse_pointer("value"): expected}
+        assert parser({"field_0": val}, {}) == {parse_pointer("value"): expected}
     else:
         with pytest.raises(BaseValidationError):
-            parser({"field_0": val})
+            parser({"field_0": val}, {})
+
+
+def test_option_expr():
+    field = SelectField(
+        set=parse_pointer("value"),
+        min=0,
+        max=2,
+        options=[
+            SelectFieldOption(
+                label=Template("Enable"),
+                value_expr=Expression("value_expr"),
+                default_expr=Expression("default_expr"),
+            ),
+            SelectFieldOption(
+                label=Template("Enable"),
+                value_expr=Expression("value_expr"),
+                default_expr=Expression("not default_expr"),
+            ),
+        ],
+    )
+    parser = create_response_parser(
+        "test",
+        [field],
+    )
+    assert field.get_schema({"value_expr": 123, "default_expr": 123})["default"] == [
+        "1"
+    ]
+    assert field.get_schema({"value_expr": 123, "default_expr": 0})["default"] == ["2"]
+    assert parser({"field_0": ["1"]}, {"value_expr": 123}) == {
+        parse_pointer("value"): (123,)
+    }
+    assert parser({"field_0": ["1"]}, {"value_expr": 123}) == {
+        parse_pointer("value"): (123,)
+    }

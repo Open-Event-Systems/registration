@@ -10,7 +10,7 @@ from cattrs import Converter, override
 from cattrs.gen import make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
 from oes.interview.config.interview import structure_question_or_path
-from oes.interview.input.field import structure_field
+from oes.interview.input.field import make_field_structure_fn
 from oes.interview.input.question import (
     Question,
     make_question_structure_fn,
@@ -94,7 +94,7 @@ def configure_converter(converter: Converter):
 
     # handle Field
     converter.register_structure_hook_func(
-        lambda cls: cls is Field, lambda v, t: structure_field(converter, v, t)
+        lambda cls: cls is Field, make_field_structure_fn(converter)
     )
 
     # expression strings or literal values

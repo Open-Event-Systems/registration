@@ -1,28 +1,29 @@
 """Question module."""
+
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any, Optional
+from typing import Any
 
 from attrs import Factory, field, frozen
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.interview.input.response import create_response_parser, map_field_names
 from oes.interview.input.types import Field, JSONSchema, ResponseParser
-from oes.interview.logic import Whenable, WhenCondition
+from oes.interview.logic import WhenCondition
 from oes.interview.util import validate_identifier
 from oes.template import Context, Template
 
 
 @frozen
-class Question(Whenable):
+class Question:
     """A question object."""
 
     id: str = field(validator=validate_identifier)
     """The question ID."""
 
-    title: Optional[Template] = None
+    title: Template | None = None
     """The question title."""
 
-    description: Optional[Template] = None
+    description: Template | None = None
     """The question description."""
 
     fields: Sequence[Field] = ()
@@ -31,16 +32,12 @@ class Question(Whenable):
     when: WhenCondition = ()
     """``when`` conditions"""
 
-    _response_parser: ResponseParser = field(
+    response_parser: ResponseParser = field(
         default=Factory(lambda s: _make_parser(s), takes_self=True),
         init=False,
         eq=False,
     )
-
-    @property
-    def response_parser(self) -> ResponseParser:
-        """The user response parser function."""
-        return self._response_parser
+    """The response parser."""
 
     def get_schema(self, context: Context) -> JSONSchema:
         """Get the JSON schema for this question.
@@ -76,7 +73,7 @@ def make_question_structure_fn(
     return make_dict_structure_fn(
         Question,
         converter,
-        _response_parser=override(omit=True),
+        response_parser=override(omit=True),
     )
 
 
@@ -87,7 +84,7 @@ def make_question_unstructure_fn(
     return make_dict_unstructure_fn(
         Question,
         converter,
-        _response_parser=override(omit=True),
+        response_parser=override(omit=True),
     )
 
 

@@ -1,6 +1,7 @@
 """Date field type."""
+
 from datetime import date
-from typing import Any, Callable, Literal, Optional, Type
+from typing import Any, Callable, Literal, Type
 
 from attr import Attribute
 from attrs import frozen, validators
@@ -13,15 +14,15 @@ class DateField(FieldBase):
     """A date field."""
 
     type: Literal[FieldType.date] = FieldType.date
-    default: Optional[date] = None
+    default: date | None = None
 
-    min: Optional[date] = None
+    min: date | None = None
     """The minimum value."""
 
-    max: Optional[date] = None
+    max: date | None = None
     """The maximum value."""
 
-    autocomplete: Optional[str] = None
+    autocomplete: str | None = None
     """The autocomplete type for this field's input."""
 
     @property

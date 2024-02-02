@@ -1,21 +1,25 @@
-from typing import Mapping, Optional
+from typing import Any, Optional
 
 import attr
 import pytest
 from attrs import frozen
 from cattrs import ClassValidationError
 from oes.interview.input.response import create_response_parser, map_field_names
-from oes.interview.input.types import Field
+from oes.interview.input.types import JSONSchema
 from oes.interview.logic import ValuePointer, parse_pointer
 from oes.template import Context
 
 
 @frozen
-class CustomField(Field):
+class CustomField:
     field_info: object
     set: Optional[ValuePointer]
+    optional: bool = False
 
-    def get_schema(self, context: Context) -> Mapping[str, object]:
+    def get_field_info(self, context: Context) -> Any:
+        return self.field_info
+
+    def get_schema(self, context: Context) -> JSONSchema:
         return {}
 
 
@@ -38,7 +42,7 @@ def test_create_response_parser():
 
     response = map_field_names(fields, (123, "test"))
 
-    parsed = parser(response)
+    parsed = parser(response, {})
     assert parsed == {
         parse_pointer("val1"): 123,
         parse_pointer("val2"): "test",
@@ -80,4 +84,4 @@ def test_create_response_parser_error(responses):
     response = map_field_names(fields, responses)
 
     with pytest.raises(ClassValidationError):
-        parser(response)
+        parser(response, {})

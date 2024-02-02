@@ -1,4 +1,4 @@
-FROM python:3.10.13-alpine3.18 AS base
+FROM python:3.12.1-alpine3.19 AS base
 
 FROM base AS build
 RUN apk add git build-base

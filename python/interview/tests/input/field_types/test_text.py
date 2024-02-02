@@ -3,7 +3,7 @@ from cattrs import BaseValidationError, ClassValidationError
 from oes.interview.input.field_types.text import TextField
 from oes.interview.input.response import create_response_parser
 from oes.interview.logic import parse_pointer
-from oes.template import Template
+from oes.template import Expression, Template
 
 field1 = TextField(
     set=parse_pointer("value"),
@@ -69,7 +69,7 @@ def test_text_field_schema_optional():
 def test_text_field_parse(val, expected):
     parser = create_response_parser("test", [field2])
 
-    result = parser({"field_0": val})
+    result = parser({"field_0": val}, {})
     assert result == {parse_pointer("value"): expected}
 
 
@@ -89,7 +89,7 @@ def test_text_field_parse_error(val):
     parser = create_response_parser("test", [field1])
 
     with pytest.raises(ClassValidationError):
-        parser({"field_0": val})
+        parser({"field_0": val}, {})
 
 
 @pytest.mark.parametrize(
@@ -110,7 +110,13 @@ def test_text_field_format(format, val, success):
     parser = create_response_parser("test", [field])
 
     if success:
-        parser({"field_0": val})
+        parser({"field_0": val}, {})
     else:
         with pytest.raises(BaseValidationError):
-            parser({"field_0": val})
+            parser({"field_0": val}, {})
+
+
+def test_text_field_default_expr():
+    field = TextField(default_expr=Expression("default_value"))
+    res = field.get_schema({"default_value": 123})
+    assert res["default"] == 123

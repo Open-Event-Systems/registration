@@ -1,13 +1,14 @@
 """Select field module."""
+
 from collections.abc import Callable, Sequence
 from enum import Enum
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import attr
 from attrs import converters, frozen, validators
 from oes.interview.input.field import OptionsFieldBase
-from oes.interview.input.types import FieldType, JSONSchema, Option
-from oes.template import Context, Template
+from oes.interview.input.types import FieldType, JSONSchema
+from oes.template import Context, Expression, Template
 
 
 class SelectComponentType(str, Enum):
@@ -19,10 +20,10 @@ class SelectComponentType(str, Enum):
 
 
 @frozen(kw_only=True)
-class SelectFieldOption(Option):
+class SelectFieldOption:
     """A select field option."""
 
-    id: Optional[str] = None
+    id: str | None = None
     """The option ID."""
 
     label: Template
@@ -31,15 +32,22 @@ class SelectFieldOption(Option):
     default: bool = False
     """Whether this option is selected by default."""
 
+    default_expr: Expression | None = None
+    """An expression of whether this option is selected by default."""
+
     value: Any = None
     """The option value."""
 
-    def get_schema(
-        self, context: Context, /, *, id: Optional[str] = None
-    ) -> JSONSchema:
+    value_expr: Expression | None = None
+    """An expression of the value."""
+
+    def get_schema(self, context: Context, *, id: str | None = None) -> JSONSchema:
         """Get the schema for this option."""
+        if id is None and self.id is None:
+            raise ValueError("An ID must be provided")
+
         schema = {
-            **super().get_schema(context, id=id),
+            "const": id or self.id,
             "title": self.label.render(context),
         }
 
@@ -91,15 +99,18 @@ class SelectField(OptionsFieldBase[SelectFieldOption]):
                 "uniqueItems": True,
             }
 
-        defaults = [id for id, opt in self.options_by_id.items() if opt.default]
+        defaults = [
+            id
+            for id, opt in self.options_by_id.items()
+            if opt.default_expr and opt.default_expr.evaluate(context) or opt.default
+        ]
 
         if defaults:
             schema["default"] = defaults[0] if self.is_single_value else defaults
 
         return schema
 
-    @property
-    def field_info(self) -> Any:
+    def get_field_info(self, context: Context) -> Any:
         if not self.is_single_value:
             validators_: list[Callable[[Any, Any, Any], Any]] = [
                 validators.instance_of(
@@ -113,9 +124,15 @@ class SelectField(OptionsFieldBase[SelectFieldOption]):
 
         return attr.ib(
             type=Any,
-            converter=converters.pipe(self._convert_none, self.convert_option)
-            if self.is_single_value
-            else converters.pipe(self._convert_none, self.convert_options),
+            converter=(
+                converters.pipe(
+                    self._convert_none, lambda x: self.convert_option(x, context)
+                )
+                if self.is_single_value
+                else converters.pipe(
+                    self._convert_none, lambda x: self.convert_options(x, context)
+                )
+            ),
             validator=validators_,
         )
 

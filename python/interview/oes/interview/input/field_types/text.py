@@ -1,7 +1,8 @@
 """Text field type."""
+
 from collections.abc import Sequence
 from enum import Enum
-from typing import Any, Callable, Literal, Optional, Type
+from typing import Any, Callable, Literal, Type
 
 import attr
 from attrs import Attribute, converters, frozen, validators
@@ -25,9 +26,9 @@ class TextField(FieldBase):
     """A text field."""
 
     type: Literal[FieldType.text] = FieldType.text
-    default: Optional[str] = None
+    default: str | None = None
 
-    format: Optional[TextFormatType] = None
+    format: TextFormatType | None = None
     """The format."""
 
     min: int = 0
@@ -36,16 +37,16 @@ class TextField(FieldBase):
     max: int = DEFAULT_MAX_LEN
     """The maximum length."""
 
-    regex: Optional[str] = None
+    regex: str | None = None
     """A regex that the value must match."""
 
-    regex_js: Optional[str] = None
+    regex_js: str | None = None
     """A JS-compatible regex used for validation at the client side."""
 
-    input_mode: Optional[str] = None
+    input_mode: str | None = None
     """The HTML input mode for this field."""
 
-    autocomplete: Optional[str] = None
+    autocomplete: str | None = None
     """The autocomplete type for this field's input."""
 
     @property
@@ -67,8 +68,7 @@ class TextField(FieldBase):
 
         return [*validators_, validators.optional(extra_validators)]
 
-    @property
-    def field_info(self) -> Any:
+    def get_field_info(self, context: Context) -> Any:
         return attr.ib(
             type=self.optional_type,
             converter=converters.pipe(
@@ -78,7 +78,7 @@ class TextField(FieldBase):
             validator=self.validators,
         )
 
-    def get_schema(self, context: Context, /) -> JSONSchema:
+    def get_schema(self, context: Context) -> JSONSchema:
         schema = {
             **super().get_schema(context),
             "type": ["string", "null"] if self.optional else "string",
@@ -111,7 +111,7 @@ def _coerce_null(v):
 
 
 def _get_format_validators(
-    type: Optional[TextFormatType],
+    type: TextFormatType | None,
 ) -> Sequence[Callable[[Any, Attribute, Any], Any]]:
     validators_ = []
 
