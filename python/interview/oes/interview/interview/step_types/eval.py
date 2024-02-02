@@ -4,14 +4,14 @@ from __future__ import annotations
 from typing import Sequence
 
 from attr import frozen
-from oes.interview.interview.types import Step
-from oes.interview.interview.update import InterviewUpdate, StepResult
+from oes.interview.interview.result import StepResult
+from oes.interview.interview.update import InterviewUpdate
 from oes.interview.logic import WhenCondition
 from oes.template import evaluate
 
 
 @frozen
-class EvalStep(Step):
+class EvalStep:
     """Ensure values are present."""
 
     eval: WhenCondition

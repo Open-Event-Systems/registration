@@ -1,17 +1,14 @@
-"""App module."""
-from typing import Literal, Optional
+"""Update module."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 import httpx
 from attrs import frozen
 from blacksheep import HTTPException, Request, Response, allow_anonymous
 from blacksheep.server.openapi.v3 import OpenAPIHandler
 from loguru import logger
-from oes.interview.interview import (
-    InterviewUpdate,
-    InvalidInputError,
-    ResultContent,
-    update_interview,
-)
+from oes.interview.interview import InterviewUpdate, InvalidInputError, update_interview
 from oes.interview.serialization import converter, json_default
 from oes.interview.server.app import json_response, router
 from oes.interview.server.docs import (
@@ -25,6 +22,10 @@ from oes.interview.server.settings import Settings
 from openapidocs.v3 import Example, MediaType, Operation, RequestBody
 from openapidocs.v3 import Response as OpenAPIResponse
 
+if TYPE_CHECKING:
+    from oes.interview.interview.step_types.ask import AskResult
+    from oes.interview.interview.step_types.exit import ExitResult
+
 
 @frozen
 class IncompleteInterviewStateResponse:
@@ -33,7 +34,7 @@ class IncompleteInterviewStateResponse:
     update_url: str
     """The update URL."""
 
-    content: Optional[ResultContent]
+    content: AskResult | ExitResult | None
     """The response content."""
 
 

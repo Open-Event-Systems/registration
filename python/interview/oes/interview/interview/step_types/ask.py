@@ -5,18 +5,16 @@ from typing import TYPE_CHECKING, Literal
 
 from attrs import frozen
 from oes.interview.input import JSONSchema
-from oes.interview.interview import InterviewError, ResultContentType, Step
+from oes.interview.interview import InterviewError, ResultContentType
+from oes.interview.interview.result import StepResult
 from oes.interview.logic import WhenCondition
 
 if TYPE_CHECKING:
-    from oes.interview.interview.update import InterviewUpdate, StepResult
-
-# prevent circular import
-import oes.interview.interview.update
+    from oes.interview.interview.update import InterviewUpdate
 
 
 @frozen
-class AskStep(Step):
+class AskStep:
     """Ask a question."""
 
     ask: str
@@ -28,9 +26,7 @@ class AskStep(Step):
     async def __call__(self, update: InterviewUpdate, /) -> StepResult:
         # skip if the question was already asked
         if self.ask in update.state.answered_question_ids:
-            return oes.interview.interview.update.StepResult(
-                update.state, changed=False
-            )
+            return StepResult(update.state, changed=False)
 
         question = update.state.interview.get_question(self.ask)
         if question is None:
@@ -40,7 +36,7 @@ class AskStep(Step):
 
         updated = update.state.set_question(question.id)
 
-        return oes.interview.interview.update.StepResult(
+        return StepResult(
             state=updated,
             changed=True,
             content=AskResult(schema=schema),

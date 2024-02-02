@@ -1,27 +1,29 @@
 """Functions to update interviews."""
+
 from __future__ import annotations
 
-# TODO name
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Iterable, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Iterable, Mapping, Union
 
-from attrs import define, field, frozen
+from attrs import define, field
 from cattrs import BaseValidationError, Converter
 from httpx import AsyncClient
 from oes.interview.input import ResponseParser, UserResponse
 from oes.interview.interview import InterviewError, InvalidInputError
 from oes.interview.interview.resolve import get_ask_result_for_variable
+from oes.interview.interview.result import StepResult
 from oes.interview.interview.state import InterviewState
+from oes.interview.interview.step_types.exit import ExitResult
 from oes.interview.interview.types import Step
 from oes.interview.logic import UndefinedError, evaluate_whenable
 from typing_extensions import Literal
 
 if TYPE_CHECKING:
-    from oes.interview.interview import ResultContent
+    from oes.interview.interview.step_types.ask import AskResult
 
 
-MAX_UPDATE_COUNT = 100
-"""The maximum number of updates that can happen in a single update."""
+MAX_UPDATE_COUNT = 1000
+"""The maximum number of updates that can happen in a single request."""
 
 
 def _default_converter() -> Converter:
@@ -56,24 +58,10 @@ class InterviewUpdate:
     """The number of steps handled."""
 
 
-@frozen
-class StepResult:
-    """The result of a step."""
-
-    state: InterviewState
-    """The updated :class:`InterviewState`."""
-
-    changed: bool
-    """Whether the interview state was changed."""
-
-    content: Optional[ResultContent] = None
-    """Result content."""
-
-
 async def update_interview(
     update: InterviewUpdate,
-    response: Optional[Mapping[str, object]] = None,
-) -> Optional[ResultContent]:
+    response: Mapping[str, object] | None = None,
+) -> AskResult | ExitResult | None:
     """Update the interview state.
 
     Updates values in ``update``.
@@ -122,7 +110,7 @@ async def handle_steps(update: InterviewUpdate, steps: Iterable[Step]) -> StepRe
 
 def _apply_response(
     state: InterviewState,
-    response: Optional[UserResponse],
+    response: UserResponse | None,
 ) -> InterviewState:
     """Validate and apply a user response if a question was asked."""
     if state.question_id is not None:
@@ -132,8 +120,6 @@ def _apply_response(
 
         # Apply response and unset question ID
         state = _validate_and_apply_response(state, question.response_parser, response)
-
-        # Unset question ID
         return state.set_question(None)
     else:
         return state
@@ -142,10 +128,10 @@ def _apply_response(
 def _validate_and_apply_response(
     state: InterviewState,
     parser: ResponseParser,
-    response: Optional[UserResponse],
+    response: UserResponse | None,
 ) -> InterviewState:
     try:
-        values = parser(response or {})
+        values = parser(response or {}, state.template_context)
     except BaseValidationError as e:
         raise InvalidInputError(e) from e
 
@@ -160,7 +146,7 @@ def _validate_and_apply_response(
 
 async def _run_interview_steps(
     update: InterviewUpdate,
-) -> Optional[ResultContent]:
+) -> AskResult | ExitResult | None:
     """Run the steps, returning result content or a completed interview.
 
     Updates values in ``update``.
@@ -179,7 +165,9 @@ async def _run_interview_steps(
 
 async def _run_once(
     update: InterviewUpdate,
-) -> Union[tuple[Literal[True], Optional[ResultContent]], tuple[Literal[False], None]]:
+) -> Union[
+    tuple[Literal[True], AskResult | ExitResult | None], tuple[Literal[False], None]
+]:
     """Handle the interview steps and update values in ``update``.
 
     Returns:

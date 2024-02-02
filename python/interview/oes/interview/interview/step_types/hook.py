@@ -1,27 +1,31 @@
 """Hook step."""
+
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import orjson
 from attr import frozen
 from httpx import Response
-from oes.interview.interview import ResultContent
+from oes.interview.interview.result import StepResult
 from oes.interview.interview.state import InterviewState
-from oes.interview.interview.types import Step
-from oes.interview.interview.update import InterviewUpdate, StepResult
+from oes.interview.interview.update import InterviewUpdate
 from oes.interview.logic import ValuePointer, WhenCondition
+
+if TYPE_CHECKING:
+    from oes.interview.interview.step_types.ask import AskResult
+    from oes.interview.interview.step_types.exit import ExitResult
 
 
 @frozen
-class HookStep(Step):
+class HookStep:
     """Invoke a webhook."""
 
     url: str
     """The hook URL."""
 
-    result: Optional[ValuePointer] = None
+    result: ValuePointer | None = None
     """An optional pointer to where to store result information."""
 
     when: WhenCondition = ()
@@ -82,4 +86,9 @@ class HookStepResult:
     """The result body from a hook step."""
 
     state: InterviewState
-    content: Optional[ResultContent] = None
+    content: AskResult | ExitResult | None = None
+
+
+# avoid circular imports
+from oes.interview.interview.step_types.ask import AskResult  # noqa
+from oes.interview.interview.step_types.exit import ExitResult  # noqa

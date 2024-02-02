@@ -3,7 +3,7 @@
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
-from attrs import Factory, field, frozen
+from attrs import Factory, field, frozen, validators
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.interview.input.response import create_response_parser, map_field_names
@@ -17,7 +17,7 @@ from oes.template import Context, Template
 class Question:
     """A question object."""
 
-    id: str = field(validator=validate_identifier)
+    id: str = field(validator=validators.optional(validate_identifier))
     """The question ID."""
 
     title: Template | None = None

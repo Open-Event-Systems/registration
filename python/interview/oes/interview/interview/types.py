@@ -9,7 +9,8 @@ from oes.interview.logic.types import Whenable
 from typing_extensions import Protocol
 
 if TYPE_CHECKING:
-    from oes.interview.interview.update import InterviewUpdate, StepResult
+    from oes.interview.interview.result import StepResult
+    from oes.interview.interview.update import InterviewUpdate
 
 
 class ResultContentType(str, Enum):

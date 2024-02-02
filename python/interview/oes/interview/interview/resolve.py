@@ -14,15 +14,12 @@ from oes.template import Context
 if TYPE_CHECKING:
     from oes.interview.interview.step_types.ask import AskResult
 
-# avoid circular import
-import oes.interview.interview.step_types.ask
-
 
 def get_ask_result_for_variable(
     state: InterviewState,
     ptr: ValuePointer,
 ) -> tuple[str, AskResult]:
-    """Get an :class:`AskResult` providing a value for ``loc``.
+    """Get an :class:`AskResult` providing a value for ``ptr``.
 
     Args:
         state: The :class:`InterviewState`.
@@ -31,8 +28,11 @@ def get_ask_result_for_variable(
     Returns:
         A pair of the question ID and an :class:`AskResult`.
     """
+    # hacky, avoid circular import
+    from oes.interview.interview.step_types.ask import AskResult
+
     question_id, schema = _get_question_schema_for_variable(state, ptr)
-    return question_id, oes.interview.interview.step_types.ask.AskResult(
+    return question_id, AskResult(
         schema=schema,
     )
 

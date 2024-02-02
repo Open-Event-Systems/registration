@@ -47,6 +47,7 @@ testpaths = [
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+reportUnsupportedDunderAll = false
 
 # Console script entry point
 [tool.poetry.plugins."console_scripts"]

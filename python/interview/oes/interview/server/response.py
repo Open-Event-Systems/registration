@@ -1,11 +1,13 @@
 """Response types."""
+
+from __future__ import annotations
+
 import base64
-from typing import Optional
 
 from attrs import frozen
 from blacksheep import Content, Request, Response
 from blacksheep.messages import get_absolute_url_to_path
-from oes.interview.interview import InterviewState, InvalidInputError, ResultContent
+from oes.interview.interview import InterviewState, InvalidInputError
 from oes.interview.serialization import converter, json_default
 from typing_extensions import Self
 
@@ -15,16 +17,16 @@ class JSONStateResponse:
     """JSON state response."""
 
     state: str
-    content: Optional[ResultContent] = None
-    complete: Optional[bool] = None
-    update_url: Optional[str] = None
-    target_url: Optional[str] = None
+    content: AskResult | ExitResult | None = None
+    complete: bool | None = None
+    update_url: str | None = None
+    target_url: str | None = None
 
     @classmethod
     def create(
         cls,
         state: InterviewState,
-        content: Optional[ResultContent] = None,
+        content: AskResult | ExitResult | None = None,
         /,
         *,
         request: Request,
@@ -38,9 +40,11 @@ class JSONStateResponse:
             state_str.decode(),
             content,
             complete=state.complete,
-            update_url=str(get_absolute_url_to_path(request, "/update"))
-            if not state.complete
-            else None,
+            update_url=(
+                str(get_absolute_url_to_path(request, "/update"))
+                if not state.complete
+                else None
+            ),
             target_url=state.target_url if state.complete else None,
         )
 
@@ -54,3 +58,8 @@ def get_error_response(input_error: InvalidInputError) -> Response:
             converter.dumps({"errors": input_error.details}),
         ),
     )
+
+
+# avoid circular references
+from oes.interview.interview.step_types.ask import AskResult  # noqa
+from oes.interview.interview.step_types.exit import ExitResult  # noqa

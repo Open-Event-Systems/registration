@@ -5,14 +5,14 @@ from typing import Literal, Union
 
 from attr import frozen
 from jinja2 import Undefined
-from oes.interview.interview.types import Step
-from oes.interview.interview.update import InterviewUpdate, StepResult
+from oes.interview.interview.result import StepResult
+from oes.interview.interview.update import InterviewUpdate
 from oes.interview.logic import ValuePointer, WhenCondition
 from oes.template import Context, Evaluable, ValueOrEvaluable
 
 
 @frozen
-class SetStep(Step):
+class SetStep:
     """Set a value."""
 
     set: ValuePointer
