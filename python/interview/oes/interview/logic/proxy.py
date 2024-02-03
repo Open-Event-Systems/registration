@@ -2,7 +2,7 @@
 from collections.abc import Mapping, MutableMapping, MutableSequence, Sequence
 from typing import Any, Generic, Iterable, TypeVar, Union, cast, overload
 
-from oes.interview.logic.pointer import PointerImpl, PointerSegment
+from oes.interview.logic.types import ValuePointer
 
 _T = TypeVar("_T")
 _KT = TypeVar("_KT")
@@ -12,10 +12,10 @@ _VT = TypeVar("_VT")
 class ObjectProxy(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
     """Object proxy."""
 
-    _pointer: PointerImpl
+    _pointer: ValuePointer
     _target: MutableMapping[_KT, _VT]
 
-    def __init__(self, pointer: PointerImpl, target: MutableMapping[_KT, _VT]):
+    def __init__(self, pointer: ValuePointer, target: MutableMapping[_KT, _VT]):
         self._pointer = pointer
         self._target = target
 
@@ -48,10 +48,10 @@ class ObjectProxy(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
 class ArrayProxy(MutableSequence[_VT], Generic[_VT]):
     """Array proxy."""
 
-    _pointer: PointerImpl
+    _pointer: ValuePointer
     _target: MutableSequence[_VT]
 
-    def __init__(self, pointer: PointerImpl, target: MutableSequence[_VT]):
+    def __init__(self, pointer: ValuePointer, target: MutableSequence[_VT]):
         self._pointer = pointer
         self._target = target
 
@@ -125,7 +125,7 @@ class ArrayProxy(MutableSequence[_VT], Generic[_VT]):
         return f"ArrayProxy({self._target!r})"
 
 
-def make_proxy(pointer: PointerImpl, obj: _T) -> _T:
+def make_proxy(pointer: ValuePointer, obj: _T) -> _T:
     """Wrap ``obj`` in a :class:`Proxy` if it is a sequence/mapping."""
     res: Any
     if isinstance(obj, Mapping):

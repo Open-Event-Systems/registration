@@ -2,9 +2,7 @@
 
 from abc import abstractmethod
 from collections.abc import Mapping
-from typing import Any
-
-from typing_extensions import Protocol, TypeAlias, runtime_checkable
+from typing import Any, Protocol, TypeAlias, runtime_checkable
 
 Context: TypeAlias = Mapping[str, Any]
 """Template/expression context"""

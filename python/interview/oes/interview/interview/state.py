@@ -18,7 +18,7 @@ from oes.interview.interview.error import InvalidStateError
 from oes.interview.interview.interview import Interview
 from oes.interview.logic import ValuePointer
 from oes.template import Context
-from oes.util import get_now, immutable_dict, make_immutable, merge_dict
+from oes.util import get_now, make_immutable, merge_dict
 from typing_extensions import Self
 
 DEFAULT_INTERVIEW_EXPIRATION = timedelta(seconds=1800)
@@ -50,7 +50,7 @@ class InterviewState:
     """Whether the state is complete."""
 
     context: Context = field(
-        converter=lambda v: make_immutable(v), default=immutable_dict({})
+        converter=lambda v: make_immutable(v), default=make_immutable({})
     )
     """Context data."""
 
@@ -62,7 +62,7 @@ class InterviewState:
 
     data: Context = field(
         converter=lambda v: make_immutable(v),
-        default=immutable_dict({}),
+        default=make_immutable({}),
     )
     """Interview data."""
 

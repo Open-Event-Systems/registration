@@ -1,4 +1,4 @@
-from oes.interview.logic.pointer import PointerImpl, parse_pointer_impl
+from oes.interview.logic.pointer import parse_pointer
 from oes.interview.logic.proxy import ArrayProxy, ObjectProxy, make_proxy
 
 

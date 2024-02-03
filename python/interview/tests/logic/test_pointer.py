@@ -1,35 +1,7 @@
 import pytest
-from oes.interview.logic.pointer import (
-    InvalidPointerError,
-    PointerSegment,
-    _Parsing,
-    parse_pointer_impl,
-)
+from oes.interview.logic.pointer import InvalidPointerError, parse_pointer
+from oes.template import Evaluable
 from oes.util import make_immutable
-
-
-@pytest.mark.parametrize(
-    "el, val, expected",
-    [
-        (_Parsing.constant, "0", 0),
-        (_Parsing.constant, "100", 100),
-        (_Parsing.constant, '"test"', "test"),
-        (_Parsing.constant, '""', ""),
-        (_Parsing.name, "test_val", "test_val"),
-        (_Parsing.property_access, ".test", "test"),
-        (_Parsing.index_access, "[0]", 0),
-        (_Parsing.index_access, '["test"]', "test"),
-        (_Parsing.pointer_segment, ".test", PointerSegment("test")),
-        (_Parsing.pointer_segment, '["test"]', PointerSegment("test")),
-        (_Parsing.pointer_segment, "[123]", PointerSegment(123)),
-        (_Parsing.pointer, "a", (PointerSegment("a"),)),
-        (_Parsing.pointer, "a.b", (PointerSegment("a"), PointerSegment("b"))),
-        (_Parsing.pointer, "a[1]", (PointerSegment("a"), PointerSegment(1))),
-    ],
-)
-def test_parser_elements(el, val, expected):
-    res = el.parse_string(val, parse_all=True)
-    assert res[0] == expected
 
 
 @pytest.mark.parametrize(
@@ -55,7 +27,50 @@ def test_parser_elements(el, val, expected):
 )
 def test_parse_invalid(val):
     with pytest.raises(InvalidPointerError):
-        parse_pointer_impl(val)
+        parse_pointer(val)
+
+
+_TYPING_INTERNALS = [
+    "__parameters__",
+    "__orig_bases__",
+    "__orig_class__",
+    "_is_protocol",
+    "_is_runtime_protocol",
+]
+
+_SPECIAL_NAMES = [
+    "__abstractmethods__",
+    "__annotations__",
+    "__dict__",
+    "__doc__",
+    "__init__",
+    "__module__",
+    "__new__",
+    "__slots__",
+    "__subclasshook__",
+    "__weakref__",
+    "__class_getitem__",
+]
+
+# These special attributes will be not collected as protocol members.
+EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ["_MutableMapping__marker"]
+
+
+def _get_protocol_attrs(cls):
+    """Collect protocol members from a protocol class objects.
+
+    This includes names actually defined in the class dictionary, as well
+    as names that appear in annotations. Special names (above) are skipped.
+    """
+    attrs = set()
+    for base in cls.__mro__[:-1]:  # without object
+        if base.__name__ in ("Protocol", "Generic"):
+            continue
+        annotations = getattr(base, "__annotations__", {})
+        for attr in list(base.__dict__.keys()) + list(annotations.keys()):
+            if not attr.startswith("_abc_") and attr not in EXCLUDED_ATTRIBUTES:
+                attrs.add(attr)
+    return attrs
 
 
 @pytest.mark.parametrize(
@@ -78,7 +93,7 @@ def test_parse_and_eval_pointer(val, expected):
         "b": {"x": 2},
         "c": [1, 2],
     }
-    ptr = parse_pointer_impl(val)
+    ptr = parse_pointer(val)
     assert ptr.evaluate(ctx) == expected
 
 
@@ -95,7 +110,7 @@ def test_parse_and_eval_pointer(val, expected):
     ],
 )
 def test_set(ctx, ptr, val, expected):
-    parsed = parse_pointer_impl(ptr)
+    parsed = parse_pointer(ptr)
 
     ctx = make_immutable(ctx)
     val = make_immutable(val)
@@ -121,5 +136,5 @@ def test_set(ctx, ptr, val, expected):
     ],
 )
 def test_str(val):
-    parsed = parse_pointer_impl(val)
+    parsed = parse_pointer(val)
     assert str(parsed) == val

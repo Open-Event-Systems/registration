@@ -57,7 +57,7 @@ LogicObjectTypes = (LogicAnd, LogicOr, LogicNot)
 """The logic object types."""
 
 
-def evaluate(obj: object, context: Context) -> object:
+def evaluate(obj: object, context: Context) -> Any:
     """Evaluate an evaluable or value."""
     if isinstance(obj, Evaluable):
         return obj.evaluate(context)

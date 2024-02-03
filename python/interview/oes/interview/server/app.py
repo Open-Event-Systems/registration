@@ -8,7 +8,6 @@ from blacksheep import Application, Request, Response, Router
 from oes.interview.config.interview import InterviewConfig
 from oes.interview.logic import default_jinja2_env
 from oes.interview.serialization import converter, json_default
-from oes.interview.server.auth import APIKeyHandler, authentication, authorization
 from oes.interview.server.docs import docs
 from oes.interview.server.settings import Settings
 from oes.template import set_jinja2_env
@@ -51,22 +50,6 @@ def make_app(settings: Settings, interview_config: InterviewConfig) -> Applicati
     router_copy = copy.deepcopy(router)
 
     app = Application(router=router_copy)
-
-    # auth
-    authentication.add(
-        APIKeyHandler(
-            settings.api_key,
-        )
-    )
-
-    app.use_authentication(authentication)
-    app.use_authorization(authorization)
-
-    # services
-
-    app.services.add_instance(settings)
-    app.services.add_instance(interview_config)
-    app.services.add_singleton_by_factory(_make_async_client)
 
     # middlewares
     configure_cors(

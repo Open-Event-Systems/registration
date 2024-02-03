@@ -2,17 +2,17 @@
 from typing import Any, Optional, Type
 
 import jinja2
+from jinja2.runtime import Context as Jinja2Context
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from jinja2.utils import missing
 from oes.interview.logic import ValuePointer
-from oes.interview.logic.pointer import PointerImpl, PointerSegment
 from oes.interview.logic.proxy import ArrayProxy, ObjectProxy, make_proxy
 
 
 class UndefinedError(jinja2.exceptions.UndefinedError):
     """Custom :class:`jinja2.exceptions.UndefinedError`."""
 
-    _pointer: Optional[PointerImpl]
+    _pointer: Optional[ValuePointer]
 
     @property
     def pointer(self) -> Optional[ValuePointer]:
@@ -23,7 +23,7 @@ class UndefinedError(jinja2.exceptions.UndefinedError):
         self,
         message: Optional[str] = None,
         *,
-        _pointer: Optional[PointerImpl] = None,
+        _pointer: Optional[ValuePointer] = None,
     ):
         super().__init__(message)
         self._pointer = _pointer
@@ -32,7 +32,7 @@ class UndefinedError(jinja2.exceptions.UndefinedError):
 class Undefined(jinja2.StrictUndefined):
     """Custom :class:`jinja2.Undefined` implementation."""
 
-    _pointer: Optional[PointerImpl]
+    _pointer: Optional[ValuePointer]
 
     def __init__(
         self,
@@ -68,7 +68,7 @@ class Undefined(jinja2.StrictUndefined):
     __contains__ = _fail_with_undefined_error
 
 
-class ProxyContext(jinja2.environment.Context):
+class ProxyContext(Jinja2Context):
     """Custom :class:`jinja2.environment.Context` to wrap values in a proxy.."""
 
     def resolve_or_missing(self, key: str) -> Any:

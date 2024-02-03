@@ -39,11 +39,11 @@ class ValuePointer(Evaluable, Protocol):
     """A pointer to a value in a document."""
 
     @abstractmethod
-    def evaluate(self, context: Context, /) -> object:
+    def evaluate(self, context: Context) -> object:
         """Evaluate the pointer with the given context."""
         ...
 
     @abstractmethod
-    def set(self, context: Context, value: object, /) -> Context:
+    def set(self, context: Context, value: object) -> Context:
         """Set the value this object points to in the given context."""
         ...
