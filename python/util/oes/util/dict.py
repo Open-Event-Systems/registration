@@ -1,20 +1,45 @@
 """Dict merge module."""
 
 import itertools
-from collections.abc import Mapping, Sequence, Set
+from collections.abc import Callable, Iterable, Mapping
 from copy import deepcopy
-from typing import Any, TypeVar, overload
+from typing import TypeVar, overload
 
 _K = TypeVar("_K")
 _V_co = TypeVar("_V_co", covariant=True)
+_K2 = TypeVar("_K2")
+_V2_co = TypeVar("_V2_co", covariant=True)
+
+_MT = TypeVar("_MT", bound=Mapping)
 
 
-def merge_dict(a: Mapping[_K, Any], b: Mapping[_K, Any], /) -> dict[_K, Any]:
+@overload
+def merge_mapping(
+    a: Mapping[_K, _V_co], b: Mapping[_K2, _V2_co], /
+) -> dict[_K | _K2, _V_co | _V2_co]:
+    ...
+
+
+@overload
+def merge_mapping(
+    a: Mapping[_K, _V_co],
+    b: Mapping[_K2, _V2_co],
+    /,
+    *,
+    constructor: Callable[[Iterable[tuple[_K | _K2, _V_co | _V2_co]]], _MT],
+) -> _MT:
+    ...
+
+
+def merge_mapping(
+    a: Mapping, b: Mapping, /, *, constructor: Callable[..., Mapping] = dict
+) -> Mapping:
     """Recursively merge two mappings into a :obj:`dict`.
 
     Args:
         a: The first mapping.
         b: The second mapping, which will merge/overwrite keys in ``a``.
+        constructor: The mapping constructor, defaults to ``dict``.
 
     Returns:
         A deep copy of ``a`` and ``b`` merged together.
@@ -23,7 +48,7 @@ def merge_dict(a: Mapping[_K, Any], b: Mapping[_K, Any], /) -> dict[_K, Any]:
     added = b.keys() - a.keys()
     updated = b.keys() - added
 
-    return dict(
+    return constructor(
         itertools.chain(
             # copy all unchanged items
             ((k, deepcopy(a[k])) for k in unchanged),
@@ -42,49 +67,4 @@ def merge_dict(a: Mapping[_K, Any], b: Mapping[_K, Any], /) -> dict[_K, Any]:
     )
 
 
-@overload
-def make_immutable(obj: Mapping[_K, _V_co], /) -> Mapping[_K, _V_co]:
-    ...
-
-
-@overload
-def make_immutable(obj: Sequence[_V_co], /) -> tuple[_V_co, ...]:
-    ...
-
-
-@overload
-def make_immutable(obj: Set[_V_co], /) -> frozenset[_V_co]:
-    ...
-
-
-@overload
-def make_immutable(obj: _V_co, /) -> _V_co:
-    ...
-
-
-def make_immutable(obj: object, /) -> object:
-    """Recursively convert mappings/sequences to immutable equivalents."""
-    if isinstance(obj, Mapping):
-        return immutable_dict({k: make_immutable(v) for k, v in obj.items()})
-    elif isinstance(obj, Sequence) and not isinstance(obj, (str, bytes)):
-        return tuple(make_immutable(v) for v in obj)
-    elif isinstance(obj, Set):
-        return frozenset(make_immutable(v) for v in obj)
-    else:
-        return obj
-
-
-def immutable_dict(data: Mapping[_K, _V_co], /) -> Mapping[_K, _V_co]:
-    """Create a hashable, immutable dict."""
-    return _ImmutableDict(data)
-
-
-class _ImmutableDict(dict):
-    __slots__ = ("_hash",)
-
-    def __init__(self, *a, **kw):
-        super().__init__(*a, **kw)
-        self._hash = hash(tuple(self.items()))
-
-    def __hash__(self) -> int:  # type: ignore
-        return self._hash
+merge_dict = merge_mapping  # deprecated alias
