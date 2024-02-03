@@ -1,6 +1,5 @@
 import pytest
 from oes.interview.logic.pointer import InvalidPointerError, parse_pointer
-from oes.template import Evaluable
 from oes.util import make_immutable
 
 

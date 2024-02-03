@@ -1,29 +1,30 @@
 """Undefined class module."""
-from typing import Any, Optional, Type
+
+from typing import Any, Type, cast
 
 import jinja2
 from jinja2.runtime import Context as Jinja2Context
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from jinja2.utils import missing
-from oes.interview.logic import ValuePointer
+from oes.interview.logic.pointer import IndexAccess, Name, PropertyAccess, ValuePointer
 from oes.interview.logic.proxy import ArrayProxy, ObjectProxy, make_proxy
 
 
 class UndefinedError(jinja2.exceptions.UndefinedError):
     """Custom :class:`jinja2.exceptions.UndefinedError`."""
 
-    _pointer: Optional[ValuePointer]
+    _pointer: ValuePointer | None
 
     @property
-    def pointer(self) -> Optional[ValuePointer]:
+    def pointer(self) -> ValuePointer | None:
         """A pointer to the undefined value."""
         return self._pointer
 
     def __init__(
         self,
-        message: Optional[str] = None,
+        message: str | None = None,
         *,
-        _pointer: Optional[ValuePointer] = None,
+        _pointer: ValuePointer | None = None,
     ):
         super().__init__(message)
         self._pointer = _pointer
@@ -32,23 +33,25 @@ class UndefinedError(jinja2.exceptions.UndefinedError):
 class Undefined(jinja2.StrictUndefined):
     """Custom :class:`jinja2.Undefined` implementation."""
 
-    _pointer: Optional[ValuePointer]
+    _pointer: ValuePointer | None
 
     def __init__(
         self,
-        hint: Optional[str] = None,
+        hint: str | None = None,
         obj: Any = missing,
-        name: Optional[str] = None,
+        name: str | None = None,
         exc: Type[jinja2.exceptions.TemplateRuntimeError] = UndefinedError,
     ):
         super().__init__(hint, obj, name, exc)
 
         if name is None:
             self._pointer = None
-        elif isinstance(obj, (ObjectProxy, ArrayProxy)):
-            self._pointer = PointerImpl((*obj._pointer, PointerSegment(name)))
+        elif isinstance(obj, ObjectProxy):
+            self._pointer = PropertyAccess(obj._pointer, name)
+        elif isinstance(obj, ArrayProxy):
+            self._pointer = IndexAccess(obj._pointer, cast(int, name))
         else:
-            self._pointer = PointerImpl((PointerSegment(name),))
+            self._pointer = Name(name)
 
     def _fail_with_undefined_error(self, *args, **kwargs):
         raise UndefinedError(self._undefined_message, _pointer=self._pointer)
@@ -72,9 +75,7 @@ class ProxyContext(Jinja2Context):
     """Custom :class:`jinja2.environment.Context` to wrap values in a proxy.."""
 
     def resolve_or_missing(self, key: str) -> Any:
-        return make_proxy(
-            PointerImpl((PointerSegment(key),)), super().resolve_or_missing(key)
-        )
+        return make_proxy(Name(key), super().resolve_or_missing(key))
 
 
 class ProxyContextEnvironment(ImmutableSandboxedEnvironment):
