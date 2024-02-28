@@ -23,14 +23,19 @@ class TextFormatType(str, Enum):
 
 @frozen(kw_only=True)
 class TextField(FieldImplBase[str]):
-    type: Type[str] = str
+    """Text field."""
+
+    @property
+    def type(self) -> Type[str]:
+        return str
+
     default: str | None = None
 
     min: int = 0
     max: int = DEFAULT_MAX_LEN
     regex: str | None = None
     regex_js: str | None = None
-    format: TextFormatType | None = None
+    format: str | None = None
 
     input_mode: str | None = None
     autocomplete: str | None = None
@@ -39,6 +44,7 @@ class TextField(FieldImplBase[str]):
     def schema(self) -> dict[str, Any]:
         schema = {
             **super().schema,
+            "x-type": "text",
             "type": ["string", "null"] if self.optional else "string",
             "minLength": self.min,
             "maxLength": self.max,
@@ -91,7 +97,7 @@ class TextField(FieldImplBase[str]):
 
 
 def _get_format_validators(
-    type: TextFormatType | None,
+    type: str | None,
 ) -> Iterator[Callable[[Any], str | None]]:
     if type == TextFormatType.email:
         yield _validate_email
@@ -104,6 +110,7 @@ def _validate_email(value: str | None) -> str | None:
 
     try:
         validate_email(value, check_deliverability=False)
+        return value
     except EmailNotValidError as e:
         raise ValueError("Invalid email") from e
 
@@ -127,3 +134,4 @@ def _validate_email_domain(value: str | None) -> str | None:
     suffix = _psl.publicsuffix(domain, accept_unknown=False)
     if suffix is None:
         raise ValueError("Invalid email")
+    return value

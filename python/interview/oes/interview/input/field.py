@@ -18,8 +18,11 @@ _T_co = TypeVar("_T_co", covariant=True)
 class FieldImplBase(Generic[_T_co], ABC):
     """Field implementation base class."""
 
-    type: Type[_T_co]
-    """The field value type."""
+    @property
+    @abstractmethod
+    def type(self) -> Type[_T_co]:
+        """The field value type."""
+        ...
 
     set: ValuePointer | None = None
     """The variable to store the value in."""
