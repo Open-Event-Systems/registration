@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
-from typing import Any, Generic, Mapping, Optional, Type, TypeVar
+from typing import Any, Generic, Mapping, Optional, Type, TypeVar, cast
 
 import attr
 from attrs import Attribute, frozen, validators
@@ -10,6 +10,66 @@ from cattrs import Converter
 from oes.interview.input.types import Field, FieldType, JSONSchema, Option
 from oes.interview.logic import ValuePointer
 from oes.template import Context, Expression, Template
+
+_T_co = TypeVar("_T_co", covariant=True)
+
+
+@frozen(kw_only=True)
+class FieldImplBase(Generic[_T_co], ABC):
+    """Field implementation base class."""
+
+    type: Type[_T_co]
+    """The field value type."""
+
+    set: ValuePointer | None = None
+    """The variable to store the value in."""
+
+    label: str | None = None
+    """The field label."""
+
+    default: Any = None
+    """A default value.
+
+    Only used for displaying in the client, not used for parsing.
+    """
+
+    optional: bool = False
+    """Whether the field may be None."""
+
+    @property
+    @abstractmethod
+    def schema(self) -> dict[str, Any]:
+        schema = {}
+
+        if self.label:
+            schema["title"] = self.label
+
+        if self.default is not None:
+            schema["default"] = self.default
+
+        return schema
+
+    def __call__(self, value: object, /) -> _T_co | None:
+        for validator in self.validators:
+            value = validator(value)
+        return cast(_T_co, value)
+
+    @property
+    @abstractmethod
+    def validators(self) -> Iterable[Callable[[Any], _T_co | None]]:
+        """Validators to run on the field."""
+        ...
+
+    def _validate_type(self, value: Any) -> _T_co | None:
+        if value is None or isinstance(value, self.type):
+            return value
+        else:
+            raise ValueError("Invalid value")
+
+    def _validate_optional(self, value: _T_co | None) -> _T_co | None:
+        if value is None and not self.optional:
+            raise ValueError("Required")
+        return value
 
 
 @frozen(kw_only=True)

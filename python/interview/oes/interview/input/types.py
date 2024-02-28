@@ -5,11 +5,16 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Callable, Mapping
 from enum import Enum
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol, Type, TypeVar
 
 from oes.interview.logic import ValuePointer
-from oes.template import Context, Expression
+from oes.template import Context
 from typing_extensions import TypeAlias
+
+_T_co = TypeVar("_T_co", covariant=True)
+
+FieldParser: TypeAlias = Callable[[object], _T_co]
+"""Callable that parses a user's input for a field."""
 
 UserResponse: TypeAlias = Mapping[str, object]
 """A user response."""
@@ -19,7 +24,7 @@ ResponseParser: TypeAlias = Callable[
 ]
 """A callable that parses a response into a mapping of variable locations/values."""
 
-JSONSchema: TypeAlias = Mapping[str, object]
+JSONSchema: TypeAlias = Mapping[str, Any]
 """The JSON schema type."""
 
 
@@ -33,60 +38,54 @@ class FieldType(str, Enum):
     button = "button"
 
 
-class Field(Protocol):
-    """A user input field.
-
-    Provides a JSON schema, an :func:`attr.ib` field for parsing/validating the
-    input, and where to store the value.
-    """
-
-    @abstractmethod
-    def get_field_info(self, context: Context) -> Any:
-        """The :func:`attr.ib` object for this field."""
-        ...
-
-    @abstractmethod
-    def get_schema(self, context: Context) -> JSONSchema:
-        """Get the JSON schema representing this field.
-
-        Args:
-            context: The context for rendering templates.
-        """
-        ...
-
-    @property
-    def optional(self) -> bool:
-        """Whether the field is optional."""
-        return False
+class Field(Protocol[_T_co]):
+    """An input field."""
 
     @property
     @abstractmethod
-    def set(self) -> Optional[ValuePointer]:
+    def type(self) -> Type[_T_co]:
+        """The type of the field's parsed value."""
+        ...
+
+    @property
+    @abstractmethod
+    def set(self) -> ValuePointer | None:
         """The value pointer to set."""
         ...
 
+    @property
+    @abstractmethod
+    def schema(self) -> JSONSchema:
+        """The JSON schema item describing the field."""
+        ...
 
-class Option(Protocol):
+    @abstractmethod
+    def __call__(self, value: object, /) -> _T_co:
+        """Parse the user input."""
+        ...
+
+
+class Option(Protocol[_T_co]):
     """A select option."""
 
     @property
     @abstractmethod
-    def id(self) -> Optional[str]:
+    def id(self) -> str | None:
         """The option ID."""
         ...
 
     @property
     @abstractmethod
-    def value(self) -> Any:
+    def value(self) -> _T_co:
         """The option value."""
         ...
 
     @property
-    def value_expr(self) -> Expression | None:
-        """An expression of the option value."""
-        return None
-
     @abstractmethod
-    def get_schema(self, context: Context, *, id: Optional[str] = None) -> JSONSchema:
-        """Get the JSON schema for this option."""
+    def schema(self) -> JSONSchema:
+        """The JSON schema for this option."""
         ...
+
+
+FieldFactory: TypeAlias = Callable[[Context], Field[_T_co]]
+"""Callable to create a :class:`Field`."""
