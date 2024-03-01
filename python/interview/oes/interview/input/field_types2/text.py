@@ -60,6 +60,10 @@ class TextField(FieldImplBase[str]):
         if self.autocomplete:
             schema["x-autocomplete"] = self.autocomplete
 
+        format_str = _get_format_str(self.format)
+        if format_str:
+            schema["format"] = format_str
+
         return schema
 
     @property
@@ -94,6 +98,13 @@ class TextField(FieldImplBase[str]):
         if value is not None and not re.match(self.regex, value):
             raise ValueError("Invalid value")
         return value
+
+
+def _get_format_str(format: str | None) -> str | None:
+    if format == TextFormatType.email:
+        return "email"
+    else:
+        return None
 
 
 def _get_format_validators(

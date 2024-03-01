@@ -14,6 +14,7 @@ class SelectComponentType(str, Enum):
     dropdown = "dropdown"
     checkbox = "checkbox"
     radio = "radio"
+    button = "button"
 
 
 @frozen
