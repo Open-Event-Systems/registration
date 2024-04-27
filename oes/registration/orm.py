@@ -59,3 +59,8 @@ class Repo(Generic[_E, _T]):
     async def flush(self):
         """Flush the underlying session."""
         await self.session.flush()
+
+
+def import_entities():
+    """Import all entities (used by migrations)."""
+    from oes.registration import registration  # noqa

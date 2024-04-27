@@ -5,7 +5,7 @@ import pytest_asyncio
 from cattrs.preconf.orjson import make_converter
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
-from oes.registration.orm import Base
+from oes.registration.orm import Base, import_entities
 from oes.registration.serialization import configure_converter
 
 
@@ -15,6 +15,7 @@ async def engine():
     if not url:
         pytest.skip("TEST_DB_URL undefined")
     engine = create_async_engine(url)
+    import_entities()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine
