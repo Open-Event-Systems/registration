@@ -93,6 +93,7 @@ class RegistrationCreate:
 class RegistrationUpdate:
     """Updatable registration fields."""
 
+    version: int | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
@@ -101,7 +102,8 @@ class RegistrationUpdate:
     def apply(self, registration: Registration):
         """Apply the attributes to a :class:`Registration`."""
         for attr in fields(type(self)):
-            setattr(registration, attr.name, getattr(self, attr.name))
+            if attr.name != "version":
+                setattr(registration, attr.name, getattr(self, attr.name))
 
 
 _field_names = (

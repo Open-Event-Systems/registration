@@ -69,6 +69,10 @@ async def update_registration(
     _check_etag(request, reg)
 
     update = await body(RegistrationUpdate)
+    if update.version is None and "If-Match" not in request.headers:
+        raise SanicException(status_code=428)
+    if update.version is not None and update.version != reg.version:
+        raise SanicException("Registration version mismatch", status_code=409)
     update.apply(reg)
     await repo.session.flush()
 
@@ -119,9 +123,7 @@ async def cancel_registration(
 def _check_etag(request: Request, registration: Registration):
     cur_etag = _get_etag(registration)
     sent_etag = request.headers.get("If-Match")
-    if not sent_etag:
-        raise SanicException(status_code=428)
-    if sent_etag != cur_etag:
+    if sent_etag and sent_etag != cur_etag:
         raise SanicException(status_code=412)
 
 

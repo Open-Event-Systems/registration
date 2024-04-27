@@ -9,6 +9,7 @@ from oes.registration.registration import (
     RegistrationRepo,
     RegistrationUpdate,
     Status,
+    StatusError,
 )
 
 
@@ -125,3 +126,15 @@ def test_create(converter: Converter):
     assert reg.last_name == "last"
     assert reg.email == "test@test.com"
     assert reg.extra_data == {"extra": 123}
+
+
+def test_complete_cancel():
+    reg = Registration(event_id="test")
+    assert reg.complete() is True
+    assert reg.status == Status.created
+    assert reg.complete() is False
+
+    assert reg.cancel() is True
+    assert reg.cancel() is False
+    with pytest.raises(StatusError):
+        reg.complete()
