@@ -1,19 +1,20 @@
 """Registration module."""
 
 import uuid
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any, Union
+from typing import Any
 
 from attr import fields
 from attrs import define, field
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
-from sqlalchemy import select
+from sqlalchemy import UUID, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from oes.registration.orm import JSON, Base, Repo, UUIDStr
+from oes.registration.orm import JSON, Base, Repo
 
 
 class Status(str, Enum):
@@ -30,13 +31,20 @@ class StatusError(ValueError):
     pass
 
 
+class ConflictError(ValueError):
+    """Raised when a registration version conflict occurs."""
+
+    def __init__(self, msg: str = "Version mismatch"):
+        super().__init__(msg)
+
+
 class Registration(Base, kw_only=True):
     """Registration entity."""
 
     __tablename__ = "registration"
 
-    id: Mapped[UUIDStr] = mapped_column(
-        default_factory=lambda: str(uuid.uuid4()), primary_key=True
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID, default_factory=lambda: uuid.uuid4(), primary_key=True
     )
     event_id: Mapped[str]
     version: Mapped[int] = mapped_column(default=1)
@@ -73,66 +81,132 @@ class Registration(Base, kw_only=True):
             return False
 
 
-@define
-class RegistrationCreate:
-    """Registration fields settable on creation."""
+_registration_meta_fields = frozenset(
+    (
+        "id",
+        "event_id",
+        "version",
+        "status",
+        "date_created",
+        "date_updated",
+    )
+)
 
-    status: Status = Status.pending
+
+@define(kw_only=True)
+class RegistrationDataFields:
+    """Registration data fields."""
+
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
+
+    # extra_data: JSON = field(factory=dict)
+
+
+_registration_data_fields: frozenset[str] = frozenset(
+    attr.name for attr in fields(RegistrationDataFields)
+)
+
+_registration_fields = _registration_meta_fields | _registration_data_fields
+
+
+@define(kw_only=True)
+class RegistrationCreateFields(RegistrationDataFields):
+    """Registration fields settable on creation."""
+
+    status: Status = Status.pending
     extra_data: JSON = field(factory=dict)
 
     def create(self, event_id: str) -> Registration:
         """Create a :class:`Registration`."""
-        kw = {attr.name: getattr(self, attr.name) for attr in fields(type(self))}
-        return Registration(event_id=event_id, **kw)
+        kw = {k: getattr(self, k) for k in _registration_data_fields}
+        return Registration(
+            event_id=event_id, status=self.status, extra_data=self.extra_data, **kw
+        )
 
 
-@define
-class RegistrationUpdate:
+@define(kw_only=True)
+class RegistrationUpdateFields(RegistrationDataFields):
     """Updatable registration fields."""
 
     version: int | None = None
-    first_name: str | None = None
-    last_name: str | None = None
-    email: str | None = None
     extra_data: JSON = field(factory=dict)
 
     def apply(self, registration: Registration):
         """Apply the attributes to a :class:`Registration`."""
-        for attr in fields(type(self)):
-            if attr.name != "version":
-                setattr(registration, attr.name, getattr(self, attr.name))
+        for k in _registration_data_fields:
+            setattr(registration, k, getattr(self, k))
+        registration.extra_data = self.extra_data
 
 
-_field_names = (
-    "id",
-    "event_id",
-    "version",
-    "status",
-    "date_created",
-    "date_updated",
-    "first_name",
-    "last_name",
-    "email",
-)
+@define(kw_only=True)
+class RegistrationBatchChangeFields(RegistrationDataFields):
+    """Fields for batch creation/update."""
+
+    id: uuid.UUID | None = None
+    event_id: str
+    status: Status = Status.pending
+    version: int | None = None
+    extra_data: JSON = field(factory=dict)
+
+    def apply(self, registration: Registration | None) -> Registration:
+        """Create a new :class:`Registration` or update the given existing one."""
+        if registration:
+            for k in _registration_data_fields:
+                setattr(registration, k, getattr(self, k))
+            registration.extra_data = self.extra_data
+        else:
+            args = {
+                "id": self.id,
+                "event_id": self.event_id,
+                "status": self.status,
+                "extra_data": self.extra_data,
+                **{k: getattr(self, k) for k in _registration_data_fields},
+            }
+            registration = Registration(
+                **{k: v for k, v in args.items() if v is not None}
+            )
+        return registration
 
 
-class RegistrationRepo(Repo[Registration, Union[str, uuid.UUID]]):
+class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
     """Registration repository."""
 
     entity_type = Registration
 
     async def get(
         self,
-        id: Union[str, uuid.UUID],
+        id: str | uuid.UUID,
         *,
         event_id: str | None = None,
         lock: bool = False,
     ) -> Registration | None:
         res = await super().get(id, lock=lock)
         return None if res is None or event_id and res.event_id != event_id else res
+
+    async def get_multi(
+        self,
+        ids: Iterable[str | uuid.UUID],
+        *,
+        event_id: str | None = None,
+        lock: bool = False,
+    ) -> Sequence[Registration]:
+        """Get multiple :class:`Registration` entities."""
+        ids = tuple(ids)
+        if not ids:
+            return ()
+
+        q = select(Registration).where(Registration.id.in_(ids))
+
+        if event_id:
+            q = q.where(Registration.event_id == event_id)
+
+        if lock:
+            q = q.order_by(Registration.id).with_for_update()
+
+        res = await self.session.execute(q)
+        return res.scalars().all()
 
     async def search(self, event_id: str) -> Sequence[Registration]:
         """Search registrations."""
@@ -141,58 +215,68 @@ class RegistrationRepo(Repo[Registration, Union[str, uuid.UUID]]):
         return res.scalars().all()
 
 
-def make_registration_structure_fn(
-    converter: Converter,
-) -> Callable[[Any, Any], Registration]:
-    """Make a function to structure a :class:`Registration`."""
-    dict_fn = make_dict_structure_fn(
-        Registration,
-        converter,
-    )
+class RegistrationService:
+    """Manages registration creation/updates."""
 
-    def structure(v, t):
-        if not isinstance(v, Mapping):
-            raise ValueError(f"Invalid registration: {v}")
-        extra = {k: v for k, v in v.items() if k not in _field_names}
-        return dict_fn({**v, "extra_data": extra}, t)
+    def __init__(self, session: AsyncSession, repo: RegistrationRepo):
+        self.session = session
+        self.repo = repo
 
-    return structure
-
-
-def make_registration_create_structure_fn(
-    converter: Converter,
-) -> Callable[[Any, Any], RegistrationCreate]:
-    """Make a function to structure a :class:`RegistrationCreate`."""
-    dict_fn = make_dict_structure_fn(
-        RegistrationCreate,
-        converter,
-    )
-
-    def structure(v, t):
-        if not isinstance(v, Mapping):
-            raise ValueError(f"Invalid registration: {v}")
-        extra = {k: v for k, v in v.items() if k not in _field_names}
-        reg = dict_fn({**v, "extra_data": extra}, t)
+    async def create(
+        self, event_id: str, data: RegistrationCreateFields
+    ) -> Registration:
+        """Create a registration."""
+        reg = data.create(event_id)
+        self.repo.add(reg)
+        await self.session.flush()
         return reg
 
-    return structure
+    async def update(
+        self,
+        event_id: str,
+        registration_id: uuid.UUID | str,
+        data: RegistrationUpdateFields,
+        etag: str | None = None,
+    ) -> Registration | None:
+        """Update a registration."""
+        reg = await self.repo.get(registration_id, event_id=event_id)
+        if reg is None:
+            return None
 
+        if (
+            etag is not None
+            and etag != self.get_etag(reg)
+            or data.version is not None
+            and data.version != reg.version
+        ):
+            raise ConflictError
 
-def make_registration_update_structure_fn(
-    converter: Converter,
-) -> Callable[[Any, Any], RegistrationUpdate]:
-    """Make a function to structure a :class:`RegistrationUpdate`."""
-    dict_fn = make_dict_structure_fn(
-        RegistrationUpdate,
-        converter,
-    )
-
-    def structure(v, t):
-        if not isinstance(v, Mapping):
-            raise ValueError(f"Invalid registration: {v}")
-        extra = {k: v for k, v in v.items() if k not in _field_names}
-        reg = dict_fn({**v, "extra_data": extra}, t)
+        data.apply(reg)
+        await self.session.flush()
         return reg
+
+    def get_etag(self, registration: Registration) -> str:
+        """Get the ETag for a registration."""
+        return f'W/"{registration.version}"'
+
+
+def make_registration_fields_structure_fn(
+    cl: (
+        type[Registration]
+        | type[RegistrationCreateFields]
+        | type[RegistrationUpdateFields]
+        | type[RegistrationBatchChangeFields]
+    ),
+    converter: Converter,
+) -> Callable[[Any, Any], Any]:
+    """Make a function to structure a registration-like object."""
+    dict_fn = make_dict_structure_fn(cl, converter)
+
+    def structure(v: Any, t: Any) -> Any:
+        if not isinstance(v, Mapping):
+            raise ValueError("Invalid registration")
+        extra_data = _get_extra_data(v)
+        return dict_fn({**v, "extra_data": extra_data}, t)
 
     return structure
 
@@ -215,3 +299,7 @@ def make_registration_unstructure_fn(
         return {**extra, **data}
 
     return unstructure
+
+
+def _get_extra_data(data: Mapping[str, Any]) -> dict[str, Any]:
+    return dict((k, v) for k, v in data.items() if k not in _registration_fields)

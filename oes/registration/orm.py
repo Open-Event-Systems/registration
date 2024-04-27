@@ -4,7 +4,7 @@ from collections.abc import MutableMapping
 from datetime import datetime
 from typing import Annotated, Any, Generic, TypeAlias, TypeVar
 
-from sqlalchemy import UUID, DateTime, String
+from sqlalchemy import DateTime, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import DeclarativeBase, MappedAsDataclass, mapped_column
@@ -14,9 +14,6 @@ DEFAULT_MAX_STRING_LENGTH = 300
 
 JSON: TypeAlias = Annotated[MutableMapping[str, Any], mapped_column(JSONB)]
 """JSON type."""
-
-UUIDStr: TypeAlias = Annotated[str, mapped_column(UUID(as_uuid=False))]
-"""UUID string type."""
 
 
 class Base(MappedAsDataclass, DeclarativeBase):

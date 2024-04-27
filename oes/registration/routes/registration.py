@@ -7,9 +7,10 @@ from sanic import Blueprint, HTTPResponse, Request, SanicException
 
 from oes.registration.registration import (
     Registration,
-    RegistrationCreate,
+    RegistrationCreateFields,
     RegistrationRepo,
-    RegistrationUpdate,
+    RegistrationService,
+    RegistrationUpdateFields,
     StatusError,
 )
 from oes.registration.routes.common import response_converter
@@ -35,7 +36,7 @@ async def create_registration(
     request: Request, event_id: str, repo: RegistrationRepo, body: CattrsBody
 ) -> Registration:
     """Create a registration."""
-    reg_create = await body(RegistrationCreate)
+    reg_create = await body(RegistrationCreateFields)
     reg = reg_create.create(event_id)
     repo.add(reg)
     await repo.session.flush()
@@ -48,11 +49,12 @@ async def read_registration(
     event_id: str,
     registration_id: UUID,
     repo: RegistrationRepo,
+    reg_service: RegistrationService,
 ) -> HTTPResponse:
     """Read a registration."""
     reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
     response = response_converter.make_response(reg)
-    response.headers["ETag"] = _get_etag(reg)
+    response.headers["ETag"] = reg_service.get_etag(reg)
     return response
 
 
@@ -61,23 +63,21 @@ async def update_registration(
     request: Request,
     event_id: str,
     registration_id: UUID,
-    repo: RegistrationRepo,
+    reg_service: RegistrationService,
     body: CattrsBody,
 ) -> HTTPResponse:
     """Update a registration."""
-    reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
-    _check_etag(request, reg)
+    etag = request.headers.get("ETag")
+    update = await body(RegistrationUpdateFields)
+    if update.version is None and etag is None:
+        raise SanicException("Version or ETag required", status_code=428)
 
-    update = await body(RegistrationUpdate)
-    if update.version is None and "If-Match" not in request.headers:
-        raise SanicException(status_code=428)
-    if update.version is not None and update.version != reg.version:
-        raise SanicException("Registration version mismatch", status_code=409)
-    update.apply(reg)
-    await repo.session.flush()
+    reg = raise_not_found(
+        await reg_service.update(event_id, registration_id, update, etag=etag)
+    )
 
     response = response_converter.make_response(reg)
-    response.headers["ETag"] = _get_etag(reg)
+    response.headers["ETag"] = reg_service.get_etag(reg)
     return response
 
 
@@ -87,6 +87,7 @@ async def complete_registration(
     event_id: str,
     registration_id: UUID,
     repo: RegistrationRepo,
+    reg_service: RegistrationService,
 ) -> HTTPResponse:
     """Complete a registration."""
     reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
@@ -98,7 +99,7 @@ async def complete_registration(
     await repo.session.flush()
 
     response = response_converter.make_response(reg)
-    response.headers["ETag"] = _get_etag(reg)
+    response.headers["ETag"] = reg_service.get_etag(reg)
     return response
 
 
@@ -108,6 +109,7 @@ async def cancel_registration(
     event_id: str,
     registration_id: UUID,
     repo: RegistrationRepo,
+    reg_service: RegistrationService,
 ) -> HTTPResponse:
     """Cancel a registration."""
     reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
@@ -116,16 +118,5 @@ async def cancel_registration(
     await repo.session.flush()
 
     response = response_converter.make_response(reg)
-    response.headers["ETag"] = _get_etag(reg)
+    response.headers["ETag"] = reg_service.get_etag(reg)
     return response
-
-
-def _check_etag(request: Request, registration: Registration):
-    cur_etag = _get_etag(registration)
-    sent_etag = request.headers.get("If-Match")
-    if sent_etag and sent_etag != cur_etag:
-        raise SanicException(status_code=412)
-
-
-def _get_etag(registration: Registration) -> str:
-    return f'W/"{registration.version}"'
