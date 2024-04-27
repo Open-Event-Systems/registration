@@ -5,6 +5,7 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from oes.registration.registration import (
     Registration,
+    RegistrationCreate,
     RegistrationRepo,
     RegistrationUpdate,
     Status,
@@ -103,3 +104,24 @@ async def test_updatable_fields(
         assert reg.extra_data == {"extra": True}
         assert reg.event_id == "test"
         assert reg.version == 2
+
+
+def test_create(converter: Converter):
+    data = {
+        "id": "ignore",
+        "event_id": "test",
+        "status": "created",
+        "first_name": "first",
+        "last_name": "last",
+        "email": "test@test.com",
+        "extra": 123,
+    }
+    create_obj = converter.structure(data, RegistrationCreate)
+    reg = create_obj.create()
+    assert reg.id != "ignore"
+    assert reg.event_id == "test"
+    assert reg.status == Status.created
+    assert reg.first_name == "first"
+    assert reg.last_name == "last"
+    assert reg.email == "test@test.com"
+    assert reg.extra_data == {"extra": 123}

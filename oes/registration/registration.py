@@ -1,7 +1,7 @@
 """Registration module."""
 
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
 from typing import Any
@@ -10,6 +10,7 @@ from attr import fields
 from attrs import define, field
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
+from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from oes.registration.orm import JSON, Base, Repo, UUIDStr
@@ -71,6 +72,23 @@ _field_names = (
 
 
 @define
+class RegistrationCreate:
+    """Registration fields settable on creation."""
+
+    event_id: str
+    status: Status = Status.pending
+    first_name: str | None = None
+    last_name: str | None = None
+    email: str | None = None
+    extra_data: JSON = field(factory=dict)
+
+    def create(self) -> Registration:
+        """Create a :class:`Registration`."""
+        kw = {attr.name: getattr(self, attr.name) for attr in fields(type(self))}
+        return Registration(**kw)
+
+
+@define
 class RegistrationUpdate:
     """Updatable registration fields."""
 
@@ -90,7 +108,11 @@ class RegistrationRepo(Repo[Registration, str]):
 
     entity_type = Registration
 
-    pass
+    async def search(self) -> Sequence[Registration]:
+        """Search registrations."""
+        q = select(Registration)
+        res = await self.session.execute(q)
+        return res.scalars().all()
 
 
 def make_registration_structure_fn(
@@ -104,9 +126,28 @@ def make_registration_structure_fn(
 
     def structure(v, t):
         if not isinstance(v, Mapping):
-            raise TypeError(f"Invalid registration: {v}")
+            raise ValueError(f"Invalid registration: {v}")
         extra = {k: v for k, v in v.items() if k not in _field_names}
         return dict_fn({**v, "extra_data": extra}, t)
+
+    return structure
+
+
+def make_registration_create_structure_fn(
+    converter: Converter,
+) -> Callable[[Any, Any], RegistrationCreate]:
+    """Make a function to structure a :class:`RegistrationCreate`."""
+    dict_fn = make_dict_structure_fn(
+        RegistrationCreate,
+        converter,
+    )
+
+    def structure(v, t):
+        if not isinstance(v, Mapping):
+            raise ValueError(f"Invalid registration: {v}")
+        extra = {k: v for k, v in v.items() if k not in _field_names}
+        reg = dict_fn({**v, "extra_data": extra}, t)
+        return reg
 
     return structure
 
@@ -122,12 +163,8 @@ def make_registration_update_structure_fn(
 
     def structure(v, t):
         if not isinstance(v, Mapping):
-            raise TypeError(f"Invalid registration: {v}")
-        extra = {
-            k: v
-            for k, v in v.items()
-            if k not in _field_names and k not in _non_updatable_fields
-        }
+            raise ValueError(f"Invalid registration: {v}")
+        extra = {k: v for k, v in v.items() if k not in _field_names}
         reg = dict_fn({**v, "extra_data": extra}, t)
         return reg
 
