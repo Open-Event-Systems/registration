@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Union
 
 from attr import fields
 from attrs import define, field
@@ -22,6 +22,12 @@ class Status(str, Enum):
     pending = "pending"
     created = "created"
     canceled = "canceled"
+
+
+class StatusError(ValueError):
+    """Raised when a registration's status is not acceptable."""
+
+    pass
 
 
 class Registration(Base, kw_only=True):
@@ -48,44 +54,39 @@ class Registration(Base, kw_only=True):
 
     __mapper_args__ = {"version_id_col": version}
 
+    def complete(self) -> bool:
+        """Complete the registration."""
+        if self.status == Status.pending:
+            self.status = Status.created
+            return True
+        elif self.status == Status.canceled:
+            raise StatusError("Registration is already canceled")
+        else:
+            return False
 
-_non_updatable_fields = (
-    "id",
-    "event_id",
-    "version",
-    "status",
-    "date_created",
-    "date_updated",
-)
-
-_field_names = (
-    "id",
-    "event_id",
-    "version",
-    "status",
-    "date_created",
-    "date_updated",
-    "first_name",
-    "last_name",
-    "email",
-)
+    def cancel(self) -> bool:
+        """Cancel the registration."""
+        if self.status != Status.canceled:
+            self.status = Status.canceled
+            return True
+        else:
+            return False
 
 
 @define
 class RegistrationCreate:
     """Registration fields settable on creation."""
 
-    event_id: str
     status: Status = Status.pending
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
     extra_data: JSON = field(factory=dict)
 
-    def create(self) -> Registration:
+    def create(self, event_id: str) -> Registration:
         """Create a :class:`Registration`."""
         kw = {attr.name: getattr(self, attr.name) for attr in fields(type(self))}
-        return Registration(**kw)
+        return Registration(event_id=event_id, **kw)
 
 
 @define
@@ -103,14 +104,37 @@ class RegistrationUpdate:
             setattr(registration, attr.name, getattr(self, attr.name))
 
 
-class RegistrationRepo(Repo[Registration, str]):
+_field_names = (
+    "id",
+    "event_id",
+    "version",
+    "status",
+    "date_created",
+    "date_updated",
+    "first_name",
+    "last_name",
+    "email",
+)
+
+
+class RegistrationRepo(Repo[Registration, Union[str, uuid.UUID]]):
     """Registration repository."""
 
     entity_type = Registration
 
-    async def search(self) -> Sequence[Registration]:
+    async def get(
+        self,
+        id: Union[str, uuid.UUID],
+        *,
+        event_id: str | None = None,
+        lock: bool = False,
+    ) -> Registration | None:
+        res = await super().get(id, lock=lock)
+        return None if res is None or event_id and res.event_id != event_id else res
+
+    async def search(self, event_id: str) -> Sequence[Registration]:
         """Search registrations."""
-        q = select(Registration)
+        q = select(Registration).where(Registration.event_id == event_id)
         res = await self.session.execute(q)
         return res.scalars().all()
 

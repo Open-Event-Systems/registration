@@ -56,10 +56,6 @@ class Repo(Generic[_E, _T]):
         """Delete an entity."""
         await self.session.delete(entity)
 
-    async def flush(self):
-        """Flush the underlying session."""
-        await self.session.flush()
-
 
 def import_entities():
     """Import all entities (used by migrations)."""

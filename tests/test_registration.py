@@ -98,7 +98,7 @@ async def test_updatable_fields(
         reg = await repo.get(id)
         assert reg
         update.apply(reg)
-        await repo.flush()
+        await repo.session.flush()
         assert reg.email == "test@test.com"
         assert reg.status == Status.pending
         assert reg.extra_data == {"extra": True}
@@ -109,7 +109,7 @@ async def test_updatable_fields(
 def test_create(converter: Converter):
     data = {
         "id": "ignore",
-        "event_id": "test",
+        "event_id": "test-other",
         "status": "created",
         "first_name": "first",
         "last_name": "last",
@@ -117,7 +117,7 @@ def test_create(converter: Converter):
         "extra": 123,
     }
     create_obj = converter.structure(data, RegistrationCreate)
-    reg = create_obj.create()
+    reg = create_obj.create("test")
     assert reg.id != "ignore"
     assert reg.event_id == "test"
     assert reg.status == Status.created
