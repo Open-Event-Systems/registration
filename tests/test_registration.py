@@ -32,7 +32,7 @@ def test_serialize_registration(converter: Converter):
     reg = Registration(event_id="test", extra_data={"test": 123})
     data = converter.unstructure(reg)
     assert data == {
-        "id": reg.id,
+        "id": str(reg.id),
         "status": Status.pending,
         "version": 1,
         "event_id": "test",

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from sanic import Blueprint, HTTPResponse, Request, SanicException
 
+from oes.registration.event import EventStatsService
 from oes.registration.registration import (
     Registration,
     RegistrationCreateFields,
@@ -33,13 +34,11 @@ async def list_registrations(
 @routes.post("/")
 @response_converter
 async def create_registration(
-    request: Request, event_id: str, repo: RegistrationRepo, body: CattrsBody
+    request: Request, event_id: str, reg_service: RegistrationService, body: CattrsBody
 ) -> Registration:
     """Create a registration."""
     reg_create = await body(RegistrationCreateFields)
-    reg = reg_create.create(event_id)
-    repo.add(reg)
-    await repo.session.flush()
+    reg = await reg_service.create(event_id, reg_create)
     return reg
 
 
@@ -90,7 +89,7 @@ async def complete_registration(
     reg_service: RegistrationService,
 ) -> HTTPResponse:
     """Complete a registration."""
-    reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
+    reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
     try:
         reg.complete()
     except StatusError as e:
@@ -112,10 +111,29 @@ async def cancel_registration(
     reg_service: RegistrationService,
 ) -> HTTPResponse:
     """Cancel a registration."""
-    reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
+    reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
     reg.cancel()
 
     await repo.session.flush()
+
+    response = response_converter.make_response(reg)
+    response.headers["ETag"] = reg_service.get_etag(reg)
+    return response
+
+
+@routes.put("/<registration_id:uuid>/assign-number")
+async def assign_number(
+    request: Request,
+    event_id: str,
+    registration_id: UUID,
+    repo: RegistrationRepo,
+    reg_service: RegistrationService,
+    event_stats_service: EventStatsService,
+) -> HTTPResponse:
+    """Assign a number to a registration."""
+    reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
+
+    await event_stats_service.assign_numbers(event_id, (reg,))
 
     response = response_converter.make_response(reg)
     response.headers["ETag"] = reg_service.get_etag(reg)

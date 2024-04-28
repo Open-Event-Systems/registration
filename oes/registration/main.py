@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from oes.registration.event import EventStatsRepo, EventStatsService
+from oes.registration.registration import RegistrationService
 from oes.utils.request import CattrsBody
 
 
@@ -29,10 +31,13 @@ def create_app() -> Sanic:
     app.ext.add_dependency(Converter, lambda: common.response_converter.converter)
     app.ext.add_dependency(CattrsBody)
 
-    app.ext.add_dependency(async_sessionmaker, _get_session_factory)
     app.ext.add_dependency(AsyncSession, _get_session)
 
     app.ext.add_dependency(RegistrationRepo)
+    app.ext.add_dependency(RegistrationService)
+
+    app.ext.add_dependency(EventStatsRepo)
+    app.ext.add_dependency(EventStatsService)
 
     app.before_server_start(_setup)
     app.after_server_stop(_shutdown)
@@ -46,6 +51,7 @@ async def _setup(app: Sanic):
     engine = create_async_engine(db_url)
     app.ctx.engine = engine
     app.ctx.session_factory = async_sessionmaker(engine)
+    app.ext.dependency(app.ctx.session_factory)
 
 
 async def _shutdown(app: Sanic):
@@ -64,13 +70,12 @@ async def _txn_middleware(request: Request, response: HTTPResponse):
         await session.close()
 
 
-async def _get_session_factory(request: Request) -> async_sessionmaker:
-    return request.app.ctx.session_factory
-
-
 async def _get_session(
     request: Request, session_factory: async_sessionmaker
 ) -> AsyncSession:
+    cur = getattr(request.ctx, "session", None)
+    if cur:
+        return cur
     session = session_factory()
     request.ctx.session = session
     return session

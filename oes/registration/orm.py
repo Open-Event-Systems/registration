@@ -56,4 +56,4 @@ class Repo(Generic[_E, _T]):
 
 def import_entities():
     """Import all entities (used by migrations)."""
-    from oes.registration import registration  # noqa
+    from oes.registration import event, registration  # noqa

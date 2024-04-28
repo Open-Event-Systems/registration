@@ -19,6 +19,9 @@ def configure_converter(converter: Converter):
     converter.register_structure_hook(
         UUID, lambda v, t: v if isinstance(v, UUID) else UUID(v)
     )
+    converter.register_unstructure_hook_func(
+        lambda cls: issubclass(cls, UUID), lambda v: str(v)
+    )
 
     converter.register_structure_hook(
         Registration, make_registration_fields_structure_fn(Registration, converter)
