@@ -55,6 +55,7 @@ class Registration(Base, kw_only=True):
     date_updated: Mapped[datetime | None] = mapped_column(
         default=None, onupdate=lambda: datetime.now().astimezone()
     )
+    number: Mapped[int | None] = mapped_column(default=None)
     first_name: Mapped[str | None] = mapped_column(default=None)
     last_name: Mapped[str | None] = mapped_column(default=None)
     email: Mapped[str | None] = mapped_column(default=None)
@@ -97,6 +98,7 @@ _registration_meta_fields = frozenset(
 class RegistrationDataFields:
     """Registration data fields."""
 
+    number: int | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
