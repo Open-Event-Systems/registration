@@ -36,7 +36,7 @@ def configure_converter(converter: Converter):
     )
     converter.register_structure_hook(
         RegistrationBatchChangeFields,
-        make_registration_fields_structure_fn(RegistrationUpdateFields, converter),
+        make_registration_fields_structure_fn(RegistrationBatchChangeFields, converter),
     )
     converter.register_unstructure_hook(
         Registration,

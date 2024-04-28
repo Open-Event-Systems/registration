@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+from oes.registration.batch import BatchChangeService
 from oes.registration.event import EventStatsRepo, EventStatsService
 from oes.registration.registration import RegistrationService
 from oes.utils.request import CattrsBody
@@ -19,14 +20,16 @@ from oes.utils.request import CattrsBody
 def create_app() -> Sanic:
     """Main app entry point."""
     from oes.registration.registration import RegistrationRepo
-    from oes.registration.routes import common, registration
+    from oes.registration.routes import batch, common, registration
     from oes.registration.serialization import configure_converter
 
     app = Sanic("Registration")
+    app.config.FALLBACK_ERROR_FORMAT = "json"
 
     configure_converter(common.response_converter.converter)
 
     app.blueprint(registration.routes, url_prefix="/events/<event_id>/registrations")
+    app.blueprint(batch.routes, url_prefix="/events/<event_id>/batch-change")
 
     app.ext.add_dependency(Converter, lambda: common.response_converter.converter)
     app.ext.add_dependency(CattrsBody)
@@ -38,6 +41,8 @@ def create_app() -> Sanic:
 
     app.ext.add_dependency(EventStatsRepo)
     app.ext.add_dependency(EventStatsService)
+
+    app.ext.add_dependency(BatchChangeService)
 
     app.before_server_start(_setup)
     app.after_server_stop(_shutdown)
