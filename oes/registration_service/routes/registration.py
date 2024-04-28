@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from sanic import Blueprint, HTTPResponse, Request, SanicException
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from oes.registration_service.event import EventStatsService
 from oes.registration_service.registration import (
@@ -85,17 +86,21 @@ async def complete_registration(
     request: Request,
     event_id: str,
     registration_id: UUID,
+    session: AsyncSession,
     repo: RegistrationRepo,
     reg_service: RegistrationService,
+    event_stats_service: EventStatsService,
 ) -> HTTPResponse:
     """Complete a registration."""
     reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
     try:
-        reg.complete()
+        changed = reg.complete()
     except StatusError as e:
         raise SanicException(str(e), status_code=409) from e
 
-    await repo.session.flush()
+    if changed:
+        with session.no_autoflush:  # don't double increment version
+            await event_stats_service.assign_numbers(event_id, (reg,))
 
     response = response_converter.make_response(reg)
     response.headers["ETag"] = reg_service.get_etag(reg)

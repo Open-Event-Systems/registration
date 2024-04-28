@@ -157,6 +157,7 @@ class RegistrationBatchChangeFields(RegistrationDataFields):
         if registration:
             for k in _registration_data_fields:
                 setattr(registration, k, getattr(self, k))
+            registration.status = self.status
             registration.extra_data = self.extra_data
         else:
             args = {

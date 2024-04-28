@@ -41,3 +41,24 @@ async def check_changes(
         response.status = 409
 
     return response
+
+
+@routes.post("/apply")
+async def apply_changes(
+    request: Request,
+    event_id: str,
+    service: BatchChangeService,
+    body: CattrsBody,
+) -> HTTPResponse:
+    """Apply a batch of changes."""
+    changes = await body(list[RegistrationBatchChangeFields])
+    current, failed = await service.check(event_id, changes, lock=True)
+
+    if failed:
+        response = response_converter.make_response(ChangeResultBody(current, failed))
+        response.status = 409
+        return response
+    else:
+        final = await service.apply(event_id, changes, current)
+        response = response_converter.make_response(ChangeResultBody(final, ()))
+        return response
