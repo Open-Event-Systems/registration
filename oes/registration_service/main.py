@@ -1,6 +1,7 @@
 """Main entry points."""
 
 import os
+import sys
 
 from cattr import Converter
 from sanic import HTTPResponse, Request, Sanic
@@ -12,9 +13,17 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from oes.registration_service.batch import BatchChangeService
+from oes.registration_service.config import Config, get_config
 from oes.registration_service.event import EventStatsRepo, EventStatsService
 from oes.registration_service.registration import RegistrationService
 from oes.utils.request import CattrsBody
+
+
+def main():
+    """CLI wrapper."""
+    os.execlp(
+        "sanic", sys.argv[0], "oes.registration_service.main:create_app", *sys.argv[1:]
+    )
 
 
 def create_app() -> Sanic:
@@ -23,8 +32,12 @@ def create_app() -> Sanic:
     from oes.registration_service.routes import batch, common, registration
     from oes.registration_service.serialization import configure_converter
 
+    config = get_config()
+
     app = Sanic("Registration")
     app.config.FALLBACK_ERROR_FORMAT = "json"
+
+    app.ctx.config = config
 
     configure_converter(common.response_converter.converter)
 
@@ -52,8 +65,8 @@ def create_app() -> Sanic:
 
 
 async def _setup(app: Sanic):
-    db_url = os.getenv("DB_URL", "")  # TODO: settings
-    engine = create_async_engine(db_url)
+    config: Config = app.ctx.config
+    engine = create_async_engine(config.database.url)
     app.ctx.engine = engine
     app.ctx.session_factory = async_sessionmaker(engine)
     app.ext.dependency(app.ctx.session_factory)

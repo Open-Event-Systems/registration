@@ -7,6 +7,11 @@ from cattrs import BaseValidationError, Converter
 from loguru import logger
 from sanic import BadRequest, NotFound, Request, SanicException
 
+__all__ = [
+    "CattrsBody",
+    "raise_not_found",
+]
+
 _T = TypeVar("_T")
 
 

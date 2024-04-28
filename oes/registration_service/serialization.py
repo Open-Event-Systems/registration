@@ -1,7 +1,5 @@
 """Serialization module."""
 
-from uuid import UUID
-
 from cattrs import Converter
 
 from oes.registration_service.registration import (
@@ -12,16 +10,12 @@ from oes.registration_service.registration import (
     make_registration_fields_structure_fn,
     make_registration_unstructure_fn,
 )
+from oes.utils.serialization import configure_converter as _configure_converter
 
 
 def configure_converter(converter: Converter):
     """Configure a :class:`Converter`."""
-    converter.register_structure_hook(
-        UUID, lambda v, t: v if isinstance(v, UUID) else UUID(v)
-    )
-    converter.register_unstructure_hook_func(
-        lambda cls: issubclass(cls, UUID), lambda v: str(v)
-    )
+    _configure_converter(converter)
 
     converter.register_structure_hook(
         Registration, make_registration_fields_structure_fn(Registration, converter)
