@@ -29,7 +29,7 @@ def create_app() -> Sanic:
 
     app = Sanic("Registration")
     setup_app(app, config, common.response_converter.converter)
-    setup_database(app, config.database.url)
+    setup_database(app, config.db_url)
     configure_converter(common.response_converter.converter)
 
     app.blueprint(registration.routes, url_prefix="/events/<event_id>/registrations")

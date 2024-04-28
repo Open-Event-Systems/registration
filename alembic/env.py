@@ -1,26 +1,15 @@
 import asyncio
-import os
-from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
+from oes.utils.log import setup_logging
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
-config = context.config
+setup_logging()
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
-
-# add your model's MetaData object here
-# for 'autogenerate' support
-# from myapp import mymodel
-# target_metadata = mymodel.Base.metadata
+from oes.registration_service.config import get_config
 from oes.registration_service.orm import Base, import_entities
 
 target_metadata = Base.metadata
@@ -44,8 +33,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    # TODO: get from settings
-    url = os.getenv("DB_URL")
+    config = get_config()
+    url = config.db_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -69,8 +58,8 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
-    # TODO: get from settings
-    url = os.getenv("DB_URL", "")
+    config = get_config()
+    url = config.db_url
     connectable = create_async_engine(
         url,
         poolclass=pool.NullPool,

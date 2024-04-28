@@ -5,6 +5,7 @@ from typing import AsyncContextManager
 from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
 from sanic import HTTPResponse, Request, Sanic
+from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -34,7 +35,7 @@ def setup_app(app: Sanic, config: object = None, converter: Converter | None = N
     app.ext.add_dependency(Converter, lambda: converter)
 
 
-def setup_database(app: Sanic, db_url: str):
+def setup_database(app: Sanic, db_url: str | URL):
     """Configure the app to manage a database engine."""
     engine = create_async_engine(db_url)
     factory = async_sessionmaker(engine, expire_on_commit=False)
