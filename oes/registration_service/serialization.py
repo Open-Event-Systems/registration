@@ -4,7 +4,7 @@ from uuid import UUID
 
 from cattrs import Converter
 
-from oes.registration.registration import (
+from oes.registration_service.registration import (
     Registration,
     RegistrationBatchChangeFields,
     RegistrationCreateFields,

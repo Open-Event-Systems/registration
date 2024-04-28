@@ -11,17 +11,17 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from oes.registration.batch import BatchChangeService
-from oes.registration.event import EventStatsRepo, EventStatsService
-from oes.registration.registration import RegistrationService
+from oes.registration_service.batch import BatchChangeService
+from oes.registration_service.event import EventStatsRepo, EventStatsService
+from oes.registration_service.registration import RegistrationService
 from oes.utils.request import CattrsBody
 
 
 def create_app() -> Sanic:
     """Main app entry point."""
-    from oes.registration.registration import RegistrationRepo
-    from oes.registration.routes import batch, common, registration
-    from oes.registration.serialization import configure_converter
+    from oes.registration_service.registration import RegistrationRepo
+    from oes.registration_service.routes import batch, common, registration
+    from oes.registration_service.serialization import configure_converter
 
     app = Sanic("Registration")
     app.config.FALLBACK_ERROR_FORMAT = "json"

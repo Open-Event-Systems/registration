@@ -5,8 +5,8 @@ from uuid import UUID
 
 from sanic import Blueprint, HTTPResponse, Request, SanicException
 
-from oes.registration.event import EventStatsService
-from oes.registration.registration import (
+from oes.registration_service.event import EventStatsService
+from oes.registration_service.registration import (
     Registration,
     RegistrationCreateFields,
     RegistrationRepo,
@@ -14,7 +14,7 @@ from oes.registration.registration import (
     RegistrationUpdateFields,
     StatusError,
 )
-from oes.registration.routes.common import response_converter
+from oes.registration_service.routes.common import response_converter
 from oes.utils.request import CattrsBody, raise_not_found
 
 routes = Blueprint("registrations")

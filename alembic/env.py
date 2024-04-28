@@ -21,7 +21,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from oes.registration.orm import Base, import_entities
+from oes.registration_service.orm import Base, import_entities
 
 target_metadata = Base.metadata
 import_entities()

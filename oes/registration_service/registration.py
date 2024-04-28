@@ -14,7 +14,7 @@ from sqlalchemy import UUID, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from oes.registration.orm import JSON, Base, Repo
+from oes.registration_service.orm import JSON, Base, Repo
 
 
 class Status(str, Enum):

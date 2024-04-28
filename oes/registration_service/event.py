@@ -5,8 +5,8 @@ from collections.abc import Iterable
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from oes.registration.orm import Base, Repo
-from oes.registration.registration import Registration
+from oes.registration_service.orm import Base, Repo
+from oes.registration_service.registration import Registration
 
 
 class EventStats(Base):

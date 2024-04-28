@@ -6,7 +6,7 @@ from cattrs import Converter
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm.exc import StaleDataError
 
-from oes.registration.registration import (
+from oes.registration_service.registration import (
     ConflictError,
     Registration,
     RegistrationCreateFields,
