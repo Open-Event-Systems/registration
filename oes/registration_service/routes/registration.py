@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from uuid import UUID
 
 from sanic import Blueprint, HTTPResponse, Request, SanicException
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from oes.registration_service.event import EventStatsService
 from oes.registration_service.registration import (
@@ -16,6 +15,7 @@ from oes.registration_service.registration import (
     StatusError,
 )
 from oes.registration_service.routes.common import response_converter
+from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
 
 routes = Blueprint("registrations")
@@ -34,6 +34,7 @@ async def list_registrations(
 
 @routes.post("/")
 @response_converter
+@transaction
 async def create_registration(
     request: Request, event_id: str, reg_service: RegistrationService, body: CattrsBody
 ) -> Registration:
@@ -72,9 +73,10 @@ async def update_registration(
     if update.version is None and etag is None:
         raise SanicException("Version or ETag required", status_code=428)
 
-    reg = raise_not_found(
-        await reg_service.update(event_id, registration_id, update, etag=etag)
-    )
+    async with transaction():
+        reg = raise_not_found(
+            await reg_service.update(event_id, registration_id, update, etag=etag)
+        )
 
     response = response_converter.make_response(reg)
     response.headers["ETag"] = reg_service.get_etag(reg)
@@ -86,20 +88,21 @@ async def complete_registration(
     request: Request,
     event_id: str,
     registration_id: UUID,
-    session: AsyncSession,
     repo: RegistrationRepo,
     reg_service: RegistrationService,
     event_stats_service: EventStatsService,
 ) -> HTTPResponse:
     """Complete a registration."""
-    reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
-    try:
-        changed = reg.complete()
-    except StatusError as e:
-        raise SanicException(str(e), status_code=409) from e
+    async with transaction():
+        reg = raise_not_found(
+            await repo.get(registration_id, event_id=event_id, lock=True)
+        )
+        try:
+            changed = reg.complete()
+        except StatusError as e:
+            raise SanicException(str(e), status_code=409) from e
 
-    if changed:
-        with session.no_autoflush:  # don't double increment version
+        if changed:
             await event_stats_service.assign_numbers(event_id, (reg,))
 
     response = response_converter.make_response(reg)
@@ -116,10 +119,11 @@ async def cancel_registration(
     reg_service: RegistrationService,
 ) -> HTTPResponse:
     """Cancel a registration."""
-    reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
-    reg.cancel()
-
-    await repo.session.flush()
+    async with transaction():
+        reg = raise_not_found(
+            await repo.get(registration_id, event_id=event_id, lock=True)
+        )
+        reg.cancel()
 
     response = response_converter.make_response(reg)
     response.headers["ETag"] = reg_service.get_etag(reg)
@@ -136,9 +140,12 @@ async def assign_number(
     event_stats_service: EventStatsService,
 ) -> HTTPResponse:
     """Assign a number to a registration."""
-    reg = raise_not_found(await repo.get(registration_id, event_id=event_id, lock=True))
+    async with transaction():
+        reg = raise_not_found(
+            await repo.get(registration_id, event_id=event_id, lock=True)
+        )
 
-    await event_stats_service.assign_numbers(event_id, (reg,))
+        await event_stats_service.assign_numbers(event_id, (reg,))
 
     response = response_converter.make_response(reg)
     response.headers["ETag"] = reg_service.get_etag(reg)

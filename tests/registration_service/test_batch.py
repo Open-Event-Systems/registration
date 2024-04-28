@@ -54,8 +54,8 @@ async def test_batch_check(mock_session, mock_repo, mock_stats):
 
     mock_repo.get_multi.side_effect = get_multi
 
-    current, failed = await service.check("test", (change2, change1))
-    assert current == [reg2, reg1]
+    passed, failed = await service.check("test", (change2, change1))
+    assert passed == [reg2, reg1]
     assert failed == []
 
 
@@ -78,8 +78,8 @@ async def test_batch_check_fail(mock_session, mock_repo, mock_stats):
 
     mock_repo.get_multi.side_effect = get_multi
 
-    current, failed = await service.check("test", (change2, change1))
-    assert current == [reg2, reg1]
+    passed, failed = await service.check("test", (change2, change1))
+    assert passed == [reg1]
     assert failed == [reg2]
 
 
@@ -104,11 +104,9 @@ async def test_batch_check_fail_invalid_status(mock_session, mock_repo, mock_sta
 
     mock_repo.get_multi.side_effect = get_multi
 
-    current, failed = await service.check("test", (change2, change1))
-    assert current == [reg2, reg1]
-    assert failed == [
-        reg2,
-    ]
+    passed, failed = await service.check("test", (change2, change1))
+    assert passed == [reg1]
+    assert failed == [reg2]
 
 
 @pytest.mark.asyncio
@@ -131,10 +129,8 @@ async def test_batch_check_create(mock_session, mock_repo, mock_stats):
 
     mock_repo.get_multi.side_effect = get_multi
 
-    current, failed = await service.check("test", (change1, change3, change4))
-    assert current == [
-        reg1,
-    ]
+    passed, failed = await service.check("test", (change1, change3, change4))
+    assert passed == [reg1]
     assert failed == []
 
 

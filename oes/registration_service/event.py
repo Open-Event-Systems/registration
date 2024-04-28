@@ -5,8 +5,9 @@ from collections.abc import Iterable
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from oes.registration_service.orm import Base, Repo
+from oes.registration_service.orm import Base
 from oes.registration_service.registration import Registration
+from oes.utils.orm import Repo
 
 
 class EventStats(Base):
@@ -63,7 +64,7 @@ class EventStatsService:
         to_update = tuple(r for r in registrations if r.number is None)
         if not to_update:
             return
-        stats = await self.repo.get_or_create(event_id, lock=True)
+        with self.session.no_autoflush:  # don't double-increment the version
+            stats = await self.repo.get_or_create(event_id, lock=True)
         for reg in to_update:
             reg.number = stats.get_number()
-        await self.session.flush()

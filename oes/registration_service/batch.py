@@ -36,18 +36,21 @@ class BatchChangeService:
         """Check that a batch of changes can be applied.
 
         Returns:
-            A pair of sequences of valid registrations and registrations with
-            mismatched versions.
+            A pair of sequences of existing registrations, one with those that
+            passed and the other with those that failed.
         """
-        current_regs = await self.repo.get_multi(
-            (c.id for c in changes if c.id), event_id=event_id, lock=lock
+        passed = list(
+            await self.repo.get_multi(
+                (c.id for c in changes if c.id), event_id=event_id, lock=lock
+            )
         )
-        failed_ver = self._check_versions(changes, current_regs)
-        failed_status = self._check_status(changes, current_regs)
-        failed = [
-            cur for cur in current_regs if cur in failed_ver or cur in failed_status
-        ]
-        return list(current_regs), failed
+
+        failed_ver = self._check_versions(changes, passed)
+        list(map(passed.remove, failed_ver))
+
+        failed_status = self._check_status(changes, passed)
+        list(map(passed.remove, failed_status))
+        return passed, failed_ver + failed_status
 
     async def apply(
         self,
@@ -58,7 +61,7 @@ class BatchChangeService:
         """Apply a batch of changes.
 
         Returns:
-            A sequences of created/updated registrations.
+            A sequence of created/updated registrations.
         """
         current_by_id = {cur.id: cur for cur in current}
 
@@ -71,10 +74,8 @@ class BatchChangeService:
             r for r in results if r.status == Status.created and r.number is None
         ]
 
-        with self.session.no_autoflush:
+        with self.session.no_autoflush:  # don't double-increment the version
             await self.event_stats_service.assign_numbers(event_id, to_assign)
-
-        await self.session.flush()
 
         return results
 

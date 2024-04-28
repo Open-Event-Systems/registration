@@ -14,7 +14,8 @@ from sqlalchemy import UUID, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from oes.registration_service.orm import JSON, Base, Repo
+from oes.registration_service.orm import Base
+from oes.utils.orm import JSON, Repo
 
 
 class Status(str, Enum):
@@ -102,8 +103,6 @@ class RegistrationDataFields:
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
-
-    # extra_data: JSON = field(factory=dict)
 
 
 _registration_data_fields: frozenset[str] = frozenset(
@@ -213,7 +212,11 @@ class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
 
     async def search(self, event_id: str) -> Sequence[Registration]:
         """Search registrations."""
-        q = select(Registration).where(Registration.event_id == event_id)
+        q = (
+            select(Registration)
+            .where(Registration.event_id == event_id)
+            .order_by(Registration.date_created.desc())
+        )
         res = await self.session.execute(q)
         return res.scalars().all()
 
@@ -231,7 +234,6 @@ class RegistrationService:
         """Create a registration."""
         reg = data.create(event_id)
         self.repo.add(reg)
-        await self.session.flush()
         return reg
 
     async def update(
@@ -255,7 +257,6 @@ class RegistrationService:
             raise ConflictError
 
         data.apply(reg)
-        await self.session.flush()
         return reg
 
     def get_etag(self, registration: Registration) -> str:

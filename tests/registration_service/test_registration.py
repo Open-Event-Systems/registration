@@ -182,7 +182,6 @@ async def test_service_create(mock_repo, mock_session):
     assert reg.event_id == "test"
     assert reg.email == "test@test.com"
     mock_repo.add.assert_called_with(reg)
-    mock_session.flush.assert_called()
 
 
 @pytest.mark.asyncio
@@ -190,22 +189,16 @@ async def test_service_update(mock_repo, mock_session):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = cur
 
-    def update_version():
-        cur.version += 1
-
-    mock_session.flush.side_effect = update_version
-
     service = RegistrationService(mock_session, mock_repo)
 
     update = RegistrationUpdateFields(version=cur.version, email="other@test.com")
 
     cur_id = cur.id
-    cur_ver = cur.version
     updated = await service.update("test", cur.id, update)
     assert updated
     assert updated.id == cur_id
     assert updated.email == "other@test.com"
-    assert updated.version == cur_ver + 1
+    # version change happens on flush...
 
 
 @pytest.mark.asyncio
@@ -213,23 +206,17 @@ async def test_service_update_etag(mock_repo, mock_session):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = cur
 
-    def update_version():
-        cur.version += 1
-
-    mock_session.flush.side_effect = update_version
-
     service = RegistrationService(mock_session, mock_repo)
 
     update = RegistrationUpdateFields(email="other@test.com")
 
     cur_id = cur.id
-    cur_ver = cur.version
     cur_etag = service.get_etag(cur)
     updated = await service.update("test", cur.id, update, etag=cur_etag)
     assert updated
     assert updated.id == cur_id
     assert updated.email == "other@test.com"
-    assert updated.version == cur_ver + 1
+    # version change happens on flush...
 
 
 @pytest.mark.asyncio

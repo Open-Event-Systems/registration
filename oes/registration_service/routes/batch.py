@@ -11,6 +11,7 @@ from oes.registration_service.registration import (
     RegistrationBatchChangeFields,
 )
 from oes.registration_service.routes.common import response_converter
+from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
 
 routes = Blueprint("batch")
@@ -20,7 +21,7 @@ routes = Blueprint("batch")
 class ChangeResultBody:
     """The result of a batch change."""
 
-    result: Sequence[Registration]
+    passed: Sequence[Registration]
     failed: Sequence[Registration]
 
 
@@ -33,9 +34,9 @@ async def check_changes(
 ) -> HTTPResponse:
     """Test a batch of changes."""
     changes = await body(list[RegistrationBatchChangeFields])
-    current, failed = await service.check(event_id, changes)
+    passed, failed = await service.check(event_id, changes)
 
-    response = response_converter.make_response(ChangeResultBody(current, failed))
+    response = response_converter.make_response(ChangeResultBody(passed, failed))
 
     if failed:
         response.status = 409
@@ -52,13 +53,18 @@ async def apply_changes(
 ) -> HTTPResponse:
     """Apply a batch of changes."""
     changes = await body(list[RegistrationBatchChangeFields])
-    current, failed = await service.check(event_id, changes, lock=True)
 
-    if failed:
-        response = response_converter.make_response(ChangeResultBody(current, failed))
-        response.status = 409
-        return response
-    else:
-        final = await service.apply(event_id, changes, current)
-        response = response_converter.make_response(ChangeResultBody(final, ()))
-        return response
+    async with transaction():
+        passed, failed = await service.check(event_id, changes, lock=True)
+
+        if failed:
+            response = response_converter.make_response(
+                ChangeResultBody(passed, failed)
+            )
+            response.status = 409
+            return response
+        else:
+            final = await service.apply(event_id, changes, passed)
+            await transaction.commit()
+            response = response_converter.make_response(ChangeResultBody(final, ()))
+            return response
