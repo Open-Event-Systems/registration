@@ -1,11 +1,18 @@
+from uuid import UUID
+
 import pytest
-from oes.cart.cart import Cart, CartRepo, CartService
+from oes.cart.cart import Cart, CartRegistration, CartRepo, CartService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
 @pytest.fixture
-def service(session: AsyncSession):
-    return CartService(CartRepo(session), b"\0" * 8, "0.1.0")
+def repo(session: AsyncSession):
+    return CartRepo(session)
+
+
+@pytest.fixture
+def service(repo: CartRepo):
+    return CartService(repo, b"\0" * 8, "0.1.0")
 
 
 def test_hash():
@@ -13,14 +20,45 @@ def test_hash():
         event_id="test",
         meta={"meta": "meta"},
         registrations=[
-            {
-                "event_id": "test",
-            }
+            CartRegistration(
+                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), old={}, new={}
+            )
         ],
     )
 
     hash_ = cart.get_id(b"\0" * 8, "0.1.0")
-    assert hash_ == "b92aae5bb14a4fd483b271281bf0e540d22b608f761a9b980a0814bbfdd52c51"
+    assert hash_ == "d44ff9b6c219ee4175dd60c8875995c56b543e1a862750713bb737c5d9876d0d"
+
+
+def test_hash_any_order():
+    cart1 = Cart(
+        event_id="test",
+        meta={"meta": "meta"},
+        registrations=[
+            CartRegistration(
+                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), old={}, new={}
+            ),
+            CartRegistration(
+                UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"), old={}, new={}
+            ),
+        ],
+    )
+    cart2 = Cart(
+        event_id="test",
+        meta={"meta": "meta"},
+        registrations=[
+            CartRegistration(
+                UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"), old={}, new={}
+            ),
+            CartRegistration(
+                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), old={}, new={}
+            ),
+        ],
+    )
+
+    hash1 = cart1.get_id(b"\0" * 8, "0.1.0")
+    hash2 = cart2.get_id(b"\0" * 8, "0.1.0")
+    assert hash1 == hash2
 
 
 @pytest.mark.asyncio
@@ -62,3 +100,87 @@ async def test_cart_parent(service: CartService, session: AsyncSession):
     await session.refresh(entity1, ["children"])
     assert len(entity1.children) == 1
     assert entity1.children[0].id == id2
+
+
+@pytest.mark.asyncio
+async def test_cart_add_registration(
+    service: CartService, session: AsyncSession, repo: CartRepo
+):
+    empty = Cart("test")
+    empty_entity = await service.add(empty)
+    empty_id = empty_entity.id
+    await session.commit()
+
+    empty_entity = await repo.get(empty_id)
+    assert empty_entity
+    result_entity = await service.add_to_cart(
+        empty_entity, [CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"))]
+    )
+    result = result_entity.get_cart()
+    assert result.registrations == [
+        CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"))
+    ]
+
+
+@pytest.mark.asyncio
+async def test_cart_add_registration_replace(
+    service: CartService, session: AsyncSession, repo: CartRepo
+):
+    base = Cart(
+        "test",
+        registrations=[
+            CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605")),
+            CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+        ],
+    )
+    base_entity = await service.add(base)
+    base_id = base_entity.id
+    await session.commit()
+
+    base_entity = await repo.get(base_id)
+    assert base_entity
+
+    result_entity = await service.add_to_cart(
+        base_entity,
+        [
+            CartRegistration(UUID("bdb33e19-1373-4c65-80ee-ac7364329932")),
+            CartRegistration(
+                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), new={"new": True}
+            ),
+        ],
+    )
+    result = result_entity.get_cart()
+    assert result.registrations == [
+        CartRegistration(
+            UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), new={"new": True}
+        ),
+        CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+        CartRegistration(UUID("bdb33e19-1373-4c65-80ee-ac7364329932")),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_cart_remove_registration(
+    service: CartService, session: AsyncSession, repo: CartRepo
+):
+    base = Cart(
+        "test",
+        registrations=[
+            CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605")),
+            CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+        ],
+    )
+    base_entity = await service.add(base)
+    base_id = base_entity.id
+    await session.commit()
+
+    base_entity = await repo.get(base_id)
+    assert base_entity
+
+    result_entity = await service.remove_from_cart(
+        base_entity, UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605")
+    )
+    result = result_entity.get_cart()
+    assert result.registrations == [
+        CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+    ]

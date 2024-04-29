@@ -15,6 +15,8 @@ class Config:
         help="the database URL",
     )
 
+    salt: str = ts.option(default="changeit", help="random salt value")
+
 
 def get_config() -> Config:
     """Get the config."""

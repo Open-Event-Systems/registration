@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Iterable
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 import orjson
@@ -11,7 +13,8 @@ from attrs import define, field
 from cattrs.preconf.orjson import make_converter
 from oes.cart.orm import Base
 from oes.utils.orm import JSON, Repo
-from sqlalchemy import Column, ForeignKey, String, Table, insert
+from sqlalchemy import Column, ForeignKey, String, Table
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 cart_child_table = Table(
@@ -51,14 +54,18 @@ class CartEntity(Base, kw_only=True):
         default_factory=list,
     )
 
+    def get_cart(self) -> Cart:
+        """Get the :class:`Cart`."""
+        return _converter.structure(self.cart_data, Cart)
+
 
 @define
 class CartRegistration:
     """A registration in a cart."""
 
     id: UUID
-    old: JSON
-    new: JSON
+    old: JSON = field(factory=dict)
+    new: JSON = field(factory=dict)
 
 
 @define
@@ -67,11 +74,14 @@ class Cart:
 
     event_id: str
     meta: JSON = field(factory=dict)
-    registrations: list[JSON] = field(factory=list)
+    registrations: list[CartRegistration] = field(factory=list)
 
     def get_id(self, salt: bytes, version: str) -> str:
         """Get the ID for this cart."""
-        as_dict = _converter.unstructure(self)
+        reg_sorted = Cart(
+            self.event_id, self.meta, sorted(self.registrations, key=lambda r: r.id)
+        )
+        as_dict = _converter.unstructure(reg_sorted)
         data = orjson.dumps(as_dict, option=orjson.OPT_SORT_KEYS)
 
         h = hashlib.sha256(usedforsecurity=False)
@@ -81,7 +91,29 @@ class Cart:
         return h.hexdigest()
 
 
+@define
+class CartResponse:
+    """Cart response body."""
+
+    id: str
+    cart: Cart
+
+
 _converter = make_converter()
+_converter.register_structure_hook(UUID, lambda v, t: UUID(v))
+_converter.register_unstructure_hook_func(
+    lambda cls: isinstance(cls, type) and issubclass(cls, UUID), str
+)
+
+
+def unstructure_cart_entity(v: CartEntity) -> Any:
+    """Unstructure a cart entity."""
+    cart = v.get_cart()
+    cart_data = _converter.unstructure(cart)
+    return {"id": v.id, "cart": cart_data}
+
+
+_converter.register_unstructure_hook(CartEntity, unstructure_cart_entity)
 
 
 class CartRepo(Repo[CartEntity, str]):
@@ -105,7 +137,11 @@ class CartRepo(Repo[CartEntity, str]):
         if parent_id == child_id:
             return
         await self.session.flush()
-        q = insert(cart_child_table).values(parent_id=parent_id, child_id=child_id)
+        q = (
+            insert(cart_child_table)
+            .values(parent_id=parent_id, child_id=child_id)
+            .on_conflict_do_nothing()
+        )
         await self.session.execute(q)
 
 
@@ -130,6 +166,32 @@ class CartService:
             await self.repo.add_child(parent.id, entity.id)
 
         return entity
+
+    async def add_to_cart(
+        self, cart_entity: CartEntity, registrations: Iterable[CartRegistration]
+    ) -> CartEntity:
+        """Add registrations to a cart.
+
+        Registrations with the same ID will be replaced.
+        """
+        cart = cart_entity.get_cart()
+        new_by_id = {r.id: r for r in registrations}
+        new_list = [new_by_id.pop(cur.id, cur) for cur in cart.registrations]
+        new_list.extend(new_by_id.values())
+        cart.registrations = new_list
+
+        return await self.add(cart, cart_entity.id)
+
+    async def remove_from_cart(
+        self, cart_entity: CartEntity, registration_id: UUID
+    ) -> CartEntity:
+        """Remove a registration from a cart.
+
+        Has no effect if the registration is not present.
+        """
+        cart = cart_entity.get_cart()
+        cart.registrations = [r for r in cart.registrations if r.id != registration_id]
+        return await self.add(cart, cart_entity.id)
 
     async def _get_or_create(self, cart: Cart) -> CartEntity:
         id = cart.get_id(self.salt, self.version)
