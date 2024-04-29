@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "oes-cart"
+version = "0.1.0"
+description = "OES registration cart service"
+authors = ["Wes <wes@anthronewengland.com>"]
+packages = [{ include = "oes" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+oes-utils = { path = "../utils", extras = [
+    "typed-settings",
+    "sanic",
+    "sqlalchemy",
+] }
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.29" }
+orjson = "^3.10.1"
+attrs = "^23.2.0"
+cattrs = "^23.2.3"
+alembic = "^1.13.1"
+typed-settings = "^24.2.0"
+asyncpg = "^0.29.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.23.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

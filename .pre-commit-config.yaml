@@ -56,6 +56,11 @@ repos:
         args: [-p, utils]
 
       - id: pyright
+        name: pyright (cart)
+        files: ^cart/
+        args: [-p, cart]
+
+      - id: pyright
         name: pyright (registration)
         files: ^registration/
         args: [-p, registration]
