@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 setup_logging()
 
-from oes.registration_service.config import get_config
-from oes.registration_service.orm import Base, import_entities
+from oes.registration.config import get_config
+from oes.registration.orm import Base, import_entities
 
 target_metadata = Base.metadata
 import_entities()

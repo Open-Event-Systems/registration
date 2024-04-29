@@ -3,12 +3,9 @@
 from collections.abc import Sequence
 
 from attrs import define
-from oes.registration_service.batch import BatchChangeService
-from oes.registration_service.registration import (
-    Registration,
-    RegistrationBatchChangeFields,
-)
-from oes.registration_service.routes.common import response_converter
+from oes.registration.batch import BatchChangeService
+from oes.registration.registration import Registration, RegistrationBatchChangeFields
+from oes.registration.routes.common import response_converter
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
 from sanic import Blueprint, HTTPResponse, Request

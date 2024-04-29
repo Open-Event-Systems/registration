@@ -2,9 +2,9 @@ import uuid
 from unittest.mock import create_autospec
 
 import pytest
-from oes.registration_service.batch import BatchChangeService
-from oes.registration_service.event import EventStats, EventStatsRepo, EventStatsService
-from oes.registration_service.registration import (
+from oes.registration.batch import BatchChangeService
+from oes.registration.event import EventStats, EventStatsRepo, EventStatsService
+from oes.registration.registration import (
     Registration,
     RegistrationBatchChangeFields,
     RegistrationRepo,

@@ -3,8 +3,8 @@ import os
 import pytest
 import pytest_asyncio
 from cattrs.preconf.orjson import make_converter
-from oes.registration_service.orm import Base, import_entities
-from oes.registration_service.serialization import configure_converter
+from oes.registration.orm import Base, import_entities
+from oes.registration.serialization import configure_converter
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
 

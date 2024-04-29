@@ -3,8 +3,8 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from oes.registration_service.event import EventStatsService
-from oes.registration_service.registration import (
+from oes.registration.event import EventStatsService
+from oes.registration.registration import (
     Registration,
     RegistrationCreateFields,
     RegistrationRepo,
@@ -12,7 +12,7 @@ from oes.registration_service.registration import (
     RegistrationUpdateFields,
     StatusError,
 )
-from oes.registration_service.routes.common import response_converter
+from oes.registration.routes.common import response_converter
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
 from sanic import Blueprint, HTTPResponse, Request, SanicException

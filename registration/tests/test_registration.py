@@ -3,7 +3,7 @@ from unittest.mock import create_autospec
 
 import pytest
 from cattrs import Converter
-from oes.registration_service.registration import (
+from oes.registration.registration import (
     ConflictError,
     Registration,
     RegistrationCreateFields,

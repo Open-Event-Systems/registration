@@ -1,7 +1,7 @@
 """Serialization module."""
 
 from cattrs import Converter
-from oes.registration_service.registration import (
+from oes.registration.registration import (
     Registration,
     RegistrationBatchChangeFields,
     RegistrationCreateFields,

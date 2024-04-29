@@ -10,7 +10,7 @@ from attr import fields
 from attrs import define, field
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
-from oes.registration_service.orm import Base
+from oes.registration.orm import Base
 from oes.utils.orm import JSON, Repo
 from sqlalchemy import UUID, select
 from sqlalchemy.ext.asyncio import AsyncSession

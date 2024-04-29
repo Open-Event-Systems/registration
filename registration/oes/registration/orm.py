@@ -14,4 +14,4 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 def import_entities():
     """Import all entities (used by migrations)."""
-    from oes.registration_service import event, registration  # noqa
+    from oes.registration import event, registration  # noqa

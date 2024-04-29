@@ -1,8 +1,8 @@
 from unittest.mock import create_autospec
 
 import pytest
-from oes.registration_service.event import EventStats, EventStatsRepo, EventStatsService
-from oes.registration_service.registration import Registration
+from oes.registration.event import EventStats, EventStatsRepo, EventStatsService
+from oes.registration.registration import Registration
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

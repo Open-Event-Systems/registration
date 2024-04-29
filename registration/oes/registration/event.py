@@ -2,8 +2,8 @@
 
 from collections.abc import Iterable
 
-from oes.registration_service.orm import Base
-from oes.registration_service.registration import Registration
+from oes.registration.orm import Base
+from oes.registration.registration import Registration
 from oes.utils.orm import Repo
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column

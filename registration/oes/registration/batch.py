@@ -2,8 +2,8 @@
 
 from collections.abc import Sequence
 
-from oes.registration_service.event import EventStatsService
-from oes.registration_service.registration import (
+from oes.registration.event import EventStatsService
+from oes.registration.registration import (
     Registration,
     RegistrationBatchChangeFields,
     RegistrationRepo,
