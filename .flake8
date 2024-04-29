@@ -21,4 +21,4 @@ extend-ignore =
     D105
     D107
 
-per-file-ignores = tests/**: D,ANN,NEW
+per-file-ignores = **/tests/**: D,ANN,NEW

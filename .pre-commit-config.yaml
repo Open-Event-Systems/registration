@@ -38,7 +38,7 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
-        exclude: ^alembic/
+        exclude: alembic/
         additional_dependencies:
           - flake8-simplify
           - flake8-newspaper-style
@@ -51,5 +51,11 @@ repos:
     rev: v1.1.360
     hooks:
       - id: pyright
-        name: pyright
-        args: [-p, .]
+        name: pyright (utils)
+        files: ^utils/
+        args: [-p, utils]
+
+      - id: pyright
+        name: pyright (registration)
+        files: ^registration/
+        args: [-p, registration]
