@@ -13,16 +13,8 @@ from attrs import define, field
 from cattrs.preconf.orjson import make_converter
 from oes.cart.orm import Base
 from oes.utils.orm import JSON, Repo
-from sqlalchemy import Column, ForeignKey, String, Table
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-cart_child_table = Table(
-    "cart_child",
-    Base.metadata,
-    Column("parent_id", ForeignKey("cart.id"), primary_key=True),
-    Column("child_id", ForeignKey("cart.id"), primary_key=True),
-)
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class CartEntity(Base, kw_only=True):
@@ -36,23 +28,6 @@ class CartEntity(Base, kw_only=True):
         default_factory=lambda: datetime.now().astimezone()
     )
     cart_data: Mapped[JSON] = mapped_column(default_factory=dict)
-
-    parents: Mapped[list[CartEntity]] = relationship(
-        "CartEntity",
-        cart_child_table,
-        primaryjoin=id == cart_child_table.c.child_id,
-        secondaryjoin=id == cart_child_table.c.parent_id,
-        back_populates="children",
-        default_factory=list,
-    )
-    children: Mapped[list[CartEntity]] = relationship(
-        "CartEntity",
-        cart_child_table,
-        primaryjoin=id == cart_child_table.c.parent_id,
-        secondaryjoin=id == cart_child_table.c.child_id,
-        back_populates="children",
-        default_factory=list,
-    )
 
     def get_cart(self) -> Cart:
         """Get the :class:`Cart`."""
@@ -132,18 +107,6 @@ class CartRepo(Repo[CartEntity, str]):
             else cart
         )
 
-    async def add_child(self, parent_id: str, child_id: str):
-        """Add a parent/child relationship."""
-        if parent_id == child_id:
-            return
-        await self.session.flush()
-        q = (
-            insert(cart_child_table)
-            .values(parent_id=parent_id, child_id=child_id)
-            .on_conflict_do_nothing()
-        )
-        await self.session.execute(q)
-
 
 class CartService:
     """Cart service."""
@@ -153,18 +116,9 @@ class CartService:
         self.salt = salt
         self.version = version
 
-    async def add(self, cart: Cart, parent_id: str | None = None) -> CartEntity:
+    async def add(self, cart: Cart) -> CartEntity:
         """Add a cart to the database."""
-        if parent_id:
-            parent = await self.repo.get(parent_id, event_id=cart.event_id, lock=True)
-        else:
-            parent = None
-
         entity = await self._get_or_create(cart)
-
-        if parent:
-            await self.repo.add_child(parent.id, entity.id)
-
         return entity
 
     async def add_to_cart(
@@ -180,7 +134,7 @@ class CartService:
         new_list.extend(new_by_id.values())
         cart.registrations = new_list
 
-        return await self.add(cart, cart_entity.id)
+        return await self.add(cart)
 
     async def remove_from_cart(
         self, cart_entity: CartEntity, registration_id: UUID
@@ -191,7 +145,7 @@ class CartService:
         """
         cart = cart_entity.get_cart()
         cart.registrations = [r for r in cart.registrations if r.id != registration_id]
-        return await self.add(cart, cart_entity.id)
+        return await self.add(cart)
 
     async def _get_or_create(self, cart: Cart) -> CartEntity:
         id = cart.get_id(self.salt, self.version)

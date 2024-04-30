@@ -85,24 +85,6 @@ async def test_add_no_update_created(service: CartService, session: AsyncSession
 
 
 @pytest.mark.asyncio
-async def test_cart_parent(service: CartService, session: AsyncSession):
-    cart1 = Cart("test")
-    entity1 = await service.add(cart1)
-    id1 = entity1.id
-    await session.commit()
-
-    cart2 = Cart("test", meta={"cart": 2})
-    entity2 = await service.add(cart2, id1)
-    id2 = entity2.id
-    await session.commit()
-
-    entity1 = await service.add(cart1)
-    await session.refresh(entity1, ["children"])
-    assert len(entity1.children) == 1
-    assert entity1.children[0].id == id2
-
-
-@pytest.mark.asyncio
 async def test_cart_add_registration(
     service: CartService, session: AsyncSession, repo: CartRepo
 ):
