@@ -6,6 +6,7 @@ from oes.registration.registration import (
     RegistrationBatchChangeFields,
     RegistrationCreateFields,
     RegistrationUpdateFields,
+    make_registration_batch_change_unstructure_fn,
     make_registration_fields_structure_fn,
     make_registration_unstructure_fn,
 )
@@ -34,4 +35,8 @@ def configure_converter(converter: Converter):
     converter.register_unstructure_hook(
         Registration,
         make_registration_unstructure_fn(converter),
+    )
+    converter.register_unstructure_hook(
+        RegistrationBatchChangeFields,
+        make_registration_batch_change_unstructure_fn(converter),
     )

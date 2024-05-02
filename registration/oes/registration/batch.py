@@ -1,7 +1,13 @@
 """Batch changes."""
 
-from collections.abc import Sequence
+from __future__ import annotations
 
+import functools
+from collections.abc import Callable, Mapping, Sequence
+from enum import Enum
+from uuid import UUID
+
+from attrs import define
 from oes.registration.event import EventStatsService
 from oes.registration.registration import (
     Registration,
@@ -10,6 +16,22 @@ from oes.registration.registration import (
     Status,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class ErrorCode(str, Enum):
+    """Batch change failure error codes."""
+
+    version = "version"
+    status = "status"
+    event = "event"
+
+
+@define
+class BatchChangeResult:
+    """The result of a batch change."""
+
+    change: RegistrationBatchChangeFields
+    errors: Sequence[ErrorCode] = ()
 
 
 class BatchChangeService:
@@ -31,73 +53,67 @@ class BatchChangeService:
         changes: Sequence[RegistrationBatchChangeFields],
         *,
         lock: bool = False,
-    ) -> tuple[list[Registration], list[Registration]]:
-        """Check that a batch of changes can be applied.
-
-        Returns:
-            A pair of sequences of existing registrations, one with those that
-            passed and the other with those that failed.
-        """
-        passed = list(
-            await self.repo.get_multi(
-                (c.id for c in changes if c.id), event_id=event_id, lock=lock
+    ) -> tuple[dict[UUID, Registration], list[BatchChangeResult]]:
+        """Check that a batch of changes can be applied."""
+        current = {
+            cur.id: cur
+            for cur in await self.repo.get_multi(
+                (c.id for c in changes), event_id=event_id, lock=lock
             )
-        )
-
-        failed_ver = self._check_versions(changes, passed)
-        list(map(passed.remove, failed_ver))
-
-        failed_status = self._check_status(changes, passed)
-        list(map(passed.remove, failed_status))
-        return passed, failed_ver + failed_status
+        }
+        return current, [
+            self._check_change(
+                event_id,
+                current.get(c.id),
+                c,
+            )
+            for c in changes
+        ]
 
     async def apply(
         self,
         event_id: str,
         changes: Sequence[RegistrationBatchChangeFields],
-        current: Sequence[Registration],
+        current: Mapping[UUID, Registration],
     ) -> list[Registration]:
         """Apply a batch of changes.
 
         Returns:
             A sequence of created/updated registrations.
         """
-        current_by_id = {cur.id: cur for cur in current}
+        # add new registrations first to trigger any concurrent inserts
+        created_regs = [c.apply(None) for c in changes if c.id not in current]
+        for created_reg in created_regs:
+            self.session.add(created_reg)
+        await self.session.flush()
 
-        results = [c.apply(current_by_id.get(c.id) if c.id else None) for c in changes]
-
-        for res in results:
-            self.session.add(res)
+        updated_regs = [c.apply(current[c.id]) for c in changes if c.id in current]
 
         to_assign = [
-            r for r in results if r.status == Status.created and r.number is None
+            r
+            for r in (*created_regs, *updated_regs)
+            if r.status == Status.created and r.number is None
         ]
 
         with self.session.no_autoflush:  # don't double-increment the version
             await self.event_stats_service.assign_numbers(event_id, to_assign)
 
-        return results
+        # restore original order
+        results_by_id = {r.id: r for r in (*created_regs, *updated_regs)}
+        return [results_by_id[c.id] for c in changes]
 
-    def _check_versions(
+    def _check_change(
         self,
-        changes: Sequence[RegistrationBatchChangeFields],
-        current: Sequence[Registration],
-    ) -> list[Registration]:
-        change_vers = {c.id: c.version for c in changes if c.id}
-        return [cur for cur in current if cur.version != change_vers.get(cur.id)]
-
-    def _check_status(
-        self,
-        changes: Sequence[RegistrationBatchChangeFields],
-        current: Sequence[Registration],
-    ) -> list[Registration]:
-        new_status = {c.id: c.status for c in changes}
-        return [
-            cur
-            for cur in current
-            if cur.status != new_status[cur.id]
-            and new_status[cur.id] not in _allowable_status_changes[cur.status]
+        event_id: str,
+        registration: Registration | None,
+        change: RegistrationBatchChangeFields,
+    ) -> BatchChangeResult:
+        checks: list[Callable[[RegistrationBatchChangeFields], BatchChangeResult]] = [
+            lambda c: _check_version(registration, c),
+            lambda c: _check_status(registration, c),
+            lambda c: _check_event(event_id, registration, c),
         ]
+        return functools.reduce(_apply_check, checks, BatchChangeResult(change))
 
 
 _allowable_status_changes = {
@@ -105,3 +121,56 @@ _allowable_status_changes = {
     Status.created: (Status.canceled,),
     Status.canceled: (),
 }
+
+
+def _apply_check(
+    cur: BatchChangeResult,
+    func: Callable[[RegistrationBatchChangeFields], BatchChangeResult],
+) -> BatchChangeResult:
+    res = func(cur.change)
+    return BatchChangeResult(cur.change, [*cur.errors, *res.errors])
+
+
+def _check_version(
+    registration: Registration | None, change: RegistrationBatchChangeFields
+) -> BatchChangeResult:
+    return BatchChangeResult(
+        change,
+        (
+            [ErrorCode.version]
+            if registration and registration.version != change.version
+            else []
+        ),
+    )
+
+
+def _check_status(
+    registration: Registration | None, change: RegistrationBatchChangeFields
+) -> BatchChangeResult:
+    cur_status = registration.status if registration else Status.pending
+    return BatchChangeResult(
+        change,
+        (
+            [ErrorCode.status]
+            if change.status != cur_status
+            and change.status not in _allowable_status_changes.get(cur_status, ())
+            else []
+        ),
+    )
+
+
+def _check_event(
+    event_id: str,
+    registration: Registration | None,
+    change: RegistrationBatchChangeFields,
+) -> BatchChangeResult:
+    return BatchChangeResult(
+        change,
+        (
+            [ErrorCode.event]
+            if change.event_id != event_id
+            or registration
+            and registration.event_id != change.event_id
+            else []
+        ),
+    )

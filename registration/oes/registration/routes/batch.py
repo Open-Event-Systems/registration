@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 
 from attrs import define
-from oes.registration.batch import BatchChangeService
+from oes.registration.batch import BatchChangeResult, BatchChangeService
 from oes.registration.registration import Registration, RegistrationBatchChangeFields
 from oes.registration.routes.common import response_converter
 from oes.utils.orm import transaction
@@ -14,11 +14,17 @@ routes = Blueprint("batch")
 
 
 @define
-class ChangeResultBody:
-    """The result of a batch change."""
+class CheckResultBody:
+    """The result of a batch change check."""
 
-    passed: Sequence[Registration]
-    failed: Sequence[Registration]
+    results: Sequence[BatchChangeResult]
+
+
+@define
+class ApplyResultBody:
+    """The result of a completed batch change."""
+
+    results: Sequence[Registration]
 
 
 @routes.post("/check")
@@ -30,11 +36,11 @@ async def check_changes(
 ) -> HTTPResponse:
     """Test a batch of changes."""
     changes = await body(list[RegistrationBatchChangeFields])
-    passed, failed = await service.check(event_id, changes)
+    _, results = await service.check(event_id, changes)
 
-    response = response_converter.make_response(ChangeResultBody(passed, failed))
+    response = response_converter.make_response(CheckResultBody(results))
 
-    if failed:
+    if any(r.errors for r in results):
         response.status = 409
 
     return response
@@ -51,16 +57,14 @@ async def apply_changes(
     changes = await body(list[RegistrationBatchChangeFields])
 
     async with transaction():
-        passed, failed = await service.check(event_id, changes, lock=True)
+        current, results = await service.check(event_id, changes, lock=True)
 
-        if failed:
-            response = response_converter.make_response(
-                ChangeResultBody(passed, failed)
-            )
+        if any(r.errors for r in results):
+            response = response_converter.make_response(CheckResultBody(results))
             response.status = 409
             return response
         else:
-            final = await service.apply(event_id, changes, passed)
+            final = await service.apply(event_id, changes, current)
             await transaction.commit()
-            response = response_converter.make_response(ChangeResultBody(final, ()))
+            response = response_converter.make_response(ApplyResultBody(final))
             return response

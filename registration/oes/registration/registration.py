@@ -144,7 +144,7 @@ class RegistrationUpdateFields(RegistrationDataFields):
 class RegistrationBatchChangeFields(RegistrationDataFields):
     """Fields for batch creation/update."""
 
-    id: uuid.UUID | None = None
+    id: uuid.UUID
     event_id: str
     status: Status = Status.pending
     version: int | None = None
@@ -297,6 +297,26 @@ def make_registration_unstructure_fn(
     )
 
     def unstructure(v: Registration) -> dict[str, Any]:
+        data = dict_fn(v)
+        extra = data.pop("extra_data", {})
+        return {**extra, **data}
+
+    return unstructure
+
+
+def make_registration_batch_change_unstructure_fn(
+    converter: Converter,
+) -> Callable[[RegistrationBatchChangeFields], Any]:
+    """Make a function to unstructure a :class:`RegistrationBatchChangeFields`."""
+    dict_fn = make_dict_unstructure_fn(
+        RegistrationBatchChangeFields,
+        converter,
+        _cattrs_omit_if_default=True,
+        version=override(omit_if_default=False),
+        status=override(omit_if_default=False),
+    )
+
+    def unstructure(v: RegistrationBatchChangeFields) -> dict[str, Any]:
         data = dict_fn(v)
         extra = data.pop("extra_data", {})
         return {**extra, **data}
