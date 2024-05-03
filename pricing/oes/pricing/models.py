@@ -96,3 +96,13 @@ class PricingRequest:
     currency: str
     cart: Cart
     results: Sequence[PricingResult] = ()
+
+
+@define
+class FinalPricingResult:
+    """The final pricing result."""
+
+    currency: str
+    total_price: int = field(validator=_validate_total)
+    registrations: Sequence[PricingResultRegistration] = ()
+    modifiers: Sequence[Modifier] = ()

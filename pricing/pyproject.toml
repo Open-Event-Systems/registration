@@ -3,7 +3,7 @@ name = "oes-pricing"
 version = "0.1.0"
 description = ""
 authors = ["Wes <wes@anthronewengland.com>"]
-packages = [{include = "oes"}]
+packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -12,9 +12,9 @@ cattrs = "^23.2.3"
 loguru = "^0.7.2"
 typed-settings = "^24.2.0"
 orjson = "^3.10.2"
-sanic = "^23.12.1"
+sanic = {extras = ["ext"], version = "^23.12.1"}
 uvloop = "^0.19.0"
-oes-utils = {path = "../utils", extras = ["typed-settings", "sanic"]}
+oes-utils = { path = "../utils", extras = ["typed-settings", "sanic"] }
 
 
 [tool.poetry.group.dev.dependencies]
@@ -22,10 +22,13 @@ pytest = "^8.2.0"
 pytest-asyncio = "^0.23.6"
 pytest-cov = "^5.0.0"
 
+[tool.poetry.scripts]
+oes-pricing-service = "oes.pricing.main:main"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pyright]
- venvPath = "."
- venv = ".venv"
+venvPath = "."
+venv = ".venv"

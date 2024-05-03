@@ -1,11 +1,23 @@
 """Pricing module."""
 
 from oes.pricing.config import Config
-from oes.pricing.models import PricingRequest
+from oes.pricing.models import FinalPricingResult, PricingRequest
 from oes.pricing.script import run_scripts
 
 
-async def price_cart(config: Config, request: PricingRequest) -> PricingRequest:
+async def price_cart(config: Config, request: PricingRequest) -> FinalPricingResult:
     """Price a cart."""
-    request = await run_scripts(config.script_dir, request)
-    return request
+    results = await run_scripts(config.script_dir, request)
+    if not results.results:
+        raise ValueError("Pricing returned no results")
+
+    last_result = results.results[-1]
+
+    final_result = FinalPricingResult(
+        currency=request.currency,
+        total_price=last_result.total_price,
+        registrations=last_result.registrations,
+        modifiers=last_result.modifiers,
+    )
+
+    return final_result
