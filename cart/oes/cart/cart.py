@@ -41,6 +41,7 @@ class CartRegistration:
     id: UUID
     old: JSON = field(factory=dict)
     new: JSON = field(factory=dict)
+    meta: JSON = field(factory=dict)
 
 
 @define
