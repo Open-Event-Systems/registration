@@ -7,7 +7,10 @@ from oes.pricing.script import run_scripts
 
 async def price_cart(config: Config, request: PricingRequest) -> FinalPricingResult:
     """Price a cart."""
-    results = await run_scripts(config.script_dir, request)
+    event_config = config.events.get(request.cart.event_id)
+    if not event_config:
+        raise ValueError(f"No config for event: {request.cart.event_id}")
+    results = await run_scripts(event_config.script_dir, request)
     if not results.results:
         raise ValueError("Pricing returned no results")
 
