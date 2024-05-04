@@ -3,12 +3,13 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from typing import Any
 
-from attrs import frozen
+from attrs import Factory, field, frozen
 from cattrs import Converter
 from cattrs.gen import make_dict_structure_fn
 from oes.interview.immutable import make_immutable
 from oes.interview.input.field import Field
 from oes.interview.input.types import FieldTemplate, JSONSchema
+from oes.interview.logic.pointer import get_path
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import WhenCondition
 from oes.utils.template import Template, TemplateContext
@@ -45,6 +46,15 @@ class QuestionTemplate:
     fields: Sequence[FieldTemplate] = ()
     when: WhenCondition = ()
 
+    _provides: Set[Sequence[str | int]] = field(
+        init=False,
+        repr=False,
+        default=Factory(
+            lambda s: frozenset(get_path(f.set) for f in s.fields if f.set),
+            takes_self=True,
+        ),
+    )
+
     def get_question(self, context: TemplateContext) -> Question:
         by_id = {_make_field_id(idx): field for idx, field in enumerate(self.fields)}
         field_by_id = {
@@ -60,8 +70,8 @@ class QuestionTemplate:
         )
 
     @property
-    def provides(self) -> Set[ValuePointer]:
-        return {f.set for f in self.fields if f.set is not None}
+    def provides(self) -> Set[Sequence[str | int | ValuePointer]]:
+        return self._provides
 
     def get_schema(
         self, fields: Mapping[str, Field], context: TemplateContext

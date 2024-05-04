@@ -17,7 +17,7 @@ def test_question_schema():
                 label="field",
             ),
             TextFieldTemplate(
-                set=parse_pointer("text"),
+                set=parse_pointer("text2"),
                 label="field2",
                 optional=True,
             ),
@@ -47,4 +47,49 @@ def test_question_schema():
             },
             "required": ["field_0"],
         }
+    )
+
+
+def test_question_provides():
+    config = QuestionTemplate(
+        id="test",
+        title=Template("{{ title }}", default_jinja2_env),
+        description="desc",
+        fields=(
+            TextFieldTemplate(
+                set=parse_pointer("user.name"),
+                label="field",
+            ),
+            TextFieldTemplate(
+                set=parse_pointer("other"),
+                label="field2",
+                optional=True,
+            ),
+        ),
+    )
+    assert config.provides == frozenset((("user", "name"), ("other",)))
+
+
+def test_question_provides_indirect():
+    config = QuestionTemplate(
+        id="test",
+        title=Template("{{ title }}", default_jinja2_env),
+        description="desc",
+        fields=(
+            TextFieldTemplate(
+                set=parse_pointer("item[n][0]"),
+                label="field",
+            ),
+            TextFieldTemplate(
+                set=parse_pointer("item[n][a.b]"),
+                label="field2",
+                optional=True,
+            ),
+        ),
+    )
+    assert config.provides == frozenset(
+        (
+            ("item", parse_pointer("n"), 0),
+            ("item", parse_pointer("n"), parse_pointer("a.b")),
+        )
     )

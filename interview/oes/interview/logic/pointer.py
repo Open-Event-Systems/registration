@@ -1,13 +1,13 @@
 """Value pointer module."""
 
 import re
+from collections.abc import Mapping, Sequence
 from typing import Any, cast
 
 import pyparsing as pp
 from attrs import frozen
 from oes.interview.immutable import make_immutable
 from oes.interview.logic.types import ValuePointer
-from oes.utils.logic import Evaluable
 from oes.utils.logic import evaluate as evaluate_logic
 from oes.utils.template import TemplateContext
 
@@ -35,40 +35,11 @@ class Name:
 
 
 @frozen
-class PropertyAccess:
-    """Property access object."""
-
-    object: ValuePointer
-    property: str | Evaluable
-
-    def evaluate(self, context: TemplateContext) -> Any:
-        prop_val = evaluate_logic(self.property, context)
-        obj_val = evaluate_logic(self.object, context)
-        return obj_val[prop_val]
-
-    def set(self, context: TemplateContext, value: Any) -> TemplateContext:
-        prop_val = evaluate_logic(self.property, context)
-        obj_val = evaluate_logic(self.object, context)
-        updated = make_immutable(obj_val) | {prop_val: value}
-        return self.object.set(context, updated)
-
-    def __str__(self) -> str:
-        if isinstance(self.property, str):
-            if re.match(r"^(?![0-9])[a-z0-9_]+$", self.property):
-                return f"{self.object}.{self.property}"
-            else:
-                escaped = self.property.replace("\\", "\\\\").replace('"', '\\"')
-                return f'{self.object}["{escaped}"]'
-        else:
-            return f"{self.object}[{self.property}]"
-
-
-@frozen
 class IndexAccess:
     """Index access object."""
 
     object: ValuePointer
-    index: int | Evaluable
+    index: str | int | ValuePointer
 
     def evaluate(self, context: TemplateContext) -> Any:
         index_val = evaluate_logic(self.index, context)
@@ -78,15 +49,33 @@ class IndexAccess:
     def set(self, context: TemplateContext, value: Any) -> TemplateContext:
         index_val = evaluate_logic(self.index, context)
         obj_val = make_immutable(evaluate_logic(self.object, context))
-        updated = obj_val[:index_val] + (value,) + obj_val[index_val + 1 :]
+        if isinstance(obj_val, Mapping):
+            if not isinstance(index_val, str):
+                raise ValueError(f"Only string keys are supported, got {index_val!r}")
+            updated = make_immutable(obj_val) | {index_val: value}
+        else:
+            if not isinstance(index_val, int):
+                raise ValueError(
+                    f"Only integer array indices are supported, got {index_val!r}"
+                )
+            updated = obj_val[:index_val] + (value,) + obj_val[index_val + 1 :]
         return self.object.set(context, updated)
 
     def __str__(self) -> str:
-        return f"{self.object}[{self.index}]"
+        if isinstance(self.index, str):
+            if re.match(r"^(?![0-9])[a-z0-9_]+$", self.index):
+                return f"{self.object}.{self.index}"
+            else:
+                escaped = self.index.replace("\\", "\\\\").replace('"', '\\"')
+                return f'{self.object}["{escaped}"]'
+        else:
+            return f"{self.object}[{self.index}]"
 
 
 class Parsing:
     """Parsing namespace."""
+
+    pointer = pp.Forward()
 
     space = pp.White(" \t")[...].suppress()
 
@@ -108,15 +97,15 @@ class Parsing:
 
     name = pp.Regex(r"(?![0-9])[a-z0-9_]+", re.I)
 
-    property_access = pp.Group(
-        ("." + name("property")) | ("[" + space + string("property") + space + "]")
-    )
+    property_access = pp.Group(("." + name("property")))
 
-    index_access = pp.Group("[" + space + number("index") + space + "]")
+    index_access = pp.Group(
+        "[" + space + (number | string | pointer)("index") + space + "]"
+    )
 
     pointer_segment = property_access | index_access
 
-    pointer = (
+    pointer <<= (
         space
         + (name("name") + pp.Group(pointer_segment[...])("segments")).leave_whitespace()
     )
@@ -127,7 +116,7 @@ class Parsing:
         cur: ValuePointer = Name(res["name"])
         for seg in res["segments"]:
             if "property" in seg:
-                cur = PropertyAccess(cur, seg["property"])
+                cur = IndexAccess(cur, seg["property"])
             elif "index" in seg:
                 cur = IndexAccess(cur, seg["index"])
             else:
@@ -142,3 +131,17 @@ def parse_pointer(ptr: str, /) -> ValuePointer:
         return cast(ValuePointer, res[0])
     except pp.ParseException as e:
         raise InvalidPointerError(ptr) from e
+
+
+def get_path(ptr: ValuePointer, /) -> Sequence[str | int | ValuePointer]:
+    """Get the path represented by a pointer."""
+    return _get_path(ptr)
+
+
+def _get_path(ptr: ValuePointer) -> Sequence[str | int | ValuePointer]:
+    if isinstance(ptr, Name):
+        return (ptr.name,)
+    elif isinstance(ptr, IndexAccess):
+        return (*_get_path(ptr.object), ptr.index)
+    else:
+        raise TypeError(ptr)
