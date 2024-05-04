@@ -1,39 +1,38 @@
 """Undefined class module."""
 
-from typing import Any, Type, cast
+from collections.abc import Sequence
+from typing import Any, Type
 
 import jinja2
 from jinja2.runtime import Context as Jinja2Context
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from jinja2.utils import missing
-from oes.interview.logic.pointer import IndexAccess, Name, PropertyAccess, ValuePointer
 from oes.interview.logic.proxy import ArrayProxy, ObjectProxy, make_proxy
 
 
 class UndefinedError(jinja2.exceptions.UndefinedError):
     """Custom :class:`jinja2.exceptions.UndefinedError`."""
 
-    _pointer: ValuePointer | None
-
-    @property
-    def pointer(self) -> ValuePointer | None:
-        """A pointer to the undefined value."""
-        return self._pointer
+    key: str | int | None
+    path: Sequence[str | int]
 
     def __init__(
         self,
         message: str | None = None,
         *,
-        _pointer: ValuePointer | None = None,
+        key: str | int | None = None,
+        path: Sequence[str | int] = (),
     ):
         super().__init__(message)
-        self._pointer = _pointer
+        self.key = key
+        self.path = path
 
 
 class Undefined(jinja2.StrictUndefined):
     """Custom :class:`jinja2.Undefined` implementation."""
 
-    _pointer: ValuePointer | None
+    _key: str | int
+    _path: Sequence[int | str]
 
     def __init__(
         self,
@@ -45,16 +44,17 @@ class Undefined(jinja2.StrictUndefined):
         super().__init__(hint, obj, name, exc)
 
         if name is None:
-            self._pointer = None
-        elif isinstance(obj, ObjectProxy):
-            self._pointer = PropertyAccess(obj._pointer, name)
-        elif isinstance(obj, ArrayProxy):
-            self._pointer = IndexAccess(obj._pointer, cast(int, name))
+            self._key = ""
+            self._path = ()
+        elif isinstance(obj, (ObjectProxy, ArrayProxy)):
+            self._key = name
+            self._path = obj._path
         else:
-            self._pointer = Name(name)
+            self._key = name
+            self._path = ()
 
     def _fail_with_undefined_error(self, *args, **kwargs):
-        raise UndefinedError(self._undefined_message, _pointer=self._pointer)
+        raise UndefinedError(self._undefined_message, key=self._key, path=self._path)
 
     __add__ = __radd__ = __sub__ = __rsub__ = _fail_with_undefined_error
     __mul__ = __rmul__ = __div__ = __rdiv__ = _fail_with_undefined_error
@@ -75,7 +75,7 @@ class ProxyContext(Jinja2Context):
     """Custom :class:`jinja2.environment.Context` to wrap values in a proxy.."""
 
     def resolve_or_missing(self, key: str) -> Any:
-        return make_proxy(Name(key), super().resolve_or_missing(key))
+        return make_proxy(super().resolve_or_missing(key), (key,))
 
 
 class ProxyContextEnvironment(ImmutableSandboxedEnvironment):

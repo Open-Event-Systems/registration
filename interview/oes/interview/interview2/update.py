@@ -11,6 +11,7 @@ from oes.interview.interview2.error import InterviewError
 from oes.interview.interview2.interview import Interview
 from oes.interview.interview2.state import InterviewState
 from oes.interview.interview2.types import AsyncStep, Step
+from oes.interview.logic.proxy import make_proxy
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import evaluate
 from typing_extensions import TypeIs
@@ -79,7 +80,8 @@ class _Updater:
         """Run through interview steps once."""
         cur_result = UpdateResult(state)
         for step in self.interview.steps:
-            if not evaluate(step.when, cur_result.state.template_context):
+            proxy_ctx = make_proxy(cur_result.state.template_context)
+            if not evaluate(step.when, proxy_ctx):
                 continue
             cur_result = await self._run_step(cur_result, step)
             if (

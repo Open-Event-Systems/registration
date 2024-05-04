@@ -1,6 +1,5 @@
 import pytest
 from oes.interview.logic.env import default_jinja2_env
-from oes.interview.logic.pointer import parse_pointer
 from oes.interview.logic.undefined import Undefined, UndefinedError
 from oes.utils.template import Expression, Template
 
@@ -16,7 +15,8 @@ def test_undefined_1():
 
     with pytest.raises(UndefinedError) as e:
         tmpl.render({"a": 1})
-    assert e.value.pointer == parse_pointer("b")
+    assert e.value.path == ()
+    assert e.value.key == "b"
 
 
 def test_undefined_2():
@@ -24,7 +24,8 @@ def test_undefined_2():
 
     with pytest.raises(UndefinedError) as e:
         tmpl.render({"a": {}})
-    assert e.value.pointer == parse_pointer("a.b")
+    assert e.value.path == ("a",)
+    assert e.value.key == "b"
 
 
 def test_undefined_3():
@@ -32,7 +33,8 @@ def test_undefined_3():
 
     with pytest.raises(UndefinedError) as e:
         tmpl.render({"a": [0]})
-    assert e.value.pointer == parse_pointer("a[1]")
+    assert e.value.path == ("a",)
+    assert e.value.key == 1
 
 
 def test_expression_defined():
@@ -46,7 +48,8 @@ def test_expression_undefined_1():
     with pytest.raises(UndefinedError) as e:
         expr.evaluate({"a": 1})
 
-    assert e.value.pointer == parse_pointer("b")
+    assert e.value.path == ()
+    assert e.value.key == "b"
 
 
 def test_expression_undefined_2():
@@ -55,7 +58,8 @@ def test_expression_undefined_2():
     with pytest.raises(UndefinedError) as e:
         expr.evaluate({"a": 1, "b": {"d": 2}})
 
-    assert e.value.pointer == parse_pointer("b.c")
+    assert e.value.path == ("b",)
+    assert e.value.key == "c"
 
 
 def test_expression_missing():
