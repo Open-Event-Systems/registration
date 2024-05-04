@@ -16,11 +16,20 @@ loguru = "^0.7.2"
 oes-utils = {path = "../utils", extras = ["template", "typed-settings"]}
 pyparsing = "^3.1.2"
 immutabledict = "^4.2.0"
+email-validator = "^2.1.1"
+publicsuffixlist = "^0.10.0.20240503"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"
 pytest-cov = "^5.0.0"
+
+# Built-in field types
+[tool.poetry.plugins."oes.interview.field_types"]
+text = "oes.interview.input.field_types.text:make_text_field_template"
+number = "oes.interview.input.field_types.number:make_number_field_template"
+date = "oes.interview.input.field_types.date:make_date_field_template"
+select = "oes.interview.input.field_types.select:make_select_field_template"
 
 [build-system]
 requires = ["poetry-core"]
