@@ -1,5 +1,5 @@
 from oes.interview.immutable import make_immutable
-from oes.interview.interview2.state import InterviewState
+from oes.interview.interview.state import InterviewState
 
 
 def test_state_template_context():

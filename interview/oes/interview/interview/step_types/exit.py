@@ -3,8 +3,8 @@
 from typing import Literal
 
 from attrs import frozen
-from oes.interview.interview2.types import UpdateResult
-from oes.interview.interview2.update import UpdateContext
+from oes.interview.interview.types import UpdateResult
+from oes.interview.interview.update import UpdateContext
 from oes.utils.logic import WhenCondition
 from oes.utils.template import Template
 

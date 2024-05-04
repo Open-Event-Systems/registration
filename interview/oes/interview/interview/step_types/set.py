@@ -4,7 +4,7 @@ from typing import Any
 
 from attrs import frozen
 from jinja2 import Undefined as Jinja2Undefined
-from oes.interview.interview2.update import UpdateContext, UpdateResult
+from oes.interview.interview.update import UpdateContext, UpdateResult
 from oes.interview.logic.proxy import ProxyLookupError, make_proxy
 from oes.interview.logic.types import ValuePointer
 from oes.interview.logic.undefined import Undefined

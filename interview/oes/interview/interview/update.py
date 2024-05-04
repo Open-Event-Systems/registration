@@ -7,10 +7,10 @@ from inspect import iscoroutinefunction
 from typing import Any
 
 from attrs import field, frozen
-from oes.interview.interview2.error import InterviewError
-from oes.interview.interview2.interview import Interview
-from oes.interview.interview2.state import InterviewState
-from oes.interview.interview2.types import AsyncStep, Step
+from oes.interview.interview.error import InterviewError
+from oes.interview.interview.interview import Interview
+from oes.interview.interview.state import InterviewState
+from oes.interview.interview.types import AsyncStep, Step
 from oes.interview.logic.proxy import make_proxy
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import evaluate

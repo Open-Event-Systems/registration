@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Protocol, TypeAlias, Union
 from oes.utils.logic import WhenCondition
 
 if TYPE_CHECKING:
-    from oes.interview.interview2.update import UpdateContext, UpdateResult
+    from oes.interview.interview.update import UpdateContext, UpdateResult
 
 
 class StepBase(Protocol):

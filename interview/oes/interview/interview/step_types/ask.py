@@ -4,9 +4,9 @@ from typing import Literal
 
 from attrs import frozen
 from oes.interview.input.types import JSONSchema
-from oes.interview.interview2.error import InterviewError
-from oes.interview.interview2.types import UpdateResult
-from oes.interview.interview2.update import UpdateContext
+from oes.interview.interview.error import InterviewError
+from oes.interview.interview.types import UpdateResult
+from oes.interview.interview.update import UpdateContext
 from oes.utils.logic import WhenCondition
 
 

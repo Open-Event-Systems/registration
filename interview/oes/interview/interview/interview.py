@@ -5,7 +5,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from attrs import field, frozen
 from immutabledict import immutabledict
 from oes.interview.input.question import QuestionTemplate
-from oes.interview.interview2.types import Step
+from oes.interview.interview.types import Step
 
 
 @frozen

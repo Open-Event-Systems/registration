@@ -1,8 +1,8 @@
 import pytest
 from oes.interview.immutable import make_immutable
-from oes.interview.interview2.state import InterviewState
-from oes.interview.interview2.step_types.set import SetStep
-from oes.interview.interview2.update import UpdateContext
+from oes.interview.interview.state import InterviewState
+from oes.interview.interview.step_types.set import SetStep
+from oes.interview.interview.update import UpdateContext
 from oes.interview.logic.env import default_jinja2_env
 from oes.interview.logic.pointer import parse_pointer
 from oes.interview.logic.proxy import ProxyLookupError
