@@ -25,12 +25,5 @@ for reg in registrations:
 
 result = {"total_price": 100, "currency": "USD", "registrations": result_registrations}
 
-output = {
-    **request,
-    "results": [
-        *request["results"],
-        result,
-    ],
-}
 
-json.dump(output, sys.stdout)
+json.dump(result, sys.stdout)

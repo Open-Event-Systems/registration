@@ -2,6 +2,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from oes.pricing.config import Config, EventConfig
 from oes.pricing.models import (
     Cart,
     CartRegistration,
@@ -10,7 +11,7 @@ from oes.pricing.models import (
     PricingResult,
     PricingResultRegistration,
 )
-from oes.pricing.script import run_scripts
+from oes.pricing.script import get_scripts
 
 
 @pytest.mark.asyncio
@@ -30,26 +31,16 @@ async def test_run_scripts():
         ),
     )
 
-    result = await run_scripts(Path("tests/scripts/test1"), request)
+    config = Config({"test": EventConfig(script_dir=Path("tests/scripts/test1"))})
 
-    expected = PricingRequest(
-        "USD",
-        Cart(
-            "test",
-            [
-                CartRegistration(
-                    id=id,
-                    old={},
-                    new={},
-                )
-            ],
-        ),
-        [
-            PricingResult(
-                100,
-                [PricingResultRegistration(id, 100, [LineItem(100, 100, name="Test")])],
-            )
-        ],
+    scripts = await get_scripts(config, request)
+
+    assert len(scripts) == 1
+    result = await scripts[0](config, request)
+
+    expected = PricingResult(
+        100,
+        [PricingResultRegistration(id, 100, [LineItem(100, 100, name="Test")])],
     )
 
     assert result == expected
