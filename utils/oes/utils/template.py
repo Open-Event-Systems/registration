@@ -31,7 +31,7 @@ class Expression:
 
     def __init__(self, source: str, env: Environment):
         self.source = source
-        self._expr = env.compile_expression(source)
+        self._expr = env.compile_expression(source, undefined_to_none=False)
 
     def evaluate(self, context: TemplateContext) -> Any:
         """Evaluate the expression."""
