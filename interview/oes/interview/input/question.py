@@ -41,7 +41,6 @@ class Question:
 class QuestionTemplate:
     """A question template."""
 
-    id: str | None = None
     title: str | Template | None = None
     description: str | Template | None = None
     fields: Mapping[ValuePointer, FieldTemplate] = field(

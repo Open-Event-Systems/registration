@@ -12,25 +12,23 @@ from oes.interview.logic.env import default_jinja2_env
 from oes.interview.logic.pointer import parse_pointer
 from oes.utils.template import Expression, Template
 
-questions = [
-    QuestionTemplate(id="q1", fields={parse_pointer("a.a"): TextFieldTemplate()}),
-    QuestionTemplate(
-        id="q2",
+questions = {
+    "q1": QuestionTemplate(fields={parse_pointer("a.a"): TextFieldTemplate()}),
+    "q2": QuestionTemplate(
         fields={
             parse_pointer("a.b"): TextFieldTemplate(),
             parse_pointer("a.c"): TextFieldTemplate(),
         },
     ),
-    QuestionTemplate(
-        id="q3",
+    "q3": QuestionTemplate(
         fields={
             parse_pointer("a.a"): TextFieldTemplate(),
             parse_pointer("a.d"): TextFieldTemplate(),
         },
         when=False,
     ),
-    QuestionTemplate(id="q4", fields={parse_pointer("b.a"): TextFieldTemplate()}),
-    QuestionTemplate(id="q5", fields={parse_pointer("b.a"): TextFieldTemplate()}),
+    "q4": QuestionTemplate(fields={parse_pointer("b.a"): TextFieldTemplate()}),
+    "q5": QuestionTemplate(fields={parse_pointer("b.a"): TextFieldTemplate()}),
     # QuestionTemplate(
     #     id="q6", fields=(TextFieldTemplate(set=parse_pointer("c[value]")),)
     # ),
@@ -47,7 +45,7 @@ questions = [
     # QuestionTemplate(
     #     id="q11", fields=(TextFieldTemplate(set=parse_pointer("e[0][value]")),)
     # ),
-]
+}
 
 
 @pytest.mark.parametrize(
@@ -73,43 +71,37 @@ def test_resolve_questions(provide, asked_ids, expected_id):
     assert id == expected_id
 
 
-questions2 = [
-    QuestionTemplate(
-        id="q1",
+questions2 = {
+    "q1": QuestionTemplate(
         fields={
             parse_pointer("a"): TextFieldTemplate(),
         },
     ),
-    QuestionTemplate(
-        id="q2",
+    "q2": QuestionTemplate(
         fields={
             parse_pointer("b"): TextFieldTemplate(),
         },
         when=Expression("a", default_jinja2_env),
     ),
-    QuestionTemplate(
-        id="q3",
+    "q3": QuestionTemplate(
         description=Template("{{ b }}", default_jinja2_env),
         fields={
             parse_pointer("c"): TextFieldTemplate(),
         },
     ),
-    QuestionTemplate(
-        id="q4",
+    "q4": QuestionTemplate(
         description=Template("{{ recursive }}", default_jinja2_env),
         fields={
             parse_pointer("recursive"): TextFieldTemplate(),
         },
     ),
-    QuestionTemplate(
-        id="q5",
+    "q5": QuestionTemplate(
         description=Template("{{ q6 }}", default_jinja2_env),
         fields={
             parse_pointer("q5"): TextFieldTemplate(),
         },
     ),
-    QuestionTemplate(
-        id="q6",
+    "q6": QuestionTemplate(
         description=Template("{{ q5 }}", default_jinja2_env),
         fields={
             parse_pointer("q6"): TextFieldTemplate(),
@@ -132,7 +124,7 @@ questions2 = [
     #     description=Template("{{ p[n].name }}", default_jinja2_env),
     #     fields=(TextFieldTemplate(set=parse_pointer("p[n].other")),),
     # ),
-]
+}
 
 
 @pytest.mark.parametrize(

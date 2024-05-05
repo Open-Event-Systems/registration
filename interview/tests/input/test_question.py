@@ -8,7 +8,6 @@ from oes.utils.template import Template
 
 def test_question_schema():
     config = QuestionTemplate(
-        id="test",
         title=Template("{{ title }}", default_jinja2_env),
         description="desc",
         fields={
@@ -50,7 +49,6 @@ def test_question_schema():
 
 def test_question_provides():
     config = QuestionTemplate(
-        id="test",
         title=Template("{{ title }}", default_jinja2_env),
         description="desc",
         fields={

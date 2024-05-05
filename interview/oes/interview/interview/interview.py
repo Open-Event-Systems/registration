@@ -39,31 +39,23 @@ class InterviewContext:
 
 
 def make_interview(
-    questions: Iterable[QuestionTemplate], steps: Iterable[Step]
+    questions: Mapping[str, QuestionTemplate], steps: Iterable[Step]
 ) -> Interview:
     """Make an :class:`Interview` object."""
-    by_id = {
-        q.id if q.id else _make_question_id(idx): q
-        for idx, q in enumerate(questions, start=1)
-    }
     steps = tuple(steps)
-    return Interview(by_id, steps)
+    return Interview(questions, steps)
 
 
 def make_interview_context(
-    question_templates: Iterable[QuestionTemplate],
+    question_templates: Mapping[str, QuestionTemplate],
     steps: Iterable[Step],
     state: InterviewState,
 ) -> InterviewContext:
     """Make an :class:`InterviewContext`."""
-    by_id = {
-        q.id if q.id else _make_question_id(idx): q
-        for idx, q in enumerate(question_templates, start=1)
-    }
     steps = tuple(steps)
-    path_index = index_question_templates_by_path(by_id.items())
+    path_index = index_question_templates_by_path(question_templates.items())
     # indirect_path_index = index_question_templates_by_indirect_path(by_id.items())
-    return InterviewContext(by_id, steps, path_index, state=state)
+    return InterviewContext(question_templates, steps, path_index, state=state)
 
 
 def _make_question_id(idx: int) -> str:
