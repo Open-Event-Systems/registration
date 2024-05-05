@@ -68,13 +68,13 @@ class QuestionTemplate:
             if all(isinstance(v, (str, int)) for v in p)
         )  # type: ignore
 
-    @property
-    def provides_indirect(self) -> Set[Sequence[str | int | ValuePointer]]:
-        return frozenset(
-            p
-            for p in (get_path(f.set) for f in self.fields if f.set)
-            if any(not isinstance(v, (str, int)) for v in p)
-        )  # type: ignore
+    # @property
+    # def provides_indirect(self) -> Set[Sequence[str | int | ValuePointer]]:
+    #     return frozenset(
+    #         p
+    #         for p in (get_path(f.set) for f in self.fields if f.set)
+    #         if any(not isinstance(v, (str, int)) for v in p)
+    #     )  # type: ignore
 
     def get_schema(
         self, fields: Mapping[str, Field], context: TemplateContext

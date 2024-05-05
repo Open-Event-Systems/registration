@@ -31,22 +31,22 @@ questions = [
     ),
     QuestionTemplate(id="q4", fields=(TextFieldTemplate(set=parse_pointer("b.a")),)),
     QuestionTemplate(id="q5", fields=(TextFieldTemplate(set=parse_pointer("b.a")),)),
-    QuestionTemplate(
-        id="q6", fields=(TextFieldTemplate(set=parse_pointer("c[value]")),)
-    ),
-    QuestionTemplate(id="q7", fields=(TextFieldTemplate(set=parse_pointer("c[0]")),)),
-    QuestionTemplate(
-        id="q8", fields=(TextFieldTemplate(set=parse_pointer("d[value]")),)
-    ),
-    QuestionTemplate(
-        id="q9", fields=(TextFieldTemplate(set=parse_pointer("e[value][value]")),)
-    ),
-    QuestionTemplate(
-        id="q10", fields=(TextFieldTemplate(set=parse_pointer("e[value][0]")),)
-    ),
-    QuestionTemplate(
-        id="q11", fields=(TextFieldTemplate(set=parse_pointer("e[0][value]")),)
-    ),
+    # QuestionTemplate(
+    #     id="q6", fields=(TextFieldTemplate(set=parse_pointer("c[value]")),)
+    # ),
+    # QuestionTemplate(id="q7", fields=(TextFieldTemplate(set=parse_pointer("c[0]")),)),
+    # QuestionTemplate(
+    #     id="q8", fields=(TextFieldTemplate(set=parse_pointer("d[value]")),)
+    # ),
+    # QuestionTemplate(
+    #     id="q9", fields=(TextFieldTemplate(set=parse_pointer("e[value][value]")),)
+    # ),
+    # QuestionTemplate(
+    #     id="q10", fields=(TextFieldTemplate(set=parse_pointer("e[value][0]")),)
+    # ),
+    # QuestionTemplate(
+    #     id="q11", fields=(TextFieldTemplate(set=parse_pointer("e[0][value]")),)
+    # ),
 ]
 
 
@@ -58,11 +58,11 @@ questions = [
         (("a", "c"), set(), "q2"),
         (("b", "a"), set(), "q4"),
         (("b", "a"), {"q4"}, "q5"),
-        (("c", 0), set(), "q7"),
-        (("c", 0), {"q7"}, "q6"),
-        (("e", 0, 0), set(), "q11"),
-        (("e", 0, 0), {"q11"}, "q9"),
-        (("e", 0, 0), {"q11", "q9"}, "q10"),
+        # (("c", 0), set(), "q7"),
+        # (("c", 0), {"q7"}, "q6"),
+        # (("e", 0, 0), set(), "q11"),
+        # (("e", 0, 0), {"q11"}, "q9"),
+        # (("e", 0, 0), {"q11", "q9"}, "q10"),
     ],
 )
 def test_resolve_questions(provide, asked_ids, expected_id):
@@ -100,23 +100,23 @@ questions2 = [
         description=Template("{{ q5 }}", default_jinja2_env),
         fields=(TextFieldTemplate(set=parse_pointer("q6")),),
     ),
-    QuestionTemplate(
-        id="q7",
-        fields=(TextFieldTemplate(set=parse_pointer("n")),),
-    ),
-    QuestionTemplate(
-        id="q8",
-        fields=(TextFieldTemplate(set=parse_pointer("p[n]")),),
-    ),
-    QuestionTemplate(
-        id="q9",
-        fields=(TextFieldTemplate(set=parse_pointer("p[n].name")),),
-    ),
-    QuestionTemplate(
-        id="q10",
-        description=Template("{{ p[n].name }}", default_jinja2_env),
-        fields=(TextFieldTemplate(set=parse_pointer("p[n].other")),),
-    ),
+    # QuestionTemplate(
+    #     id="q7",
+    #     fields=(TextFieldTemplate(set=parse_pointer("n")),),
+    # ),
+    # QuestionTemplate(
+    #     id="q8",
+    #     fields=(TextFieldTemplate(set=parse_pointer("p[n]")),),
+    # ),
+    # QuestionTemplate(
+    #     id="q9",
+    #     fields=(TextFieldTemplate(set=parse_pointer("p[n].name")),),
+    # ),
+    # QuestionTemplate(
+    #     id="q10",
+    #     description=Template("{{ p[n].name }}", default_jinja2_env),
+    #     fields=(TextFieldTemplate(set=parse_pointer("p[n].other")),),
+    # ),
 ]
 
 
@@ -127,11 +127,11 @@ questions2 = [
         ("c", {}, "q1"),
         ("c", {"a": True}, "q2"),
         ("c", {"b": "b"}, "q3"),
-        ("p[0].name", {"p": []}, "q7"),
-        ("p[0].name", {"p": [], "n": 0}, "q8"),
-        ("p[0].name", {"p": [{}], "n": 0}, "q9"),
-        ("p[0].other", {"p": [{}], "n": 0}, "q9"),
-        ("p[0].other", {"p": [{"name": "..."}], "n": 0}, "q10"),
+        # ("p[0].name", {"p": []}, "q7"),
+        # ("p[0].name", {"p": [], "n": 0}, "q8"),
+        # ("p[0].name", {"p": [{}], "n": 0}, "q9"),
+        # ("p[0].other", {"p": [{}], "n": 0}, "q9"),
+        # ("p[0].other", {"p": [{"name": "..."}], "n": 0}, "q10"),
     ],
 )
 def test_resolve_context(eval, data, expected_id):

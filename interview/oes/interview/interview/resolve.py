@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Generator, Iterable, Mapping, Sequence, Set
+from collections.abc import Iterable, Sequence, Set
 from typing import TYPE_CHECKING, Any
 
 from attrs import define, field, frozen
@@ -10,7 +10,6 @@ from oes.interview.input.question import Question, QuestionTemplate
 from oes.interview.interview.error import InterviewError
 from oes.interview.interview.update import UpdateResult
 from oes.interview.logic.proxy import ProxyLookupError, make_proxy
-from oes.interview.logic.types import ValuePointer
 from oes.interview.logic.undefined import UndefinedError
 from oes.utils.logic import evaluate
 from oes.utils.template import TemplateContext
@@ -32,23 +31,24 @@ def index_question_templates_by_path(
     return index
 
 
-def index_question_templates_by_indirect_path(
-    question_templates: Iterable[tuple[str, QuestionTemplate]]
-) -> dict[
-    Sequence[str | int],
-    tuple[tuple[str, Set[Sequence[str | int | ValuePointer]]], ...],
-]:
-    """Index :class:`QuestionTemplate` objects by the indirect value paths provided."""
-    index = {}
-    for id, question_template in question_templates:
-        for path in question_template.provides_indirect:
-            prefix = _get_path_prefix(path)
-            cur = index.get(prefix, ())
-            index[prefix] = (
-                *cur,
-                (id, question_template.provides_indirect),
-            )
-    return index
+# def index_question_templates_by_indirect_path(
+#     question_templates: Iterable[tuple[str, QuestionTemplate]]
+# ) -> dict[
+#     Sequence[str | int],
+#     tuple[tuple[str, Set[Sequence[str | int | ValuePointer]]], ...],
+# ]:
+#     """Index :class:`QuestionTemplate` objects by the indirect value paths
+#     provided."""
+#     index = {}
+#     for id, question_template in question_templates:
+#         for path in question_template.provides_indirect:
+#             prefix = _get_path_prefix(path)
+#             cur = index.get(prefix, ())
+#             index[prefix] = (
+#                 *cur,
+#                 (id, question_template.provides_indirect),
+#             )
+#     return index
 
 
 @frozen
@@ -100,10 +100,10 @@ def resolve_question_providing_path(
     """Get a :class:`Question` providing a value at ``path``."""
     proxy_ctx = make_proxy(interview_context.state.template_context)
     selected = _resolve_question(path, interview_context, skip_ids, proxy_ctx)
-    if selected is None:
-        selected = _resolve_question_indirect(
-            path, interview_context, skip_ids, proxy_ctx
-        )
+    # if selected is None:
+    #     selected = _resolve_question_indirect(
+    #         path, interview_context, skip_ids, proxy_ctx
+    #     )
     if selected is None:
         value_str = " -> ".join(repr(v) for v in path)
         raise InterviewError(f"No questions provide value {value_str}")
@@ -131,29 +131,29 @@ def _resolve_question(
     return None
 
 
-def _resolve_question_indirect(
-    path: Sequence[str | int],
-    interview_context: InterviewContext,
-    skip_ids: Set[str],
-    ctx: TemplateContext,
-) -> tuple[str, Question] | None:
-    for id, provides in _get_question_templates_providing_indirect_path(
-        path, interview_context.indirect_path_index
-    ):
-        if id in interview_context.state.answered_question_ids or id in skip_ids:
-            continue
-        with resolve_undefined_values(  # noqa: NEW100
-            interview_context, skip_ids | {id}
-        ) as resolver:
-            # TODO: need to check if this results in spurious ask steps...
-            if not any(_evaluate_path(p, ctx) == path for p in provides):
-                continue
-            question_template = interview_context.question_templates[id]
-            if not evaluate(question_template.when, ctx):
-                continue
-            return _render_question(id, question_template, ctx)
-        return resolver.result
-    return None
+# def _resolve_question_indirect(
+#     path: Sequence[str | int],
+#     interview_context: InterviewContext,
+#     skip_ids: Set[str],
+#     ctx: TemplateContext,
+# ) -> tuple[str, Question] | None:
+#     for id, provides in _get_question_templates_providing_indirect_path(
+#         path, interview_context.indirect_path_index
+#     ):
+#         if id in interview_context.state.answered_question_ids or id in skip_ids:
+#             continue
+#         with resolve_undefined_values(  # noqa: NEW100
+#             interview_context, skip_ids | {id}
+#         ) as resolver:
+#             # TODO: need to check if this results in spurious ask steps...
+#             if not any(_evaluate_path(p, ctx) == path for p in provides):
+#                 continue
+#             question_template = interview_context.question_templates[id]
+#             if not evaluate(question_template.when, ctx):
+#                 continue
+#             return _render_question(id, question_template, ctx)
+#         return resolver.result
+#     return None
 
 
 def _render_question(
@@ -165,33 +165,33 @@ def _render_question(
     return id, question
 
 
-def _get_question_templates_providing_indirect_path(
-    path: Sequence[str | int],
-    index: Mapping[
-        Sequence[str | int],
-        Sequence[tuple[str, Set[Sequence[str | int | ValuePointer]]]],
-    ],
-) -> Generator[tuple[str, Set[Sequence[str | int | ValuePointer]]], None, None]:
-    cur_path = path[:-1]
-    while True:
-        templates = index.get(cur_path, ())
-        yield from templates
-        if not cur_path:
-            return
-        cur_path = cur_path[:-1]
+# def _get_question_templates_providing_indirect_path(
+#     path: Sequence[str | int],
+#     index: Mapping[
+#         Sequence[str | int],
+#         Sequence[tuple[str, Set[Sequence[str | int | ValuePointer]]]],
+#     ],
+# ) -> Generator[tuple[str, Set[Sequence[str | int | ValuePointer]]], None, None]:
+#     cur_path = path[:-1]
+#     while True:
+#         templates = index.get(cur_path, ())
+#         yield from templates
+#         if not cur_path:
+#             return
+#         cur_path = cur_path[:-1]
 
 
-def _get_path_prefix(path: Sequence[str | int | ValuePointer]) -> Sequence[str | int]:
-    prefix = []
-    for p in path:
-        if isinstance(p, (int, str)):
-            prefix.append(p)
-        else:
-            break
-    return tuple(prefix)
+# def _get_path_prefix(path: Sequence[str | int | ValuePointer]) -> Sequence[str | int]:
+#     prefix = []
+#     for p in path:
+#         if isinstance(p, (int, str)):
+#             prefix.append(p)
+#         else:
+#             break
+#     return tuple(prefix)
 
 
-def _evaluate_path(
-    path: Sequence[str | int | ValuePointer], ctx: TemplateContext
-) -> Sequence[str | int]:
-    return tuple(p.evaluate(ctx) if not isinstance(p, (str, int)) else p for p in path)
+# def _evaluate_path(
+#     path: Sequence[str | int | ValuePointer], ctx: TemplateContext
+# ) -> Sequence[str | int]:
+#     return tuple(p.evaluate(ctx) if not isinstance(p,(str, int)) else p for p in path)

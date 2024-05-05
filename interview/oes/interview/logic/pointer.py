@@ -39,7 +39,7 @@ class IndexAccess:
     """Index access object."""
 
     object: ValuePointer
-    index: str | int | ValuePointer
+    index: str | int
 
     def evaluate(self, context: TemplateContext) -> Any:
         index_val = evaluate_logic(self.index, context)
@@ -99,9 +99,7 @@ class Parsing:
 
     property_access = pp.Group(("." + name("property")))
 
-    index_access = pp.Group(
-        "[" + space + (number | string | pointer)("index") + space + "]"
-    )
+    index_access = pp.Group("[" + space + (number | string)("index") + space + "]")
 
     pointer_segment = property_access | index_access
 
@@ -133,12 +131,12 @@ def parse_pointer(ptr: str, /) -> ValuePointer:
         raise InvalidPointerError(ptr) from e
 
 
-def get_path(ptr: ValuePointer, /) -> Sequence[str | int | ValuePointer]:
+def get_path(ptr: ValuePointer, /) -> Sequence[str | int]:
     """Get the path represented by a pointer."""
     return _get_path(ptr)
 
 
-def _get_path(ptr: ValuePointer) -> Sequence[str | int | ValuePointer]:
+def _get_path(ptr: ValuePointer) -> Sequence[str | int]:
     if isinstance(ptr, Name):
         return (ptr.name,)
     elif isinstance(ptr, IndexAccess):
