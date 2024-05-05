@@ -1,23 +1,34 @@
 """Missing value resolution."""
 
-from collections.abc import Iterable, Mapping, Sequence, Set
+from __future__ import annotations
 
-from oes.interview.input.question import QuestionTemplate
-from oes.interview.logic.proxy import make_proxy
+from collections.abc import Generator, Iterable, Mapping, Sequence, Set
+from typing import TYPE_CHECKING, Any
+
+from attrs import define, field, frozen
+from oes.interview.input.question import Question, QuestionTemplate
+from oes.interview.interview.error import InterviewError
+from oes.interview.interview.update import UpdateResult
+from oes.interview.logic.proxy import ProxyLookupError, make_proxy
 from oes.interview.logic.types import ValuePointer
+from oes.interview.logic.undefined import UndefinedError
 from oes.utils.logic import evaluate
 from oes.utils.template import TemplateContext
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from oes.interview.interview.interview import InterviewContext
 
 
 def index_question_templates_by_path(
     question_templates: Iterable[tuple[str, QuestionTemplate]]
-) -> dict[Sequence[str | int], tuple[tuple[str, QuestionTemplate], ...]]:
+) -> dict[Sequence[str | int], tuple[str, ...]]:
     """Index :class:`QuestionTemplate` objects by the value paths they provide."""
     index = {}
     for id, question_template in question_templates:
         for path in question_template.provides:
             cur = index.get(path, ())
-            index[path] = (*cur, (id, question_template))
+            index[path] = (*cur, id)
     return index
 
 
@@ -25,7 +36,7 @@ def index_question_templates_by_indirect_path(
     question_templates: Iterable[tuple[str, QuestionTemplate]]
 ) -> dict[
     Sequence[str | int],
-    tuple[tuple[str, Set[Sequence[str | int | ValuePointer]], QuestionTemplate], ...],
+    tuple[tuple[str, Set[Sequence[str | int | ValuePointer]]], ...],
 ]:
     """Index :class:`QuestionTemplate` objects by the indirect value paths provided."""
     index = {}
@@ -35,46 +46,136 @@ def index_question_templates_by_indirect_path(
             cur = index.get(prefix, ())
             index[prefix] = (
                 *cur,
-                (id, question_template.provides_indirect, question_template),
+                (id, question_template.provides_indirect),
             )
     return index
 
 
-def get_question_template_providing_path(
-    path: Sequence[str | int],
-    context: TemplateContext,
-    skip_ids: Set[str],
-    index: Mapping[Sequence[str | int], Sequence[tuple[str, QuestionTemplate]]],
-) -> tuple[str, QuestionTemplate] | None:
-    """Get a :class:`QuestionTemplate` that provides a value at ``path``."""
-    ctx = make_proxy(context)
-    templates = index.get(path, ())
-    for id, question_template in templates:
-        if id not in skip_ids and evaluate(question_template.when, ctx):
-            return id, question_template
+@frozen
+class ResolveResult:
+    """Holds the result of resolving a value."""
+
+    result: UpdateResult | None
 
 
-def get_question_template_providing_indirect_path(
+@define
+class Resolver:
+    """Missing value resolver."""
+
+    interview_context: InterviewContext
+    skip_ids: Set[str]
+    result: tuple[str, Question] = field(init=False)
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_typ: type[BaseException] | None,
+        exc_val: BaseException | None,
+        tb: Any,
+    ) -> bool:
+        if isinstance(exc_val, (ProxyLookupError, UndefinedError)):
+            path = (*exc_val.path, exc_val.key)
+            self.result = resolve_question_providing_path(
+                path, self.interview_context, self.skip_ids
+            )
+            return True
+        return False
+
+
+def resolve_undefined_values(
+    interview_context: InterviewContext,
+    skip_ids: Set[str] = frozenset(),
+) -> Resolver:
+    """Return a context manager to resolve any undefined value exceptions."""
+    return Resolver(interview_context, skip_ids)
+
+
+def resolve_question_providing_path(
     path: Sequence[str | int],
-    context: TemplateContext,
+    interview_context: InterviewContext,
+    skip_ids: Set[str] = frozenset(),
+) -> tuple[str, Question]:
+    """Get a :class:`Question` providing a value at ``path``."""
+    proxy_ctx = make_proxy(interview_context.state.template_context)
+    selected = _resolve_question(path, interview_context, skip_ids, proxy_ctx)
+    if selected is None:
+        selected = _resolve_question_indirect(
+            path, interview_context, skip_ids, proxy_ctx
+        )
+    if selected is None:
+        value_str = " -> ".join(repr(v) for v in path)
+        raise InterviewError(f"No questions provide value {value_str}")
+
+    return selected
+
+
+def _resolve_question(
+    path: Sequence[str | int],
+    interview_context: InterviewContext,
     skip_ids: Set[str],
+    ctx: TemplateContext,
+) -> tuple[str, Question] | None:
+    for id in interview_context.path_index.get(path, ()):
+        if id in interview_context.state.answered_question_ids or id in skip_ids:
+            continue
+        with resolve_undefined_values(  # noqa: NEW100
+            interview_context, skip_ids | {id}
+        ) as resolver:
+            question_template = interview_context.question_templates[id]
+            if not evaluate(question_template.when, ctx):
+                continue
+            return _render_question(id, question_template, ctx)
+        return resolver.result
+    return None
+
+
+def _resolve_question_indirect(
+    path: Sequence[str | int],
+    interview_context: InterviewContext,
+    skip_ids: Set[str],
+    ctx: TemplateContext,
+) -> tuple[str, Question] | None:
+    for id, provides in _get_question_templates_providing_indirect_path(
+        path, interview_context.indirect_path_index
+    ):
+        if id in interview_context.state.answered_question_ids or id in skip_ids:
+            continue
+        with resolve_undefined_values(  # noqa: NEW100
+            interview_context, skip_ids | {id}
+        ) as resolver:
+            # TODO: need to check if this results in spurious ask steps...
+            if not any(_evaluate_path(p, ctx) == path for p in provides):
+                continue
+            question_template = interview_context.question_templates[id]
+            if not evaluate(question_template.when, ctx):
+                continue
+            return _render_question(id, question_template, ctx)
+        return resolver.result
+    return None
+
+
+def _render_question(
+    id: str,
+    template: QuestionTemplate,
+    ctx: TemplateContext,
+) -> tuple[str, Question]:
+    question = template.get_question(ctx)
+    return id, question
+
+
+def _get_question_templates_providing_indirect_path(
+    path: Sequence[str | int],
     index: Mapping[
         Sequence[str | int],
-        Sequence[tuple[str, Set[Sequence[str | int | ValuePointer]], QuestionTemplate]],
+        Sequence[tuple[str, Set[Sequence[str | int | ValuePointer]]]],
     ],
-) -> tuple[str, QuestionTemplate] | None:
-    """Get a :class:`QuestionTemplate` that provides a value at ``path``."""
-    ctx = make_proxy(context)
+) -> Generator[tuple[str, Set[Sequence[str | int | ValuePointer]]], None, None]:
     cur_path = path[:-1]
     while True:
         templates = index.get(cur_path, ())
-        for id, provides, question_template in templates:
-            if (
-                id not in skip_ids
-                and evaluate(question_template.when, ctx)
-                and any(_evaluate_path(p, ctx) == path for p in provides)
-            ):
-                return id, question_template
+        yield from templates
         if not cur_path:
             return
         cur_path = cur_path[:-1]

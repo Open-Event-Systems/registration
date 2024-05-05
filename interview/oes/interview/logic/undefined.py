@@ -13,14 +13,14 @@ from oes.interview.logic.proxy import ArrayProxy, ObjectProxy, make_proxy
 class UndefinedError(jinja2.exceptions.UndefinedError):
     """Custom :class:`jinja2.exceptions.UndefinedError`."""
 
-    key: str | int | None
+    key: str | int
     path: Sequence[str | int]
 
     def __init__(
         self,
         message: str | None = None,
         *,
-        key: str | int | None = None,
+        key: str | int,
         path: Sequence[str | int] = (),
     ):
         super().__init__(message)

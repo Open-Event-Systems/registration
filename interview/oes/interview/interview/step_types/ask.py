@@ -5,8 +5,7 @@ from typing import Literal
 from attrs import frozen
 from oes.interview.input.types import JSONSchema
 from oes.interview.interview.error import InterviewError
-from oes.interview.interview.types import UpdateResult
-from oes.interview.interview.update import UpdateContext
+from oes.interview.interview.update import UpdateContext, UpdateResult
 from oes.utils.logic import WhenCondition
 
 
@@ -28,7 +27,7 @@ class AskStep:
     def __call__(self, context: UpdateContext) -> UpdateResult:
         if self.ask in context.state.answered_question_ids:
             return UpdateResult(context.state)
-        question_template = context.interview.questions.get(self.ask)
+        question_template = context.question_templates.get(self.ask)
         if question_template is None:
             raise InterviewError(f"No question with ID {self.ask}")
         question = question_template.get_question(context.state.template_context)

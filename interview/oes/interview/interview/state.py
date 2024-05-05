@@ -35,9 +35,7 @@ class InterviewState:
         default=immutabledict(), converter=lambda v: make_immutable(v)
     )
     completed: bool = False
-    answered_question_ids: Set[str] = field(
-        default=frozenset(), converter=lambda v: make_immutable(v)
-    )
+    answered_question_ids: Set[str] = field(default=frozenset(), converter=frozenset)
     current_question: Question | None = None
 
     _template_context: Mapping[str, Any] = field(

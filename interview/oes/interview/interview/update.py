@@ -4,17 +4,21 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from inspect import iscoroutinefunction
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from attrs import field, frozen
+from immutabledict import immutabledict
+from oes.interview.input.question import QuestionTemplate
 from oes.interview.interview.error import InterviewError
-from oes.interview.interview.interview import Interview
 from oes.interview.interview.state import InterviewState
 from oes.interview.interview.types import AsyncStep, Step
 from oes.interview.logic.proxy import make_proxy
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import evaluate
 from typing_extensions import TypeIs
+
+if TYPE_CHECKING:
+    from oes.interview.interview.interview import Interview
 
 MAX_UPDATE_COUNT = 100
 
@@ -23,7 +27,9 @@ MAX_UPDATE_COUNT = 100
 class UpdateContext:
     """Interview update context."""
 
-    interview: Interview = Interview()
+    question_templates: Mapping[str, QuestionTemplate] = field(
+        default=immutabledict(), converter=immutabledict
+    )
     state: InterviewState = field(factory=InterviewState)
 
 

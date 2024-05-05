@@ -21,11 +21,10 @@ class ProxyLookupError(LookupError):
         self.path = path
 
     def __str__(self) -> str:
-        value_str = " -> ".join(repr(k) for k in (*self.path, self.key))
-        return f"<ProxyLookupError {value_str} >"
+        return " -> ".join(repr(k) for k in (*self.path, self.key))
 
     def __repr__(self) -> str:
-        return str(self)
+        return f"<ProxyLookupError {str(self)} >"
 
 
 class ArrayProxy(Sequence[_V_co]):
