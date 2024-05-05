@@ -3,6 +3,7 @@ questions:
     title: First Name
     description: What is your first name?
     fields:
-      - set: first_name
+      first_name:
         type: text
+  - ../questions/questions1.yml
 steps: []
