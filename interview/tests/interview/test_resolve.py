@@ -13,24 +13,24 @@ from oes.interview.logic.pointer import parse_pointer
 from oes.utils.template import Expression, Template
 
 questions = [
-    QuestionTemplate(id="q1", fields=(TextFieldTemplate(set=parse_pointer("a.a")),)),
+    QuestionTemplate(id="q1", fields={parse_pointer("a.a"): TextFieldTemplate()}),
     QuestionTemplate(
         id="q2",
-        fields=(
-            TextFieldTemplate(set=parse_pointer("a.b")),
-            TextFieldTemplate(set=parse_pointer("a.c")),
-        ),
+        fields={
+            parse_pointer("a.b"): TextFieldTemplate(),
+            parse_pointer("a.c"): TextFieldTemplate(),
+        },
     ),
     QuestionTemplate(
         id="q3",
-        fields=(
-            TextFieldTemplate(set=parse_pointer("a.a")),
-            TextFieldTemplate(set=parse_pointer("a.d")),
-        ),
+        fields={
+            parse_pointer("a.a"): TextFieldTemplate(),
+            parse_pointer("a.d"): TextFieldTemplate(),
+        },
         when=False,
     ),
-    QuestionTemplate(id="q4", fields=(TextFieldTemplate(set=parse_pointer("b.a")),)),
-    QuestionTemplate(id="q5", fields=(TextFieldTemplate(set=parse_pointer("b.a")),)),
+    QuestionTemplate(id="q4", fields={parse_pointer("b.a"): TextFieldTemplate()}),
+    QuestionTemplate(id="q5", fields={parse_pointer("b.a"): TextFieldTemplate()}),
     # QuestionTemplate(
     #     id="q6", fields=(TextFieldTemplate(set=parse_pointer("c[value]")),)
     # ),
@@ -74,31 +74,46 @@ def test_resolve_questions(provide, asked_ids, expected_id):
 
 
 questions2 = [
-    QuestionTemplate(id="q1", fields=(TextFieldTemplate(set=parse_pointer("a")),)),
+    QuestionTemplate(
+        id="q1",
+        fields={
+            parse_pointer("a"): TextFieldTemplate(),
+        },
+    ),
     QuestionTemplate(
         id="q2",
-        fields=(TextFieldTemplate(set=parse_pointer("b")),),
+        fields={
+            parse_pointer("b"): TextFieldTemplate(),
+        },
         when=Expression("a", default_jinja2_env),
     ),
     QuestionTemplate(
         id="q3",
         description=Template("{{ b }}", default_jinja2_env),
-        fields=(TextFieldTemplate(set=parse_pointer("c")),),
+        fields={
+            parse_pointer("c"): TextFieldTemplate(),
+        },
     ),
     QuestionTemplate(
         id="q4",
         description=Template("{{ recursive }}", default_jinja2_env),
-        fields=(TextFieldTemplate(set=parse_pointer("recursive")),),
+        fields={
+            parse_pointer("recursive"): TextFieldTemplate(),
+        },
     ),
     QuestionTemplate(
         id="q5",
         description=Template("{{ q6 }}", default_jinja2_env),
-        fields=(TextFieldTemplate(set=parse_pointer("q5")),),
+        fields={
+            parse_pointer("q5"): TextFieldTemplate(),
+        },
     ),
     QuestionTemplate(
         id="q6",
         description=Template("{{ q5 }}", default_jinja2_env),
-        fields=(TextFieldTemplate(set=parse_pointer("q6")),),
+        fields={
+            parse_pointer("q6"): TextFieldTemplate(),
+        },
     ),
     # QuestionTemplate(
     #     id="q7",

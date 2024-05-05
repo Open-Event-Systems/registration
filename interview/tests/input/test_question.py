@@ -11,17 +11,15 @@ def test_question_schema():
         id="test",
         title=Template("{{ title }}", default_jinja2_env),
         description="desc",
-        fields=(
-            TextFieldTemplate(
-                set=parse_pointer("text"),
+        fields={
+            parse_pointer("text"): TextFieldTemplate(
                 label="field",
             ),
-            TextFieldTemplate(
-                set=parse_pointer("text2"),
+            parse_pointer("text2"): TextFieldTemplate(
                 label="field2",
                 optional=True,
             ),
-        ),
+        },
     )
     question = config.get_question({"title": "Test"})
     assert question.schema == make_immutable(
@@ -55,13 +53,11 @@ def test_question_provides():
         id="test",
         title=Template("{{ title }}", default_jinja2_env),
         description="desc",
-        fields=(
-            TextFieldTemplate(
-                set=parse_pointer("user.name"),
+        fields={
+            parse_pointer("user.name"): TextFieldTemplate(
                 label="field",
             ),
-            TextFieldTemplate(
-                set=parse_pointer("other"),
+            parse_pointer("other"): TextFieldTemplate(
                 label="field2",
                 optional=True,
             ),
@@ -74,7 +70,7 @@ def test_question_provides():
             #     label="field4",
             #     optional=True,
             # ),
-        ),
+        },
     )
     assert config.provides == frozenset((("user", "name"), ("other",)))
     # assert config.provides_indirect == frozenset(

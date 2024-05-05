@@ -3,9 +3,10 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from typing import Any
 
-from attrs import frozen
+from attrs import field, frozen
 from cattrs import Converter
 from cattrs.gen import make_dict_structure_fn
+from immutabledict import immutabledict
 from oes.interview.immutable import make_immutable
 from oes.interview.input.field import Field
 from oes.interview.input.types import FieldTemplate, JSONSchema
@@ -43,30 +44,30 @@ class QuestionTemplate:
     id: str | None = None
     title: str | Template | None = None
     description: str | Template | None = None
-    fields: Sequence[FieldTemplate] = ()
+    fields: Mapping[ValuePointer, FieldTemplate] = field(
+        default=immutabledict(), converter=immutabledict[ValuePointer, FieldTemplate]
+    )
     when: WhenCondition = True
 
     def get_question(self, context: TemplateContext) -> Question:
-        by_id = {_make_field_id(idx): field for idx, field in enumerate(self.fields)}
+        by_id = {
+            _make_field_id(idx): item for idx, item in enumerate(self.fields.items())
+        }
         field_by_id = {
-            field_id: field.get_field(context) for field_id, field in by_id.items()
+            field_id: field.get_field(context) for field_id, (_, field) in by_id.items()
         }
         schema = self.get_schema(field_by_id, context)
         return make_question(
             (
-                (field_id, field.set, field_by_id[field_id])
-                for field_id, field in by_id.items()
+                (field_id, set_, field_by_id[field_id])
+                for field_id, (set_, _) in by_id.items()
             ),
             schema,
         )
 
     @property
     def provides(self) -> Set[Sequence[str | int]]:
-        return frozenset(
-            p
-            for p in (get_path(f.set) for f in self.fields if f.set)
-            if all(isinstance(v, (str, int)) for v in p)
-        )  # type: ignore
+        return frozenset(get_path(set_) for set_ in self.fields.keys())  # type: ignore
 
     # @property
     # def provides_indirect(self) -> Set[Sequence[str | int | ValuePointer]]:
