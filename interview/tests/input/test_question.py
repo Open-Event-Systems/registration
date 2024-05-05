@@ -65,29 +65,19 @@ def test_question_provides():
                 label="field2",
                 optional=True,
             ),
-        ),
-    )
-    assert config.provides == frozenset((("user", "name"), ("other",)))
-
-
-def test_question_provides_indirect():
-    config = QuestionTemplate(
-        id="test",
-        title=Template("{{ title }}", default_jinja2_env),
-        description="desc",
-        fields=(
             TextFieldTemplate(
                 set=parse_pointer("item[n][0]"),
-                label="field",
+                label="field3",
             ),
             TextFieldTemplate(
                 set=parse_pointer("item[n][a.b]"),
-                label="field2",
+                label="field4",
                 optional=True,
             ),
         ),
     )
-    assert config.provides == frozenset(
+    assert config.provides == frozenset((("user", "name"), ("other",)))
+    assert config.provides_indirect == frozenset(
         (
             ("item", parse_pointer("n"), 0),
             ("item", parse_pointer("n"), parse_pointer("a.b")),

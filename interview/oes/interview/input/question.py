@@ -3,7 +3,7 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from typing import Any
 
-from attrs import Factory, field, frozen
+from attrs import frozen
 from cattrs import Converter
 from cattrs.gen import make_dict_structure_fn
 from oes.interview.immutable import make_immutable
@@ -44,16 +44,7 @@ class QuestionTemplate:
     title: str | Template | None = None
     description: str | Template | None = None
     fields: Sequence[FieldTemplate] = ()
-    when: WhenCondition = ()
-
-    _provides: Set[Sequence[str | int]] = field(
-        init=False,
-        repr=False,
-        default=Factory(
-            lambda s: frozenset(get_path(f.set) for f in s.fields if f.set),
-            takes_self=True,
-        ),
-    )
+    when: WhenCondition = True
 
     def get_question(self, context: TemplateContext) -> Question:
         by_id = {_make_field_id(idx): field for idx, field in enumerate(self.fields)}
@@ -70,8 +61,20 @@ class QuestionTemplate:
         )
 
     @property
-    def provides(self) -> Set[Sequence[str | int | ValuePointer]]:
-        return self._provides
+    def provides(self) -> Set[Sequence[str | int]]:
+        return frozenset(
+            p
+            for p in (get_path(f.set) for f in self.fields if f.set)
+            if all(isinstance(v, (str, int)) for v in p)
+        )  # type: ignore
+
+    @property
+    def provides_indirect(self) -> Set[Sequence[str | int | ValuePointer]]:
+        return frozenset(
+            p
+            for p in (get_path(f.set) for f in self.fields if f.set)
+            if any(not isinstance(v, (str, int)) for v in p)
+        )  # type: ignore
 
     def get_schema(
         self, fields: Mapping[str, Field], context: TemplateContext
