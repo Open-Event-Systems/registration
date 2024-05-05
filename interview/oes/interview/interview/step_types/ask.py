@@ -22,7 +22,7 @@ class AskStep:
     """A step that asks a question."""
 
     ask: str
-    when: WhenCondition = ()
+    when: WhenCondition = True
 
     def __call__(self, context: UpdateContext) -> UpdateResult:
         if self.ask in context.state.answered_question_ids:

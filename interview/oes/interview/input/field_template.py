@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 
-from attrs import frozen
+from attrs import field, frozen
 from oes.interview.input.field import Field, Validator
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import WhenCondition, evaluate
@@ -70,7 +70,7 @@ class SelectFieldOptionBase:
     value: Any = None
     value_expr: Expression | None = None
     default: bool = False
-    when: WhenCondition = ()
+    when: WhenCondition = True
 
     def get_schema(self, id: str, context: TemplateContext) -> dict[str, Any]:
         label = (
@@ -90,7 +90,9 @@ class SelectFieldOptionBase:
 class SelectFieldTemplateBase(FieldTemplateBase, ABC):
     """Base class for select field template types."""
 
-    options: Sequence[SelectFieldOptionBase] = ()
+    options: Sequence[SelectFieldOptionBase] = field(
+        default=(), converter=tuple[SelectFieldOptionBase, ...]
+    )
 
     @property
     @abstractmethod

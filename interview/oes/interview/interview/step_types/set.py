@@ -18,7 +18,7 @@ class SetStep:
 
     set: ValuePointer
     value: Expression
-    when: WhenCondition = ()
+    when: WhenCondition = True
 
     def __call__(self, context: UpdateContext) -> UpdateResult:
         proxy = make_proxy(context.state.template_context)

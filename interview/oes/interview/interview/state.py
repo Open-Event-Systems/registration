@@ -6,7 +6,7 @@ from typing import Any
 
 from attrs import Factory, evolve, field, frozen
 from immutabledict import immutabledict
-from oes.interview.immutable import make_immutable
+from oes.interview.immutable import immutable_converter, make_immutable
 from oes.interview.input.question import Question
 from oes.utils.template import TemplateContext
 from typing_extensions import Self
@@ -29,18 +29,21 @@ class InterviewState:
     )
     target: str | None = None
     context: Mapping[str, Any] = field(
-        default=immutabledict(), converter=lambda v: make_immutable(v)
+        default=immutabledict(), converter=immutable_converter(Mapping[str, Any])
     )
     data: Mapping[str, Any] = field(
-        default=immutabledict(), converter=lambda v: make_immutable(v)
+        default=immutabledict(), converter=immutable_converter(Mapping[str, Any])
     )
     completed: bool = False
-    answered_question_ids: Set[str] = field(default=frozenset(), converter=frozenset)
+    answered_question_ids: Set[str] = field(
+        default=frozenset(), converter=frozenset[str]
+    )
     current_question: Question | None = None
 
     _template_context: Mapping[str, Any] = field(
         init=False,
         repr=False,
+        eq=False,
         default=Factory(lambda s: _merge_dict(s.data, s.context), takes_self=True),
     )
 

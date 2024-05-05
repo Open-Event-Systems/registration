@@ -22,6 +22,7 @@ def configure_converter(converter: Converter):
     from oes.interview.logic.pointer import ValuePointer, parse_pointer
 
     converter.register_structure_hook(ValuePointer, lambda v, t: parse_pointer(v))
+    converter.register_unstructure_hook(ValuePointer, lambda v: str(v))
 
     converter.register_structure_hook(
         FieldTemplate, make_field_template_structure_fn(converter)

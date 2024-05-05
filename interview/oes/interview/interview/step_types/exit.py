@@ -24,7 +24,7 @@ class ExitStep:
 
     exit: Template
     description: Template
-    when: WhenCondition = ()
+    when: WhenCondition = True
 
     def __call__(self, context: UpdateContext) -> UpdateResult:
         return UpdateResult(

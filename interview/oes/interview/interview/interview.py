@@ -15,9 +15,9 @@ class Interview:
     """An interview."""
 
     questions: Mapping[str, QuestionTemplate] = field(
-        default=immutabledict(), converter=lambda v: immutabledict(v)
+        default=immutabledict(), converter=immutabledict[str, QuestionTemplate]
     )
-    steps: Sequence[Step] = field(default=(), converter=lambda v: tuple(v))
+    steps: Sequence[Step] = field(default=(), converter=tuple[Step, ...])
 
 
 @frozen
@@ -25,25 +25,18 @@ class InterviewContext:
     """Interview context."""
 
     question_templates: Mapping[str, QuestionTemplate] = field(
-        default=immutabledict(), converter=lambda v: immutabledict(v)
+        default=immutabledict(), converter=immutabledict[str, QuestionTemplate]
     )
-    steps: Sequence[Step] = field(default=(), converter=lambda v: tuple(v))
+    steps: Sequence[Step] = field(default=(), converter=tuple[Step, ...])
     path_index: Mapping[Sequence[str | int], Sequence[str]] = field(
-        default=immutabledict(), converter=lambda v: immutabledict(v)
+        default=immutabledict(),
+        converter=immutabledict[Sequence[str | int], Sequence[str]],
     )
     # indirect_path_index: Mapping[
     #     Sequence[str | int],
     #     Sequence[tuple[str, Set[Sequence[str | int | ValuePointer]]]],
     # ] = field(default=immutabledict(), converter=lambda v: immutabledict(v))
     state: InterviewState = field(factory=InterviewState)
-
-
-def make_interview(
-    questions: Mapping[str, QuestionTemplate], steps: Iterable[Step]
-) -> Interview:
-    """Make an :class:`Interview` object."""
-    steps = tuple(steps)
-    return Interview(questions, steps)
 
 
 def make_interview_context(
@@ -56,7 +49,3 @@ def make_interview_context(
     path_index = index_question_templates_by_path(question_templates.items())
     # indirect_path_index = index_question_templates_by_indirect_path(by_id.items())
     return InterviewContext(question_templates, steps, path_index, state=state)
-
-
-def _make_question_id(idx: int) -> str:
-    return f"q{idx}"

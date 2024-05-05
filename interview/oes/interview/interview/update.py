@@ -28,7 +28,7 @@ class UpdateContext:
     """Interview update context."""
 
     question_templates: Mapping[str, QuestionTemplate] = field(
-        default=immutabledict(), converter=immutabledict
+        default=immutabledict(), converter=immutabledict[str, QuestionTemplate]
     )
     state: InterviewState = field(factory=InterviewState)
 
@@ -37,7 +37,7 @@ class UpdateContext:
 class UpdateResult:
     """The result of an update."""
 
-    state: InterviewState
+    state: InterviewState = field(factory=InterviewState)
     content: object | None = None
 
 

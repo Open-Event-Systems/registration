@@ -3,7 +3,7 @@
 from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Literal, Mapping
 
-from attrs import frozen
+from attrs import field, frozen
 from cattrs import Converter
 from oes.interview.input.field_template import (
     SelectFieldOptionBase,
@@ -29,7 +29,9 @@ class SelectFieldTemplate(SelectFieldTemplateBase):
 
     type: Literal["select"] = "select"
     component: str = "dropdown"
-    options: Sequence[SelectFieldOption] = ()
+    options: Sequence[SelectFieldOption] = field(
+        default=(), converter=tuple[SelectFieldOption, ...]
+    )
     min: int = 0
     max: int = 1
 

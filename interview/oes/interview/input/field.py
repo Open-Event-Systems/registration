@@ -4,7 +4,8 @@ from collections.abc import Sequence
 from typing import Any
 
 from attrs import field, frozen
-from oes.interview.immutable import make_immutable
+from immutabledict import immutabledict
+from oes.interview.immutable import immutable_converter
 from oes.interview.input.types import JSONSchema, Validator
 
 
@@ -14,8 +15,10 @@ class Field:
 
     python_type: type
     optional: bool = False
-    schema: JSONSchema = field(factory=dict, converter=lambda v: make_immutable(v))
-    validators: Sequence[Validator] = ()
+    schema: JSONSchema = field(
+        default=immutabledict(), converter=immutable_converter(JSONSchema)
+    )
+    validators: Sequence[Validator] = field(default=(), converter=tuple[Validator, ...])
 
     def parse(self, value: object, /) -> Any:
         cur = value

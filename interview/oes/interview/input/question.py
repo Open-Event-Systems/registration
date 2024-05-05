@@ -7,7 +7,7 @@ from attrs import field, frozen
 from cattrs import Converter
 from cattrs.gen import make_dict_structure_fn
 from immutabledict import immutabledict
-from oes.interview.immutable import make_immutable
+from oes.interview.immutable import immutable_converter
 from oes.interview.input.field import Field
 from oes.interview.input.types import FieldTemplate, JSONSchema
 from oes.interview.logic.pointer import get_path
@@ -20,9 +20,15 @@ from oes.utils.template import Template, TemplateContext
 class Question:
     """A question."""
 
-    fields: Mapping[str, Field]
-    value_map: Mapping[str, ValuePointer]
-    schema: JSONSchema
+    fields: Mapping[str, Field] = field(
+        default=immutabledict(), converter=immutabledict[str, Field]
+    )
+    value_map: Mapping[str, ValuePointer] = field(
+        default=immutabledict(), converter=immutabledict[str, ValuePointer]
+    )
+    schema: JSONSchema = field(
+        default=immutabledict(), converter=immutable_converter(JSONSchema)
+    )
 
     def parse(self, response: Mapping[str, Any]) -> dict[ValuePointer, Any]:
         response_values = {k: response.get(k) for k in self.fields}
@@ -127,9 +133,9 @@ def make_question(
     value_map = {f[0]: f[1] for f in by_id.values() if f[1] is not None}
     fields_ = {f[0]: f[2] for f in by_id.values()}
     return Question(
-        fields=make_immutable(fields_),
-        value_map=make_immutable(value_map),
-        schema=make_immutable(schema or {}),
+        fields=fields_,
+        value_map=value_map,
+        schema=schema or {},
     )
 
 
