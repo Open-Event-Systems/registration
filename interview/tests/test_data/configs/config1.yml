@@ -1,0 +1,7 @@
+---
+interviews:
+  - id: interview1
+    questions: []
+    steps: []
+  - interviews
+  - interview-file2.yml

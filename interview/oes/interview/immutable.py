@@ -1,12 +1,29 @@
 """Immutability utilities."""
 
-from collections.abc import Mapping, Sequence, Set
+from collections.abc import Callable, Iterable, Mapping, Sequence, Set
 from typing import TypeVar, overload
 
 from immutabledict import immutabledict
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
+
+
+@overload
+def immutable_converter(
+    t: type[Mapping[_K, _T]], /
+) -> Callable[[Mapping[_K, _T] | Iterable[tuple[_K, _T]]], immutabledict[_K, _T]]: ...
+
+
+@overload
+def immutable_converter(
+    t: type[Sequence[_T]], /
+) -> Callable[[Iterable[_T]], tuple[_T, ...]]: ...
+
+
+def immutable_converter(t: type) -> Callable:
+    """Get a field converter that calls :obj:`make_immutable` on the value."""
+    return make_immutable
 
 
 @overload
