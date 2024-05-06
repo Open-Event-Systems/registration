@@ -1,12 +1,31 @@
 """Immutability utilities."""
 
+from __future__ import annotations
+
 from collections.abc import Callable, Iterable, Mapping, Sequence, Set
-from typing import TypeVar, overload
+from typing import TypeVar, cast, overload
 
 from immutabledict import immutabledict
 
 _K = TypeVar("_K")
 _T = TypeVar("_T")
+_T_co = TypeVar("_T_co", covariant=True)
+
+
+class immutable_mapping(immutabledict[_K, _T_co]):
+    """:class:`immutabledict` with a properly typed ``__new__``."""
+
+    def __new__(
+        cls, arg: Mapping[_K, _T_co] | Iterable[tuple[_K, _T_co]], /
+    ) -> immutable_mapping[_K, _T_co]:
+        return cast(immutable_mapping[_K, _T_co], super().__new__(cls, arg))
+
+
+# def immutable_mapping(
+#     k: type[_K], v: type[_T], /
+# ) -> Callable[[Mapping[_K, _T] | Iterable[tuple[_K, _T]]], immutabledict[_K, _T]]:
+#     """Get a properly typed constructor of :class:`immutabledict`."""
+#     return immutabledict
 
 
 @overload

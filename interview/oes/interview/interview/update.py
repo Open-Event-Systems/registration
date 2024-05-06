@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 
 from attrs import field, frozen
 from immutabledict import immutabledict
+from oes.interview.immutable import immutable_mapping
 from oes.interview.input.question import QuestionTemplate
 from oes.interview.interview.error import InterviewError
 from oes.interview.interview.state import InterviewState
@@ -28,7 +29,7 @@ class UpdateContext:
     """Interview update context."""
 
     question_templates: Mapping[str, QuestionTemplate] = field(
-        default=immutabledict(), converter=immutabledict[str, QuestionTemplate]
+        default=immutabledict(), converter=immutable_mapping[str, QuestionTemplate]
     )
     state: InterviewState = field(factory=InterviewState)
 
