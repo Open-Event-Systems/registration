@@ -26,6 +26,7 @@ pytest = "^8.2.0"
 pytest-cov = "^5.0.0"
 
 # Built-in field types
+pytest-asyncio = "^0.23.6"
 [tool.poetry.plugins."oes.interview.field_types"]
 text = "oes.interview.input.field_types.text:make_text_field_template"
 number = "oes.interview.input.field_types.number:make_number_field_template"

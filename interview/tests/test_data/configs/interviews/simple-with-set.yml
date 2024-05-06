@@ -7,5 +7,5 @@ questions:
         type: text
   - ../questions/questions1.yml
 steps:
-  - ask: first-name
-  - ask: last-name
+  - set: full_name
+    value: first_name + " " + last_name

@@ -4,7 +4,7 @@ from typing import Literal
 
 from attrs import frozen
 from oes.interview.interview.interview import InterviewContext
-from oes.interview.interview.types import UpdateResult
+from oes.interview.interview.update import UpdateResult
 from oes.utils.logic import WhenCondition
 from oes.utils.template import Template
 
