@@ -4,7 +4,8 @@ from typing import Any
 
 from attrs import frozen
 from jinja2 import Undefined as Jinja2Undefined
-from oes.interview.interview.update import UpdateContext, UpdateResult
+from oes.interview.interview.interview import InterviewContext
+from oes.interview.interview.update import UpdateResult
 from oes.interview.logic.proxy import ProxyLookupError, make_proxy
 from oes.interview.logic.types import ValuePointer
 from oes.interview.logic.undefined import Undefined
@@ -20,7 +21,7 @@ class SetStep:
     value: Expression
     when: WhenCondition = True
 
-    def __call__(self, context: UpdateContext) -> UpdateResult:
+    def __call__(self, context: InterviewContext) -> UpdateResult:
         proxy = make_proxy(context.state.template_context)
         try:
             cur_value = self.set.evaluate(proxy)
@@ -42,7 +43,7 @@ class SetStep:
             raise ProxyLookupError(value._key, value._path)
         return value
 
-    def _set_value(self, context: UpdateContext, value: object) -> UpdateResult:
+    def _set_value(self, context: InterviewContext, value: object) -> UpdateResult:
         proxy = make_proxy(context.state.data)
         new_data = self.set.set(proxy, value)
         new_state = context.state.update(data=new_data)

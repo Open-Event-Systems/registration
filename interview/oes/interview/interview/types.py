@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Protocol, TypeAlias, Union
 from oes.utils.logic import WhenCondition
 
 if TYPE_CHECKING:
-    from oes.interview.interview.update import UpdateContext, UpdateResult
+    from oes.interview.interview.interview import InterviewContext
+    from oes.interview.interview.update import UpdateResult
 
 
 class StepBase(Protocol):
@@ -17,7 +18,7 @@ class StepBase(Protocol):
 
     @abstractmethod
     def __call__(
-        self, context: UpdateContext, /
+        self, context: InterviewContext, /
     ) -> UpdateResult | Awaitable[UpdateResult]:
         """Update the interview state."""
         ...
@@ -33,7 +34,7 @@ class SyncStep(StepBase):
     """A synchronous interview step."""
 
     @abstractmethod
-    def __call__(self, context: UpdateContext, /) -> UpdateResult:
+    def __call__(self, context: InterviewContext, /) -> UpdateResult:
         """Update the interview state."""
         ...
 
@@ -42,7 +43,7 @@ class AsyncStep(StepBase):
     """A synchronous interview step."""
 
     @abstractmethod
-    async def __call__(self, context: UpdateContext, /) -> UpdateResult:
+    async def __call__(self, context: InterviewContext, /) -> UpdateResult:
         """Update the interview state."""
         ...
 

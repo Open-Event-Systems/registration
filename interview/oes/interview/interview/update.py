@@ -6,11 +6,9 @@ from collections.abc import Mapping
 from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, Any
 
-from attrs import field, frozen
-from immutabledict import immutabledict
-from oes.interview.immutable import immutable_mapping
-from oes.interview.input.question import QuestionTemplate
+from attrs import evolve, field, frozen
 from oes.interview.interview.error import InterviewError
+from oes.interview.interview.resolve import resolve_undefined_values
 from oes.interview.interview.state import InterviewState
 from oes.interview.interview.types import AsyncStep, Step
 from oes.interview.logic.proxy import make_proxy
@@ -19,19 +17,9 @@ from oes.utils.logic import evaluate
 from typing_extensions import TypeIs
 
 if TYPE_CHECKING:
-    from oes.interview.interview.interview import Interview
+    from oes.interview.interview.interview import InterviewContext
 
 MAX_UPDATE_COUNT = 100
-
-
-@frozen
-class UpdateContext:
-    """Interview update context."""
-
-    question_templates: Mapping[str, QuestionTemplate] = field(
-        default=immutabledict(), converter=immutable_mapping[str, QuestionTemplate]
-    )
-    state: InterviewState = field(factory=InterviewState)
 
 
 @frozen
@@ -42,21 +30,29 @@ class UpdateResult:
     content: object | None = None
 
 
-async def apply_responses(
-    state: InterviewState, responses: Mapping[str, Any] | None
+async def update_interview(
+    interview_context: InterviewContext, responses: Mapping[str, Any] | None = None
+) -> tuple[InterviewContext, object | None]:
+    """Update an interview."""
+    # apply responses first
+    if interview_context.state.current_question is not None:
+        state = apply_responses(interview_context.state, responses or {})
+        interview_context = evolve(interview_context, state=state)
+    updater = _Updater(interview_context)
+    result = await updater()
+    final_context = evolve(interview_context, state=result.state)
+    return final_context, result.content
+
+
+def apply_responses(
+    state: InterviewState, responses: Mapping[str, Any]
 ) -> InterviewState:
     """Apply user responses."""
-    if state.current_question is None or responses is None:
+    if state.current_question is None:
         return state
 
     changes = state.current_question.parse(responses)
     return _apply_response_values(state, changes)
-
-
-async def update_interview(interview: Interview, state: InterviewState) -> UpdateResult:
-    """Update an interview."""
-    updater = _Updater(interview)
-    return await updater(state)
 
 
 def _apply_response_values(
@@ -70,11 +66,11 @@ def _apply_response_values(
 
 @frozen
 class _Updater:
-    interview: Interview
+    initial_context: InterviewContext
 
-    async def __call__(self, state: InterviewState) -> UpdateResult:
+    async def __call__(self) -> UpdateResult:
         """Run the interview steps until completed or content is returned."""
-        current_state = state
+        current_state = self.initial_context.state
         for _ in range(MAX_UPDATE_COUNT):
             result = await self._run_steps(current_state)
             if result.content is not None or result.state.completed:
@@ -85,29 +81,43 @@ class _Updater:
 
     async def _run_steps(self, state: InterviewState) -> UpdateResult:
         """Run through interview steps once."""
+        # probably needs to be moved
+        from oes.interview.interview.step_types.ask import AskResult
+
         cur_result = UpdateResult(state)
-        for step in self.interview.steps:
-            proxy_ctx = make_proxy(cur_result.state.template_context)
-            if not evaluate(step.when, proxy_ctx):
-                continue
-            cur_result = await self._run_step(cur_result, step)
-            if (
-                cur_result.state is not state
-                and cur_result.state != state
-                or cur_result.content is not None
-            ):
-                return cur_result
-        else:
-            updated_state = cur_result.state.update(completed=True)
-            return UpdateResult(updated_state)
+        with resolve_undefined_values(self.initial_context) as resolver:
+            for step in self.initial_context.steps:
+                proxy_ctx = make_proxy(cur_result.state.template_context)
+                if not evaluate(step.when, proxy_ctx):
+                    continue
+                cur_result = await self._run_step(cur_result, step)
+                if (
+                    cur_result.content is not None
+                    or cur_result.state is not state
+                    and cur_result.state != state
+                ):
+                    return cur_result
+            else:
+                updated_state = cur_result.state.update(completed=True)
+                return UpdateResult(updated_state)
+
+        # if we got here, we have an undefined value to ask about
+        question_id, question = resolver.result
+        state = cur_result.state.update(
+            answered_question_ids=cur_result.state.answered_question_ids
+            | {question_id},
+            current_question=question,
+        )
+        result = UpdateResult(state, AskResult(schema=question.schema))
+        return result
 
     async def _run_step(self, prev_result: UpdateResult, step: Step) -> UpdateResult:
         """Run a step and return a result."""
-        context = UpdateContext(self.interview, prev_result.state)
+        base_context = evolve(self.initial_context, state=prev_result.state)
         if _is_async_step(step):
-            result = await step(context)
+            result = await step(base_context)
         else:
-            result = step(context)
+            result = step(base_context)
         return result
 
 

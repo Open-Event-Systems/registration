@@ -3,8 +3,8 @@
 from typing import Literal
 
 from attrs import frozen
+from oes.interview.interview.interview import InterviewContext
 from oes.interview.interview.types import UpdateResult
-from oes.interview.interview.update import UpdateContext
 from oes.utils.logic import WhenCondition
 from oes.utils.template import Template
 
@@ -26,7 +26,7 @@ class ExitStep:
     description: Template
     when: WhenCondition = True
 
-    def __call__(self, context: UpdateContext) -> UpdateResult:
+    def __call__(self, context: InterviewContext) -> UpdateResult:
         return UpdateResult(
             context.state,
             ExitResult(

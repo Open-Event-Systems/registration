@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence, Set
+from collections.abc import Sequence, Set
 from typing import TYPE_CHECKING, Any
 
-from attrs import define, field, frozen
+from attrs import define, field
 from oes.interview.input.question import Question, QuestionTemplate
 from oes.interview.interview.error import InterviewError
-from oes.interview.interview.update import UpdateResult
 from oes.interview.logic.proxy import ProxyLookupError, make_proxy
 from oes.interview.logic.undefined import UndefinedError
 from oes.utils.logic import evaluate
@@ -17,18 +16,6 @@ from typing_extensions import Self
 
 if TYPE_CHECKING:
     from oes.interview.interview.interview import InterviewContext
-
-
-def index_question_templates_by_path(
-    question_templates: Iterable[tuple[str, QuestionTemplate]]
-) -> dict[Sequence[str | int], tuple[str, ...]]:
-    """Index :class:`QuestionTemplate` objects by the value paths they provide."""
-    index = {}
-    for id, question_template in question_templates:
-        for path in question_template.provides:
-            cur = index.get(path, ())
-            index[path] = (*cur, id)
-    return index
 
 
 # def index_question_templates_by_indirect_path(
@@ -49,13 +36,6 @@ def index_question_templates_by_path(
 #                 (id, question_template.provides_indirect),
 #             )
 #     return index
-
-
-@frozen
-class ResolveResult:
-    """Holds the result of resolving a value."""
-
-    result: UpdateResult | None
 
 
 @define

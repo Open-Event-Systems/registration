@@ -5,7 +5,8 @@ from typing import Literal
 from attrs import frozen
 from oes.interview.input.types import JSONSchema
 from oes.interview.interview.error import InterviewError
-from oes.interview.interview.update import UpdateContext, UpdateResult
+from oes.interview.interview.interview import InterviewContext
+from oes.interview.interview.update import UpdateResult
 from oes.utils.logic import WhenCondition
 
 
@@ -24,7 +25,7 @@ class AskStep:
     ask: str
     when: WhenCondition = True
 
-    def __call__(self, context: UpdateContext) -> UpdateResult:
+    def __call__(self, context: InterviewContext) -> UpdateResult:
         if self.ask in context.state.answered_question_ids:
             return UpdateResult(context.state)
         question_template = context.question_templates.get(self.ask)
