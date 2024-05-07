@@ -30,7 +30,7 @@ class StepBase(Protocol):
         ...
 
 
-class SyncStep(StepBase):
+class SyncStep(StepBase, Protocol):
     """A synchronous interview step."""
 
     @abstractmethod
@@ -39,7 +39,7 @@ class SyncStep(StepBase):
         ...
 
 
-class AsyncStep(StepBase):
+class AsyncStep(StepBase, Protocol):
     """A synchronous interview step."""
 
     @abstractmethod

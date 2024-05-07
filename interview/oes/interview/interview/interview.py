@@ -1,8 +1,11 @@
 """Interview module."""
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from typing import Any
 
 from attrs import field, frozen
+from cattrs import Converter, override
+from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from immutabledict import immutabledict
 from oes.interview.immutable import immutable_mapping
 from oes.interview.input.question import QuestionTemplate
@@ -61,3 +64,36 @@ def index_question_templates_by_path(
     #     Sequence[str | int],
     #     Sequence[tuple[str, Set[Sequence[str | int | ValuePointer]]]],
     # ] = field(default=immutabledict(), converter=lambda v: immutabledict(v))
+
+
+def make_interview_context_structure_fn(
+    converter: Converter,
+) -> Callable[[Any, Any], Any]:
+    """Make a function to structure a :class:`InterviewContext`."""
+
+    def structure_index(v, t):
+        path_index_items = converter.structure(
+            v,
+            tuple[tuple[tuple[str | int, ...], tuple[str, ...]], ...],
+        )
+        return immutabledict(path_index_items)
+
+    dict_fn = make_dict_structure_fn(
+        InterviewContext, converter, path_index=override(struct_hook=structure_index)
+    )
+
+    return dict_fn
+
+
+def make_interview_context_unstructure_fn(converter: Converter) -> Callable[[Any], Any]:
+    """Make a function to unstructure a :class:`InterviewContext`."""
+    dict_fn = make_dict_unstructure_fn(
+        InterviewContext, converter, path_index=override(omit=True)
+    )
+
+    def unstructure(v: InterviewContext) -> Any:
+        as_dict = dict_fn(v)
+        as_dict["path_index"] = list(v.path_index.items())
+        return as_dict
+
+    return unstructure

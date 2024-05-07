@@ -40,6 +40,12 @@ class Expression:
     def __repr__(self) -> str:
         return f"Expression({self.source!r})"
 
+    def __hash__(self) -> int:
+        return hash(self.source)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Expression) and other.source == self.source
+
 
 class Template:
     """A template."""
@@ -59,6 +65,12 @@ class Template:
 
     def __repr__(self) -> str:
         return f"Template({self.source!r})"
+
+    def __hash__(self) -> int:
+        return hash(self.source)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Template) and other.source == self.source
 
 
 def make_expression_structure_fn(env: Environment) -> Callable[[Any, Any], Expression]:

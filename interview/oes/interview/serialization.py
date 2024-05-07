@@ -6,6 +6,11 @@ from typing import Union
 from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
 from oes.interview.input.types import FieldTemplate
+from oes.interview.interview.interview import (
+    InterviewContext,
+    make_interview_context_structure_fn,
+    make_interview_context_unstructure_fn,
+)
 from oes.interview.logic.env import default_jinja2_env
 from oes.utils.logic import (
     LogicAnd,
@@ -21,6 +26,8 @@ from oes.utils.template import (
     Template,
     make_expression_structure_fn,
     make_template_structure_fn,
+    unstructure_expression,
+    unstructure_template,
 )
 
 converter = make_converter()
@@ -42,13 +49,16 @@ def configure_converter(converter: Converter):
     converter.register_structure_hook(
         Template, make_template_structure_fn(default_jinja2_env)
     )
+    converter.register_unstructure_hook(Template, unstructure_template)
     converter.register_structure_hook(
         Expression, make_expression_structure_fn(default_jinja2_env)
     )
+    converter.register_unstructure_hook(Expression, unstructure_expression)
 
+    template_structure_fn = make_template_structure_fn(default_jinja2_env)
     converter.register_structure_hook_func(
         lambda cls: cls == Union[str, Template, None],
-        make_template_structure_fn(default_jinja2_env),
+        lambda v, t: template_structure_fn(v, t) if v is not None else None,
     )
     converter.register_structure_hook(
         ValueOrEvaluable, make_value_or_evaluable_structure_fn(converter)
@@ -77,4 +87,11 @@ def configure_converter(converter: Converter):
     converter.register_structure_hook(
         Union[Path, QuestionTemplateObject],
         make_question_template_structure_fn(converter),
+    )
+
+    converter.register_structure_hook(
+        InterviewContext, make_interview_context_structure_fn(converter)
+    )
+    converter.register_unstructure_hook(
+        InterviewContext, make_interview_context_unstructure_fn(converter)
     )
