@@ -1,6 +1,8 @@
-"""Cache module."""
+"""Storage module."""
 
+import asyncio
 import base64
+import gzip
 import hashlib
 
 import orjson
@@ -10,8 +12,8 @@ from redis.asyncio import Redis
 from typing_extensions import Self
 
 
-class CacheService:
-    """Cache service."""
+class StorageService:
+    """Storage service."""
 
     def __init__(self, url: str, converter: Converter):
         self._url = url
@@ -24,7 +26,8 @@ class CacheService:
         Returns:
             A string key to reference the context.
         """
-        hash_, data = self._to_bytes(context)
+        loop = asyncio.get_running_loop()
+        hash_, data = await loop.run_in_executor(None, self._to_bytes, context)
         await self._client.set(
             b"oes.interview." + hash_.encode(),
             data,
@@ -38,7 +41,8 @@ class CacheService:
         res = await self._client.get(b"oes.interview." + key.encode())
         if res is None:
             return None
-        data = orjson.loads(res)
+        uncompressed = gzip.decompress(res)
+        data = orjson.loads(uncompressed)
         loaded = self._converter.structure(data, InterviewContext)
         return loaded
 
@@ -47,7 +51,10 @@ class CacheService:
         bytes_ = orjson.dumps(data)
         h = hashlib.md5(bytes_, usedforsecurity=False)
         hash_ = base64.urlsafe_b64encode(h.digest()).decode().replace("=", "")
-        return hash_, bytes_
+
+        compressed = gzip.compress(bytes_)
+
+        return hash_, compressed
 
     async def __aenter__(self) -> Self:
         return self
