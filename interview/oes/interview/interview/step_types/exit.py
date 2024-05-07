@@ -23,7 +23,7 @@ class ExitStep:
     """Show an error message and stop."""
 
     exit: Template
-    description: Template
+    description: Template | None = None
     when: WhenCondition = True
 
     def __call__(self, context: InterviewContext) -> UpdateResult:

@@ -7,6 +7,15 @@ from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
 from oes.interview.input.types import FieldTemplate
 from oes.interview.logic.env import default_jinja2_env
+from oes.utils.logic import (
+    LogicAnd,
+    LogicOr,
+    ValueOrEvaluable,
+    WhenCondition,
+    make_logic_unstructure_fn,
+    make_value_or_evaluable_structure_fn,
+    make_when_condition_structure_fn,
+)
 from oes.utils.template import (
     Expression,
     Template,
@@ -35,6 +44,21 @@ def configure_converter(converter: Converter):
     )
     converter.register_structure_hook(
         Expression, make_expression_structure_fn(default_jinja2_env)
+    )
+
+    converter.register_structure_hook_func(
+        lambda cls: cls == Union[str, Template, None],
+        make_template_structure_fn(default_jinja2_env),
+    )
+    converter.register_structure_hook(
+        ValueOrEvaluable, make_value_or_evaluable_structure_fn(converter)
+    )
+    converter.register_unstructure_hook_func(
+        lambda cls: cls in (LogicAnd, LogicOr), make_logic_unstructure_fn(converter)
+    )
+
+    converter.register_structure_hook(
+        WhenCondition, make_when_condition_structure_fn(converter)
     )
 
     converter.register_structure_hook(ValuePointer, lambda v, t: parse_pointer(v))

@@ -1,0 +1,11 @@
+questions:
+  - id: first-name
+    title: First Name
+    description: What is your first name?
+    fields:
+      first_name:
+        type: text
+  - ../questions/questions1.yml
+steps:
+  - exit: Wrong Name
+    when: confirm_name == false

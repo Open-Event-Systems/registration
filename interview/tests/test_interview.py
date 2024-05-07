@@ -7,7 +7,7 @@ from oes.interview.config.config import load_config
 from oes.interview.immutable import make_immutable
 from oes.interview.interview.interview import InterviewContext, make_interview_context
 from oes.interview.interview.state import InterviewState
-from oes.interview.interview.step_types.exit import ExitStep
+from oes.interview.interview.step_types.exit import ExitResult
 from oes.interview.interview.update import update_interview
 from oes.interview.serialization import configure_converter
 
@@ -40,6 +40,12 @@ def converter():
             [["fname"], ["lname"]],
             {"first_name": "fname", "last_name": "lname", "full_name": "fname lname"},
         ),
+        (
+            "tests/test_data/configs/config1.yml",
+            "question-triggering-question",
+            [["fname"], ["lname"], ["2"]],
+            False,
+        ),
     ],
 )
 @pytest.mark.asyncio
@@ -59,10 +65,9 @@ async def test_interview(
     )
 
     responses = list(responses)
-
     final_state, content = await run_interview(interview_context, responses)
     if final_data is False:
-        assert isinstance(content, ExitStep)
+        assert isinstance(content, ExitResult)
     else:
         assert content is None
         assert final_state.completed
@@ -79,6 +84,6 @@ async def run_interview(
         response = {f"field_{i}": v for i, v in enumerate(response_values)}
 
         interview_context, content = await update_interview(interview_context, response)
-        if isinstance(content, ExitStep):
+        if isinstance(content, ExitResult):
             return interview_context.state, content
     return interview_context.state, None
