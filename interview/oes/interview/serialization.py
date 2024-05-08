@@ -5,30 +5,6 @@ from typing import Union
 
 from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
-from oes.interview.input.types import FieldTemplate
-from oes.interview.interview.interview import (
-    InterviewContext,
-    make_interview_context_structure_fn,
-    make_interview_context_unstructure_fn,
-)
-from oes.interview.logic.env import default_jinja2_env
-from oes.utils.logic import (
-    LogicAnd,
-    LogicOr,
-    ValueOrEvaluable,
-    WhenCondition,
-    make_logic_unstructure_fn,
-    make_value_or_evaluable_structure_fn,
-    make_when_condition_structure_fn,
-)
-from oes.utils.template import (
-    Expression,
-    Template,
-    make_expression_structure_fn,
-    make_template_structure_fn,
-    unstructure_expression,
-    unstructure_template,
-)
 
 converter = make_converter()
 
@@ -42,9 +18,33 @@ def configure_converter(converter: Converter):
         make_question_template_structure_fn,
     )
     from oes.interview.input.serialization import make_field_template_structure_fn
+    from oes.interview.input.types import FieldTemplate
+    from oes.interview.interview.interview import (
+        InterviewContext,
+        make_interview_context_structure_fn,
+        make_interview_context_unstructure_fn,
+    )
     from oes.interview.interview.serialization import make_step_structure_fn
     from oes.interview.interview.types import Step
+    from oes.interview.logic.env import default_jinja2_env
     from oes.interview.logic.pointer import ValuePointer, parse_pointer
+    from oes.utils.logic import (
+        LogicAnd,
+        LogicOr,
+        ValueOrEvaluable,
+        WhenCondition,
+        make_logic_unstructure_fn,
+        make_value_or_evaluable_structure_fn,
+        make_when_condition_structure_fn,
+    )
+    from oes.utils.template import (
+        Expression,
+        Template,
+        make_expression_structure_fn,
+        make_template_structure_fn,
+        unstructure_expression,
+        unstructure_template,
+    )
 
     converter.register_structure_hook(
         Template, make_template_structure_fn(default_jinja2_env)

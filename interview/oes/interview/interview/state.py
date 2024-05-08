@@ -7,7 +7,7 @@ from typing import Any
 from attrs import Factory, evolve, field, frozen
 from immutabledict import immutabledict
 from oes.interview.immutable import immutable_converter, make_immutable
-from oes.interview.input.question import Question
+from oes.interview.input.question import QuestionTemplate
 from oes.utils.template import TemplateContext
 from typing_extensions import Self
 
@@ -38,7 +38,7 @@ class InterviewState:
     answered_question_ids: Set[str] = field(
         default=frozenset(), converter=frozenset[str]
     )
-    current_question: Question | None = None
+    current_question: QuestionTemplate | None = None
 
     _template_context: Mapping[str, Any] = field(
         init=False,
@@ -58,7 +58,7 @@ class InterviewState:
         data: Mapping[str, Any] | None = None,
         completed: bool | None = None,
         answered_question_ids: Iterable[str] = _unset,
-        current_question: Question | None = _unset,
+        current_question: QuestionTemplate | None = _unset,
     ) -> Self:
         """Return an updated interview state."""
         new_data = data if data is not None else self.data

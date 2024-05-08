@@ -9,6 +9,7 @@ from typing import Any
 
 import orjson
 from cattrs import Converter
+from immutabledict import immutabledict
 from oes.interview.interview.interview import InterviewContext
 from redis.asyncio import Redis
 from typing_extensions import Self
@@ -96,13 +97,20 @@ class StorageService:
 
 
 def _to_bytes(obj: Mapping[str, Any]) -> tuple[str, bytes]:
-    bytes_ = orjson.dumps(obj)
+    bytes_ = orjson.dumps(obj, default=_default)
     h = hashlib.md5(bytes_, usedforsecurity=False)
     hash_ = base64.urlsafe_b64encode(h.digest()).decode().replace("=", "")
 
     compressed = gzip.compress(bytes_)
 
     return hash_, compressed
+
+
+def _default(obj):
+    if isinstance(obj, immutabledict):
+        return dict(obj)
+    else:
+        raise TypeError(type(obj))
 
 
 def _from_bytes(b: bytes) -> Mapping[str, Any]:

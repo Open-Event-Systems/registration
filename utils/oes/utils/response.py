@@ -20,8 +20,16 @@ class ResponseConverter:
     converter: OrjsonConverter
     """The :class:`Converter` used."""
 
-    def __init__(self):
-        self.converter = make_converter()
+    json_default: Callable[[Any], Any] | None
+    """A ``default`` function for the JSON encoder."""
+
+    def __init__(
+        self,
+        converter: OrjsonConverter | None = None,
+        json_default: Callable[[Any], Any] | None = None,
+    ):
+        self.converter = converter or make_converter()
+        self.json_default = json_default
 
     @overload
     def __call__(self, unstructure_as: Type | None = None, /) -> Callable[
@@ -57,5 +65,5 @@ class ResponseConverter:
         self, value: Any, unstructure_as: Type | None = None
     ) -> HTTPResponse:
         """Make a response from the value."""
-        body = self.converter.dumps(value, unstructure_as)
+        body = self.converter.dumps(value, unstructure_as, default=self.json_default)
         return HTTPResponse(body, content_type="application/json")

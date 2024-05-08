@@ -67,7 +67,7 @@ def test_resolve_questions(provide, asked_ids, expected_id):
     interview_context = make_interview_context(
         questions, [], InterviewState(data={"value": 0})
     )
-    id, _ = resolve_question_providing_path(provide, interview_context, asked_ids)
+    id, _, _ = resolve_question_providing_path(provide, interview_context, asked_ids)
     assert id == expected_id
 
 

@@ -51,7 +51,8 @@ def apply_responses(
     if state.current_question is None:
         return state
 
-    changes = state.current_question.parse(responses)
+    question = state.current_question.get_question(state.template_context)
+    changes = question.parse(responses)
     return _apply_response_values(state, changes)
 
 
@@ -102,11 +103,11 @@ class _Updater:
                 return UpdateResult(updated_state)
 
         # if we got here, we have an undefined value to ask about
-        question_id, question = resolver.result
+        question_id, question_template, question = resolver.result
         state = cur_result.state.update(
             answered_question_ids=cur_result.state.answered_question_ids
             | {question_id},
-            current_question=question,
+            current_question=question_template,
         )
         result = UpdateResult(state, AskResult(schema=question.schema))
         return result

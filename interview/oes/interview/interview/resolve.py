@@ -44,7 +44,7 @@ class Resolver:
 
     interview_context: InterviewContext
     skip_ids: Set[str]
-    result: tuple[str, Question] = field(init=False)
+    result: tuple[str, QuestionTemplate, Question] = field(init=False)
 
     def __enter__(self) -> Self:
         return self
@@ -76,7 +76,7 @@ def resolve_question_providing_path(
     path: Sequence[str | int],
     interview_context: InterviewContext,
     skip_ids: Set[str] = frozenset(),
-) -> tuple[str, Question]:
+) -> tuple[str, QuestionTemplate, Question]:
     """Get a :class:`Question` providing a value at ``path``."""
     proxy_ctx = make_proxy(interview_context.state.template_context)
     selected = _resolve_question(path, interview_context, skip_ids, proxy_ctx)
@@ -96,7 +96,7 @@ def _resolve_question(
     interview_context: InterviewContext,
     skip_ids: Set[str],
     ctx: TemplateContext,
-) -> tuple[str, Question] | None:
+) -> tuple[str, QuestionTemplate, Question] | None:
     for id in interview_context.path_index.get(path, ()):
         if id in interview_context.state.answered_question_ids or id in skip_ids:
             continue
@@ -140,9 +140,9 @@ def _render_question(
     id: str,
     template: QuestionTemplate,
     ctx: TemplateContext,
-) -> tuple[str, Question]:
+) -> tuple[str, QuestionTemplate, Question]:
     question = template.get_question(ctx)
-    return id, question
+    return id, template, question
 
 
 # def _get_question_templates_providing_indirect_path(

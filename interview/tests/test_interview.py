@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from cattrs import Converter
 from cattrs.preconf.orjson import make_converter
-from oes.interview.config.config import load_config
+from oes.interview.config.config import load_config_file
 from oes.interview.immutable import make_immutable
 from oes.interview.interview.interview import InterviewContext, make_interview_context
 from oes.interview.interview.state import InterviewState
@@ -58,7 +58,7 @@ async def test_interview(
 ):
     path = Path(interview_path)
     base_dir = path.parent
-    cfg = load_config(path, converter)
+    cfg = load_config_file(path, converter)
     interview = cfg.get_interviews(base_dir, converter)[interview_id]
     interview_context = make_interview_context(
         interview.questions, interview.steps, InterviewState()

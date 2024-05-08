@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, runtime_checkable
 
 from oes.utils.template import TemplateContext
 
@@ -18,6 +18,7 @@ JSONSchema: TypeAlias = Mapping[str, Any]
 Validator: TypeAlias = Callable[[Any], Any]
 
 
+@runtime_checkable
 class FieldTemplate(Protocol):
     """A field template."""
 

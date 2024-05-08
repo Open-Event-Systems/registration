@@ -5,7 +5,7 @@ from typing import Any
 
 from attrs import field, frozen
 from cattrs import Converter
-from cattrs.gen import make_dict_structure_fn
+from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from immutabledict import immutabledict
 from oes.interview.immutable import immutable_converter, immutable_mapping
 from oes.interview.input.field import Field
@@ -14,6 +14,12 @@ from oes.interview.logic.pointer import get_path
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import WhenCondition
 from oes.utils.template import Template, TemplateContext
+
+
+class ValidationError(ValueError):
+    """Raised when user input is invalid."""
+
+    pass
 
 
 @frozen
@@ -34,9 +40,12 @@ class Question:
 
     def parse(self, response: Mapping[str, Any]) -> dict[ValuePointer, Any]:
         response_values = {k: response.get(k) for k in self.fields}
-        parsed_values = {
-            k: field.parse(response_values[k]) for k, field in self.fields.items()
-        }
+        try:
+            parsed_values = {
+                k: field.parse(response_values[k]) for k, field in self.fields.items()
+            }
+        except (TypeError, ValueError) as exc:
+            raise ValidationError from exc
         mapped_values = {
             self.value_map[k]: parsed_values[k]
             for k in self.fields
@@ -125,6 +134,16 @@ def make_question_template_structure_fn(
 ) -> Callable[[Any, Any], QuestionTemplate]:
     """Make a function to structure a :class:`QuestionTemplate`."""
     return make_dict_structure_fn(QuestionTemplate, converter)
+
+
+def make_question_unstructure_fn(converter: Converter) -> Callable[[Question], Any]:
+    """Make a function to unstructure a :class:`Question`."""
+    dict_fn = make_dict_unstructure_fn(Question, converter)
+
+    def _unstructure(v: Question):
+        return dict_fn(v)
+
+    return _unstructure
 
 
 def make_question(

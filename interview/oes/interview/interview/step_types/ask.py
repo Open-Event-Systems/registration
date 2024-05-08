@@ -33,7 +33,7 @@ class AskStep:
             raise InterviewError(f"No question with ID {self.ask}")
         question = question_template.get_question(context.state.template_context)
         state = context.state.update(
-            current_question=question,
+            current_question=question_template,
             answered_question_ids=context.state.answered_question_ids | {self.ask},
         )
         content = AskResult(schema=question.schema)
