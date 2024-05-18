@@ -3,7 +3,7 @@ name = "oes-auth"
 version = "0.1.0"
 description = ""
 authors = ["Wes <wes@anthronewengland.com>"]
-packages = [{include = "oes"}]
+packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -11,13 +11,17 @@ attrs = "^23.2.0"
 cattrs = "^23.2.3"
 pyjwt = "^2.8.0"
 orjson = "^3.10.3"
-oes-utils = {path = "../utils", extras = ["typed-settings", "sanic", "sqlalchemy"]}
+oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "d47778a854d512657dc0c990bb6f538a0a813a18", extras = [
+    "typed-settings",
+    "sanic",
+    "sqlalchemy",
+] }
 alembic = "^1.13.1"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
+sqlalchemy = { extras = ["asyncio"], version = "^2.0.30" }
 asyncpg = "^0.29.0"
 nanoid = "^2.0.0"
 loguru = "^0.7.2"
-sanic = {extras = ["ext"], version = "^23.12.1"}
+sanic = { extras = ["ext"], version = "^23.12.1" }
 
 
 [tool.poetry.group.dev.dependencies]
