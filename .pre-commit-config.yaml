@@ -61,6 +61,11 @@ repos:
         args: [-p, interview]
 
       - id: pyright
+        name: pyright (auth)
+        files: ^auth/
+        args: [-p, auth]
+
+      - id: pyright
         name: pyright (cart)
         files: ^cart/
         args: [-p, cart]
