@@ -1,0 +1,25 @@
+---
+interviews:
+  - id: interview1
+    questions:
+      - id: first-name
+        title: First Name
+        description: What is your first name?
+        fields:
+          registration.first_name:
+            type: text
+
+      - id: last-name
+        title: Last Name
+        description: What is your last name?
+        fields:
+          registration.last_name:
+            type: text
+
+    steps:
+      - set: registration
+        value: "{}"
+        when: registration is undefined
+
+      - set: display_name
+        value: registration.first_name + " " + registration.last_name

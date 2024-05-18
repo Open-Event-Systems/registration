@@ -1,0 +1,8 @@
+**/*
+!oes/**
+!alembic/**
+!pyproject.toml
+!poetry.lock
+!poetry.lock
+!alembic.ini
+!interviews.example.yml

@@ -1,0 +1,8 @@
+name: registration-example
+
+services:
+  auth:
+    build: ../auth
+
+  interview:
+    build: ../interview
