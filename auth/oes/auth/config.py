@@ -9,6 +9,7 @@ from sqlalchemy import URL, make_url
 class Config:
     """Config object."""
 
+    token_secret: ts.SecretStr = ts.secret(help="the secret for signing tokens")
     db_url: URL = ts.option(
         default=make_url("postgresql+asyncpg:///auth"),
         converter=lambda v: make_url(v),
