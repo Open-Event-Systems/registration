@@ -1,7 +1,5 @@
 """Routes module."""
 
-from collections.abc import Mapping
-from typing import Any
 from uuid import UUID
 
 from attrs import define
@@ -16,7 +14,7 @@ from oes.cart.cart import (
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
-from sanic import Blueprint, NotFound, Request
+from sanic import Blueprint, HTTPResponse, NotFound, Request
 
 routes = Blueprint("carts")
 response_converter = ResponseConverter()
@@ -81,10 +79,10 @@ async def remove_from_cart(
 
 
 @routes.get("/carts/<cart_id>/pricing-result")
-@response_converter
 async def price_cart(
     request: Request, cart_id: str, repo: CartRepo, pricing_service: CartPricingService
-) -> Mapping[str, Any]:
+) -> HTTPResponse:
     """Get a pricing result for a cart."""
     cart_entity = raise_not_found(await repo.get(cart_id))
-    return await pricing_service.price_cart(cart_entity.get_cart())
+    res = await pricing_service.price_cart(cart_id, cart_entity.get_cart())
+    return HTTPResponse(res, status=200, content_type="application/json")

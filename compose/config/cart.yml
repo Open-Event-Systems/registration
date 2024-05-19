@@ -1,4 +1,5 @@
 ---
 db_url: postgresql+asyncpg://registration:changeit@db/cart
 pricing_url: http://pricing:8000
+redis_url: redis://redis:6379
 currency: USD

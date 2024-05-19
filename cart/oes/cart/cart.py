@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -16,8 +16,12 @@ from cattrs.preconf.orjson import make_converter
 from oes.cart.config import Config
 from oes.cart.orm import Base
 from oes.utils.orm import JSON, Repo
+from redis.asyncio import Redis
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+
+CART_PRICING_RESULT_CACHE_TIME = 300
+"""Cache time for pricing results, in seconds."""
 
 
 class CartEntity(Base, kw_only=True):
@@ -158,15 +162,29 @@ class CartService:
 class CartPricingService:
     """Cart pricing service."""
 
-    def __init__(self, config: Config, client: httpx.AsyncClient):
+    def __init__(self, config: Config, client: httpx.AsyncClient, redis: Redis | None):
         self.config = config
         self.client = client
+        self.redis = redis
 
-    async def price_cart(self, cart: Cart) -> Mapping[str, Any]:
+    async def price_cart(self, id: str, cart: Cart) -> bytes:
         """Get a pricing result for a cart."""
+        if self.redis:
+            cached_bytes = await self.redis.get(f"oes.cart.{id}.pricing-result")
+            if cached_bytes:
+                return cached_bytes
+
         data = _converter.unstructure(cart)
         res = await self.client.post(
             f"{self.config.pricing_url}/price-cart",
             json={"currency": self.config.currency, "cart": data},
         )
-        return res.json()
+        res.raise_for_status
+        res_bytes = res.content
+        if self.redis:
+            await self.redis.set(
+                f"oes.cart.{id}.pricing-result",
+                res_bytes,
+                ex=CART_PRICING_RESULT_CACHE_TIME,
+            )
+        return res_bytes

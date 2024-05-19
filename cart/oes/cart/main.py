@@ -17,6 +17,7 @@ from oes.cart.config import get_config
 from oes.cart.routes import response_converter, routes
 from oes.utils import configure_converter
 from oes.utils.sanic import setup_app, setup_database
+from redis.asyncio import Redis
 from sanic import Request, Sanic
 
 
@@ -56,6 +57,17 @@ def create_app() -> Sanic:
     @app.after_server_stop
     async def shutdown_httpx(app: Sanic):
         await app.ctx.httpx.aclose()
+
+    @app.before_server_start
+    async def setup_redis(app: Sanic):
+        app.ctx.redis = Redis.from_url(config.redis_url) if config.redis_url else None
+        app.ext.dependency(app.ctx.redis)
+
+    @app.after_server_stop
+    async def shutdown_redis(app: Sanic):
+        redis: Redis | None = app.ctx.redis
+        if redis:
+            await redis.aclose()
 
     return app
 

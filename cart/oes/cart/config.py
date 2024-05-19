@@ -14,6 +14,7 @@ class Config:
         converter=lambda v: make_url(v),
         help="the database URL",
     )
+    redis_url: str | None = ts.option(default=None, help="url of a redis service")
     pricing_url: str = ts.option(
         default="http://pricing:8000", help="url of the pricing service"
     )
