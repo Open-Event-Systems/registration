@@ -20,5 +20,5 @@ class Config:
 
 def get_config() -> Config:
     """Get the config."""
-    loaders = get_loaders("OES_CART_")
+    loaders = get_loaders("OES_CART_", ("cart.yml",))
     return ts.load_settings(Config, loaders)

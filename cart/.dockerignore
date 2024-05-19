@@ -5,4 +5,5 @@
 !poetry.lock
 !poetry.lock
 !alembic.ini
-!config.example.yml
+!cart.example.yml
+!scripts
