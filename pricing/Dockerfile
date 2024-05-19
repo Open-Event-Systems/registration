@@ -25,13 +25,14 @@ RUN poetry build -f wheel \
 
 
 FROM base AS app
-RUN mkdir /app /config && adduser -S app
-WORKDIR /config
+RUN mkdir /app /config && adduser -D app
+WORKDIR /app
 
 COPY --chown=app:app pricing.example.yml /config/pricing.yml
 COPY --from=build /app/ /app/
 
 ENV PATH="/app/bin:$PATH"
+ENV CONFIG_FILE=/config/pricing.yml
 VOLUME [ "/config" ]
 EXPOSE 8000
 USER app

@@ -14,7 +14,7 @@ typed-settings = "^24.2.0"
 orjson = "^3.10.2"
 sanic = {extras = ["ext"], version = "^23.12.1"}
 uvloop = "^0.19.0"
-oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "d47778a854d512657dc0c990bb6f538a0a813a18", extras = [
+oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "93057f461249c6d6b40fdbb676da770827d246fa", extras = [
     "typed-settings",
     "sanic",
     "template",
