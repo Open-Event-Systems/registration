@@ -97,16 +97,10 @@ class CartRepo(Repo[CartEntity, str]):
 
     entity_type = CartEntity
 
-    async def get(
-        self, id: str, *, event_id: str | None = None, lock: bool = False
-    ) -> CartEntity | None:
+    async def get(self, id: str, *, lock: bool = False) -> CartEntity | None:
         """Get a cart by ID."""
         cart = await super().get(id, lock=lock)
-        return (
-            None
-            if cart is None or event_id is not None and cart.event_id != event_id
-            else cart
-        )
+        return cart
 
 
 class CartService:
@@ -150,7 +144,7 @@ class CartService:
 
     async def _get_or_create(self, cart: Cart) -> CartEntity:
         id = cart.get_id(self.salt, self.version)
-        cur = await self.repo.get(id, event_id=cart.event_id)
+        cur = await self.repo.get(id)
         if cur:
             return cur
 

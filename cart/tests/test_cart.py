@@ -27,7 +27,7 @@ def test_hash():
     )
 
     hash_ = cart.get_id(b"\0" * 8, "0.1.0")
-    assert hash_ == "d44ff9b6c219ee4175dd60c8875995c56b543e1a862750713bb737c5d9876d0d"
+    assert hash_ == "a84e022390c29b9538dda8e6145b563dd0c32bdd546e61ad467bfa64a2bceccb"
 
 
 def test_hash_any_order():

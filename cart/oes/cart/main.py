@@ -33,7 +33,7 @@ def create_app() -> Sanic:
     setup_app(app, config, response_converter.converter)
     setup_database(app, config.db_url)
 
-    app.blueprint(routes, url_prefix="/events/<event_id>/carts")
+    app.blueprint(routes)
 
     app.ctx.config = config
     app.ctx.salt = config.salt.encode()
