@@ -1,20 +1,60 @@
 name: registration-example
 
+volumes:
+  db:
+
+configs:
+  auth:
+    file: ./config/auth.yml
+  cart:
+    file: ./config/cart.yml
+  interview:
+    file: ./config/interviews.yml
+  pricing:
+    file: ./config/pricing.yml
+  registration:
+    file: ./config/registration.yml
+
 services:
+  db:
+    image: postgres:16.3-alpine3.19
+    environment:
+      POSTGRES_USER: registration
+      POSTGRES_PASSWORD: changeit
+      POSTGRES_DB: registration
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./scripts/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh:z
+
   auth:
     build: ../auth
+    configs:
+      - source: auth
+        target: /config/config.yml
 
   interview:
     build: ../interview
+    configs:
+      - source: interview
+        target: /config/interviews.yml
 
   cart:
     build: ../cart
+    configs:
+      - source: cart
+        target: /config/config.yml
 
   pricing:
     build: ../pricing
+    configs:
+      - source: pricing
+        target: /config/pricing.yml
 
   registration:
     build: ../registration
+    configs:
+      - source: registration
+        target: /config/config.yml
 
   gateway:
     build: ../gateway

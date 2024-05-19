@@ -25,14 +25,16 @@ RUN poetry build -f wheel \
 
 
 FROM base AS app
-RUN mkdir /app /config && adduser -S app
-WORKDIR /config
+RUN mkdir /app /config && adduser -D app
+WORKDIR /app
 
 # COPY --chown=app:app alembic.ini /app/
+COPY --chown=app:app interview.example.yml /config/interview.yml
 COPY --chown=app:app interviews.example.yml /config/interviews.yml
 COPY --from=build /app/ /app/
 
 ENV PATH="/app/bin:$PATH"
+ENV CONFIG_FILE="/config/interview.yml"
 VOLUME [ "/config" ]
 EXPOSE 8000
 USER app

@@ -5,4 +5,5 @@
 !poetry.lock
 !poetry.lock
 !alembic.ini
+!interview.example.yml
 !interviews.example.yml

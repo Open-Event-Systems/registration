@@ -8,6 +8,7 @@ from oes.interview.config.config import get_config, load_config_file
 from oes.interview.serialization import configure_converter
 from oes.interview.server.routes import response_converter, routes
 from oes.interview.storage import StorageService
+from oes.utils import setup_logging
 from oes.utils.sanic import setup_app
 from sanic import Sanic
 
@@ -24,8 +25,9 @@ def main():
 
 def create_app():
     """Main app."""
-    app = Sanic("Interview")
+    app = Sanic("Interview", configure_logging=False)
     config = get_config()
+    setup_logging()
 
     converter = make_converter()
     configure_converter(converter)
@@ -41,6 +43,10 @@ def create_app():
     app.ctx.interviews = interviews
 
     app.blueprint(routes)
+
+    @app.before_server_start
+    async def setup_worker_logging(app: Sanic):
+        setup_logging(app.debug)
 
     @app.before_server_start
     async def setup_redis(app: Sanic):
