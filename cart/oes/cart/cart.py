@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 from collections.abc import Iterable
 from datetime import datetime
@@ -52,7 +53,7 @@ class Cart:
     meta: JSON = field(factory=dict)
     registrations: list[CartRegistration] = field(factory=list)
 
-    def get_id(self, salt: bytes, version: str) -> str:
+    def get_id(self, version: str) -> str:
         """Get the ID for this cart."""
         reg_sorted = Cart(
             self.event_id, self.meta, sorted(self.registrations, key=lambda r: r.id)
@@ -60,11 +61,10 @@ class Cart:
         as_dict = _converter.unstructure(reg_sorted)
         data = orjson.dumps(as_dict, option=orjson.OPT_SORT_KEYS)
 
-        h = hashlib.sha256(usedforsecurity=False)
-        h.update(salt)
+        h = hashlib.md5(usedforsecurity=False)
         h.update(version.encode())
         h.update(data)
-        return h.hexdigest()
+        return base64.urlsafe_b64encode(h.digest()).replace(b"=", b"").decode()
 
 
 @define
@@ -106,9 +106,8 @@ class CartRepo(Repo[CartEntity, str]):
 class CartService:
     """Cart service."""
 
-    def __init__(self, repo: CartRepo, salt: bytes, version: str):
+    def __init__(self, repo: CartRepo, version: str):
         self.repo = repo
-        self.salt = salt
         self.version = version
 
     async def add(self, cart: Cart) -> CartEntity:
@@ -143,7 +142,7 @@ class CartService:
         return await self.add(cart)
 
     async def _get_or_create(self, cart: Cart) -> CartEntity:
-        id = cart.get_id(self.salt, self.version)
+        id = cart.get_id(self.version)
         cur = await self.repo.get(id)
         if cur:
             return cur

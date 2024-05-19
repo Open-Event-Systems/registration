@@ -15,6 +15,7 @@ class Config:
         converter=lambda v: make_url(v),
         help="the database URL",
     )
+    disable_auth: bool = ts.option(default=False, help="disable auth")
 
 
 def get_config() -> Config:

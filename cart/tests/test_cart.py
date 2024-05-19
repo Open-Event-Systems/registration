@@ -12,7 +12,7 @@ def repo(session: AsyncSession):
 
 @pytest.fixture
 def service(repo: CartRepo):
-    return CartService(repo, b"\0" * 8, "0.1.0")
+    return CartService(repo, "0.1.0")
 
 
 def test_hash():
@@ -26,8 +26,8 @@ def test_hash():
         ],
     )
 
-    hash_ = cart.get_id(b"\0" * 8, "0.1.0")
-    assert hash_ == "a84e022390c29b9538dda8e6145b563dd0c32bdd546e61ad467bfa64a2bceccb"
+    hash_ = cart.get_id("0.1.0")
+    assert hash_ == "couM12APbZ6jBurSGsqUxg"
 
 
 def test_hash_any_order():
@@ -56,8 +56,8 @@ def test_hash_any_order():
         ],
     )
 
-    hash1 = cart1.get_id(b"\0" * 8, "0.1.0")
-    hash2 = cart2.get_id(b"\0" * 8, "0.1.0")
+    hash1 = cart1.get_id("0.1.0")
+    hash2 = cart2.get_id("0.1.0")
     assert hash1 == hash2
 
 

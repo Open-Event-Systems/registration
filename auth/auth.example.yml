@@ -1,3 +1,4 @@
 ---
 token_secret: changeit
 db_url: postgresql+asyncpg:///
+disable_auth: false

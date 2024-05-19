@@ -36,7 +36,6 @@ def create_app() -> Sanic:
     app.blueprint(routes)
 
     app.ctx.config = config
-    app.ctx.salt = config.salt.encode()
 
     app.ext.add_dependency(CartRepo)
     app.ext.add_dependency(CartService, _get_cart_service)
@@ -45,4 +44,4 @@ def create_app() -> Sanic:
 
 
 async def _get_cart_service(request: Request, repo: CartRepo) -> CartService:
-    return CartService(repo, request.app.ctx.salt, oes.cart.__version__)
+    return CartService(repo, oes.cart.__version__)

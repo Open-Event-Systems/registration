@@ -22,8 +22,13 @@ class CreateRefreshTokenRequest:
 
 
 @routes.get("/auth/validate")
-async def validate_token(request: Request, auth_service: AuthService) -> HTTPResponse:
+async def validate_token(
+    request: Request, config: Config, auth_service: AuthService
+) -> HTTPResponse:
     """Validate a token."""
+    if config.disable_auth:
+        return HTTPResponse(status=204)
+
     header = request.headers.get("Authorization", "")
     token = auth_service.validate_token(header)
     if token is None:
