@@ -19,5 +19,5 @@ class Config:
 
 def get_config() -> Config:
     """Load the config."""
-    loaders = get_loaders("OES_AUTH_SERVICE_")
+    loaders = get_loaders("OES_AUTH_SERVICE_", ("auth.yml",))
     return ts.load_settings(Config, loaders)

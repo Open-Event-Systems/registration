@@ -1,15 +1,11 @@
 import asyncio
 
 from alembic import context
-from oes.utils.log import setup_logging
+from oes.auth.config import get_config
+from oes.auth.orm import Base, import_entities
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
-
-setup_logging()
-
-from oes.auth.config import get_config
-from oes.auth.orm import Base, import_entities
 
 target_metadata = Base.metadata
 import_entities()
