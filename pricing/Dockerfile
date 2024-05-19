@@ -28,14 +28,12 @@ FROM base AS app
 RUN mkdir /app /config && adduser -S app
 WORKDIR /config
 
-COPY --chown=app:app alembic/ /app/alembic/
-COPY --chown=app:app alembic.ini /app/
-COPY --chown=app:app config.example.yml /config/config.yml
+COPY --chown=app:app pricing.example.yml /config/pricing.yml
 COPY --from=build /app/ /app/
 
 ENV PATH="/app/bin:$PATH"
 VOLUME [ "/config" ]
 EXPOSE 8000
 USER app
-ENTRYPOINT [ "oes-auth-service" ]
+ENTRYPOINT [ "oes-pricing-service" ]
 CMD [ "-H", "0.0.0.0" ]

@@ -16,7 +16,7 @@ loguru = "^0.7.2"
 oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "d47778a854d512657dc0c990bb6f538a0a813a18", extras = [
     "typed-settings",
     "sanic",
-    "sqlalchemy",
+    "template",
 ] }
 pyparsing = "^3.1.2"
 immutabledict = "^4.2.0"

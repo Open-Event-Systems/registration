@@ -1,0 +1,13 @@
+events:
+  example-event:
+    script_dir: tests/scripts
+    items:
+      - name: Standard Registration
+        description: Standard registration.
+        price: 5000
+        modifiers:
+          - name: Early Bird
+            amount: -1000
+            when: early_bird
+        when: >
+          "standard" in meta.added_option_ids

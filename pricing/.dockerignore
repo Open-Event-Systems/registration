@@ -1,0 +1,6 @@
+**/*
+!oes/**
+!pyproject.toml
+!poetry.lock
+!poetry.lock
+!pricing.example.yml

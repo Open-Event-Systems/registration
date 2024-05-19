@@ -37,5 +37,5 @@ ENV PATH="/app/bin:$PATH"
 VOLUME [ "/config" ]
 EXPOSE 8000
 USER app
-ENTRYPOINT [ "oes-auth-service" ]
+ENTRYPOINT [ "oes-registration-service" ]
 CMD [ "-H", "0.0.0.0" ]

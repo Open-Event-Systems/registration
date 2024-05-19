@@ -7,6 +7,15 @@ services:
   interview:
     build: ../interview
 
+  cart:
+    build: ../cart
+
+  pricing:
+    build: ../pricing
+
+  registration:
+    build: ../registration
+
   gateway:
     build: ../gateway
     ports:
