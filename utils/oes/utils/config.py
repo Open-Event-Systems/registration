@@ -31,5 +31,6 @@ def get_loaders(
                 "*.yml": _load_yaml,
             },
             config_files,
+            env_var="CONFIG_FILE",
         ),
     ]
