@@ -1,11 +1,12 @@
 import asyncio
+import contextlib
 
 from alembic import context
 from oes.auth.config import get_config
 from oes.auth.orm import Base, import_entities
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 target_metadata = Base.metadata
 import_entities()
@@ -60,15 +61,24 @@ async def run_async_migrations() -> None:
         poolclass=pool.NullPool,
     )
 
+    await _wait_online(connectable)
+
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
     await connectable.dispose()
 
 
+async def _wait_online(engine: AsyncEngine):
+    for _ in range(3):
+        with contextlib.suppress(OSError):
+            async with engine.connect():
+                return
+        await asyncio.sleep(3)
+
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-
     asyncio.run(run_async_migrations())
 
 
