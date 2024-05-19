@@ -6,3 +6,11 @@ services:
 
   interview:
     build: ../interview
+
+  gateway:
+    build: ../gateway
+    ports:
+      - "8000:80"
+    depends_on:
+      - auth
+      - interview

@@ -37,3 +37,4 @@ VOLUME [ "/config" ]
 EXPOSE 8000
 USER app
 ENTRYPOINT [ "oes-auth-service" ]
+CMD [ "-H", "0.0.0.0" ]
