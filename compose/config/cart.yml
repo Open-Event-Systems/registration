@@ -1,2 +1,4 @@
 ---
 db_url: postgresql+asyncpg://registration:changeit@db/cart
+pricing_url: http://pricing:8000
+currency: USD

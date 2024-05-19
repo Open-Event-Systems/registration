@@ -3,9 +3,16 @@
 import os
 import sys
 
+import httpx
 import oes.cart
 import uvloop
-from oes.cart.cart import CartEntity, CartRepo, CartService, unstructure_cart_entity
+from oes.cart.cart import (
+    CartEntity,
+    CartPricingService,
+    CartRepo,
+    CartService,
+    unstructure_cart_entity,
+)
 from oes.cart.config import get_config
 from oes.cart.routes import response_converter, routes
 from oes.utils import configure_converter
@@ -36,9 +43,19 @@ def create_app() -> Sanic:
     app.blueprint(routes)
 
     app.ctx.config = config
-
+    app.ext.dependency(config)
     app.ext.add_dependency(CartRepo)
     app.ext.add_dependency(CartService, _get_cart_service)
+    app.ext.add_dependency(CartPricingService)
+
+    @app.before_server_start
+    async def setup_httpx(app: Sanic):
+        app.ctx.httpx = httpx.AsyncClient()
+        app.ext.dependency(app.ctx.httpx)
+
+    @app.after_server_stop
+    async def shutdown_httpx(app: Sanic):
+        await app.ctx.httpx.aclose()
 
     return app
 

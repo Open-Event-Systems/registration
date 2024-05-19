@@ -14,6 +14,10 @@ class Config:
         converter=lambda v: make_url(v),
         help="the database URL",
     )
+    pricing_url: str = ts.option(
+        default="http://pricing:8000", help="url of the pricing service"
+    )
+    currency: str = ts.option(default="USD", help="the currency to use")
 
 
 def get_config() -> Config:

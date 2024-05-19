@@ -1,6 +1,5 @@
 events:
   example-event:
-    script_dir: tests/scripts
     items:
       - name: Standard Registration
         description: Standard registration.

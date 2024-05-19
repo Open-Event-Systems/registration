@@ -4,14 +4,16 @@ from __future__ import annotations
 
 import base64
 import hashlib
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+import httpx
 import orjson
 from attrs import define, field
 from cattrs.preconf.orjson import make_converter
+from oes.cart.config import Config
 from oes.cart.orm import Base
 from oes.utils.orm import JSON, Repo
 from sqlalchemy import String
@@ -151,3 +153,20 @@ class CartService:
         entity = CartEntity(id=id, event_id=cart.event_id, cart_data=data)
         self.repo.add(entity)
         return entity
+
+
+class CartPricingService:
+    """Cart pricing service."""
+
+    def __init__(self, config: Config, client: httpx.AsyncClient):
+        self.config = config
+        self.client = client
+
+    async def price_cart(self, cart: Cart) -> Mapping[str, Any]:
+        """Get a pricing result for a cart."""
+        data = _converter.unstructure(cart)
+        res = await self.client.post(
+            f"{self.config.pricing_url}/price-cart",
+            json={"currency": self.config.currency, "cart": data},
+        )
+        return res.json()

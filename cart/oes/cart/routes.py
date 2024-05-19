@@ -1,9 +1,18 @@
 """Routes module."""
 
+from collections.abc import Mapping
+from typing import Any
 from uuid import UUID
 
 from attrs import define
-from oes.cart.cart import Cart, CartEntity, CartRegistration, CartRepo, CartService
+from oes.cart.cart import (
+    Cart,
+    CartEntity,
+    CartPricingService,
+    CartRegistration,
+    CartRepo,
+    CartService,
+)
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
@@ -56,7 +65,7 @@ async def add_to_cart(
     return await service.add_to_cart(cart_entity, add_body.registrations)
 
 
-@routes.delete("/<cart_id>/registrations/<registration_id:uuid>")
+@routes.delete("/carts/<cart_id>/registrations/<registration_id:uuid>")
 @response_converter
 @transaction
 async def remove_from_cart(
@@ -69,3 +78,13 @@ async def remove_from_cart(
     """Add a registration to a cart."""
     cart_entity = raise_not_found(await repo.get(cart_id))
     return await service.remove_from_cart(cart_entity, registration_id)
+
+
+@routes.get("/carts/<cart_id>/pricing-result")
+@response_converter
+async def price_cart(
+    request: Request, cart_id: str, repo: CartRepo, pricing_service: CartPricingService
+) -> Mapping[str, Any]:
+    """Get a pricing result for a cart."""
+    cart_entity = raise_not_found(await repo.get(cart_id))
+    return await pricing_service.price_cart(cart_entity.get_cart())
