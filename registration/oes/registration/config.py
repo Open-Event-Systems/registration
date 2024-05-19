@@ -18,5 +18,5 @@ class Config:
 
 def get_config() -> Config:
     """Load the config."""
-    loaders = get_loaders("OES_REGISTRATION_SERVICE_")
+    loaders = get_loaders("OES_REGISTRATION_SERVICE_", ("registration.yml",))
     return ts.load_settings(Config, loaders)

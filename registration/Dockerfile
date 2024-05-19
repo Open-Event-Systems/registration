@@ -25,17 +25,19 @@ RUN poetry build -f wheel \
 
 
 FROM base AS app
-RUN mkdir /app /config && adduser -S app
-WORKDIR /config
+RUN mkdir /app /config && adduser -D app
+WORKDIR /app
 
+COPY --chown=app:app scripts/docker-entrypoint.sh /
 COPY --chown=app:app alembic/ /app/alembic/
 COPY --chown=app:app alembic.ini /app/
-COPY --chown=app:app config.example.yml /config/config.yml
+COPY --chown=app:app registration.example.yml /config/registration.yml
 COPY --from=build /app/ /app/
 
 ENV PATH="/app/bin:$PATH"
+ENV CONFIG_FILE=/config/registration.yml
 VOLUME [ "/config" ]
 EXPOSE 8000
 USER app
-ENTRYPOINT [ "oes-registration-service" ]
+ENTRYPOINT [ "/docker-entrypoint.sh" ]
 CMD [ "-H", "0.0.0.0" ]
