@@ -1,6 +1,7 @@
 """HTTP response utilities."""
 
 import functools
+import types
 from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any, ParamSpec, Type, overload
 
@@ -44,7 +45,7 @@ class ResponseConverter:
 
     def __call__(self, arg=None) -> Any:
         """Decorate a handler to unstructure the return value into a response."""
-        if callable(arg) and not isinstance(arg, type):
+        if isinstance(arg, types.FunctionType):
             unstructure_as = None
             func = arg
         else:
