@@ -57,6 +57,8 @@ services:
         target: /config/cart.yml
     depends_on:
       - db
+      - redis
+      - pricing
 
   pricing:
     build: ../pricing

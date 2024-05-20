@@ -74,7 +74,7 @@ async def _wait_online(engine: AsyncEngine):
         with contextlib.suppress(OSError):
             async with engine.connect():
                 return
-        await asyncio.sleep(3)
+        await asyncio.sleep(1)
 
 
 def run_migrations_online() -> None:
