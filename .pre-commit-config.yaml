@@ -79,3 +79,8 @@ repos:
         name: pyright (registration)
         files: ^registration/
         args: [-p, registration]
+
+      - id: pyright
+        name: pyright (web)
+        files: ^web/
+        args: [-p, web]
