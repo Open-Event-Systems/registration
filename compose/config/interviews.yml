@@ -1,6 +1,6 @@
 ---
 interviews:
-  - id: interview1
+  - id: new-registration
     questions:
       - id: first-name
         title: First Name

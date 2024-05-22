@@ -1,6 +1,5 @@
 """Event routes."""
 
-from collections.abc import Sequence
 from datetime import date as dt_date
 
 from attrs import frozen
@@ -25,8 +24,8 @@ class EventResponse:
 
 
 @routes.get("/events")
-@response_converter(Sequence[EventResponse])
-async def list_events(request: Request, config: Config) -> Sequence[Event]:
+@response_converter(list[EventResponse])
+async def list_events(request: Request, config: Config) -> list[Event]:
     """List events."""
     return sorted(config.events, key=lambda e: e.date, reverse=True)
 

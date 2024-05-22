@@ -51,6 +51,7 @@ async def create_refresh_token(
 ) -> HTTPResponse:
     """Create a new refresh token."""
     req = await body(CreateRefreshTokenRequest)
+    # TODO: this endpoint should be anonymous accounts only
     account_id = (
         req.account_id
         if req.account_id

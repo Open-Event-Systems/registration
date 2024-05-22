@@ -3,12 +3,14 @@
 import os
 import sys
 
+import httpx
 from cattrs.gen import make_dict_unstructure_fn
 from oes.utils import configure_converter, setup_logging
 from oes.utils.sanic import setup_app
 from oes.web.config import get_config
+from oes.web.interview import InterviewService
+from oes.web.registration import RegistrationService
 from oes.web.routes.common import response_converter
-from oes.web.routes.registration import RegistrationService
 from sanic import Sanic
 
 
@@ -44,9 +46,20 @@ def create_app() -> Sanic:
     app.ctx.config = config
     app.ext.dependency(config)
     app.ext.add_dependency(RegistrationService)
+    app.ext.add_dependency(InterviewService)
 
     @app.before_server_start
     async def setup_log(app: Sanic):
         setup_logging(app.debug)
+
+    @app.before_server_start
+    async def setup_httpx(app: Sanic):
+        client = httpx.AsyncClient()
+        app.ctx.httpx = client
+        app.ext.dependency(client)
+
+    @app.after_server_stop
+    async def shutdown_httpx(app: Sanic):
+        await app.ctx.httpx.aclose()
 
     return app

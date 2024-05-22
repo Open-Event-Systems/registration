@@ -52,7 +52,8 @@ class InterviewResponse:
 
     state: str
     completed: bool
-    content: AskResult | ExitResult | None
+    update_url: str | None = None
+    content: AskResult | ExitResult | None = None
 
 
 @routes.post("/interviews/<interview_id>")
@@ -73,10 +74,13 @@ async def start_interview(
     )
     context = make_interview_context(interview.questions, interview.steps, state)
     key = await storage.put(context)
-    return InterviewResponse(key, state.completed, None)
+    update_url = request.url_for("interview.update_interview_route")
+    return InterviewResponse(
+        key, state.completed, update_url if not state.completed else None, None
+    )
 
 
-@routes.post("/update-interview")
+@routes.post("/update-interview", name="update_interview_route")
 @response_converter
 async def update_interview_route(
     request: Request, storage: StorageService, body: CattrsBody
@@ -92,4 +96,10 @@ async def update_interview_route(
         exc.status_code = 422
         raise exc
     key = await storage.put(result_ctx)
-    return InterviewResponse(key, result_ctx.state.completed, cast(AskResult, content))
+    update_url = request.url_for("interview.update_interview_route")
+    return InterviewResponse(
+        key,
+        result_ctx.state.completed,
+        update_url if not result_ctx.state.completed else None,
+        cast(AskResult, content),
+    )

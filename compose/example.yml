@@ -16,6 +16,8 @@ configs:
     file: ./config/pricing.yml
   registration:
     file: ./config/registration.yml
+  web:
+    file: ./config/events.yml
 
 services:
   db:
@@ -71,6 +73,14 @@ services:
     configs:
       - source: registration
         target: /config/registration.yml
+    depends_on:
+      - db
+
+  web:
+    build: ../web
+    configs:
+      - source: web
+        target: /config/events.yml
     depends_on:
       - db
 

@@ -36,6 +36,16 @@ async def update_interview(
     """Update an interview."""
     # apply responses first
     if interview_context.state.current_question is not None:
+        if responses is None:
+            # probably needs to be moved
+            from oes.interview.interview.step_types.ask import AskResult
+
+            # if no responses were provided, return the same state unchanged
+            return interview_context, AskResult(
+                schema=interview_context.state.current_question.get_question(
+                    interview_context.state.template_context
+                ).schema
+            )
         state = apply_responses(interview_context.state, responses or {})
         interview_context = evolve(interview_context, state=state)
     updater = _Updater(interview_context)

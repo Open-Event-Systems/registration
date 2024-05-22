@@ -1,6 +1,4 @@
 ---
-registration_service_url: http://registration:8000
-interview_service_url: http://interview:8000
 events:
   - id: example-event
     title: Example Event

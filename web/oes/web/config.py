@@ -78,6 +78,12 @@ class Event:
 class Config:
     """Main config object."""
 
+    registration_service_url: str = ts.option(
+        default="http://registration:8000", help="the registration service url"
+    )
+    interview_service_url: str = ts.option(
+        default="http://interview:8000", help="the interview service url"
+    )
     events: Sequence[Event] = ()
 
 
