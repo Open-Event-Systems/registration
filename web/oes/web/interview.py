@@ -36,6 +36,11 @@ class InterviewService:
         body = {
             "context": {
                 "event": event.get_template_context(),
+                "meta": {
+                    "event_id": event.id,
+                    "interview_id": interview_id,
+                    "cart_id": cart_id,
+                },
             },
             "data": {"registration": registration},
             "target": target,
@@ -44,5 +49,15 @@ class InterviewService:
         res = await self.client.post(
             url, content=body_bytes, headers={"Content-Type": "application/json"}
         )
+        res.raise_for_status()
+        return res.json()
+
+    async def get_completed_interview(self, state: str) -> Mapping[str, Any] | None:
+        """Get a completed interview."""
+        res = await self.client.get(
+            f"{self.config.interview_service_url}/completed-interviews/{state}"
+        )
+        if res.status_code == 404:
+            return None
         res.raise_for_status()
         return res.json()

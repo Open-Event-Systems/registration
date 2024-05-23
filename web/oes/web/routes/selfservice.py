@@ -5,8 +5,9 @@ from typing import Any
 from urllib.parse import urlunparse
 
 from attrs import frozen
-from oes.utils.request import raise_not_found
+from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.template import TemplateContext
+from oes.web.cart import CartService
 from oes.web.config import Config, Event, InterviewOption, RegistrationDisplay
 from oes.web.interview import InterviewService
 from oes.web.registration import RegistrationService
@@ -79,6 +80,13 @@ class SelfServiceRegistrationsResponse:
     add_options: Sequence[SelfServiceInterviewOption] = ()
 
 
+@frozen
+class SelfServiceAddToCartRequest:
+    """A request to add a registration to a cart."""
+
+    state: str
+
+
 @routes.get("/self-service/events")
 @response_converter(list[EventResponse])
 async def list_selfservice_events(request: Request, config: Config) -> list[Event]:
@@ -129,6 +137,7 @@ async def start_interview(
     interview_id: str,
     reg_service: RegistrationService,
     interview_service: InterviewService,
+    cart_service: CartService,
 ) -> HTTPResponse:
     """Start an interview to add a registration to a cart."""
     event = raise_not_found(reg_service.get_event(event_id))
@@ -138,18 +147,66 @@ async def start_interview(
         raise Forbidden
 
     cart_id = request.args.get("cart_id")
+    cart = await cart_service.get_cart(cart_id) if cart_id else None
     # TODO: registration for changes
-    if not cart_id or not reg_service.is_interview_allowed(interview_id, event, None):
+    if (
+        not cart
+        or cart.get("cart", {}).get("event_id") != event_id
+        or not reg_service.is_interview_allowed(interview_id, event, None)
+    ):
         raise NotFound
 
     update_url = urlunparse(
         (request.scheme, request.host, "/update-interview", None, None, None)
     )
-    target_url = request.url_for(
-        "selfservice.list_selfservice_registrations", event_id=event_id
-    )  # TODO
+    target_url = request.url_for("selfservice.add_to_cart")
 
     interview = await interview_service.start_interview(
         event, interview_id, cart_id, target_url, None
     )
     return json({**interview, "update_url": update_url})
+
+
+@routes.post("/self-service/add-to-cart", name="add_to_cart")
+async def add_to_cart(
+    request: Request,
+    body: CattrsBody,
+    interview_service: InterviewService,
+    cart_service: CartService,
+    registration_service: RegistrationService,
+) -> HTTPResponse:
+    req = await body(SelfServiceAddToCartRequest)
+    state = req.state
+    completed_interview = raise_not_found(
+        await interview_service.get_completed_interview(state)
+    )
+    target = completed_interview.get("target")
+    expected_target = request.url
+    if target != expected_target:
+        raise NotFound
+
+    data = completed_interview.get("data", {})
+    context = completed_interview.get("context", {})
+    meta = context.get("meta", {})
+    cart_id = meta.get("cart_id")
+    interview_id = meta.get("interview_id")
+    event_id = meta.get("event_id")
+    # TODO: registration id?
+    registration = data.get("registration", {})
+
+    event = raise_not_found(registration_service.get_event(event_id))
+    if not event.visible or not event.open:
+        raise NotFound
+    if not registration_service.is_interview_allowed(interview_id, event, None):
+        raise NotFound
+
+    # TODO: get current registration data?
+    new_cart = await cart_service.add_to_cart(
+        cart_id,
+        {
+            "id": registration.get("id"),
+            "old": {},
+            "new": registration,
+        },
+    )
+    return json({"id": new_cart.get("id")})

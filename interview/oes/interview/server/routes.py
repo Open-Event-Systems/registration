@@ -1,6 +1,7 @@
 """Routes."""
 
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any, cast
 
 from attrs import field, frozen
@@ -14,7 +15,7 @@ from oes.interview.interview.update import update_interview
 from oes.interview.storage import StorageService
 from oes.utils.request import BadRequest, CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
-from sanic import Blueprint, Request
+from sanic import Blueprint, NotFound, Request
 
 routes = Blueprint("interview")
 
@@ -54,6 +55,17 @@ class InterviewResponse:
     completed: bool
     update_url: str | None = None
     content: AskResult | ExitResult | None = None
+
+
+@frozen
+class InterviewResultResponse:
+    """A completed interview result."""
+
+    date_started: datetime
+    date_expires: datetime
+    target: str | None
+    context: Mapping[str, Any]
+    data: Mapping[str, Any]
 
 
 @routes.post("/interviews/<interview_id>")
@@ -102,4 +114,26 @@ async def update_interview_route(
         result_ctx.state.completed,
         update_url if not result_ctx.state.completed else None,
         cast(AskResult, content),
+    )
+
+
+@routes.get("/completed-interviews/<state>")
+@response_converter
+async def completed_interview_route(
+    request: Request, state: str, storage: StorageService
+) -> InterviewResultResponse:
+    interview = raise_not_found(await storage.get(state))
+    if not interview.state.completed:
+        raise NotFound
+
+    now = datetime.now().astimezone()
+    if now >= interview.state.date_expires:
+        raise NotFound
+
+    return InterviewResultResponse(
+        date_started=interview.state.date_started,
+        date_expires=interview.state.date_expires,
+        target=interview.state.target,
+        context=interview.state.context,
+        data=interview.state.data,
     )

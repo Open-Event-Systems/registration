@@ -7,6 +7,7 @@ import httpx
 from cattrs.gen import make_dict_unstructure_fn
 from oes.utils import configure_converter, setup_logging
 from oes.utils.sanic import setup_app
+from oes.web.cart import CartService
 from oes.web.config import get_config
 from oes.web.interview import InterviewService
 from oes.web.registration import RegistrationService
@@ -47,6 +48,7 @@ def create_app() -> Sanic:
     app.ext.dependency(config)
     app.ext.add_dependency(RegistrationService)
     app.ext.add_dependency(InterviewService)
+    app.ext.add_dependency(CartService)
 
     @app.before_server_start
     async def setup_log(app: Sanic):
