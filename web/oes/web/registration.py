@@ -25,6 +25,21 @@ class RegistrationService:
         # TODO: filter by account/email
         url = f"{self.config.registration_service_url}/events/{event_id}/registrations"
         res = await self.client.get(url)
+        res.raise_for_status()
+        return res.json()
+
+    async def get_registration(
+        self, event_id: str, registration_id: str
+    ) -> Mapping[str, Any] | None:
+        """Get a registration from the registration service."""
+        url = (
+            f"{self.config.registration_service_url}/events"
+            f"/{event_id}/registrations/{registration_id}"
+        )
+        res = await self.client.get(url)
+        if res.status_code == 404:
+            return None
+        res.raise_for_status()
         return res.json()
 
     def get_add_options(self, event: Event) -> Iterable[InterviewOption]:

@@ -30,17 +30,16 @@ class InterviewService:
                 "id": str(uuid.uuid4()),
                 "status": "created",
                 "event_id": event.id,
+                "version": 1,
             }
 
         url = f"{self.config.interview_service_url}/interviews/{interview_id}"
         body = {
             "context": {
                 "event": event.get_template_context(),
-                "meta": {
-                    "event_id": event.id,
-                    "interview_id": interview_id,
-                    "cart_id": cart_id,
-                },
+                "event_id": event.id,
+                "interview_id": interview_id,
+                "cart_id": cart_id,
             },
             "data": {"registration": registration},
             "target": target,

@@ -11,7 +11,7 @@ from oes.web.cart import CartService
 from oes.web.config import Config, Event, InterviewOption, RegistrationDisplay
 from oes.web.interview import InterviewService
 from oes.web.registration import RegistrationService
-from oes.web.routes.common import response_converter
+from oes.web.routes.common import Conflict, response_converter
 from oes.web.routes.event import EventResponse
 from sanic import Blueprint, Forbidden, HTTPResponse, NotFound, Request, json
 from typing_extensions import Self
@@ -147,12 +147,19 @@ async def start_interview(
         raise Forbidden
 
     cart_id = request.args.get("cart_id")
+    registration_id = request.args.get("registration_id")
     cart = await cart_service.get_cart(cart_id) if cart_id else None
-    # TODO: registration for changes
+    reg = (
+        await reg_service.get_registration(event_id, registration_id)
+        if registration_id
+        else None
+    )
     if (
         not cart
         or cart.get("cart", {}).get("event_id") != event_id
-        or not reg_service.is_interview_allowed(interview_id, event, None)
+        or registration_id
+        and reg is None
+        or not reg_service.is_interview_allowed(interview_id, event, reg)
     ):
         raise NotFound
 
@@ -162,7 +169,7 @@ async def start_interview(
     target_url = request.url_for("selfservice.add_to_cart")
 
     interview = await interview_service.start_interview(
-        event, interview_id, cart_id, target_url, None
+        event, interview_id, cart_id, target_url, reg
     )
     return json({**interview, "update_url": update_url})
 
@@ -175,38 +182,67 @@ async def add_to_cart(
     cart_service: CartService,
     registration_service: RegistrationService,
 ) -> HTTPResponse:
+    """Add a change to a cart via interview state."""
     req = await body(SelfServiceAddToCartRequest)
     state = req.state
     completed_interview = raise_not_found(
         await interview_service.get_completed_interview(state)
     )
+
     target = completed_interview.get("target")
     expected_target = request.url
     if target != expected_target:
-        raise NotFound
+        raise Forbidden
 
     data = completed_interview.get("data", {})
     context = completed_interview.get("context", {})
-    meta = context.get("meta", {})
-    cart_id = meta.get("cart_id")
-    interview_id = meta.get("interview_id")
-    event_id = meta.get("event_id")
-    # TODO: registration id?
+    cart_id = context.get("cart_id")
+    interview_id = context.get("interview_id")
+    event_id = context.get("event_id")
     registration = data.get("registration", {})
 
-    event = raise_not_found(registration_service.get_event(event_id))
-    if not event.visible or not event.open:
-        raise NotFound
-    if not registration_service.is_interview_allowed(interview_id, event, None):
-        raise NotFound
+    event = raise_not_found(
+        registration_service.get_event(event_id) if event_id else None
+    )
+    cur_exists, cur_reg = await _get_cur_registration(
+        event.id, registration, registration_service
+    )
 
-    # TODO: get current registration data?
+    if (
+        not cart_id
+        or not interview_id
+        or not event.visible
+        or not event.open
+        or not registration_service.is_interview_allowed(
+            interview_id, event, cur_reg if cur_exists else None
+        )
+    ):
+        raise Conflict
+
+    if cur_reg.get("version") != registration.get("version"):
+        raise Conflict
+
     new_cart = await cart_service.add_to_cart(
         cart_id,
         {
             "id": registration.get("id"),
-            "old": {},
+            "old": cur_reg,
             "new": registration,
         },
     )
     return json({"id": new_cart.get("id")})
+
+
+async def _get_cur_registration(
+    event_id: str, reg: Mapping[str, Any], service: RegistrationService
+) -> tuple[bool, Mapping[str, Any]]:
+    reg_id = reg.get("id")
+    cur = await service.get_registration(event_id, reg_id) if reg_id else None
+    if cur:
+        return True, cur
+    else:
+        return False, {
+            "id": reg_id,
+            "status": "pending",
+            "version": 1,
+        }

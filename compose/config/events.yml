@@ -14,8 +14,8 @@ events:
       - id: new-registration
         title: New Registration
     change_options:
-      - id: upgrade
-        title: Upgrade
+      - id: change-registration
+        title: Change Registration
 
     registration_display:
       title: "{{ registration.preferred_name or registration.first_name }}"
