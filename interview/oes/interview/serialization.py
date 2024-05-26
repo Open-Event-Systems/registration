@@ -1,5 +1,6 @@
 """Serialization module."""
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Union
 
@@ -62,6 +63,14 @@ def configure_converter(converter: Converter):
     )
     converter.register_structure_hook(
         ValueOrEvaluable, make_value_or_evaluable_structure_fn(converter)
+    )
+    converter.register_structure_hook_func(
+        lambda cls: cls == Union[Expression, Sequence[Expression]],
+        lambda v, t: (
+            converter.structure(v, Sequence[Expression])
+            if isinstance(v, Sequence) and not isinstance(v, str)
+            else converter.structure(v, Expression)
+        ),
     )
     converter.register_unstructure_hook_func(
         lambda cls: cls in (LogicAnd, LogicOr), make_logic_unstructure_fn(converter)

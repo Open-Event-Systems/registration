@@ -52,6 +52,12 @@ def converter():
             [],
             {"val": 1, "result1": True},
         ),
+        (
+            "tests/test_data/configs/config1.yml",
+            "ensure",
+            [["fname"], ["lname"]],
+            {"first_name": "fname", "last_name": "lname"},
+        ),
     ],
 )
 @pytest.mark.asyncio

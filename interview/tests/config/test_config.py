@@ -17,7 +17,7 @@ def converter():
 @pytest.mark.parametrize(
     "path, num_interviews",
     [
-        ("tests/test_data/configs/config1.yml", 6),
+        ("tests/test_data/configs/config1.yml", 7),
     ],
 )
 def test_config(path, num_interviews: int, converter: Converter):
