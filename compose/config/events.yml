@@ -14,8 +14,12 @@ events:
       - id: new-registration
         title: New Registration
     change_options:
-      - id: change-registration
-        title: Change Registration
+      - id: upgrade-registration
+        title: Upgrade Registration
+        when: >-
+          "sponsor" not in registration.option_ids
 
     registration_display:
       title: "{{ registration.preferred_name or registration.first_name }}"
+      subtitle: >-
+        {{ "Sponsor" if "sponsor" in registration.option_ids else "Basic" }}

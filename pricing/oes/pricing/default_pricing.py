@@ -102,6 +102,6 @@ def _default_get_name(reg: CartRegistration) -> str:
     lname = reg.new.get("last_name")
     pname = reg.new.get("preferred_name")
 
-    names = [fname or pname, lname]
+    names = [pname or fname, lname]
     name = " ".join(n for n in names if n)
     return name or "Registration"

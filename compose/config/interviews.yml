@@ -2,48 +2,124 @@
 interviews:
   - id: new-registration
     questions:
-      - id: first-name
-        title: First Name
-        description: What is your first name?
+      - id: name
+        title: Your Name
+        description: |
+          What is your legal first and last name? Enter it exactly as it appears
+          on your government-issued photo ID.
+
+          If you prefer to go by a different name, we'll ask for that next.
         fields:
           registration.first_name:
             type: text
-
-      - id: last-name
-        title: Last Name
-        description: What is your last name?
-        fields:
+            label: First Name
           registration.last_name:
             type: text
+            label: Last Name
+          use_preferred_name:
+            type: select
+            component: checkbox
+            min: 0
+            max: 1
+            options:
+              - label: I prefer to go by a different name
+                value: true
+
+      - id: preferred-name
+        title: Preferred Name
+        description: |
+          Enter your preferred name. We'll use this when addressing you going
+          forward.
+        fields:
+          registration.preferred_name:
+            type: text
+            label: Preferred Name
+
+      - id: email
+        title: Contact
+        description: |
+          Enter an email to associate with this registration. If we need to
+          contact you regarding this registration, we'll use this address.
+        fields:
+          registration.email:
+            type: text
+            format: email
+            label: Email
+
+      - id: registration-level
+        title: Registration Level
+        description: |
+          Choose a registration level. You can find more information about each
+          level on our website.
+        fields:
+          level:
+            type: select
+            label: Registration Level
+            min: 1
+            max: 1
+            options:
+              - label: Basic
+                default: true
+                value: basic
+              - label: Sponsor
+                value: sponsor
+
+      - id: code-of-conduct
+        title: Code of Conduct
+        description: |
+          That's all the information we need now. Take a moment to review our
+          code of conduct.
+        fields:
+          accept_code_of_conduct:
+            type: select
+            component: checkbox
+            min: 1
+            max: 1
+            options:
+              - label: I agree to abide by the Code of Conduct
+                value: true
 
     steps:
-      - set: registration
-        value: "{}"
-        when: registration is undefined
-
       - set: display_name
-        value: registration.first_name + " " + registration.last_name
+        value: >-
+          registration.preferred_name if use_preferred_name else
+          registration.first_name
 
-  - id: change-registration
+      - set: registration.option_ids
+        value: >-
+          ["basic", "sponsor"] if level == "sponsor" else ["basic"]
+
+      # TODO: need an ensure/eval step
+      - ask: code-of-conduct
+        when:
+          - registration.first_name
+          - registration.last_name
+          - registration.email
+
+  - id: upgrade-registration
     questions:
-      - id: first-name
-        title: First Name
-        description: What is your first name?
+      - id: registration-level
+        title: Registration Level
+        description: |
+          Choose a registration level. You can find more information about each
+          level on our website.
         fields:
-          registration.first_name:
-            type: text
-
-      - id: last-name
-        title: Last Name
-        description: What is your last name?
-        fields:
-          registration.last_name:
-            type: text
+          level:
+            type: select
+            label: Registration Level
+            min: 1
+            max: 1
+            options:
+              - label: Sponsor
+                default: true
+                value: sponsor
 
     steps:
-      - set: registration
-        value: "{}"
-        when: registration is undefined
-
-      - ask: first-name
-      - ask: last-name
+      - set: registration.option_ids
+        value: "[]"
+        when: registration.option_ids is not defined
+      - set: registration.option_ids
+        value: registration.option_ids + ["sponsor"]
+        when:
+          - "'sponsor' not in registration.option_ids"
+          - level == "sponsor"
