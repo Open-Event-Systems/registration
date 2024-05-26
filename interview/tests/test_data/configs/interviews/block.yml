@@ -1,0 +1,12 @@
+questions: []
+steps:
+  - set: val
+    value: "1"
+  - block:
+      - set: result1
+        value: "true"
+      - block:
+          - set: result2
+            value: "true"
+        when: val == 2
+    when: val == 1

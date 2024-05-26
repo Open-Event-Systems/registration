@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from inspect import iscoroutinefunction
 from typing import TYPE_CHECKING, Any
 
@@ -48,10 +48,7 @@ async def update_interview(
             )
         state = apply_responses(interview_context.state, responses or {})
         interview_context = evolve(interview_context, state=state)
-    updater = _Updater(interview_context)
-    result = await updater()
-    final_context = evolve(interview_context, state=result.state)
-    return final_context, result.content
+    return await run_steps(interview_context, interview_context.steps)
 
 
 def apply_responses(
@@ -75,29 +72,41 @@ def _apply_response_values(
     return state.update(data=cur_data, current_question=None)
 
 
+async def run_steps(
+    interview_context: InterviewContext, steps: Sequence[Step]
+) -> tuple[InterviewContext, object | None]:
+    """Run the interview steps until completed or content is returned."""
+    updater = _Updater(interview_context)
+    result = await updater(steps)
+    final_context = evolve(interview_context, state=result.state)
+    return final_context, result.content
+
+
 @frozen
 class _Updater:
     initial_context: InterviewContext
 
-    async def __call__(self) -> UpdateResult:
+    async def __call__(self, steps: Sequence[Step]) -> UpdateResult:
         """Run the interview steps until completed or content is returned."""
         current_state = self.initial_context.state
         for _ in range(MAX_UPDATE_COUNT):
-            result = await self._run_steps(current_state)
+            result = await self._run_steps(current_state, steps)
             if result.content is not None or result.state.completed:
                 return result
             current_state = result.state
         else:
             raise InterviewError("Max update count exceeded")
 
-    async def _run_steps(self, state: InterviewState) -> UpdateResult:
+    async def _run_steps(
+        self, state: InterviewState, steps: Sequence[Step]
+    ) -> UpdateResult:
         """Run through interview steps once."""
         # probably needs to be moved
         from oes.interview.interview.step_types.ask import AskResult
 
         cur_result = UpdateResult(state)
         with resolve_undefined_values(self.initial_context) as resolver:
-            for step in self.initial_context.steps:
+            for step in steps:
                 proxy_ctx = make_proxy(cur_result.state.template_context)
                 if not evaluate(step.when, proxy_ctx):
                     continue
