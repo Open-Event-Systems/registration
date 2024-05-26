@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "oes-payment"
+version = "0.1.0"
+description = "OES registration payment service"
+authors = ["Wes <wes@anthronewengland.com>"]
+packages = [{ include = "oes" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "93057f461249c6d6b40fdbb676da770827d246fa", extras = [
+    "typed-settings",
+    "sanic",
+    "sqlalchemy",
+] }
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
+sanic = {extras = ["ext"], version = "^23.12.1"}
+alembic = "^1.13.1"
+asyncpg = "^0.29.0"
+uvloop = "^0.19.0"
+attrs = "^23.2.0"
+cattrs = "^23.2.3"
+orjson = "^3.10.3"
+typed-settings = "^24.3.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.1"
+pytest-asyncio = "^0.23.7"
+pytest-cov = "^5.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
