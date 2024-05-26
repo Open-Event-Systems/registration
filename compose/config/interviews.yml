@@ -89,12 +89,11 @@ interviews:
         value: >-
           ["basic", "sponsor"] if level == "sponsor" else ["basic"]
 
-      # TODO: need an ensure/eval step
-      - ask: code-of-conduct
-        when:
+      - ensure:
           - registration.first_name
           - registration.last_name
           - registration.email
+          - accept_code_of_conduct
 
   - id: upgrade-registration
     questions:
