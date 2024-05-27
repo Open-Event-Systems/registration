@@ -62,7 +62,6 @@ services:
     depends_on:
       - db
       - redis
-      - pricing
 
   pricing:
     build: ../pricing
@@ -100,4 +99,8 @@ services:
       - "8000:80"
     depends_on:
       - auth
+      - cart
+      - payment
       - interview
+      - registration
+      - web

@@ -1,6 +1,7 @@
 """Web routes."""
 
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from typing import Any
 
 from attrs import frozen
@@ -37,6 +38,22 @@ class CreatePaymentRequestBody:
     cart_id: str
     cart_data: CartData
     pricing_result: PricingResult
+
+
+@frozen
+class PaymentResponse:
+    """Payment response body."""
+
+    id: str
+    service: str
+    external_id: str
+    status: PaymentStatus
+    date_created: datetime
+    date_closed: datetime | None
+    cart_id: str
+    cart_data: CartData
+    pricing_result: Mapping[str, Any]
+    data: Mapping[str, Any]
 
 
 @frozen
@@ -94,6 +111,27 @@ async def create_payment(
         id=res.id,
         status=res.status,
         body=res.body,
+    )
+
+
+@routes.get("/payments/<payment_id>")
+@response_converter
+async def read_payment(
+    request: Request, payment_id: str, repo: PaymentRepo
+) -> PaymentResponse:
+    """Read a payment."""
+    payment = raise_not_found(await repo.get(payment_id))
+    return PaymentResponse(
+        id=payment.id,
+        service=payment.service,
+        external_id=payment.external_id,
+        status=payment.status,
+        date_created=payment.date_created,
+        date_closed=payment.date_closed,
+        cart_id=payment.cart_id,
+        cart_data=payment.cart_data,
+        pricing_result=payment.pricing_result,
+        data=payment.data,
     )
 
 

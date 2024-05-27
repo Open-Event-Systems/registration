@@ -51,6 +51,9 @@ class PaymentServicesSvc:
         self, cart_data: CartData, pricing_result: PricingResult
     ) -> Iterable[tuple[str, PaymentMethodConfig]]:
         """Get the available :class:`PaymentMethodConfig` objects."""
+        # return an empty tuple when the cart is empty
+        if len(cart_data.get("registrations", [])) == 0:
+            return ()
         ctx = {
             "cart": cart_data,
             "pricing_result": self.converter.unstructure(pricing_result),

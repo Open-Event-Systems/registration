@@ -41,7 +41,10 @@ class InterviewService:
                 "interview_id": interview_id,
                 "cart_id": cart_id,
             },
-            "data": {"registration": registration},
+            "data": {
+                "registration": registration,
+                "meta": {},
+            },
             "target": target,
         }
         body_bytes = orjson.dumps(body)

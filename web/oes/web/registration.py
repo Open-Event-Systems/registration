@@ -74,3 +74,35 @@ class RegistrationService:
                 o.id == interview_id
                 for o in self.get_change_options(event, registration)
             )
+
+    async def check_batch_change(
+        self, event_id: str, cart_data: Mapping[str, Any]
+    ) -> tuple[int, Mapping[str, Any]]:
+        """Check that cart changes can be applied.
+
+        Returns:
+            A pair of a response status code and a response body.
+        """
+        changes = [r.get("new", {}) for r in cart_data.get("registrations", [])]
+        res = await self.client.post(
+            f"{self.config.registration_service_url}/events"
+            f"/{event_id}/batch-change/check",
+            json=changes,
+        )
+        return res.status_code, res.json()
+
+    async def apply_batch_change(
+        self, event_id: str, cart_data: Mapping[str, Any]
+    ) -> tuple[int, Mapping[str, Any]]:
+        """Apply a batch change.
+
+        Returns:
+            A pair of a response status code and a response body.
+        """
+        changes = [r.get("new", {}) for r in cart_data.get("registrations", [])]
+        res = await self.client.post(
+            f"{self.config.registration_service_url}/events"
+            f"/{event_id}/batch-change/apply",
+            json=changes,
+        )
+        return res.status_code, res.json()

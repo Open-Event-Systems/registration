@@ -196,6 +196,7 @@ async def add_to_cart(
 
     data = completed_interview.get("data", {})
     context = completed_interview.get("context", {})
+    meta = data.get("meta", {})
     cart_id = context.get("cart_id")
     interview_id = context.get("interview_id")
     event_id = context.get("event_id")
@@ -228,6 +229,7 @@ async def add_to_cart(
             "id": registration.get("id"),
             "old": cur_reg,
             "new": registration,
+            "meta": meta,
         },
     )
     return json({"id": new_cart.get("id")})

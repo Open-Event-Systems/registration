@@ -1,12 +1,17 @@
 events:
   example-event:
     items:
-      - name: Standard Registration
-        description: Standard registration.
+      - name: Basic Registration
+        description: Basic registration.
         price: 5000
         modifiers:
           - name: Early Bird
             amount: -1000
             when: early_bird
         when: >
-          "standard" in meta.added_option_ids
+          "basic" in meta.added_option_ids
+      - name: Sponsor Upgrade
+        description: Sponsor level upgrade.
+        price: 2500
+        when: >
+          "sponsor" in meta.added_option_ids

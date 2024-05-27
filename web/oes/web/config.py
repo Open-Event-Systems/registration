@@ -81,6 +81,9 @@ class Config:
     cart_service_url: str = ts.option(
         default="http://cart:8000", help="the cart service url"
     )
+    payment_service_url: str = ts.option(
+        default="http://payment:8000", help="the payment service url"
+    )
     registration_service_url: str = ts.option(
         default="http://registration:8000", help="the registration service url"
     )

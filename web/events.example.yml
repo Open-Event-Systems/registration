@@ -1,5 +1,6 @@
 ---
 cart_service_url: http://cart:8000
+payment_service_url: http://payment:8000
 registration_service_url: http://registration:8000
 interview_service_url: http://interview:8000
 events:
