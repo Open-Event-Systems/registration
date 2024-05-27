@@ -8,3 +8,4 @@ services:
 methods:
   mock:
     service: mock
+    name: Mock

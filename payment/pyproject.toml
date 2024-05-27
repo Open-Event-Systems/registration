@@ -36,6 +36,9 @@ pytest-cov = "^5.0.0"
 [tool.poetry.plugins."oes.payment.services"]
 mock = "oes.payment.services.mock:make_mock_payment_service"
 
+[tool.poetry.scripts]
+oes-payment-service = "oes.payment.main:main"
+
 
 [build-system]
 requires = ["poetry-core"]
