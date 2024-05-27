@@ -76,6 +76,11 @@ repos:
         args: [-p, pricing]
 
       - id: pyright
+        name: pyright (payment)
+        files: ^payment/
+        args: [-p, payment]
+
+      - id: pyright
         name: pyright (registration)
         files: ^registration/
         args: [-p, registration]

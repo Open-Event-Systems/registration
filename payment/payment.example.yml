@@ -1,0 +1,10 @@
+---
+# Payment config
+db_url: postgresql+asyncpg:///payment
+
+services:
+  mock: {}
+
+methods:
+  mock:
+    service: mock
