@@ -638,8 +638,8 @@ typed-settings = ["ruamel-yaml (>=0.18.6,<0.19.0)", "typed-settings (>=24.2.0,<2
 [package.source]
 type = "git"
 url = "https://github.com/waweber/registration-monorepo-tmp.git"
-reference = "93057f461249c6d6b40fdbb676da770827d246fa"
-resolved_reference = "93057f461249c6d6b40fdbb676da770827d246fa"
+reference = "a0d0bc03f6defb4bddb560f7aeb4b12b73066346"
+resolved_reference = "a0d0bc03f6defb4bddb560f7aeb4b12b73066346"
 subdirectory = "utils"
 
 [[package]]
@@ -1358,4 +1358,4 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "c9a43610d1e8c917d502c73ef28c49c09a444f5fa5e66c21b68b40142d1d76f8"
+content-hash = "ceaeb9d054c66989fb06f02c82eebc3ae654f3e9aeee88be4c1834b27224872e"

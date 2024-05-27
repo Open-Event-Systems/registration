@@ -1,0 +1,9 @@
+**/*
+!oes/**
+!alembic/**
+!pyproject.toml
+!poetry.lock
+!poetry.lock
+!alembic.ini
+!payment.example.yml
+!scripts

@@ -14,6 +14,8 @@ configs:
     file: ./config/interviews.yml
   pricing:
     file: ./config/pricing.yml
+  payment:
+    file: ./config/payment.yml
   registration:
     file: ./config/registration.yml
   web:
@@ -67,6 +69,14 @@ services:
     configs:
       - source: pricing
         target: /config/pricing.yml
+
+  payment:
+    build: ../payment
+    configs:
+      - source: payment
+        target: /config/payment.yml
+    depends_on:
+      - db
 
   registration:
     build: ../registration
