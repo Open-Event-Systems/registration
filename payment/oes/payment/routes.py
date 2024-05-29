@@ -61,6 +61,7 @@ class PaymentResultResponse:
     """Payment result response body."""
 
     id: str
+    service: str
     status: PaymentStatus
     body: Mapping[str, Any]
 
@@ -109,6 +110,7 @@ async def create_payment(
         raise NotFound
     return PaymentResultResponse(
         id=res.id,
+        service=res.service,
         status=res.status,
         body=res.body,
     )
@@ -152,6 +154,7 @@ async def update_payment(
         raise UnprocessableEntity(str(e))
     return PaymentResultResponse(
         id=res.id,
+        service=res.service,
         status=res.status,
         body=res.body,
     )
@@ -171,6 +174,7 @@ async def cancel_payment(
         raise NotFound
     return PaymentResultResponse(
         id=res.id,
+        service=res.service,
         status=res.status,
         body=res.body,
     )

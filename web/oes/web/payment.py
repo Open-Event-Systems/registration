@@ -125,6 +125,6 @@ class PaymentService:
             cart_data.get("event_id", ""), cart_data
         )
         if apply_res == 200:
-            return apply_res, {}
+            return apply_res, res_body
         else:
             return apply_res, apply_body

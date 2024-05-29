@@ -43,11 +43,13 @@ class MockPaymentService:
             data={
                 "status": PaymentStatus.pending.value,
                 "currency": currency,
-                "total_price": format_currency(currency, total_price),
+                "total_price": total_price,
+                "total_price_string": format_currency(currency, total_price),
             },
             body={
                 "currency": currency,
-                "total_price": format_currency(currency, total_price),
+                "total_price": total_price,
+                "total_price_string": format_currency(currency, total_price),
             },
         )
 
@@ -69,6 +71,7 @@ class MockPaymentService:
                 body={
                     "currency": request.data.get("currency"),
                     "total_price": request.data.get("total_price"),
+                    "total_price_string": request.data.get("total_price_string"),
                 },
             )
 
@@ -88,6 +91,11 @@ class MockPaymentService:
                 **request.data,
                 "status": PaymentStatus.completed,
                 "date_closed": date_closed.isoformat(),
+            },
+            body={
+                "currency": request.data.get("currency"),
+                "total_price": request.data.get("total_price"),
+                "total_price_string": request.data.get("total_price_string"),
             },
         )
 
@@ -109,6 +117,7 @@ class MockPaymentService:
                 body={
                     "currency": request.data.get("currency"),
                     "total_price": request.data.get("total_price"),
+                    "total_price_string": request.data.get("total_price_string"),
                 },
             )
 
@@ -124,6 +133,11 @@ class MockPaymentService:
                 **request.data,
                 "status": PaymentStatus.canceled,
                 "date_closed": date_closed.isoformat(),
+            },
+            body={
+                "currency": request.data.get("currency"),
+                "total_price": request.data.get("total_price"),
+                "total_price_string": request.data.get("total_price_string"),
             },
         )
 
