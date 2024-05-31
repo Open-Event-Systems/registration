@@ -20,6 +20,8 @@ configs:
     file: ./config/registration.yml
   web:
     file: ./config/events.yml
+  rabbitmq:
+    file: ./config/rabbitmq.conf
 
 services:
   db:
@@ -34,6 +36,13 @@ services:
 
   redis:
     image: redis:7.2.4-alpine3.19
+
+  rabbitmq:
+    image: rabbitmq:3.13.2-management-alpine
+    hostname: rabbitmq
+    configs:
+      - source: rabbitmq
+        target: /etc/rabbitmq/rabbitmq.conf
 
   auth:
     build: ../auth

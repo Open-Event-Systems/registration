@@ -4,6 +4,7 @@ import secrets
 from datetime import datetime, timedelta
 
 from loguru import logger
+from oes.auth.mq import MQService
 from oes.auth.orm import Base
 from oes.utils.orm import Repo, transaction
 from sqlalchemy import String
@@ -63,16 +64,19 @@ class EmailAuthRepo(Repo[EmailAuth, str]):
 class EmailAuthService:
     """Email auth service."""
 
-    def __init__(self, repo: EmailAuthRepo):
+    def __init__(self, repo: EmailAuthRepo, mq: MQService):
         self.repo = repo
+        self.mq = mq
 
     async def send(self, email: str):
         """Send an email auth code."""
+        send = False
         async with transaction():
             entity = await self.repo.get(email.lower(), lock=True)
             if entity is None:
                 entity = EmailAuth.create(email)
                 self.repo.add(entity)
+                send = True
             else:
                 if entity.can_attempt and entity.can_resend():
                     entity.attempts += 1
@@ -81,7 +85,17 @@ class EmailAuthService:
                     entity.code = "".join(
                         secrets.choice("0123456789") for _ in range(TOKEN_LENGTH)
                     )
-        logger.debug(f"Email auth code for {email}: {entity.code}")
+                    send = True
+
+        if send:
+            await self.mq.publish(
+                {
+                    "email": email,
+                    "code": entity.code,
+                    "date": entity.date_sent.isoformat(),
+                }
+            )
+            logger.debug(f"Email auth code for {email}: {entity.code}")
 
     async def verify(self, email: str, code: str) -> bool:
         """Verify an email auth code."""
