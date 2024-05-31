@@ -72,6 +72,22 @@ async def validate_token(
     return HTTPResponse(status=204, headers=response_headers)
 
 
+@routes.get("/auth/info")
+async def read_info(request: Request, auth_service: AuthService) -> HTTPResponse:
+    """Read auth info."""
+    header = request.headers.get("Authorization", "")
+    token = auth_service.validate_token(header)
+    if token is None:
+        raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
+
+    return json(
+        {
+            "account_id": token.sub,
+            "email": token.email,
+        }
+    )
+
+
 @routes.post("/auth/create")
 async def create_refresh_token(
     request: Request, service: RefreshTokenService, config: Config, body: CattrsBody
@@ -121,11 +137,13 @@ async def refresh_token(
             updated = await service.refresh(refresh_token_str)
         except TokenError:
             raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
-        access_token = updated.make_access_token(now=updated.date_issued)
+        access_token = updated.make_access_token(now=updated.date_last_used)
         token_response = {
             "access_token": access_token.encode(key=config.token_secret),
             "token_type": "Bearer",
-            "expires_in": int((access_token.exp - updated.date_issued).total_seconds()),
+            "expires_in": int(
+                (access_token.exp - updated.date_last_used).total_seconds()
+            ),
             "refresh_token": f"{updated.id}-{updated.token}",
         }
         return HTTPResponse(

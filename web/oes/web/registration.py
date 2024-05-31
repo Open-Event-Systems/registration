@@ -20,11 +20,24 @@ class RegistrationService:
         """Get an event by ID."""
         return self._events_by_id.get(event_id)
 
-    async def get_registrations(self, event_id: str) -> Sequence[Mapping[str, Any]]:
+    async def get_registrations(
+        self,
+        *,
+        event_id: str,
+        account_id: str | None = None,
+        email: str | None = None,
+    ) -> Sequence[Mapping[str, Any]]:
         """Get registrations from the registration service."""
-        # TODO: filter by account/email
         url = f"{self.config.registration_service_url}/events/{event_id}/registrations"
-        res = await self.client.get(url)
+        params = {}
+
+        if account_id:
+            params["account_id"] = account_id
+
+        if email:
+            params["email"] = email
+
+        res = await self.client.get(url, params=params)
         res.raise_for_status()
         return res.json()
 

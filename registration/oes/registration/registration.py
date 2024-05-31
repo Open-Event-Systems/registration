@@ -12,7 +12,7 @@ from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.registration.orm import Base
 from oes.utils.orm import JSON, Repo
-from sqlalchemy import UUID, select
+from sqlalchemy import UUID, Index, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -42,6 +42,7 @@ class Registration(Base, kw_only=True):
     """Registration entity."""
 
     __tablename__ = "registration"
+    __table_args__ = (Index("ix_email", text("LOWER(email)")),)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID, default_factory=lambda: uuid.uuid4(), primary_key=True
@@ -59,6 +60,7 @@ class Registration(Base, kw_only=True):
     first_name: Mapped[str | None] = mapped_column(default=None)
     last_name: Mapped[str | None] = mapped_column(default=None)
     email: Mapped[str | None] = mapped_column(default=None)
+    account_id: Mapped[str | None] = mapped_column(default=None, index=True)
     extra_data: Mapped[JSON] = mapped_column(default_factory=dict)
 
     __mapper_args__ = {"version_id_col": version}
@@ -102,6 +104,7 @@ class RegistrationDataFields:
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
+    account_id: str | None = None
 
 
 _registration_data_fields: frozenset[str] = frozenset(
@@ -209,13 +212,31 @@ class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
         res = await self.session.execute(q)
         return res.scalars().all()
 
-    async def search(self, event_id: str) -> Sequence[Registration]:
+    async def search(
+        self,
+        *,
+        event_id: str,
+        account_id: str | None = None,
+        email: str | None = None,
+    ) -> Sequence[Registration]:
         """Search registrations."""
         q = (
             select(Registration)
             .where(Registration.event_id == event_id)
             .order_by(Registration.date_created.desc())
         )
+
+        or_clauses = []
+
+        if account_id:
+            or_clauses.append(Registration.account_id == account_id)
+
+        if email:
+            or_clauses.append(Registration.email.lower() == email.lower())
+
+        if or_clauses:
+            q = q.where(or_(*or_clauses))
+
         res = await self.session.execute(q)
         return res.scalars().all()
 

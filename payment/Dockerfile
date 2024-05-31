@@ -10,7 +10,7 @@ RUN apk add git \
 FROM build-base AS build
 RUN python -m venv /app \
     && /app/bin/pip install --no-cache-dir setuptools
-COPY pyproject.toml poetry.lock ./
+COPY pyproject.toml poetry.lock poetry.toml ./
 
 # https://github.com/python-poetry/poetry-plugin-export/issues/69#issuecomment-1220142028
 RUN poetry export -o requirements.txt \

@@ -28,7 +28,11 @@ async def list_registrations(
     registration_repo: RegistrationRepo,
 ) -> Sequence[Registration]:
     """List registrations."""
-    return await registration_repo.search(event_id)
+    account_id = request.args.get("account_id")
+    email = request.args.get("email")
+    return await registration_repo.search(
+        event_id=event_id, account_id=account_id, email=email
+    )
 
 
 @routes.post("/")

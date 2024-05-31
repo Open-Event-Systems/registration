@@ -1,4 +1,5 @@
 ---
 token_secret: changeit
 db_url: postgresql+asyncpg://registration:changeit@db/auth
-disable_auth: true
+amqp_url: amqp://registration:changeit@rabbitmq/
+disable_auth: false

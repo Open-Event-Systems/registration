@@ -2,5 +2,5 @@
 !oes/**
 !pyproject.toml
 !poetry.lock
-!poetry.lock
+!poetry.toml
 !pricing.example.yml

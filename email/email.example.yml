@@ -1,0 +1,30 @@
+---
+amqp_url: amqp://guest:guest@localhost/
+email_from: test@test.com
+debug: false
+template_path: templates
+
+# What to use to send mail: null | mock | smtp | mailgun
+use: mock
+
+# Settings for using SMTP
+smtp:
+  # The server and port
+  server: smtp.example.com
+  port: 587
+
+  username: you@example.com
+  password: password
+
+  # null, ssl, or starttls
+  tls: starttls
+
+# Settings for using Mailgun
+mailgun:
+  domain: example.com
+  api_key: api_key
+
+# Messages to handle
+messages:
+  auth:
+    subject: Verify Your Email

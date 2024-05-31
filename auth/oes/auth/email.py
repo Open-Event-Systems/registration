@@ -91,7 +91,7 @@ class EmailAuthService:
             await self.mq.publish(
                 {
                     "email": email,
-                    "code": entity.code,
+                    "code": f"{entity.code[0:3]} {entity.code[3:6]} {entity.code[6:9]}",
                     "date": entity.date_sent.isoformat(),
                 }
             )

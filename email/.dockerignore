@@ -1,0 +1,7 @@
+**/*
+!oes/**
+!templates/**
+!pyproject.toml
+!poetry.lock
+!poetry.toml
+!email.example.yml

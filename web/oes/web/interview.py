@@ -22,6 +22,7 @@ class InterviewService:
         interview_id: str,
         cart_id: str,
         target: str,
+        account_id: str | None,
         registration: Mapping[str, Any] | None,
     ) -> Mapping[str, Any]:
         """Start an interview."""
@@ -31,6 +32,7 @@ class InterviewService:
                 "status": "created",
                 "event_id": event.id,
                 "version": 1,
+                "account_id": account_id,
             }
 
         url = f"{self.config.interview_service_url}/interviews/{interview_id}"

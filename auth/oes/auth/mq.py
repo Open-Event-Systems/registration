@@ -23,6 +23,7 @@ class MQService:
     async def _run(self):
         conn = await aio_pika.connect_robust(
             self.config.amqp_url,
+            fail_fast=False,
         )
         async with conn:
             channel = await conn.channel()

@@ -86,6 +86,11 @@ repos:
         args: [-p, registration]
 
       - id: pyright
+        name: pyright (email)
+        files: ^email/
+        args: [-p, email]
+
+      - id: pyright
         name: pyright (web)
         files: ^web/
         args: [-p, web]

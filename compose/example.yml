@@ -20,6 +20,8 @@ configs:
     file: ./config/registration.yml
   web:
     file: ./config/events.yml
+  email:
+    file: ./config/email.yml
   rabbitmq:
     file: ./config/rabbitmq.conf
 
@@ -101,6 +103,18 @@ services:
         target: /config/events.yml
     depends_on:
       - db
+
+  email:
+    build: ../email
+    configs:
+      - source: email
+        target: /config/email.yml
+    volumes:
+      - source: ./config/templates
+        target: /config/templates
+        type: bind
+    depends_on:
+      - rabbitmq
 
   gateway:
     build: ../gateway

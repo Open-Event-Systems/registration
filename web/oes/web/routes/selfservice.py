@@ -110,7 +110,12 @@ async def list_selfservice_registrations(
     if not event.visible:
         raise NotFound
 
-    regs = await service.get_registrations(event_id)
+    account_id = request.headers.get("x-account-id")
+    email = request.headers.get("x-email")
+
+    regs = await service.get_registrations(
+        event_id=event_id, account_id=account_id, email=email
+    )
 
     event_ctx = event.get_template_context()
     results = []
@@ -146,6 +151,8 @@ async def start_interview(
     elif not event.open:
         raise Forbidden
 
+    account_id = request.headers.get("x-account-id")
+
     cart_id = request.args.get("cart_id")
     registration_id = request.args.get("registration_id")
     cart = await cart_service.get_cart(cart_id) if cart_id else None
@@ -169,7 +176,7 @@ async def start_interview(
     target_url = request.url_for("selfservice.add_to_cart")
 
     interview = await interview_service.start_interview(
-        event, interview_id, cart_id, target_url, reg
+        event, interview_id, cart_id, target_url, account_id, reg
     )
     return json({**interview, "update_url": update_url})
 
