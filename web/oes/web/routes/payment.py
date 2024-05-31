@@ -1,5 +1,8 @@
 """Payment routes."""
 
+from collections.abc import Mapping
+from typing import Any
+
 from oes.utils.request import raise_not_found
 from oes.web.payment import PaymentService
 from sanic import Blueprint, HTTPResponse, NotFound, Request, json
@@ -27,7 +30,11 @@ async def create_payment(
     res_status, res_body = raise_not_found(
         await payment_service.create_payment(cart_id, method)
     )
-    resp = json(res_body, status=res_status)
+
+    if res_status == 409:
+        resp = json(_strip_cart_error(res_body), status=res_status)
+    else:
+        resp = json(res_body, status=res_status)
     return resp
 
 
@@ -40,4 +47,23 @@ async def update_payment(
     res_status, res_body = raise_not_found(
         await payment_service.update_payment(payment_id, body)
     )
-    return json(res_body, res_status)
+
+    if res_status == 409:
+        resp = json(_strip_cart_error(res_body), status=res_status)
+    else:
+        resp = json(res_body, status=res_status)
+    return resp
+
+
+def _strip_cart_error(cart_error: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Remove detailed data from the cart conflict response."""
+    stripped = {"results": []}
+    for res in cart_error.get("results", []):
+        stripped["results"].append(
+            {
+                "change": {"id": res.get("change", {}).get("id")},
+                "errors": res.get("errors", []),
+            }
+        )
+
+    return stripped
