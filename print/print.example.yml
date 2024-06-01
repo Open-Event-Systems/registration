@@ -1,4 +1,5 @@
 ---
+storage: /data
 templates:
   example-event: /config/template.html
 chromium-exec: chromium-browser

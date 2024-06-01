@@ -9,6 +9,7 @@ import (
 )
 
 type Config struct {
+	Storage      string            `yaml:"storage"`
 	Templates    map[string]string `yaml:"templates"`
 	ChromiumExec string            `yaml:"chromium-exec"`
 }

@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	print "print/pkg"
+	"strconv"
 )
 
 func makeMux(config *print.Config) *http.ServeMux {
@@ -17,6 +19,60 @@ func makeMux(config *print.Config) *http.ServeMux {
 	}
 
 	limitChan := make(chan struct{}, 1)
+
+	createFile := func(eventId string, id string, version int, data map[string]any) (*os.File, error) {
+		template := templates[eventId]
+		if template == nil {
+			return nil, fmt.Errorf("no template for event: %s", eventId)
+		}
+
+		outputFileName := print.GetFilePath(config.Storage, eventId, id, version)
+		err := print.EnsureStoragePathExists(config.Storage, eventId, id)
+		if err != nil {
+			return nil, err
+		}
+
+		limitChan <- struct{}{}
+		err = print.RenderPDF(config.ChromiumExec, template, outputFileName, data)
+		<-limitChan
+		if err != nil {
+			return nil, err
+		}
+
+		return os.Open(outputFileName)
+	}
+
+	getPDF := func(w http.ResponseWriter, req *http.Request) {
+		eventId := req.PathValue("event_id")
+		id := req.PathValue("id")
+		versionStr := req.URL.Query().Get("version")
+
+		if len(id) < 2 {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+
+		version, err := strconv.ParseInt(versionStr, 10, 32)
+		if err != nil {
+			version = 1
+		}
+
+		fileName := print.GetFilePath(config.Storage, eventId, id, int(version))
+		file, err := os.Open(fileName)
+		if err != nil {
+			http.NotFound(w, req)
+			return
+		}
+
+		data, err := io.ReadAll(file)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			log.Printf("error reading %s: %s", fileName, err)
+			return
+		}
+
+		w.Write(data)
+	}
 
 	printToPDF := func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != "POST" {
@@ -37,40 +93,33 @@ func makeMux(config *print.Config) *http.ServeMux {
 			return
 		}
 
-		eventId, ok := jsonBody["event_id"].(string)
-		if !ok {
+		eventId, eventIdOk := jsonBody["event_id"].(string)
+		versionFloat, verOk := jsonBody["version"].(float64)
+		id, idOk := jsonBody["id"].(string)
+
+		if !eventIdOk || !idOk || len(id) < 2 {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
 
-		template := templates[eventId]
-		if template == nil {
-			log.Printf("no template for event: %s", eventId)
-			http.NotFound(w, req)
-			return
+		var version int
+
+		if !verOk {
+			version = 1
+		} else {
+			version = int(versionFloat)
 		}
 
-		tmpFile, err := os.CreateTemp("", "output*.pdf")
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Print(err)
-			return
-		}
-		tmpFileName := tmpFile.Name()
-		defer os.Remove(tmpFileName)
-		defer tmpFile.Close()
-
-		limitChan <- struct{}{}
-		err = print.RenderPDF(config.ChromiumExec, template, tmpFileName, jsonBody)
-		<-limitChan
+		outputFile, err := createFile(eventId, id, version, jsonBody)
 
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			log.Print(err)
 			return
 		}
+		defer outputFile.Close()
 
-		outputData, err := io.ReadAll(tmpFile)
+		outputData, err := io.ReadAll(outputFile)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			log.Print(err)
@@ -81,6 +130,7 @@ func makeMux(config *print.Config) *http.ServeMux {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/events/{event_id}/registrations/{id}/badge", getPDF)
 	mux.HandleFunc("/print-to-pdf", printToPDF)
 	return mux
 }
