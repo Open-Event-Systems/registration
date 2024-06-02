@@ -1,6 +1,7 @@
 import uuid
 from unittest.mock import create_autospec
 
+import httpx
 import pytest
 from oes.registration.batch import BatchChangeResult, BatchChangeService, ErrorCode
 from oes.registration.event import EventStats, EventStatsRepo, EventStatsService
@@ -32,9 +33,14 @@ def mock_stats(mock_session):
     return stats_service
 
 
+@pytest.fixture
+def mock_client():
+    return create_autospec(httpx.AsyncClient)
+
+
 @pytest.mark.asyncio
-async def test_batch_check(mock_session, mock_repo, mock_stats):
-    service = BatchChangeService(mock_session, mock_repo, mock_stats)
+async def test_batch_check(mock_session, mock_repo, mock_stats, mock_client):
+    service = BatchChangeService(mock_session, mock_repo, mock_stats, mock_client)
 
     reg1 = Registration(event_id="test")
     reg2 = Registration(event_id="test", version=2)
@@ -62,8 +68,8 @@ async def test_batch_check(mock_session, mock_repo, mock_stats):
 
 
 @pytest.mark.asyncio
-async def test_batch_check_fail(mock_session, mock_repo, mock_stats):
-    service = BatchChangeService(mock_session, mock_repo, mock_stats)
+async def test_batch_check_fail(mock_session, mock_repo, mock_stats, mock_client):
+    service = BatchChangeService(mock_session, mock_repo, mock_stats, mock_client)
 
     good = Registration(event_id="test")
     wrong_version = Registration(event_id="test", version=2)
@@ -129,8 +135,8 @@ async def test_batch_check_fail(mock_session, mock_repo, mock_stats):
 
 
 @pytest.mark.asyncio
-async def test_batch_check_create(mock_session, mock_repo, mock_stats):
-    service = BatchChangeService(mock_session, mock_repo, mock_stats)
+async def test_batch_check_create(mock_session, mock_repo, mock_stats, mock_client):
+    service = BatchChangeService(mock_session, mock_repo, mock_stats, mock_client)
 
     reg1 = Registration(event_id="test")
 
@@ -158,8 +164,8 @@ async def test_batch_check_create(mock_session, mock_repo, mock_stats):
 
 
 @pytest.mark.asyncio
-async def test_batch_apply(mock_session, mock_repo, mock_stats):
-    service = BatchChangeService(mock_session, mock_repo, mock_stats)
+async def test_batch_apply(mock_session, mock_repo, mock_stats, mock_client):
+    service = BatchChangeService(mock_session, mock_repo, mock_stats, mock_client)
 
     reg1 = Registration(event_id="test")
 

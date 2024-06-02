@@ -5,8 +5,10 @@ from __future__ import annotations
 import functools
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
+from typing import Any
 from uuid import UUID
 
+import httpx
 from attrs import define
 from oes.registration.event import EventStatsService
 from oes.registration.registration import (
@@ -42,10 +44,12 @@ class BatchChangeService:
         session: AsyncSession,
         repo: RegistrationRepo,
         event_stats_service: EventStatsService,
+        client: httpx.AsyncClient,
     ):
         self.session = session
         self.repo = repo
         self.event_stats_service = event_stats_service
+        self.client = client
 
     async def check(
         self,
@@ -101,6 +105,16 @@ class BatchChangeService:
         # restore original order
         results_by_id = {r.id: r for r in (*created_regs, *updated_regs)}
         return [results_by_id[c.id] for c in changes]
+
+    async def complete_payment(
+        self, payment_url: str, payment_body: Mapping[str, Any]
+    ) -> Mapping[str, Any] | None:
+        """Complete a payment."""
+        res = await self.client.post(payment_url, json=payment_body)
+        if res.status_code == 404:
+            return None
+        res.raise_for_status()
+        return res.json()
 
     def _check_change(
         self,

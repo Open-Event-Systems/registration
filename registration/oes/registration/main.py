@@ -3,6 +3,7 @@
 import os
 import sys
 
+import httpx
 from oes.registration.batch import BatchChangeService
 from oes.registration.config import get_config
 from oes.registration.event import EventStatsRepo, EventStatsService
@@ -39,5 +40,14 @@ def create_app() -> Sanic:
     app.ext.add_dependency(EventStatsService)
 
     app.ext.add_dependency(BatchChangeService)
+
+    @app.before_server_start
+    async def setup_httpx(app: Sanic):
+        app.ctx.httpx = httpx.AsyncClient()
+        app.ext.dependency(app.ctx.httpx)
+
+    @app.after_server_stop
+    async def stop_httpx(app: Sanic):
+        await app.ctx.httpx.aclose()
 
     return app
