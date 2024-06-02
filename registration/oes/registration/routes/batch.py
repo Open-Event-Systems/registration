@@ -26,6 +26,7 @@ class ApplyResultBody:
     """The result of a completed batch change."""
 
     results: Sequence[Registration]
+    payment: Mapping[str, Any] | None = None
 
 
 @define
@@ -75,17 +76,19 @@ async def apply_changes(
             return response
         else:
             final = await service.apply(event_id, req_body.changes, current)
-            payment_res = (
+            payment_success, payment_status_code, payment_res = (
                 await _handle_payment(
                     req_body.payment_url, req_body.payment_body, service
                 )
                 if req_body.payment_url
-                else None
+                else (True, 200, None)
             )
-            if payment_res is not None:
-                return json(payment_res)
+            if not payment_success:
+                return json(payment_res, status=payment_status_code)
             await transaction.commit()
-            response = response_converter.make_response(ApplyResultBody(final))
+            response = response_converter.make_response(
+                ApplyResultBody(final, payment_res)
+            )
             return response
 
 
@@ -93,13 +96,19 @@ async def _handle_payment(
     payment_url: str,
     payment_body: Mapping[str, Any] | None,
     service: BatchChangeService,
-) -> Mapping[str, Any] | None:
-    payment_res = await service.complete_payment(payment_url, payment_body or {})
-    if payment_res is None:
+) -> tuple[bool, int, Mapping[str, Any]]:
+    payment_req_status, payment_res = await service.complete_payment(
+        payment_url, payment_body or {}
+    )
+    if payment_req_status == 404:
         raise NotFound
+    if payment_req_status != 200:
+        await transaction.rollback()
+        return False, payment_req_status, payment_res
+
     payment_status = payment_res.get("status")
     if payment_status != "completed":
         await transaction.rollback()
-        return payment_res
+        return False, payment_req_status, payment_res
     else:
-        return None
+        return True, payment_req_status, payment_res

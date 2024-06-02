@@ -105,7 +105,11 @@ class RegistrationService:
         return res.status_code, res.json()
 
     async def apply_batch_change(
-        self, event_id: str, cart_data: Mapping[str, Any]
+        self,
+        event_id: str,
+        cart_data: Mapping[str, Any],
+        payment_id: str | None = None,
+        payment_body: Mapping[str, Any] | None = None,
     ) -> tuple[int, Mapping[str, Any]]:
         """Apply a batch change.
 
@@ -113,9 +117,23 @@ class RegistrationService:
             A pair of a response status code and a response body.
         """
         changes = [r.get("new", {}) for r in cart_data.get("registrations", [])]
+
+        if payment_id is not None:
+            payment_url = (
+                f"{self.config.payment_service_url}/payments/{payment_id}/update"
+            )
+        else:
+            payment_url = None
+
+        req_body = {
+            "changes": changes,
+            "payment_url": payment_url,
+            "payment_body": payment_body,
+        }
+
         res = await self.client.post(
             f"{self.config.registration_service_url}/events"
             f"/{event_id}/batch-change/apply",
-            json=changes,
+            json=req_body,
         )
         return res.status_code, res.json()

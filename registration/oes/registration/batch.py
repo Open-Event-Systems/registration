@@ -108,13 +108,10 @@ class BatchChangeService:
 
     async def complete_payment(
         self, payment_url: str, payment_body: Mapping[str, Any]
-    ) -> Mapping[str, Any] | None:
+    ) -> tuple[int, Mapping[str, Any]]:
         """Complete a payment."""
         res = await self.client.post(payment_url, json=payment_body)
-        if res.status_code == 404:
-            return None
-        res.raise_for_status()
-        return res.json()
+        return res.status_code, res.json()
 
     def _check_change(
         self,

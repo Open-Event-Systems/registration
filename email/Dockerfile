@@ -38,4 +38,5 @@ ENV PATH="/app/bin:$PATH"
 ENV CONFIG_FILE=/config/email.yml
 VOLUME [ "/config" ]
 USER app
+STOPSIGNAL SIGINT
 ENTRYPOINT [ "oes-email-worker" ]

@@ -104,27 +104,7 @@ class PaymentService:
             return None
         cart_data = payment.get("cart_data", {})
 
-        # TODO: implement applying along w/ payment in a single transaction
-
-        check_res, check_body = await self.registration_service.check_batch_change(
-            cart_data.get("event_id", ""), cart_data
-        )
-        if check_res != 200:
-            return check_res, check_body
-
-        res = await self.client.post(
-            f"{self.config.payment_service_url}/payments/{payment_id}/update", json=body
-        )
-        if res.status_code == 404:
-            return None
-        res_body = res.json()
-        if res.status_code != 200 or res_body.get("status") != "completed":
-            return res.status_code, res_body
-
         apply_res, apply_body = await self.registration_service.apply_batch_change(
-            cart_data.get("event_id", ""), cart_data
+            cart_data.get("event_id", ""), cart_data, payment_id, body
         )
-        if apply_res == 200:
-            return apply_res, res_body
-        else:
-            return apply_res, apply_body
+        return apply_res, apply_body
