@@ -1,7 +1,8 @@
 """Access code routes."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
+from typing import Any
 
 from attrs import frozen
 from oes.registration.access_code import (
@@ -26,6 +27,7 @@ class AccessCodeResponse:
     date_expires: datetime
     used: bool
     name: str
+    options: Mapping[str, Any]
 
 
 @frozen
@@ -51,6 +53,7 @@ async def list_access_codes(
             date_expires=c.date_expires,
             used=c.used,
             name=c.name,
+            options=c.options,
         )
         for c in codes
     ]
@@ -71,6 +74,27 @@ async def create_access_code(
         date_expires=c.date_expires,
         used=c.used,
         name=c.name,
+        options=c.options,
+    )
+
+
+@routes.get("/<code>")
+@response_converter
+async def read_access_code(
+    request: Request, event_id: str, code: str, repo: AccessCodeRepo
+) -> AccessCodeResponse:
+    """Check an access code."""
+    obj = await repo.get(code)
+    now = datetime.now().astimezone()
+    if obj is None or obj.event_id != event_id or obj.used or obj.date_expires <= now:
+        raise NotFound
+    return AccessCodeResponse(
+        code=obj.code,
+        date_created=obj.date_created,
+        date_expires=obj.date_expires,
+        used=obj.used,
+        name=obj.name,
+        options=obj.options,
     )
 
 

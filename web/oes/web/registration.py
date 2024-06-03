@@ -77,9 +77,17 @@ class RegistrationService:
                 yield opt
 
     def is_interview_allowed(
-        self, interview_id: str, event: Event, registration: Mapping[str, Any] | None
+        self,
+        interview_id: str,
+        event: Event,
+        registration: Mapping[str, Any] | None,
+        access_code_data: Mapping[str, Any] | None,
     ) -> bool:
         """Check if an interview is allowed."""
+        if access_code_data is not None:
+            return self._is_interview_allowed_access_code(
+                interview_id, registration, access_code_data
+            )
         if registration is None:
             return any(o.id == interview_id for o in self.get_add_options(event))
         else:
@@ -87,6 +95,23 @@ class RegistrationService:
                 o.id == interview_id
                 for o in self.get_change_options(event, registration)
             )
+
+    def _is_interview_allowed_access_code(
+        self,
+        interview_id: str,
+        registration: Mapping[str, Any] | None,
+        access_code_data: Mapping[str, Any],
+    ) -> bool:
+        opts = access_code_data.get("options", {})
+        if registration is None:
+            add_options = opts.get("add_options", [])
+            return any(opt["id"] == interview_id for opt in add_options)
+        else:
+            reg_ids = opts.get("registration_ids", [])
+            if reg_ids and registration.get("id") not in reg_ids:
+                return False
+            change_options = opts.get("change_options", [])
+            return any(opt["id"] == interview_id for opt in change_options)
 
     async def check_batch_change(
         self, event_id: str, cart_data: Mapping[str, Any]
@@ -97,10 +122,14 @@ class RegistrationService:
             A pair of a response status code and a response body.
         """
         changes = [r.get("new", {}) for r in cart_data.get("registrations", [])]
+        body = {
+            "changes": changes,
+            "access_codes": _get_access_codes(cart_data),
+        }
         res = await self.client.post(
             f"{self.config.registration_service_url}/events"
             f"/{event_id}/batch-change/check",
-            json=changes,
+            json=body,
         )
         return res.status_code, res.json()
 
@@ -129,6 +158,7 @@ class RegistrationService:
             "changes": changes,
             "payment_url": payment_url,
             "payment_body": payment_body,
+            "access_codes": _get_access_codes(cart_data),
         }
 
         res = await self.client.post(
@@ -137,3 +167,26 @@ class RegistrationService:
             json=req_body,
         )
         return res.status_code, res.json()
+
+    async def get_access_code(
+        self, event_id: str, code: str
+    ) -> Mapping[str, Any] | None:
+        """Get an access code by ID."""
+        res = await self.client.get(
+            f"{self.config.registration_service_url}/events/{event_id}"
+            f"/access-codes/{code}"
+        )
+        if res.status_code == 404:
+            return None
+        res.raise_for_status()
+        return res.json()
+
+
+def _get_access_codes(cart_data: Mapping[str, Any]) -> Mapping[str, Any]:
+    codes = {}
+    for registration in cart_data.get("registrations", []):
+        meta = registration.get("meta", {})
+        access_code = meta.get("access_code")
+        if access_code:
+            codes[registration["id"]] = access_code
+    return codes
