@@ -1,9 +1,10 @@
 import uuid
+from datetime import datetime, timedelta
 from unittest.mock import create_autospec
 
 import httpx
 import pytest
-from oes.registration.access_code import AccessCodeService
+from oes.registration.access_code import AccessCode, AccessCodeService
 from oes.registration.batch import BatchChangeResult, BatchChangeService, ErrorCode
 from oes.registration.event import EventStats, EventStatsRepo, EventStatsService
 from oes.registration.registration import (
@@ -179,6 +180,73 @@ async def test_batch_check_create(
         (change3.id, set()),
         (change4.id, set()),
     ]
+
+
+@pytest.mark.asyncio
+async def test_batch_check_access_code(
+    mock_session, mock_repo, mock_stats, mock_access_code_service, mock_client
+):
+    service = BatchChangeService(
+        mock_session, mock_repo, mock_stats, mock_access_code_service, mock_client
+    )
+
+    reg1 = Registration(event_id="test")
+
+    change1 = RegistrationBatchChangeFields(
+        id=reg1.id, event_id="test", version=reg1.version
+    )
+
+    by_id = {reg1.id: reg1}
+
+    def get_multi(ids, event_id, lock):
+        return tuple(by_id[id] for id in ids if id in by_id)
+
+    mock_repo.get_multi.side_effect = get_multi
+
+    def get_access_code(self, *a, **kw):
+        now = datetime.now().astimezone()
+        return AccessCode(
+            "CODE", "test", now, now + timedelta(hours=1), "Test", False, {}
+        )
+
+    mock_access_code_service.get.side_effect = get_access_code
+
+    _, access_codes, _ = await service.check("test", (change1,), {change1.id: "CODE"})
+    codes = access_codes[change1.id]
+    assert codes
+    assert codes.code == "CODE"
+
+
+@pytest.mark.asyncio
+async def test_batch_check_access_code_error(
+    mock_session, mock_repo, mock_stats, mock_access_code_service, mock_client
+):
+    service = BatchChangeService(
+        mock_session, mock_repo, mock_stats, mock_access_code_service, mock_client
+    )
+
+    reg1 = Registration(event_id="test")
+
+    change1 = RegistrationBatchChangeFields(
+        id=reg1.id, event_id="test", version=reg1.version
+    )
+
+    by_id = {reg1.id: reg1}
+
+    def get_multi(ids, event_id, lock):
+        return tuple(by_id[id] for id in ids if id in by_id)
+
+    mock_repo.get_multi.side_effect = get_multi
+
+    def get_access_code(self, *a, **kw):
+        return None
+
+    mock_access_code_service.get.side_effect = get_access_code
+
+    _, _, results = await service.check("test", (change1,), {change1.id: "CODE"})
+
+    ids_and_errors = [(res.change.id, set(res.errors)) for res in results]
+    assert ids_and_errors[0] == (change1.id, set((ErrorCode.access_code,)))
 
 
 @pytest.mark.asyncio
