@@ -7,8 +7,8 @@ from datetime import datetime
 from attrs import frozen
 from cattrs.preconf.orjson import make_converter
 from oes.registration.orm import Base
-from oes.utils.orm import JSON
-from sqlalchemy import String
+from oes.utils.orm import JSON, AsyncSession, Repo
+from sqlalchemy import String, select
 from sqlalchemy.orm import Mapped, mapped_column
 from typing_extensions import Self
 
@@ -75,6 +75,58 @@ class AccessCode(Base):
     def set_options(self, options: AccessCodeOptions):
         """Set the options."""
         self.options = _converter.unstructure(options)
+
+
+class AccessCodeRepo(Repo[AccessCode, str]):
+    """Access code repo."""
+
+    entity_type = AccessCode
+
+
+class AccessCodeService:
+    """Access code service."""
+
+    def __init__(self, repo: AccessCodeRepo, session: AsyncSession):
+        self.repo = repo
+        self.session = session
+
+    async def list(self, event_id: str) -> Sequence[AccessCode]:
+        """List access codes."""
+        q = (
+            select(AccessCode)
+            .where(AccessCode.event_id == event_id)
+            .order_by(AccessCode.date_created.desc())
+        )
+        res = await self.session.execute(q)
+        return res.scalars().all()
+
+    async def create(
+        self,
+        event_id: str,
+        date_expires: datetime,
+        name: str,
+        options: AccessCodeOptions,
+    ) -> AccessCode:
+        """Create an access code."""
+        entity = AccessCode.create(event_id, date_expires, name, options)
+        self.repo.add(entity)
+        return entity
+
+    async def get(
+        self, event_id: str, code: str, *, lock: bool = False
+    ) -> AccessCode | None:
+        """Get an access code."""
+        entity = await self.repo.get(code, lock=lock)
+        now = datetime.now().astimezone()
+        if (
+            entity is not None
+            and not entity.used
+            and entity.event_id == event_id
+            and entity.date_expires > now
+        ):
+            return entity
+        else:
+            return None
 
 
 _converter = make_converter()

@@ -10,6 +10,7 @@ from uuid import UUID
 
 import httpx
 from attrs import define
+from oes.registration.access_code import AccessCode, AccessCodeService
 from oes.registration.event import EventStatsService
 from oes.registration.registration import (
     Registration,
@@ -26,6 +27,7 @@ class ErrorCode(str, Enum):
     version = "version"
     status = "status"
     event = "event"
+    access_code = "access_code"
 
 
 @define
@@ -44,20 +46,27 @@ class BatchChangeService:
         session: AsyncSession,
         repo: RegistrationRepo,
         event_stats_service: EventStatsService,
+        access_code_service: AccessCodeService,
         client: httpx.AsyncClient,
     ):
         self.session = session
         self.repo = repo
         self.event_stats_service = event_stats_service
+        self.access_code_service = access_code_service
         self.client = client
 
     async def check(
         self,
         event_id: str,
         changes: Sequence[RegistrationBatchChangeFields],
+        access_codes: Mapping[UUID, str],
         *,
         lock: bool = False,
-    ) -> tuple[dict[UUID, Registration], list[BatchChangeResult]]:
+    ) -> tuple[
+        dict[UUID, Registration],
+        Mapping[UUID, AccessCode | None],
+        list[BatchChangeResult],
+    ]:
         """Check that a batch of changes can be applied."""
         current = {
             cur.id: cur
@@ -65,19 +74,29 @@ class BatchChangeService:
                 (c.id for c in changes), event_id=event_id, lock=lock
             )
         }
-        return current, [
-            self._check_change(
-                event_id,
-                current.get(c.id),
-                c,
-            )
-            for c in changes
-        ]
+        access_code_entities = await self._get_access_codes(
+            event_id, access_codes, lock=lock
+        )
+        return (
+            current,
+            access_code_entities,
+            [
+                self._check_change(
+                    event_id,
+                    current.get(c.id),
+                    c,
+                    access_codes.get(c.id),
+                    access_code_entities.get(c.id),
+                )
+                for c in changes
+            ],
+        )
 
     async def apply(
         self,
         event_id: str,
         changes: Sequence[RegistrationBatchChangeFields],
+        access_codes: Mapping[UUID, AccessCode | None],
         current: Mapping[UUID, Registration],
     ) -> list[Registration]:
         """Apply a batch of changes.
@@ -102,6 +121,10 @@ class BatchChangeService:
         with self.session.no_autoflush:  # don't double-increment the version
             await self.event_stats_service.assign_numbers(event_id, to_assign)
 
+        for code in access_codes.values():
+            if code:
+                code.used = True
+
         # restore original order
         results_by_id = {r.id: r for r in (*created_regs, *updated_regs)}
         return [results_by_id[c.id] for c in changes]
@@ -113,16 +136,31 @@ class BatchChangeService:
         res = await self.client.post(payment_url, json=payment_body)
         return res.status_code, res.json()
 
+    async def _get_access_codes(
+        self, event_id: str, access_codes: Mapping[UUID, str], *, lock: bool = False
+    ) -> Mapping[UUID, AccessCode | None]:
+        ids = sorted(access_codes.items(), key=lambda x: x[1])
+        entities = {
+            reg_id: await self.access_code_service.get(event_id, code, lock=lock)
+            for reg_id, code in ids
+        }
+        return entities
+
     def _check_change(
         self,
         event_id: str,
         registration: Registration | None,
         change: RegistrationBatchChangeFields,
+        access_code: str | None,
+        access_code_entity: AccessCode | None,
     ) -> BatchChangeResult:
         checks: list[Callable[[RegistrationBatchChangeFields], BatchChangeResult]] = [
             lambda c: _check_version(registration, c),
             lambda c: _check_status(registration, c),
             lambda c: _check_event(event_id, registration, c),
+            lambda c: _check_access_code(
+                access_code, access_code_entity, registration, c
+            ),
         ]
         return functools.reduce(_apply_check, checks, BatchChangeResult(change))
 
@@ -184,4 +222,16 @@ def _check_event(
             and registration.event_id != change.event_id
             else []
         ),
+    )
+
+
+def _check_access_code(
+    access_code: str | None,
+    access_code_entity: AccessCode | None,
+    registration: Registration | None,
+    change: RegistrationBatchChangeFields,
+) -> BatchChangeResult:
+    return BatchChangeResult(
+        change,
+        ([ErrorCode.access_code] if access_code and not access_code_entity else []),
     )

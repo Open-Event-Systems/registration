@@ -2,8 +2,9 @@
 
 from collections.abc import Mapping, Sequence
 from typing import Any
+from uuid import UUID
 
-from attrs import define
+from attrs import define, field
 from oes.registration.batch import BatchChangeResult, BatchChangeService
 from oes.registration.registration import Registration, RegistrationBatchChangeFields
 from oes.registration.routes.common import response_converter
@@ -34,6 +35,7 @@ class BatchChangeRequestBody:
     """Batch change body."""
 
     changes: Sequence[RegistrationBatchChangeFields]
+    access_codes: Mapping[UUID, str] = field(factory=dict)
     payment_url: str | None = None
     payment_body: Mapping[str, Any] | None = None
 
@@ -46,8 +48,10 @@ async def check_changes(
     body: CattrsBody,
 ) -> HTTPResponse:
     """Test a batch of changes."""
-    changes = await body(list[RegistrationBatchChangeFields])
-    _, results = await service.check(event_id, changes)
+    req_body = await body(BatchChangeRequestBody)
+    _, _, results = await service.check(
+        event_id, req_body.changes, req_body.access_codes
+    )
 
     response = response_converter.make_response(CheckResultBody(results))
 
@@ -68,14 +72,18 @@ async def apply_changes(
     req_body = await body(BatchChangeRequestBody)
 
     async with transaction():
-        current, results = await service.check(event_id, req_body.changes, lock=True)
+        current, access_codes, results = await service.check(
+            event_id, req_body.changes, req_body.access_codes, lock=True
+        )
 
         if any(r.errors for r in results):
             response = response_converter.make_response(CheckResultBody(results))
             response.status = 409
             return response
         else:
-            final = await service.apply(event_id, req_body.changes, current)
+            final = await service.apply(
+                event_id, req_body.changes, access_codes, current
+            )
             payment_success, payment_status_code, payment_res = (
                 await _handle_payment(
                     req_body.payment_url, req_body.payment_body, service
