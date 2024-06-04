@@ -1,0 +1,3 @@
+Subject: {{ email.subject }}
+
+Data: {{ test }}

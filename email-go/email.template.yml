@@ -1,0 +1,28 @@
+---
+# path to the template directory
+template_path: templates
+
+# the default From address
+email_from: from@example.net
+
+# What to use to send mail: mock | smtp
+use: mock
+
+# Settings for using SMTP
+smtp:
+  # The server and port
+  server: smtp.example.com
+  port: 587
+
+  # SMTP credentials
+  username: you@example.com
+  password: password
+
+  # null, ssl, or starttls
+  tls: starttls
+
+# Messages to handle
+messages:
+  auth:
+    subject: Verify Your Email
+    email_from: from@example.net

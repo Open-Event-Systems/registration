@@ -1,0 +1,5 @@
+{{ email.subject }}
+
+{% set cid = inline("test.gif") %}
+
+An example email. {{ cid }}
