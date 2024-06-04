@@ -1,9 +1,9 @@
 package template
 
 import (
+	"encoding/base64"
 	"fmt"
 	"mime/multipart"
-	"mime/quotedprintable"
 	"net/textproto"
 	"os"
 	"path"
@@ -34,20 +34,20 @@ func (att *Attachment) MakeMIMEPart(multipartWriter *multipart.Writer) error {
 	header.Set("Content-Type", att.MediaType)
 	header.Set("Content-Disposition", formatContentDisp(att.AttachmentType, att.Name))
 	header.Set("Content-ID", fmt.Sprintf("<%s>", att.Id))
-	header.Set("Content-Transfer-Encoding", "quoted-printable")
+	header.Set("Content-Transfer-Encoding", "base64")
 	partWriter, err := multipartWriter.CreatePart(header)
 	if err != nil {
 		return err
 	}
 
-	qpPartWriter := quotedprintable.NewWriter(partWriter)
+	base64PartWriter := base64.NewEncoder(base64.StdEncoding, partWriter)
 
-	_, err = qpPartWriter.Write(att.Data)
+	_, err = base64PartWriter.Write(att.Data)
 	if err != nil {
 		return err
 	}
 
-	qpPartWriter.Close()
+	base64PartWriter.Close()
 	return nil
 }
 

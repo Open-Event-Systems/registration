@@ -30,10 +30,10 @@ func TestAttachment(t *testing.T) {
 	expected := fmt.Sprintf(`--%s
 Content-Disposition: inline; filename="test.txt"
 Content-Id: <1>
-Content-Transfer-Encoding: quoted-printable
+Content-Transfer-Encoding: base64
 Content-Type: text/plain
 
-Hello, world!
+SGVsbG8sIHdvcmxkIQ==
 --%s--
 `, mpWriter.Boundary(), mpWriter.Boundary())
 

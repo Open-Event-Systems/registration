@@ -18,8 +18,8 @@ type SMTPConfig struct {
 	Server   string  `yaml:"server"`
 	Port     int     `yaml:"port"`
 	Username *string `yaml:"username"`
-	Password *string `yaml:"password"`
-	TLS      *string `yaml:"tls"`
+	Password string `yaml:"password"`
+	TLS      string `yaml:"tls"`
 }
 
 type MessageConfig struct {
