@@ -1,9 +1,0 @@
-{%- extends "base.txt" %}
-
-{% block content -%}
-To verify your email, enter the following code:
-
-    {{ code }}
-
-If you didn't request this, simply ignore this message.
-{%- endblock %}

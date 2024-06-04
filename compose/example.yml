@@ -105,7 +105,7 @@ services:
       - db
 
   email:
-    build: ../email-go
+    build: ../email
     configs:
       - source: email
         target: /config/email.yml
