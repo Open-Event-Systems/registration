@@ -155,18 +155,28 @@ async def start_interview(
 
     cart_id = request.args.get("cart_id")
     registration_id = request.args.get("registration_id")
+    access_code = request.args.get("access_code")
     cart = await cart_service.get_cart(cart_id) if cart_id else None
     reg = (
         await reg_service.get_registration(event_id, registration_id)
         if registration_id
         else None
     )
+
+    access_code_data = (
+        await _check_access_code_use(access_code, event.id, cart, reg_service)
+        if cart
+        else None
+    )
+
     if (
         not cart
         or cart.get("cart", {}).get("event_id") != event_id
         or registration_id
         and reg is None
-        or not reg_service.is_interview_allowed(interview_id, event, reg)
+        or not reg_service.is_interview_allowed(
+            interview_id, event, reg, access_code_data
+        )
     ):
         raise NotFound
 
@@ -176,7 +186,7 @@ async def start_interview(
     target_url = request.url_for("selfservice.add_to_cart")
 
     interview = await interview_service.start_interview(
-        event, interview_id, cart_id, target_url, account_id, reg
+        event, interview_id, cart_id, target_url, account_id, reg, access_code
     )
     return json({**interview, "update_url": update_url})
 
@@ -208,6 +218,7 @@ async def add_to_cart(
     interview_id = context.get("interview_id")
     event_id = context.get("event_id")
     registration = data.get("registration", {})
+    access_code = context.get("access_code")
 
     event = raise_not_found(
         registration_service.get_event(event_id) if event_id else None
@@ -216,18 +227,25 @@ async def add_to_cart(
         event.id, registration, registration_service
     )
 
+    cart = await cart_service.get_cart(cart_id) if cart_id else None
+
+    access_code_data = (
+        await _check_access_code_use(access_code, event.id, cart, registration_service)
+        if cart
+        else None
+    )
+
     if (
         not cart_id
+        or not cart
         or not interview_id
         or not event.visible
         or not event.open
         or not registration_service.is_interview_allowed(
-            interview_id, event, cur_reg if cur_exists else None
+            interview_id, event, cur_reg if cur_exists else None, access_code_data
         )
+        or cur_reg.get("version") != registration.get("version")
     ):
-        raise Conflict
-
-    if cur_reg.get("version") != registration.get("version"):
         raise Conflict
 
     new_cart = await cart_service.add_to_cart(
@@ -236,7 +254,7 @@ async def add_to_cart(
             "id": registration.get("id"),
             "old": cur_reg,
             "new": registration,
-            "meta": meta,
+            "meta": {"access_code": access_code, **meta} if access_code else meta,
         },
     )
     return json({"id": new_cart.get("id")})
@@ -255,3 +273,26 @@ async def _get_cur_registration(
             "status": "pending",
             "version": 1,
         }
+
+
+async def _check_access_code_use(
+    access_code: str | None,
+    event_id: str,
+    cart: Mapping[str, Any],
+    registration_service: RegistrationService,
+) -> Mapping[str, Any] | None:
+    if not access_code:
+        return None
+
+    cart_data = cart.get("cart", {})
+    registrations = cart_data.get("registrations", [])
+    for reg in registrations:
+        meta = reg.get("meta", {})
+        reg_access_code = meta.get("access_code")
+        if access_code == reg_access_code:
+            raise Conflict
+
+    code = await registration_service.get_access_code(event_id, access_code)
+    if code is None:
+        raise Conflict
+    return code

@@ -4,6 +4,7 @@ import os
 import sys
 
 import httpx
+from oes.registration.access_code import AccessCodeRepo, AccessCodeService
 from oes.registration.batch import BatchChangeService
 from oes.registration.config import get_config
 from oes.registration.event import EventStatsRepo, EventStatsService
@@ -20,7 +21,7 @@ def main():
 def create_app() -> Sanic:
     """Main app entry point."""
     from oes.registration.registration import RegistrationRepo
-    from oes.registration.routes import batch, common, registration
+    from oes.registration.routes import access_code, batch, common, registration
     from oes.registration.serialization import configure_converter
 
     config = get_config()
@@ -32,12 +33,16 @@ def create_app() -> Sanic:
 
     app.blueprint(registration.routes, url_prefix="/events/<event_id>/registrations")
     app.blueprint(batch.routes, url_prefix="/events/<event_id>/batch-change")
+    app.blueprint(access_code.routes, url_prefix="/events/<event_id>/access-codes")
 
     app.ext.add_dependency(RegistrationRepo)
     app.ext.add_dependency(RegistrationService)
 
     app.ext.add_dependency(EventStatsRepo)
     app.ext.add_dependency(EventStatsService)
+
+    app.ext.add_dependency(AccessCodeRepo)
+    app.ext.add_dependency(AccessCodeService)
 
     app.ext.add_dependency(BatchChangeService)
 

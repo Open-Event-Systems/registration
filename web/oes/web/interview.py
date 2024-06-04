@@ -24,6 +24,7 @@ class InterviewService:
         target: str,
         account_id: str | None,
         registration: Mapping[str, Any] | None,
+        access_code: str | None,
     ) -> Mapping[str, Any]:
         """Start an interview."""
         if registration is None:
@@ -42,6 +43,7 @@ class InterviewService:
                 "event_id": event.id,
                 "interview_id": interview_id,
                 "cart_id": cart_id,
+                "access_code": access_code,
             },
             "data": {
                 "registration": registration,
@@ -49,6 +51,7 @@ class InterviewService:
             },
             "target": target,
         }
+
         body_bytes = orjson.dumps(body)
         res = await self.client.post(
             url, content=body_bytes, headers={"Content-Type": "application/json"}
