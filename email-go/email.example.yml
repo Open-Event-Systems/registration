@@ -2,6 +2,9 @@
 # path to the template directory
 template_path: templates
 
+# AMQP URL
+amqp_url: amqp://guest:guest@localhost/
+
 # the default From address
 email_from: from@example.net
 
