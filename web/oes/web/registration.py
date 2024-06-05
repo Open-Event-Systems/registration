@@ -55,8 +55,16 @@ class RegistrationService:
         res.raise_for_status()
         return res.json()
 
-    def get_add_options(self, event: Event) -> Iterable[InterviewOption]:
+    def get_add_options(
+        self, event: Event, access_code: Mapping[str, Any] | None
+    ) -> Iterable[InterviewOption]:
         """Get available add options."""
+        if access_code:
+            opts = access_code.get("options", {})
+            for opt in opts.get("add_options", []):
+                yield InterviewOption(opt["id"], opt["title"])
+            return
+
         ctx = {
             "event": event.get_template_context(),
         }
@@ -65,9 +73,18 @@ class RegistrationService:
                 yield opt
 
     def get_change_options(
-        self, event: Event, registration: Mapping[str, Any]
+        self,
+        event: Event,
+        registration: Mapping[str, Any],
+        access_code: Mapping[str, Any] | None,
     ) -> Iterable[InterviewOption]:
         """Get available change options."""
+        if access_code:
+            opts = access_code.get("options", {})
+            for opt in opts.get("change_options", []):
+                yield InterviewOption(opt["id"], opt["title"])
+            return
+
         ctx = {
             "event": event.get_template_context(),
             "registration": registration,
@@ -81,19 +98,19 @@ class RegistrationService:
         interview_id: str,
         event: Event,
         registration: Mapping[str, Any] | None,
-        access_code_data: Mapping[str, Any] | None,
+        access_code: Mapping[str, Any] | None,
     ) -> bool:
         """Check if an interview is allowed."""
-        if access_code_data is not None:
+        if access_code is not None:
             return self._is_interview_allowed_access_code(
-                interview_id, registration, access_code_data
+                interview_id, registration, access_code
             )
         if registration is None:
-            return any(o.id == interview_id for o in self.get_add_options(event))
+            return any(o.id == interview_id for o in self.get_add_options(event, None))
         else:
             return any(
                 o.id == interview_id
-                for o in self.get_change_options(event, registration)
+                for o in self.get_change_options(event, registration, None)
             )
 
     def _is_interview_allowed_access_code(

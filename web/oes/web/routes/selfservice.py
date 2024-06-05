@@ -112,16 +112,20 @@ async def list_selfservice_registrations(
 
     account_id = request.headers.get("x-account-id")
     email = request.headers.get("x-email")
-
-    regs = await service.get_registrations(
-        event_id=event_id, account_id=account_id, email=email
+    access_code_str = request.args.get("access_code")
+    access_code = (
+        await service.get_access_code(event_id, access_code_str)
+        if access_code_str
+        else None
     )
+
+    regs = await _get_regs(service, event_id, account_id, email, access_code)
 
     event_ctx = event.get_template_context()
     results = []
 
     for reg in regs:
-        change_opts = list(service.get_change_options(event, reg))
+        change_opts = list(service.get_change_options(event, reg, access_code))
         results.append(
             SelfServiceRegistration.from_registration(
                 event.registration_display, event_ctx, change_opts, reg
@@ -130,7 +134,7 @@ async def list_selfservice_registrations(
 
     add_opts = [
         SelfServiceInterviewOption(opt.id, opt.title)
-        for opt in service.get_add_options(event)
+        for opt in service.get_add_options(event, access_code)
     ]
     return SelfServiceRegistrationsResponse(results, add_opts)
 
@@ -258,6 +262,29 @@ async def add_to_cart(
         },
     )
     return json({"id": new_cart.get("id")})
+
+
+async def _get_regs(
+    service: RegistrationService,
+    event_id: str,
+    account_id: str | None,
+    email: str | None,
+    access_code: Mapping[str, Any] | None,
+) -> Sequence[Mapping[str, Any]]:
+    if access_code:
+        opts = access_code.get("options", {})
+        registration_ids = opts.get("registration_ids", [])
+        if registration_ids:
+            # could make a batch get method to improve this
+            regs = [
+                await service.get_registration(event_id, reg_id)
+                for reg_id in registration_ids
+            ]
+            return [r for r in regs if r]
+
+    return await service.get_registrations(
+        event_id=event_id, account_id=account_id, email=email
+    )
 
 
 async def _get_cur_registration(
