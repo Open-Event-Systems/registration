@@ -1,0 +1,26 @@
+---
+script_dir: scripts
+display_name: >-
+  registration.new.preferred_name
+  | default(registration.new.first_name | default("Registration"))
+line_items:
+  - id: basic
+    name: Basic Registration
+    description: Basic registration.
+    price: 5000
+    modifiers:
+      - id: early-bird
+        name: Early Bird
+        amount: -1000
+        when: registration.new.early_bird == true
+    when:
+      - '"basic" not in registration.old.options'
+      - '"basic" in registration.new.options'
+
+  - id: sponsor
+    name: Sponsor Upgrade
+    description: Sponsor level upgrade.
+    price: 2500
+    when:
+      - '"sponsor" not in registration.old.options'
+      - '"sponsor" in registration.new.options'
