@@ -54,7 +54,6 @@ func getScriptFunc(file string) PricingFunc {
 			return nil, err
 		}
 
-
 		err = cmd.Start()
 		if err != nil {
 			return nil, err
@@ -63,13 +62,13 @@ func getScriptFunc(file string) PricingFunc {
 		stdin.Write(jsonData)
 		stdin.Close()
 
-		data, _ := io.ReadAll(stderr)
-		log.Printf("%v", string(data))
-		log.Printf("%v", string(jsonData))
+		stderrData, _ := io.ReadAll(stderr)
 
 		var result structs.PricingResult
 		err = json.NewDecoder(stdout).Decode(&result)
 		if err != nil {
+			log.Printf("error running pricing script %v: %v", filepath.Base(file), err)
+			log.Printf("script stderr: %s", string(stderrData))
 			return nil, err
 		}
 
