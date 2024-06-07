@@ -9,13 +9,13 @@ import (
 )
 
 type defaultPricer struct {
-	config *config.Config
+	config *config.EventConfig
 	req    *structs.PricingRequest
 	ctx    *exec.Context
 }
 
 // Get the default pricing function.
-func NewDefaultPricingFunc(config *config.Config) PricingFunc {
+func NewDefaultPricingFunc(config *config.EventConfig) PricingFunc {
 	pricingFunc := func(req *structs.PricingRequest) (*structs.PricingResult, error) {
 		ctx := exec.NewContext(map[string]any{
 			"currency": req.Currency,
@@ -42,7 +42,8 @@ func NewDefaultPricingFunc(config *config.Config) PricingFunc {
 
 func (p *defaultPricer) price() (*structs.PricingResult, error) {
 	result := structs.PricingResult{
-		Currency: p.req.Currency,
+		Currency:      p.req.Currency,
+		Registrations: []structs.PricingResultRegistration{},
 	}
 	for _, reg := range p.req.CartData.Registrations {
 		regRes, err := p.handleRegistration(&reg)
@@ -125,7 +126,7 @@ func (p *defaultPricer) handleModifier(regCtx *exec.Context, m *config.ModifierC
 	}, nil
 }
 
-func getDisplayName(regCtx *exec.Context, cfg *config.Config) string {
+func getDisplayName(regCtx *exec.Context, cfg *config.EventConfig) string {
 	displayName := cfg.DisplayName.Evaluate(regCtx)
 	return fmt.Sprintf("%v", displayName)
 }

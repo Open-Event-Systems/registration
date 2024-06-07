@@ -177,9 +177,9 @@ class CartPricingService:
         data = _converter.unstructure(cart)
         res = await self.client.post(
             f"{self.config.pricing_url}/price-cart",
-            json={"currency": self.config.currency, "cart": data},
+            json={"currency": self.config.currency, "cart_data": data},
         )
-        res.raise_for_status
+        res.raise_for_status()
         res_bytes = res.content
         if self.redis:
             await self.redis.set(

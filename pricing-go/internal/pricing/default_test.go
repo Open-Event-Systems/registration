@@ -9,7 +9,8 @@ import (
 
 func TestDefaultPricing(t *testing.T) {
 	cfg := config.LoadConfig("default_test.yml")
-	pricingFunc := NewDefaultPricingFunc(cfg)
+	eventCfg := cfg.Events["example-event"]
+	pricingFunc := NewDefaultPricingFunc(&eventCfg)
 
 	t.Run("basic", func(t *testing.T) {
 		req := structs.PricingRequest{

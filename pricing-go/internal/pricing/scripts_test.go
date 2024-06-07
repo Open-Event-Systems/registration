@@ -9,8 +9,9 @@ import (
 
 func TestScripts(t *testing.T) {
 	cfg := config.LoadConfig("default_test.yml")
-	cfg.ScriptDir = "../../scripts"
-	pricingFunc := NewPricingFunction(cfg)
+	eventCfg := cfg.Events["example-event"]
+	eventCfg.ScriptDir = "../../scripts"
+	pricingFunc := NewPricingFunction(&eventCfg)
 
 	req := structs.PricingRequest{
 		Currency: "USD",

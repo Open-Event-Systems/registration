@@ -23,10 +23,14 @@ type LineItemConfig struct {
 	When        logic.Condition  `yaml:"when"`
 }
 
-type Config struct {
+type EventConfig struct {
 	ScriptDir   string           `yaml:"script_dir"`
 	DisplayName logic.Expression `yaml:"display_name"`
 	LineItems   []LineItemConfig `yaml:"line_items"`
+}
+
+type Config struct {
+	Events map[string]EventConfig `yaml:"events"`
 }
 
 func LoadConfig(filename string) *Config {

@@ -12,7 +12,7 @@ type LineItem struct {
 	Description string     `json:"description,omitempty"`
 	Price       int        `json:"price"`
 	TotalPrice  int        `json:"total_price"`
-	Modifiers   []Modifier `json:"modifiers,omitempty"`
+	Modifiers   []Modifier `json:"modifiers"`
 }
 
 type PricingResultRegistration struct {

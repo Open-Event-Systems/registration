@@ -7,13 +7,13 @@ import (
 
 type PricingFunc func(req *structs.PricingRequest) (*structs.PricingResult, error)
 
-func NewPricingFunction(cfg *config.Config) PricingFunc {
+func NewPricingFunction(eventCfg *config.EventConfig) PricingFunc {
 	funcs := []PricingFunc{
-		NewDefaultPricingFunc(cfg),
+		NewDefaultPricingFunc(eventCfg),
 	}
 
-	if cfg.ScriptDir != "" {
-		scripts := GetPricingScripts(cfg.ScriptDir)
+	if eventCfg.ScriptDir != "" {
+		scripts := GetPricingScripts(eventCfg.ScriptDir)
 		funcs = append(funcs, scripts...)
 	}
 

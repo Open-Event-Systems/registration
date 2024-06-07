@@ -17,7 +17,11 @@ func main() {
 
 	cfg := config.LoadConfig(os.Args[1])
 
-	pricingFunc := pricing.NewPricingFunction(cfg)
+	pricingFuncs := make(map[string]pricing.PricingFunc)
+
+	for eventId, eventCfg := range cfg.Events {
+		pricingFuncs[eventId] = pricing.NewPricingFunction(&eventCfg)
+	}
 
 	mux := http.NewServeMux()
 
@@ -31,6 +35,13 @@ func main() {
 		err := json.NewDecoder(req.Body).Decode(&request)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+			return
+		}
+
+		pricingFunc, funcOk := pricingFuncs[request.CartData.EventId]
+		if !funcOk {
+			log.Printf("no event: %v", request.CartData.EventId)
+			http.NotFound(w, req)
 			return
 		}
 

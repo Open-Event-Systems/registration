@@ -85,11 +85,7 @@ interviews:
           registration.preferred_name if use_preferred_name else
           registration.first_name
 
-      - set: registration.option_ids
-        value: >-
-          ["basic", "sponsor"] if level == "sponsor" else ["basic"]
-
-      - set: meta.added_option_ids
+      - set: registration.options
         value: >-
           ["basic", "sponsor"] if level == "sponsor" else ["basic"]
 
@@ -124,8 +120,5 @@ interviews:
       - set: registration.option_ids
         value: registration.option_ids + ["sponsor"]
         when:
-          - "'sponsor' not in registration.option_ids"
+          - "'sponsor' not in registration.options"
           - level == "sponsor"
-      - set: meta.added_option_ids
-        value: >-
-          ["sponsor"] if level == "sponsor" else []
