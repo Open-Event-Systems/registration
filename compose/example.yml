@@ -75,7 +75,7 @@ services:
       - redis
 
   pricing:
-    build: ../pricing-go
+    build: ../pricing
     configs:
       - source: pricing
         target: /config/pricing.yml
