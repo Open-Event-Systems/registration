@@ -3,10 +3,12 @@
 import os
 import sys
 
+from oes.auth.auth import AuthRepo, AuthService
 from oes.auth.config import get_config
 from oes.auth.email import EmailAuthRepo, EmailAuthService
 from oes.auth.mq import MQService
-from oes.auth.service import AuthService, RefreshTokenService
+from oes.auth.service import AccessTokenService, RefreshTokenService
+from oes.auth.token import RefreshTokenRepo
 from oes.utils.sanic import setup_app, setup_database
 from sanic import Sanic
 
@@ -29,7 +31,10 @@ def create_app() -> Sanic:
     app.blueprint(routes)
 
     app.ext.dependency(config)
-    app.ext.dependency(AuthService(config))
+    app.ext.add_dependency(AuthService)
+    app.ext.add_dependency(AuthRepo)
+    app.ext.dependency(AccessTokenService(config))
+    app.ext.add_dependency(RefreshTokenRepo)
     app.ext.add_dependency(RefreshTokenService)
     app.ext.add_dependency(EmailAuthRepo)
     app.ext.add_dependency(EmailAuthService)

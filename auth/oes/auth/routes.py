@@ -2,28 +2,20 @@
 
 import re
 
-import nanoid
 import orjson
 from attrs import frozen
 from email_validator import validate_email
+from oes.auth.auth import AuthRepo, AuthService, Scope, Scopes
 from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
-from oes.auth.service import AuthService, RefreshTokenService
-from oes.auth.token import TokenError
+from oes.auth.service import AccessTokenService, RefreshTokenService
+from oes.auth.token import AccessToken, TokenError
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
 from sanic import Blueprint, Forbidden, HTTPResponse, Request, Unauthorized, json
 from sanic.exceptions import HTTPException
 
 routes = Blueprint("auth")
-
-
-@frozen
-class CreateRefreshTokenRequest:
-    """Request to create a new refresh token."""
-
-    account_id: str | None = None
-    email: str | None = None
 
 
 @frozen
@@ -50,16 +42,13 @@ class UnprocessableEntity(HTTPException):
 
 @routes.get("/auth/validate")
 async def validate_token(
-    request: Request, config: Config, auth_service: AuthService
+    request: Request, config: Config, access_token_service: AccessTokenService
 ) -> HTTPResponse:
     """Validate a token."""
     if config.disable_auth:
         return HTTPResponse(status=204)
 
-    header = request.headers.get("Authorization", "")
-    token = auth_service.validate_token(header)
-    if token is None:
-        raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
+    token = _validate_token(request, access_token_service)
 
     response_headers = {}
 
@@ -69,11 +58,13 @@ async def validate_token(
     if token.email:
         response_headers["x-email"] = token.email
 
+    response_headers["x-scope"] = list(token.scope)
+
     return HTTPResponse(status=204, headers=response_headers)
 
 
 @routes.get("/auth/info")
-async def read_info(request: Request, auth_service: AuthService) -> HTTPResponse:
+async def read_info(request: Request, auth_service: AccessTokenService) -> HTTPResponse:
     """Read auth info."""
     header = request.headers.get("Authorization", "")
     token = auth_service.validate_token(header)
@@ -84,33 +75,35 @@ async def read_info(request: Request, auth_service: AuthService) -> HTTPResponse
         {
             "account_id": token.sub,
             "email": token.email,
+            "scope": str(token.scope),
         }
     )
 
 
 @routes.post("/auth/create")
-async def create_refresh_token(
-    request: Request, service: RefreshTokenService, config: Config, body: CattrsBody
+async def create_auth(
+    request: Request,
+    auth_service: AuthService,
+    refresh_token_service: RefreshTokenService,
+    config: Config,
 ) -> HTTPResponse:
-    """Create a new refresh token."""
-    req = await body(CreateRefreshTokenRequest)
-    # TODO: this endpoint should be anonymous accounts only
-    account_id = (
-        req.account_id
-        if req.account_id
-        else nanoid.generate(_alphabet, 14) if not req.email else None
-    )
-
+    """Create a guest authorization."""
     async with transaction():
-        refresh_token = await service.create(account_id, req.email)
-        access_token = refresh_token.make_access_token(now=refresh_token.date_issued)
+        auth = auth_service.create_auth(
+            scope=Scopes((Scope.selfservice, Scope.cart)), max_path_length=0
+        )
+        refresh_token = await refresh_token_service.create(auth)
+        access_token = refresh_token.make_access_token(now=refresh_token.date_created)
         token_response = {
             "access_token": access_token.encode(key=config.token_secret),
             "token_type": "Bearer",
+            "scope": str(access_token.scope),
+            "account_id": access_token.acc,
+            "email": access_token.email,
             "expires_in": int(
-                (access_token.exp - refresh_token.date_issued).total_seconds()
+                (access_token.exp - refresh_token.date_created).total_seconds()
             ),
-            "refresh_token": f"{refresh_token.id}-{refresh_token.token}",
+            "refresh_token": f"{refresh_token.auth_id}-{refresh_token.token}",
         }
         return HTTPResponse(
             orjson.dumps(token_response), content_type="application/json"
@@ -119,7 +112,9 @@ async def create_refresh_token(
 
 @routes.post("/auth/token")
 async def refresh_token(
-    request: Request, service: RefreshTokenService, config: Config, body: CattrsBody
+    request: Request,
+    refresh_token_service: RefreshTokenService,
+    config: Config,
 ) -> HTTPResponse:
     """Create a new refresh token."""
     form = request.form
@@ -134,17 +129,20 @@ async def refresh_token(
 
     async with transaction():
         try:
-            updated = await service.refresh(refresh_token_str)
+            updated = await refresh_token_service.refresh(refresh_token_str)
         except TokenError:
             raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
-        access_token = updated.make_access_token(now=updated.date_last_used)
+        access_token = updated.make_access_token(now=updated.date_created)
         token_response = {
             "access_token": access_token.encode(key=config.token_secret),
             "token_type": "Bearer",
+            "scope": str(access_token.scope),
+            "account_id": access_token.acc,
+            "email": access_token.email,
             "expires_in": int(
-                (access_token.exp - updated.date_last_used).total_seconds()
+                (access_token.exp - updated.date_created).total_seconds()
             ),
-            "refresh_token": f"{updated.id}-{updated.token}",
+            "refresh_token": f"{updated.auth_id}-{updated.token}",
         }
         return HTTPResponse(
             orjson.dumps(token_response), content_type="application/json"
@@ -153,10 +151,16 @@ async def refresh_token(
 
 @routes.post("/auth/email")
 async def start_email_auth(
-    request: Request, service: EmailAuthService, body: CattrsBody
+    request: Request,
+    service: EmailAuthService,
+    access_token_service: AccessTokenService,
+    body: CattrsBody,
 ) -> HTTPResponse:
     """Start email auth."""
     req = await body(StartEmailAuthRequest)
+    token = _validate_token(request, access_token_service)
+    if token.email:
+        raise Forbidden
     email = req.email.strip()
     if not validate_email(email, check_deliverability=False):
         raise UnprocessableEntity
@@ -168,29 +172,53 @@ async def start_email_auth(
 async def complete_email_auth(
     request: Request,
     service: EmailAuthService,
+    auth_repo: AuthRepo,
     refresh_token_service: RefreshTokenService,
+    access_token_service: AccessTokenService,
     config: Config,
     body: CattrsBody,
 ) -> HTTPResponse:
     """Complete email auth."""
     req = await body(CompleteEmailAuthRequest)
+    token = _validate_token(request, access_token_service)
+    if token.email:
+        raise Forbidden
     email = req.email.strip()
     code = re.sub(r"[. -]", "", req.code)
-    res = await service.verify(req.email.strip(), code)
-    if not res:
-        raise Forbidden
+
     async with transaction():
-        refresh_token = await refresh_token_service.create(email=email)
-        access_token = refresh_token.make_access_token(now=refresh_token.date_issued)
+        # TODO: need to move a lot of business logic out of here
+        auth = await auth_repo.get(token.sub, lock=True)
+        if not auth or auth.email:
+            raise Forbidden
+        res = await service.verify(email, code)
+        if not res:
+            raise Forbidden
+
+        auth.email = email
+        refresh_token = await refresh_token_service.create(auth)
+        access_token = refresh_token.make_access_token(now=refresh_token.date_created)
         token_response = {
             "access_token": access_token.encode(key=config.token_secret),
             "token_type": "Bearer",
+            "scope": str(access_token.scope),
+            "account_id": access_token.acc,
+            "email": access_token.email,
             "expires_in": int(
-                (access_token.exp - refresh_token.date_issued).total_seconds()
+                (access_token.exp - refresh_token.date_created).total_seconds()
             ),
-            "refresh_token": f"{refresh_token.id}-{refresh_token.token}",
+            "refresh_token": f"{refresh_token.auth_id}-{refresh_token.token}",
         }
-    return json(token_response)
+        return HTTPResponse(
+            orjson.dumps(token_response), content_type="application/json"
+        )
 
 
-_alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+def _validate_token(
+    request: Request, access_token_service: AccessTokenService
+) -> AccessToken:
+    header = request.headers.get("Authorization", "")
+    token = access_token_service.validate_token(header)
+    if token is None:
+        raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
+    return token

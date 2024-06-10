@@ -114,11 +114,11 @@ interviews:
                 value: sponsor
 
     steps:
-      - set: registration.option_ids
+      - set: registration.options
         value: "[]"
-        when: registration.option_ids is not defined
-      - set: registration.option_ids
-        value: registration.option_ids + ["sponsor"]
+        when: registration.options is not defined
+      - set: registration.options
+        value: registration.options + ["sponsor"]
         when:
           - "'sponsor' not in registration.options"
           - level == "sponsor"
