@@ -4,7 +4,7 @@ import re
 
 import orjson
 from attrs import frozen
-from email_validator import validate_email
+from email_validator import EmailNotValidError, validate_email
 from oes.auth.auth import AuthRepo, AuthService, Scope, Scopes
 from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
@@ -162,7 +162,9 @@ async def start_email_auth(
     if token.email:
         raise Forbidden
     email = req.email.strip()
-    if not validate_email(email, check_deliverability=False):
+    try:
+        validate_email(email, check_deliverability=False)
+    except EmailNotValidError:
         raise UnprocessableEntity
     await service.send(email)
     return HTTPResponse(status=204)
