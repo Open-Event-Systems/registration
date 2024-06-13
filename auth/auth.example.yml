@@ -2,4 +2,6 @@
 token_secret: changeit
 db_url: postgresql+asyncpg:///
 amqp_url: amqp://guest:guest@localhost/
+origin: http://localhost:8080
+name: Registration
 disable_auth: false

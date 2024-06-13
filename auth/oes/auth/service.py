@@ -60,10 +60,9 @@ class RefreshTokenService:
             min(exp, authorization.date_expires) if authorization.date_expires else exp
         )
 
-        if "refresh_token" not in authorization.__dict__:
-            await self.db.refresh(authorization, ("refresh_token",))
-        if authorization.refresh_token:
-            await self.repo.delete(authorization.refresh_token)
+        current = await self.repo.get(authorization.id)
+        if current:
+            await self.repo.delete(current)
 
         token = RefreshToken(
             auth_id=authorization.id,

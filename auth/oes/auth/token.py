@@ -98,6 +98,7 @@ class RefreshToken(Base, kw_only=True):
         self, *, exp: datetime | None = None, now: datetime | None = None
     ) -> AccessToken:
         """Make an access token from this refresh token."""
+        # TODO: review exp times
         now = now if now is not None else datetime.now().astimezone()
         exp = exp if exp is not None else now + DEFAULT_ACCESS_TOKEN_LIFETIME
         exp = (

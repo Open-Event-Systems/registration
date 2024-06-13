@@ -14,4 +14,4 @@ class Base(MappedAsDataclass, DeclarativeBase):
 
 def import_entities():
     """Import all entities (used by migrations)."""
-    from oes.auth import auth, email, token  # noqa
+    from oes.auth import auth, email, token, webauthn  # noqa

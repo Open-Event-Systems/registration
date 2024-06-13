@@ -20,6 +20,11 @@ class Config:
     )
     disable_auth: bool = ts.option(default=False, help="disable auth")
 
+    origin: str = ts.option(
+        default="http://localhost:8080", help="the domain of the web UI"
+    )
+    name: str = ts.option(default="Registration", help="the name of the service")
+
 
 def get_config() -> Config:
     """Load the config."""

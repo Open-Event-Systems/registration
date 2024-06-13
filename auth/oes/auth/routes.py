@@ -1,6 +1,10 @@
 """Routes."""
 
+import base64
 import re
+from collections.abc import Mapping
+from datetime import datetime
+from typing import Any
 
 import orjson
 from attrs import frozen
@@ -9,10 +13,19 @@ from oes.auth.auth import AuthRepo, AuthService, Scope, Scopes
 from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
 from oes.auth.service import AccessTokenService, RefreshTokenService
-from oes.auth.token import AccessToken, TokenError
+from oes.auth.token import AccessToken, RefreshToken, TokenError
+from oes.auth.webauthn import WebAuthnService
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
-from sanic import Blueprint, Forbidden, HTTPResponse, Request, Unauthorized, json
+from sanic import (
+    Blueprint,
+    Forbidden,
+    HTTPResponse,
+    NotFound,
+    Request,
+    Unauthorized,
+    json,
+)
 from sanic.exceptions import HTTPException
 
 routes = Blueprint("auth")
@@ -31,6 +44,21 @@ class CompleteEmailAuthRequest:
 
     email: str
     code: str
+
+
+@frozen
+class CompleteWebAuthnRequest:
+    """Request to complete a WebAuthn challenge."""
+
+    token: str
+    response: Mapping[str, Any]
+
+
+@frozen
+class StartWebAuthnAuthenticationRequest:
+    """Request to start WebAuthn authentication."""
+
+    credential_id: str
 
 
 class UnprocessableEntity(HTTPException):
@@ -94,20 +122,7 @@ async def create_auth(
         )
         refresh_token = await refresh_token_service.create(auth)
         access_token = refresh_token.make_access_token(now=refresh_token.date_created)
-        token_response = {
-            "access_token": access_token.encode(key=config.token_secret),
-            "token_type": "Bearer",
-            "scope": str(access_token.scope),
-            "account_id": access_token.acc,
-            "email": access_token.email,
-            "expires_in": int(
-                (access_token.exp - refresh_token.date_created).total_seconds()
-            ),
-            "refresh_token": f"{refresh_token.auth_id}-{refresh_token.token}",
-        }
-        return HTTPResponse(
-            orjson.dumps(token_response), content_type="application/json"
-        )
+        return _make_token_response(access_token, refresh_token, config)
 
 
 @routes.post("/auth/token")
@@ -133,20 +148,7 @@ async def refresh_token(
         except TokenError:
             raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
         access_token = updated.make_access_token(now=updated.date_created)
-        token_response = {
-            "access_token": access_token.encode(key=config.token_secret),
-            "token_type": "Bearer",
-            "scope": str(access_token.scope),
-            "account_id": access_token.acc,
-            "email": access_token.email,
-            "expires_in": int(
-                (access_token.exp - updated.date_created).total_seconds()
-            ),
-            "refresh_token": f"{updated.auth_id}-{updated.token}",
-        }
-        return HTTPResponse(
-            orjson.dumps(token_response), content_type="application/json"
-        )
+        return _make_token_response(access_token, updated, config)
 
 
 @routes.post("/auth/email")
@@ -200,20 +202,106 @@ async def complete_email_auth(
         auth.email = email
         refresh_token = await refresh_token_service.create(auth)
         access_token = refresh_token.make_access_token(now=refresh_token.date_created)
-        token_response = {
-            "access_token": access_token.encode(key=config.token_secret),
-            "token_type": "Bearer",
-            "scope": str(access_token.scope),
-            "account_id": access_token.acc,
-            "email": access_token.email,
-            "expires_in": int(
-                (access_token.exp - refresh_token.date_created).total_seconds()
-            ),
-            "refresh_token": f"{refresh_token.auth_id}-{refresh_token.token}",
+        return _make_token_response(access_token, refresh_token, config)
+
+
+@routes.get("/auth/webauthn/register")
+async def start_webauthn_registration(
+    request: Request,
+    webauthn_service: WebAuthnService,
+    auth_repo: AuthRepo,
+    access_token_service: AccessTokenService,
+) -> HTTPResponse:
+    """Start a WebAuthn registration."""
+    token = _validate_token(request, access_token_service)
+    if not token.email:
+        raise Forbidden
+    auth = await auth_repo.get(token.sub, lock=True)
+    if not auth:
+        raise Forbidden
+    challenge_token, challenge_json = webauthn_service.create_registration_challenge(
+        auth
+    )
+    return json(
+        {
+            "token": challenge_token,
+            "challenge": challenge_json,
         }
-        return HTTPResponse(
-            orjson.dumps(token_response), content_type="application/json"
-        )
+    )
+
+
+@routes.post("/auth/webauthn/register")
+async def complete_webauthn_registration(
+    request: Request,
+    webauthn_service: WebAuthnService,
+    auth_repo: AuthRepo,
+    access_token_service: AccessTokenService,
+    refresh_token_service: RefreshTokenService,
+    config: Config,
+    body: CattrsBody,
+) -> HTTPResponse:
+    """Start a WebAuthn registration."""
+    token = _validate_token(request, access_token_service)
+    if not token.email:
+        raise Forbidden
+    req = await body(CompleteWebAuthnRequest)
+    async with transaction():
+        auth = await auth_repo.get(token.sub, lock=True)
+        if not auth:
+            raise Forbidden
+        res = webauthn_service.complete_registration(auth, req.token, req.response)
+        if not res:
+            raise Forbidden
+        refresh_token = await refresh_token_service.create(auth)
+        access_token = refresh_token.make_access_token(now=refresh_token.date_created)
+        return _make_token_response(access_token, refresh_token, config)
+
+
+@routes.post("/auth/webauthn/start-authenticate")
+async def start_webauthn_authentication(
+    request: Request,
+    webauthn_service: WebAuthnService,
+    body: CattrsBody,
+) -> HTTPResponse:
+    """Start a WebAuthn authentication."""
+    req = await body(StartWebAuthnAuthenticationRequest)
+    try:
+        base64.urlsafe_b64decode(req.credential_id + "==")
+    except ValueError:
+        raise NotFound
+    challenge = await webauthn_service.create_authentication_challenge(
+        req.credential_id
+    )
+    if not challenge:
+        raise NotFound
+    challenge_token, challenge_json = challenge
+
+    return json(
+        {
+            "token": challenge_token,
+            "challenge": challenge_json,
+        }
+    )
+
+
+@routes.post("/auth/webauthn/authenticate")
+async def complete_webauthn_authentication(
+    request: Request,
+    webauthn_service: WebAuthnService,
+    refresh_token_service: RefreshTokenService,
+    config: Config,
+    body: CattrsBody,
+) -> HTTPResponse:
+    """Complete WebAuthn authentication."""
+    req = await body(CompleteWebAuthnRequest)
+    async with transaction():
+        auth = await webauthn_service.complete_authentication(req.token, req.response)
+        if not auth:
+            raise Forbidden
+
+        refresh_token = await refresh_token_service.create(auth)
+        access_token = refresh_token.make_access_token(now=refresh_token.date_created)
+        return _make_token_response(access_token, refresh_token, config)
 
 
 def _validate_token(
@@ -224,3 +312,21 @@ def _validate_token(
     if token is None:
         raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
     return token
+
+
+def _make_token_response(
+    access_token: AccessToken, refresh_token: RefreshToken | None, config: Config
+) -> HTTPResponse:
+    iat = refresh_token.date_created if refresh_token else datetime.now().astimezone()
+    resp_data = {
+        "access_token": access_token.encode(key=config.token_secret),
+        "token_type": "Bearer",
+        "scope": str(access_token.scope),
+        "account_id": access_token.acc,
+        "email": access_token.email,
+        "expires_in": int((access_token.exp - iat).total_seconds()),
+        "refresh_token": (
+            f"{refresh_token.auth_id}-{refresh_token.token}" if refresh_token else None
+        ),
+    }
+    return HTTPResponse(orjson.dumps(resp_data), content_type="application/json")
