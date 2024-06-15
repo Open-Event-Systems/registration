@@ -3,7 +3,7 @@
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any
 
-from attrs import field, frozen
+from attrs import evolve, field, frozen
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from immutabledict import immutabledict
@@ -11,6 +11,7 @@ from oes.interview.immutable import immutable_mapping
 from oes.interview.input.question import QuestionTemplate
 from oes.interview.interview.state import InterviewState
 from oes.interview.interview.types import Step
+from typing_extensions import Self
 
 
 @frozen
@@ -36,18 +37,26 @@ class InterviewContext:
         default=immutabledict(),
         converter=immutable_mapping[Sequence[str | int], Sequence[str]],
     )
+    interviews: Mapping[str, Interview] = field(
+        default=immutabledict(), converter=immutable_mapping[str, Interview]
+    )
+
+    def with_state(self, state: InterviewState) -> Self:
+        """Return a copy with the state replaced."""
+        return evolve(self, state=state)
 
 
 def make_interview_context(
     question_templates: Mapping[str, QuestionTemplate],
     steps: Iterable[Step],
     state: InterviewState,
+    interviews: Mapping[str, Interview],
 ) -> InterviewContext:
     """Make an :class:`InterviewContext`."""
     steps = tuple(steps)
     path_index = index_question_templates_by_path(question_templates.items())
     # indirect_path_index = index_question_templates_by_indirect_path(by_id.items())
-    return InterviewContext(state, question_templates, steps, path_index)
+    return InterviewContext(state, question_templates, steps, path_index, interviews)
 
 
 def index_question_templates_by_path(

@@ -35,7 +35,7 @@ class SetStep:
             if isinstance(cur_value, Jinja2Undefined) or cur_value != new_value:
                 return self._set_value(context, new_value)
             else:
-                return UpdateResult(context.state)
+                return UpdateResult(context)
 
     def _get_value(self, ctx: TemplateContext) -> Any:
         value = self.value.evaluate(ctx)
@@ -47,4 +47,4 @@ class SetStep:
         proxy = make_proxy(context.state.data)
         new_data = self.set.set(proxy, value)
         new_state = context.state.update(data=new_data)
-        return UpdateResult(new_state)
+        return UpdateResult(context.with_state(new_state))

@@ -1,20 +1,35 @@
 """Interview state module."""
 
+from __future__ import annotations
+
 from collections.abc import Iterable, Mapping, Set
 from datetime import datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from attrs import Factory, evolve, field, frozen
 from immutabledict import immutabledict
 from oes.interview.immutable import immutable_converter, make_immutable
 from oes.interview.input.question import QuestionTemplate
+from oes.interview.logic.types import ValuePointer
 from oes.utils.template import TemplateContext
 from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from oes.interview.interview.interview import InterviewContext
+
 
 _unset: Any = object()
 
 DEFAULT_INTERVIEW_EXPIRATION = timedelta(hours=1)
 """Default interview expiration time."""
+
+
+@frozen
+class ParentInterviewContext:
+    """Parent interview context."""
+
+    context: InterviewContext
+    result: ValuePointer
 
 
 @frozen
@@ -27,7 +42,7 @@ class InterviewState:
             lambda s: s.date_started + DEFAULT_INTERVIEW_EXPIRATION, takes_self=True
         )
     )
-    target: str | None = None
+    target: str | ParentInterviewContext | None = None
     context: Mapping[str, Any] = field(
         default=immutabledict(), converter=immutable_converter(Mapping[str, Any])
     )

@@ -44,6 +44,7 @@ async def test_storage(storage: StorageService):
             ),
         ),
         state=InterviewState(context={"value": 0}),
+        interviews={},
     )
     key = await storage.put(context)
     retrieved = await storage.get(key)

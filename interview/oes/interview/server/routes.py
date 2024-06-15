@@ -8,7 +8,7 @@ from attrs import field, frozen
 from immutabledict import immutabledict
 from oes.interview.input.question import ValidationError
 from oes.interview.interview.interview import Interview, make_interview_context
-from oes.interview.interview.state import InterviewState
+from oes.interview.interview.state import InterviewState, ParentInterviewContext
 from oes.interview.interview.step_types.ask import AskResult
 from oes.interview.interview.step_types.exit import ExitResult
 from oes.interview.interview.update import update_interview
@@ -84,7 +84,9 @@ async def start_interview(
         context=req.context,
         data=req.data,
     )
-    context = make_interview_context(interview.questions, interview.steps, state)
+    context = make_interview_context(
+        interview.questions, interview.steps, state, interviews
+    )
     key = await storage.put(context)
     update_url = request.url_for("interview.update_interview_route")
     return InterviewResponse(
@@ -129,6 +131,8 @@ async def completed_interview_route(
     now = datetime.now().astimezone()
     if now >= interview.state.date_expires:
         raise NotFound
+
+    assert not isinstance(interview.state.target, ParentInterviewContext)
 
     return InterviewResultResponse(
         date_started=interview.state.date_started,

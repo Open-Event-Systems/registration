@@ -1,0 +1,5 @@
+questions:
+  - ../questions/questions1.yml
+steps:
+  - sub: simple-with-set
+    result: result

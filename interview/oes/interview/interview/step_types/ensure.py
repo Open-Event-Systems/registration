@@ -26,7 +26,7 @@ class EnsureStep:
         )
         for item in items:
             self._eval(item, context)
-        return UpdateResult(context.state, None)
+        return UpdateResult(context, None)
 
     def _eval(self, expr: Expression, context: InterviewContext):
         res = evaluate(expr, context.state.template_context)

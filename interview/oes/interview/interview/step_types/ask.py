@@ -27,7 +27,7 @@ class AskStep:
 
     def __call__(self, context: InterviewContext) -> UpdateResult:
         if self.ask in context.state.answered_question_ids:
-            return UpdateResult(context.state)
+            return UpdateResult(context)
         question_template = context.question_templates.get(self.ask)
         if question_template is None:
             raise InterviewError(f"No question with ID {self.ask}")
@@ -37,4 +37,4 @@ class AskStep:
             answered_question_ids=context.state.answered_question_ids | {self.ask},
         )
         content = AskResult(schema=question.schema)
-        return UpdateResult(state, content)
+        return UpdateResult(context.with_state(state), content)
