@@ -70,6 +70,27 @@ def converter():
                 }
             },
         ),
+        (
+            "tests/test_data/configs/config1.yml",
+            "subinterviews2",
+            [["fname1"], ["lname1"], ["fname2"], ["lname2"]],
+            {
+                "results": [
+                    {
+                        "idx": 0,
+                        "first_name": "fname1",
+                        "last_name": "lname1",
+                        "full_name": "fname1 lname1",
+                    },
+                    {
+                        "idx": 1,
+                        "first_name": "fname2",
+                        "last_name": "lname2",
+                        "full_name": "fname2 lname2",
+                    },
+                ]
+            },
+        ),
     ],
 )
 @pytest.mark.asyncio
