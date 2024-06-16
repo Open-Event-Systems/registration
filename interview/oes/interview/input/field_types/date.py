@@ -59,7 +59,7 @@ class DateFieldTemplate(FieldTemplateBase):
                 if self.min_expr is not None
                 else self.min
             )
-            schema["x-minimum"] = min_val.isoformat() if min_val is not None else None
+            schema["x-minDate"] = min_val.isoformat() if min_val is not None else None
 
         if self.max_expr is not None or self.max is not None:
             max_val = (
@@ -67,7 +67,7 @@ class DateFieldTemplate(FieldTemplateBase):
                 if self.max_expr is not None
                 else self.max
             )
-            schema["x-maximum"] = max_val.isoformat() if max_val is not None else None
+            schema["x-maxDate"] = max_val.isoformat() if max_val is not None else None
 
         if self.input_mode:
             schema["x-input-mode"] = self.input_mode

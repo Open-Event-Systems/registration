@@ -23,8 +23,8 @@ def test_date_field_schema():
             "format": "date",
             "title": "Title",
             "default": "2020-01-01",
-            "x-minimum": "1990-01-01",
-            "x-maximum": "2030-01-01",
+            "x-minDate": "1990-01-01",
+            "x-maxDate": "2030-01-01",
             "x-input-mode": "date",
             "x-autocomplete": "date",
         }
