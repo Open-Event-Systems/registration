@@ -40,7 +40,7 @@ class SelectFieldTemplate(SelectFieldTemplateBase):
         return self.max > 1
 
     @property
-    def optional(self) -> bool:
+    def is_optional(self) -> bool:
         return self.min == 0
 
     autocomplete: str | None = None

@@ -4,7 +4,7 @@ import functools
 from collections.abc import Callable, Iterator, Mapping
 from typing import Any, Literal, TypeAlias, Union
 
-from attrs import field, frozen
+from attrs import frozen
 from cattrs import Converter
 from oes.interview.input.field_template import FieldTemplateBase
 from oes.utils.template import Expression, TemplateContext
@@ -21,7 +21,7 @@ class NumberFieldTemplate(FieldTemplateBase):
         return int if self.integer else float
 
     type: Literal["number"] = "number"
-    _optional: bool = field(default=False, alias="optional")
+    optional: bool = False
     default: _Num | None = None
     default_expr: Expression | None = None
     min: _Num | None = None
@@ -34,14 +34,14 @@ class NumberFieldTemplate(FieldTemplateBase):
     autocomplete: str | None = None
 
     @property
-    def optional(self) -> bool:
-        return self._optional
+    def is_optional(self) -> bool:
+        return self.optional
 
     def get_schema(self, context: TemplateContext) -> dict[str, Any]:
         typ = "integer" if self.integer else "number"
         schema = {
             **super().get_schema(context),
-            "type": [typ, "null"] if self.optional else typ,
+            "type": [typ, "null"] if self.is_optional else typ,
         }
 
         if self.default_expr is not None or self.default is not None:
@@ -98,7 +98,11 @@ class NumberFieldTemplate(FieldTemplateBase):
         return value
 
     def validate_type(self, value: Any) -> float | None:
-        if value is None and not self.optional or not isinstance(value, (int, float)):
+        if (
+            value is None
+            and not self.is_optional
+            or not isinstance(value, (int, float))
+        ):
             raise ValueError("Invalid value")
         return value
 

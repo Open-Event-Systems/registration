@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator, Mapping
 from datetime import date
 from typing import Any, Literal
 
-from attrs import field, frozen
+from attrs import frozen
 from cattrs import Converter
 from oes.interview.input.field_template import FieldTemplateBase
 from oes.utils.template import Expression, TemplateContext
@@ -20,11 +20,11 @@ class DateFieldTemplate(FieldTemplateBase):
         return date
 
     type: Literal["date"] = "date"
-    _optional: bool = field(default=False, alias="optional")
+    optional: bool = False
 
     @property
-    def optional(self) -> bool:
-        return self._optional
+    def is_optional(self) -> bool:
+        return self.optional
 
     default: date | None = None
     default_expr: Expression | None = None
@@ -39,7 +39,7 @@ class DateFieldTemplate(FieldTemplateBase):
     def get_schema(self, context: TemplateContext) -> dict[str, Any]:  # noqa: CCR001
         schema = {
             **super().get_schema(context),
-            "type": ["string", "null"] if self.optional else "string",
+            "type": ["string", "null"] if self.is_optional else "string",
             "format": "date",
         }
 
