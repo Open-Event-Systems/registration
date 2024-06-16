@@ -26,8 +26,8 @@ def test_text_field_schema():
             "minLength": 2,
             "maxLength": 10,
             "pattern": "test",
-            "x-input-mode": "number",
-            "x-autocomplete": "username",
+            "x-inputMode": "number",
+            "x-autoComplete": "username",
         }
     )
 

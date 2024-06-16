@@ -25,8 +25,8 @@ def test_date_field_schema():
             "default": "2020-01-01",
             "x-minDate": "1990-01-01",
             "x-maxDate": "2030-01-01",
-            "x-input-mode": "date",
-            "x-autocomplete": "date",
+            "x-inputMode": "date",
+            "x-autoComplete": "date",
         }
     )
 

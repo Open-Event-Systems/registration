@@ -67,10 +67,10 @@ class TextFieldTemplate(FieldTemplateBase):
             schema["pattern"] = pattern
 
         if self.input_mode:
-            schema["x-input-mode"] = self.input_mode
+            schema["x-inputMode"] = self.input_mode
 
         if self.autocomplete:
-            schema["x-autocomplete"] = self.autocomplete
+            schema["x-autoComplete"] = self.autocomplete
 
         format_str = _get_format_str(self.format)
         if format_str:

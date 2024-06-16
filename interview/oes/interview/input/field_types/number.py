@@ -58,10 +58,10 @@ class NumberFieldTemplate(FieldTemplateBase):
             schema["maximum"] = self.max
 
         if self.input_mode:
-            schema["x-input-mode"] = self.input_mode
+            schema["x-inputMode"] = self.input_mode
 
         if self.autocomplete:
-            schema["x-autocomplete"] = self.autocomplete
+            schema["x-autoComplete"] = self.autocomplete
 
         return schema
 

@@ -17,6 +17,13 @@ class SelectFieldOption(SelectFieldOptionBase):
     """Select field option."""
 
     default: bool = False
+    primary: bool = False
+
+    def get_schema(self, id: str, context: TemplateContext) -> dict[str, Any]:
+        schema = super().get_schema(id, context)
+        if self.primary:
+            schema["x-primary"] = True
+        return schema
 
 
 @frozen
@@ -59,7 +66,7 @@ class SelectFieldTemplate(SelectFieldTemplateBase):
                 schema["default"] = next(iter(defaults), None)
 
         if self.autocomplete:
-            schema["x-autocomplete"] = self.autocomplete
+            schema["x-autoComplete"] = self.autocomplete
 
         schema["x-component"] = self.component
 

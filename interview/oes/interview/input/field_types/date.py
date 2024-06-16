@@ -70,10 +70,10 @@ class DateFieldTemplate(FieldTemplateBase):
             schema["x-maxDate"] = max_val.isoformat() if max_val is not None else None
 
         if self.input_mode:
-            schema["x-input-mode"] = self.input_mode
+            schema["x-inputMode"] = self.input_mode
 
         if self.autocomplete:
-            schema["x-autocomplete"] = self.autocomplete
+            schema["x-autoComplete"] = self.autocomplete
 
         return schema
 
