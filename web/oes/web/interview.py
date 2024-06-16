@@ -1,12 +1,75 @@
 """Interview service."""
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import httpx
 import orjson
+from attrs import frozen
 from oes.web.config import Config, Event
+from typing_extensions import Self
+
+
+@frozen
+class CompletedInterview:
+    """Completed interview body."""
+
+    data: Mapping[str, Any]
+    """Result data."""
+
+    context: Mapping[str, Any]
+    """Interview context."""
+
+    target: str
+    """The target URL."""
+
+    meta: Mapping[str, Any]
+    """Interview metadata."""
+
+    cart_id: str
+    """The cart ID to modify."""
+
+    interview_id: str
+    """The interview used."""
+
+    event_id: str
+    """The event id."""
+
+    access_code: str | None
+    """The access code used."""
+
+    registration: Mapping[str, Any] | None
+    """The registration."""
+
+    registrations: Sequence[Mapping[str, Any]]
+    """The list of registrations."""
+
+    @classmethod
+    def parse(cls, body: Mapping[str, Any]) -> Self:
+        """Parse a completed interview body."""
+        data = body["data"]
+        context = body["context"]
+        target = body["target"]
+        meta = data.get("meta", {})
+        cart_id = context["cart_id"]
+        interview_id = context["interview_id"]
+        event_id = context["event_id"]
+        access_code = context.get("access_code")
+        registration = data.get("registration")
+        registrations = data.get("registrations", [])
+        return cls(
+            data,
+            context,
+            target,
+            meta,
+            cart_id,
+            interview_id,
+            event_id,
+            access_code,
+            registration,
+            registrations,
+        )
 
 
 class InterviewService:
@@ -59,7 +122,7 @@ class InterviewService:
         res.raise_for_status()
         return res.json()
 
-    async def get_completed_interview(self, state: str) -> Mapping[str, Any] | None:
+    async def get_completed_interview(self, state: str) -> CompletedInterview | None:
         """Get a completed interview."""
         res = await self.client.get(
             f"{self.config.interview_service_url}/completed-interviews/{state}"
@@ -67,4 +130,4 @@ class InterviewService:
         if res.status_code == 404:
             return None
         res.raise_for_status()
-        return res.json()
+        return CompletedInterview.parse(res.json())

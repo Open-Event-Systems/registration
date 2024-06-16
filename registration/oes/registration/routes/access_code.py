@@ -28,6 +28,7 @@ class AccessCodeResponse:
     used: bool
     name: str
     options: Mapping[str, Any]
+    valid: bool
 
 
 @frozen
@@ -45,6 +46,7 @@ async def list_access_codes(
     request: Request, event_id: str, service: AccessCodeService
 ) -> Sequence[AccessCodeResponse]:
     """List access codes."""
+    now = datetime.now().astimezone()
     codes = await service.list(event_id)
     return [
         AccessCodeResponse(
@@ -54,6 +56,7 @@ async def list_access_codes(
             used=c.used,
             name=c.name,
             options=c.options,
+            valid=c.date_expires > now and not c.used,
         )
         for c in codes
     ]
@@ -66,6 +69,7 @@ async def create_access_code(
     request: Request, event_id: str, service: AccessCodeService, cattrs_body: CattrsBody
 ) -> AccessCodeResponse:
     """Create an access code."""
+    now = datetime.now().astimezone()
     body = await cattrs_body(CreateAccessCodeRequest)
     c = await service.create(event_id, body.date_expires, body.name, body.options)
     return AccessCodeResponse(
@@ -75,6 +79,7 @@ async def create_access_code(
         used=c.used,
         name=c.name,
         options=c.options,
+        valid=c.date_expires > now and not c.used,
     )
 
 
@@ -84,9 +89,9 @@ async def read_access_code(
     request: Request, event_id: str, code: str, repo: AccessCodeRepo
 ) -> AccessCodeResponse:
     """Check an access code."""
-    obj = await repo.get(code)
     now = datetime.now().astimezone()
-    if obj is None or obj.event_id != event_id or obj.used or obj.date_expires <= now:
+    obj = await repo.get(code)
+    if obj is None or obj.event_id != event_id:
         raise NotFound
     return AccessCodeResponse(
         code=obj.code,
@@ -95,6 +100,7 @@ async def read_access_code(
         used=obj.used,
         name=obj.name,
         options=obj.options,
+        valid=obj.date_expires > now and not obj.used,
     )
 
 

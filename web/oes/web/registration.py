@@ -1,11 +1,18 @@
 """Registration module."""
 
+import uuid
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 import httpx
 from oes.utils.logic import evaluate
+from oes.web.cart import CartService
 from oes.web.config import Config, Event, InterviewOption
+from oes.web.interview import CompletedInterview
+
+
+class AddRegistrationError(ValueError):
+    """Raised when a registration cannot be added."""
 
 
 class RegistrationService:
@@ -197,6 +204,118 @@ class RegistrationService:
             return None
         res.raise_for_status()
         return res.json()
+
+
+async def add_to_cart(  # noqa: CCR001
+    completed_interview: CompletedInterview,
+    registration_service: RegistrationService,
+    cart_service: CartService,
+) -> Mapping[str, Any]:
+    """Add a completed interview to a cart."""
+    event = registration_service.get_event(completed_interview.event_id)
+    if not event or not event.visible or not event.open:
+        raise AddRegistrationError(f"Event not valid: {completed_interview.event_id}")
+
+    all_registrations = (
+        [completed_interview.registration, *completed_interview.registrations]
+        if completed_interview.registration
+        else [*completed_interview.registrations]
+    )
+    cur_registrations = [
+        (
+            r,
+            await _get_current_registration(
+                completed_interview.event_id, r.get("id"), registration_service
+            ),
+        )
+        for r in all_registrations
+    ]
+    by_id = {c.get("id", ""): (e, r, c) for r, (e, c) in cur_registrations}
+
+    access_code = (
+        await registration_service.get_access_code(
+            completed_interview.event_id, completed_interview.access_code
+        )
+        if completed_interview.access_code
+        else None
+    )
+    if completed_interview.access_code and (
+        not access_code or not access_code.get("valid")
+    ):
+        raise AddRegistrationError(
+            f"Invalid access code: {completed_interview.access_code}"
+        )
+
+    cart = await cart_service.get_cart(completed_interview.cart_id)
+    if not cart:
+        raise AddRegistrationError(f"Cart not found: {completed_interview.cart_id}")
+
+    to_add = []
+    for reg_id, (exist, reg_data, cur) in by_id.items():
+        _check_can_add_registration(
+            reg_data,
+            cur,
+            completed_interview.interview_id,
+            not exist,
+            event,
+            access_code,
+            registration_service,
+        )
+        to_add.append(
+            {
+                "id": reg_id,
+                "old": cur,
+                "new": reg_data,
+                "meta": (
+                    {
+                        "access_code": completed_interview.access_code,
+                        **completed_interview.meta,
+                    }
+                    if completed_interview.access_code
+                    else completed_interview.meta
+                ),
+            },
+        )
+    return await cart_service.add_to_cart(completed_interview.cart_id, to_add)
+
+
+async def _get_current_registration(
+    event_id: str, id: str | None, service: RegistrationService
+) -> tuple[bool, Mapping[str, Any]]:
+    """Get the current registration data, or a default "empty" one."""
+    # TODO: generate properly once no longer using uuids
+    orig_id = id
+    id = id or str(uuid.uuid4())
+    cur = await service.get_registration(event_id, orig_id) if orig_id else None
+    if cur:
+        return True, cur
+    else:
+        return False, {
+            "id": id,
+            "event_id": event_id,
+            "status": "pending",
+            "version": 1,
+        }
+
+
+def _check_can_add_registration(
+    registration: Mapping[str, Any],
+    cur_registration: Mapping[str, Any],
+    interview_id: str,
+    is_new: bool,
+    event: Event,
+    access_code_data: Mapping[str, Any] | None,
+    registration_service: RegistrationService,
+):
+    cur_version = cur_registration["version"]
+    version = registration.get("version", 1)
+    if version != cur_version:
+        raise AddRegistrationError(f"Version mismatch: {version} != {cur_version}")
+
+    if not registration_service.is_interview_allowed(
+        interview_id, event, cur_registration if not is_new else None, access_code_data
+    ):
+        raise AddRegistrationError(f"Interview not allowed: {interview_id}")
 
 
 def _get_access_codes(cart_data: Mapping[str, Any]) -> Mapping[str, Any]:
