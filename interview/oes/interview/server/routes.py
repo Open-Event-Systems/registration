@@ -109,8 +109,8 @@ async def update_interview_route(
         exc = BadRequest("Invalid input")
         exc.status_code = 422
         raise exc
-    key = await storage.put(result_ctx)
     update_url = request.url_for("interview.update_interview_route")
+    key = await storage.put(result_ctx)
     return InterviewResponse(
         key,
         result_ctx.state.completed,
