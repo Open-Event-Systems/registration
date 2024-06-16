@@ -19,7 +19,7 @@ from oes.interview.logic.pointer import IndexAccess
 from oes.interview.logic.proxy import ProxyLookupError, make_proxy
 from oes.interview.logic.types import ValuePointer
 from oes.utils.logic import ValueOrEvaluable, WhenCondition, evaluate
-from oes.utils.template import TemplateContext
+from oes.utils.template import Expression, TemplateContext
 
 
 @frozen
@@ -34,6 +34,7 @@ class SubStep:
     initial_data: Mapping[str, ValueOrEvaluable] = field(
         default=immutabledict(), converter=immutable_mapping[str, ValueOrEvaluable]
     )
+    value: Expression | None = None
     map: ValueOrEvaluable | None = None
     map_var: str | None = None
     when: WhenCondition = True
@@ -108,6 +109,7 @@ class SubStep:
             target=ParentInterviewContext(
                 context,
                 self._get_result_ptr(item),
+                value=self.value,
             ),
         )
 

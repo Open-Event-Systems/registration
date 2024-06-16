@@ -141,8 +141,13 @@ class _Updater:
     def _handle_complete(self, context: InterviewContext) -> UpdateResult:
         if isinstance(context.state.target, ParentInterviewContext):
             parent_ctx = context.state.target.context
+            value = (
+                context.state.data
+                if context.state.target.value is None
+                else evaluate(context.state.target.value, context.state.data)
+            )
             new_data = context.state.target.result.set(
-                parent_ctx.state.template_context, context.state.data
+                parent_ctx.state.template_context, value
             )
             return UpdateResult(
                 parent_ctx.with_state(parent_ctx.state.update(data=new_data))

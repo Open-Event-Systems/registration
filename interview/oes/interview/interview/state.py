@@ -12,7 +12,7 @@ from immutabledict import immutabledict
 from oes.interview.immutable import immutable_converter, make_immutable
 from oes.interview.input.question import QuestionTemplate
 from oes.interview.logic.types import ValuePointer
-from oes.utils.template import TemplateContext
+from oes.utils.template import Expression, TemplateContext
 from typing_extensions import Self
 
 _unset: Any = object()
@@ -27,6 +27,7 @@ class ParentInterviewContext:
 
     context: oes.interview.interview.interview.InterviewContext
     result: ValuePointer
+    value: Expression | None = None
 
 
 @frozen
