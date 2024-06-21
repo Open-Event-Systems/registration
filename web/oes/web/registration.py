@@ -5,10 +5,16 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 import httpx
+from attrs import evolve
 from oes.utils.logic import evaluate
 from oes.web.cart import CartService
 from oes.web.config import Config, Event, InterviewOption
-from oes.web.interview import CompletedInterview
+from oes.web.interview import (
+    CompletedInterview,
+    InterviewRegistration,
+    InterviewRegistrationFields,
+    converter,
+)
 
 
 class AddRegistrationError(ValueError):
@@ -216,21 +222,16 @@ async def add_to_cart(  # noqa: CCR001
     if not event or not event.visible or not event.open:
         raise AddRegistrationError(f"Event not valid: {completed_interview.event_id}")
 
-    all_registrations = (
-        [completed_interview.registration, *completed_interview.registrations]
-        if completed_interview.registration
-        else [*completed_interview.registrations]
-    )
-    cur_registrations = [
-        (
-            r,
-            await _get_current_registration(
-                completed_interview.event_id, r.get("id"), registration_service
+    all_registrations = list(completed_interview.registrations)
+
+    if completed_interview.registration:
+        all_registrations = [
+            InterviewRegistration(
+                registration=completed_interview.registration,
+                meta=completed_interview.meta,
             ),
-        )
-        for r in all_registrations
-    ]
-    by_id = {c.get("id", ""): (e, r, c) for r, (e, c) in cur_registrations}
+            *all_registrations,
+        ]
 
     access_code = (
         await registration_service.get_access_code(
@@ -250,33 +251,57 @@ async def add_to_cart(  # noqa: CCR001
     if not cart:
         raise AddRegistrationError(f"Cart not found: {completed_interview.cart_id}")
 
-    to_add = []
-    for reg_id, (exist, reg_data, cur) in by_id.items():
-        _check_can_add_registration(
-            reg_data,
-            cur,
-            completed_interview.interview_id,
-            not exist,
-            event,
-            access_code,
-            registration_service,
+    to_add = [
+        await _make_cart_registration(
+            completed_interview, r, event, access_code, registration_service
         )
-        to_add.append(
-            {
-                "id": reg_id,
-                "old": cur,
-                "new": reg_data,
-                "meta": (
-                    {
-                        "access_code": completed_interview.access_code,
-                        **completed_interview.meta,
-                    }
-                    if completed_interview.access_code
-                    else completed_interview.meta
-                ),
-            },
-        )
+        for r in all_registrations
+    ]
     return await cart_service.add_to_cart(completed_interview.cart_id, to_add)
+
+
+async def _make_cart_registration(
+    interview: CompletedInterview,
+    data: InterviewRegistration,
+    event: Event,
+    access_code_data: Mapping[str, Any] | None,
+    service: RegistrationService,
+) -> Mapping[str, Any]:
+    exists, cur = await _get_current_registration(
+        interview.event_id, data.registration.id, service
+    )
+
+    new_data = evolve(
+        data.registration,
+        id=data.registration.id or cur.get("id", ""),
+        event_id=data.registration.event_id or event.id,
+    )
+
+    _check_can_add_registration(
+        new_data,
+        cur,
+        interview.interview_id,
+        not exists,
+        event,
+        access_code_data,
+        service,
+    )
+    return {
+        "id": cur.get("id", ""),
+        "old": cur,
+        "new": {
+            "event_id": interview.event_id,
+            **converter.unstructure(new_data),
+        },
+        "meta": (
+            {
+                "access_code": interview.access_code,
+                **data.meta,
+            }
+            if interview.access_code
+            else data.meta
+        ),
+    }
 
 
 async def _get_current_registration(
@@ -299,7 +324,7 @@ async def _get_current_registration(
 
 
 def _check_can_add_registration(
-    registration: Mapping[str, Any],
+    registration: InterviewRegistrationFields,
     cur_registration: Mapping[str, Any],
     interview_id: str,
     is_new: bool,
@@ -308,7 +333,7 @@ def _check_can_add_registration(
     registration_service: RegistrationService,
 ):
     cur_version = cur_registration["version"]
-    version = registration.get("version", 1)
+    version = registration.version
     if version != cur_version:
         raise AddRegistrationError(f"Version mismatch: {version} != {cur_version}")
 

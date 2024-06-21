@@ -157,6 +157,7 @@ async def start_interview(
         raise Forbidden
 
     account_id = request.headers.get("x-account-id")
+    email = request.headers.get("x-email")
 
     cart_id = request.args.get("cart_id")
     registration_id = request.args.get("registration_id")
@@ -191,7 +192,7 @@ async def start_interview(
     target_url = request.url_for("selfservice.add_to_cart")
 
     interview = await interview_service.start_interview(
-        event, interview_id, cart_id, target_url, account_id, reg, access_code
+        event, interview_id, cart_id, target_url, account_id, email, reg, access_code
     )
     return json({**interview, "update_url": update_url})
 
