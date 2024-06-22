@@ -58,6 +58,39 @@ def converter():
             [["fname"], ["lname"]],
             {"first_name": "fname", "last_name": "lname"},
         ),
+        (
+            "tests/test_data/configs/config1.yml",
+            "subinterviews1",
+            [["fname"], ["lname"]],
+            {
+                "result": {
+                    "first_name": "fname",
+                    "last_name": "lname",
+                    "full_name": "fname lname",
+                }
+            },
+        ),
+        (
+            "tests/test_data/configs/config1.yml",
+            "subinterviews2",
+            [["fname1"], ["lname1"], ["fname2"], ["lname2"]],
+            {
+                "results": [
+                    {
+                        "idx": 0,
+                        "first_name": "fname1",
+                        "last_name": "lname1",
+                        "full_name": "fname1 lname1",
+                    },
+                    {
+                        "idx": 1,
+                        "first_name": "fname2",
+                        "last_name": "lname2",
+                        "full_name": "fname2 lname2",
+                    },
+                ]
+            },
+        ),
     ],
 )
 @pytest.mark.asyncio
@@ -71,9 +104,10 @@ async def test_interview(
     path = Path(interview_path)
     base_dir = path.parent
     cfg = load_config_file(path, converter)
-    interview = cfg.get_interviews(base_dir, converter)[interview_id]
+    interviews = cfg.get_interviews(base_dir, converter)
+    interview = interviews[interview_id]
     interview_context = make_interview_context(
-        interview.questions, interview.steps, InterviewState()
+        interview.questions, interview.steps, InterviewState(), interviews
     )
 
     responses = list(responses)

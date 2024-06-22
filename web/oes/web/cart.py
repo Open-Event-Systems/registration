@@ -1,6 +1,6 @@
 """Cart service."""
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 import httpx
@@ -33,10 +33,10 @@ class CartService:
         return res.json()
 
     async def add_to_cart(
-        self, cart_id: str, cart_registration: Mapping[str, Any]
+        self, cart_id: str, cart_registrations: Sequence[Mapping[str, Any]]
     ) -> Mapping[str, Any]:
         """Add a registration to a cart."""
-        body = {"registrations": [cart_registration]}
+        body = {"registrations": cart_registrations}
         res = await self.client.post(
             f"{self.config.cart_service_url}/carts/{cart_id}/registrations", json=body
         )

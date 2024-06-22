@@ -23,8 +23,8 @@ def test_number_field_schema():
             "default": 1,
             "minimum": 1,
             "maximum": 5,
-            "x-input-mode": "number",
-            "x-autocomplete": "number",
+            "x-inputMode": "number",
+            "x-autoComplete": "number",
         }
     )
 

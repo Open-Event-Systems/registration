@@ -9,3 +9,6 @@ questions:
 steps:
   - set: full_name
     value: first_name + " " + last_name
+  - set: idx
+    value: n
+    when: n is defined

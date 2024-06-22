@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator, Mapping
 from datetime import date
 from typing import Any, Literal
 
-from attrs import field, frozen
+from attrs import frozen
 from cattrs import Converter
 from oes.interview.input.field_template import FieldTemplateBase
 from oes.utils.template import Expression, TemplateContext
@@ -20,11 +20,11 @@ class DateFieldTemplate(FieldTemplateBase):
         return date
 
     type: Literal["date"] = "date"
-    _optional: bool = field(default=False, alias="optional")
+    optional: bool = False
 
     @property
-    def optional(self) -> bool:
-        return self._optional
+    def is_optional(self) -> bool:
+        return self.optional
 
     default: date | None = None
     default_expr: Expression | None = None
@@ -39,7 +39,7 @@ class DateFieldTemplate(FieldTemplateBase):
     def get_schema(self, context: TemplateContext) -> dict[str, Any]:  # noqa: CCR001
         schema = {
             **super().get_schema(context),
-            "type": ["string", "null"] if self.optional else "string",
+            "type": ["string", "null"] if self.is_optional else "string",
             "format": "date",
         }
 
@@ -59,7 +59,7 @@ class DateFieldTemplate(FieldTemplateBase):
                 if self.min_expr is not None
                 else self.min
             )
-            schema["x-minimum"] = min_val.isoformat() if min_val is not None else None
+            schema["x-minDate"] = min_val.isoformat() if min_val is not None else None
 
         if self.max_expr is not None or self.max is not None:
             max_val = (
@@ -67,13 +67,13 @@ class DateFieldTemplate(FieldTemplateBase):
                 if self.max_expr is not None
                 else self.max
             )
-            schema["x-maximum"] = max_val.isoformat() if max_val is not None else None
+            schema["x-maxDate"] = max_val.isoformat() if max_val is not None else None
 
         if self.input_mode:
-            schema["x-input-mode"] = self.input_mode
+            schema["x-inputMode"] = self.input_mode
 
         if self.autocomplete:
-            schema["x-autocomplete"] = self.autocomplete
+            schema["x-autoComplete"] = self.autocomplete
 
         return schema
 

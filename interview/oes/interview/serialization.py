@@ -1,5 +1,6 @@
 """Serialization module."""
 
+import functools
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Union
@@ -47,23 +48,28 @@ def configure_converter(converter: Converter):
         unstructure_template,
     )
 
-    converter.register_structure_hook(
-        Template, make_template_structure_fn(default_jinja2_env)
+    # cached structure funcs
+    expr_structure_fn = functools.lru_cache(maxsize=1024)(
+        make_expression_structure_fn(default_jinja2_env)
     )
+    tmpl_structure_fn = functools.lru_cache(maxsize=1024)(
+        make_template_structure_fn(default_jinja2_env)
+    )
+    value_eval_structure_fn = functools.lru_cache(maxsize=1024)(
+        make_value_or_evaluable_structure_fn(converter)
+    )
+    value_pointer_structure_fn = functools.lru_cache(maxsize=1024)(parse_pointer)
+
+    converter.register_structure_hook(Template, tmpl_structure_fn)
     converter.register_unstructure_hook(Template, unstructure_template)
-    converter.register_structure_hook(
-        Expression, make_expression_structure_fn(default_jinja2_env)
-    )
+    converter.register_structure_hook(Expression, expr_structure_fn)
     converter.register_unstructure_hook(Expression, unstructure_expression)
 
-    template_structure_fn = make_template_structure_fn(default_jinja2_env)
     converter.register_structure_hook_func(
         lambda cls: cls == Union[str, Template, None],
-        lambda v, t: template_structure_fn(v, t) if v is not None else None,
+        lambda v, t: tmpl_structure_fn(v, t) if v is not None else None,
     )
-    converter.register_structure_hook(
-        ValueOrEvaluable, make_value_or_evaluable_structure_fn(converter)
-    )
+    converter.register_structure_hook(ValueOrEvaluable, value_eval_structure_fn)
     converter.register_structure_hook_func(
         lambda cls: cls == Union[Expression, Sequence[Expression]],
         lambda v, t: (
@@ -80,7 +86,9 @@ def configure_converter(converter: Converter):
         WhenCondition, make_when_condition_structure_fn(converter)
     )
 
-    converter.register_structure_hook(ValuePointer, lambda v, t: parse_pointer(v))
+    converter.register_structure_hook(
+        ValuePointer, lambda v, t: value_pointer_structure_fn(v)
+    )
     converter.register_unstructure_hook(ValuePointer, lambda v: str(v))
 
     converter.register_structure_hook_func(
