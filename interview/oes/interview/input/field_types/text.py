@@ -34,7 +34,7 @@ class TextFieldTemplate(FieldTemplateBase):
     optional: bool = False
     default: str | None = None
     default_expr: Expression | None = None
-    min: int = 0
+    min: int = 1
     max: int = 300
     regex: str | None = None
     regex_js: str | None = None
