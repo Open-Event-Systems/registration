@@ -12,7 +12,7 @@ from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.registration.orm import Base
 from oes.utils.orm import JSON, Repo
-from sqlalchemy import UUID, Index, or_, select, text
+from sqlalchemy import UUID, Index, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -232,7 +232,7 @@ class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
             or_clauses.append(Registration.account_id == account_id)
 
         if email:
-            or_clauses.append(Registration.email.lower() == email.lower())
+            or_clauses.append(func.lower(Registration.email) == email.lower())
 
         if or_clauses:
             q = q.where(or_(*or_clauses))
