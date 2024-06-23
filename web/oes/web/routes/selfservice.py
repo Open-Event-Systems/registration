@@ -133,6 +133,8 @@ async def list_selfservice_registrations(
             )
         )
 
+    results.reverse()
+
     add_opts = [
         SelfServiceInterviewOption(opt.id, opt.title)
         for opt in service.get_add_options(event, access_code)
