@@ -76,6 +76,10 @@ async def validate_token(
     if config.disable_auth:
         return HTTPResponse(status=204)
 
+    # return 204 for options
+    if request.headers.get("x-original-method", "") == "OPTIONS":
+        return HTTPResponse(status=204)
+
     token = _validate_token(request, access_token_service)
 
     response_headers = {}
