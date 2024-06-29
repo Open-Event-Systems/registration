@@ -20,8 +20,7 @@ from typing_extensions import Self
 
 converter = make_converter()
 
-DEFAULT_REFRESH_TOKEN_LIFETIME = timedelta(days=3)
-GUEST_REFRESH_TOKEN_LIFETIME = timedelta(days=30)
+DEFAULT_REFRESH_TOKEN_LIFETIME = timedelta(days=7)
 DEFAULT_ACCESS_TOKEN_LIFETIME = timedelta(minutes=15)
 REFRESH_TOKEN_REUSE_GRACE_PERIOD = timedelta(minutes=1)
 

@@ -7,7 +7,6 @@ from oes.auth.auth import Authorization, AuthRepo
 from oes.auth.config import Config
 from oes.auth.token import (
     DEFAULT_REFRESH_TOKEN_LIFETIME,
-    GUEST_REFRESH_TOKEN_LIFETIME,
     REFRESH_TOKEN_REUSE_GRACE_PERIOD,
     AccessToken,
     RefreshToken,
@@ -50,12 +49,7 @@ class RefreshTokenService:
     async def create(self, authorization: Authorization) -> RefreshToken:
         """Create a new refresh token for an authorization."""
         now = datetime.now().astimezone()
-        # TODO: revisit this
-        exp = now + (
-            DEFAULT_REFRESH_TOKEN_LIFETIME
-            if authorization.email
-            else GUEST_REFRESH_TOKEN_LIFETIME
-        )
+        exp = now + DEFAULT_REFRESH_TOKEN_LIFETIME
         exp = (
             min(exp, authorization.date_expires) if authorization.date_expires else exp
         )

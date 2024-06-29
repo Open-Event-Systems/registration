@@ -6,7 +6,7 @@ from datetime import datetime
 import orjson
 from attrs import frozen
 from email_validator import EmailNotValidError, validate_email
-from oes.auth.auth import AuthRepo, AuthService, Scope, Scopes
+from oes.auth.auth import AuthRepo, AuthService, Scope
 from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
 from oes.auth.service import AccessTokenService, RefreshTokenService
@@ -95,7 +95,7 @@ async def create_auth(
     """Create a guest authorization."""
     async with transaction():
         auth = auth_service.create_auth(
-            scope=Scopes((Scope.selfservice, Scope.cart)), max_path_length=0
+            scope=(Scope.selfservice, Scope.cart), path_length=0
         )
         refresh_token = await refresh_token_service.create(auth)
         access_token = refresh_token.make_access_token(now=refresh_token.date_created)
