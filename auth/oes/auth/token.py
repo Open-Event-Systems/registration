@@ -8,8 +8,8 @@ from typing import Literal
 
 import jwt
 from attrs import frozen
-from cattrs import BaseValidationError
-from cattrs.gen import make_dict_unstructure_fn
+from cattrs import BaseValidationError, override
+from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
 from oes.auth.auth import Authorization, Scopes
 from oes.auth.orm import Base
@@ -68,7 +68,7 @@ class AccessToken(TokenBase):
     sub: str
     acc: str | None = None
     email: str | None = None
-    scope: Scopes = Scopes()
+    scope: Scopes = frozenset()
 
 
 class RefreshToken(Base, kw_only=True):
@@ -92,7 +92,7 @@ class RefreshToken(Base, kw_only=True):
     def is_valid(self, *, now: datetime | None = None) -> bool:
         """Check that the token is unexpired."""
         now = now or datetime.now().astimezone()
-        return now < self.date_expires and self.authorization.is_valid(now=now)
+        return now < self.date_expires and self.authorization.get_is_valid(now=now)
 
     def make_access_token(
         self, *, exp: datetime | None = None, now: datetime | None = None
@@ -132,10 +132,21 @@ converter.register_structure_hook(
 )
 converter.register_unstructure_hook(datetime, lambda d: int(d.timestamp()))
 
-converter.register_structure_hook(Scopes, lambda v, t: Scopes(v))
-converter.register_unstructure_hook(Scopes, lambda v: str(v))
+converter.register_structure_hook(
+    AccessToken,
+    make_dict_structure_fn(
+        AccessToken,
+        converter,
+        scope=override(struct_hook=lambda v, t: frozenset(v.split())),
+    ),
+)
 
-converter.register_unstructure_hook_factory(
-    lambda cls: isinstance(cls, type) and issubclass(cls, TokenBase),
-    lambda cls: make_dict_unstructure_fn(cls, converter, _cattrs_omit_if_default=True),
+converter.register_unstructure_hook(
+    AccessToken,
+    make_dict_unstructure_fn(
+        AccessToken,
+        converter,
+        _cattrs_omit_if_default=True,
+        scope=override(unstruct_hook=lambda v: " ".join(sorted(v))),
+    ),
 )

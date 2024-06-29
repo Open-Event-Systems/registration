@@ -25,7 +25,6 @@ sanic = { extras = ["ext"], version = "^23.12.1" }
 typing-extensions = "^4.12.0"
 email-validator = "^2.1.1"
 aio-pika = "^9.4.1"
-webauthn = "^2.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
