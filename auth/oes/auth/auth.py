@@ -15,7 +15,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from oes.auth.token import RefreshToken
-    from oes.auth.webauthn import WebAuthnCredential
 
 AUTH_ID_LEN = 14
 
@@ -72,12 +71,6 @@ class Authorization(Base):
     )
     refresh_token: Mapped[RefreshToken | None] = relationship(
         "RefreshToken",
-        back_populates="authorization",
-        cascade="save-update, merge, delete, delete-orphan",
-        default=None,
-    )
-    webauthn_credential: Mapped[WebAuthnCredential | None] = relationship(
-        "WebAuthnCredential",
         back_populates="authorization",
         cascade="save-update, merge, delete, delete-orphan",
         default=None,

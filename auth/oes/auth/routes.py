@@ -1,10 +1,7 @@
 """Routes."""
 
-import base64
 import re
-from collections.abc import Mapping
 from datetime import datetime
-from typing import Any
 
 import orjson
 from attrs import frozen
@@ -14,18 +11,9 @@ from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
 from oes.auth.service import AccessTokenService, RefreshTokenService
 from oes.auth.token import AccessToken, RefreshToken, TokenError
-from oes.auth.webauthn import WebAuthnService
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
-from sanic import (
-    Blueprint,
-    Forbidden,
-    HTTPResponse,
-    NotFound,
-    Request,
-    Unauthorized,
-    json,
-)
+from sanic import Blueprint, Forbidden, HTTPResponse, Request, Unauthorized, json
 from sanic.exceptions import HTTPException
 
 routes = Blueprint("auth")
@@ -44,21 +32,6 @@ class CompleteEmailAuthRequest:
 
     email: str
     code: str
-
-
-@frozen
-class CompleteWebAuthnRequest:
-    """Request to complete a WebAuthn challenge."""
-
-    token: str
-    response: Mapping[str, Any]
-
-
-@frozen
-class StartWebAuthnAuthenticationRequest:
-    """Request to start WebAuthn authentication."""
-
-    credential_id: str
 
 
 class UnprocessableEntity(HTTPException):
@@ -204,105 +177,6 @@ async def complete_email_auth(
             raise Forbidden
 
         auth.email = email
-        refresh_token = await refresh_token_service.create(auth)
-        access_token = refresh_token.make_access_token(now=refresh_token.date_created)
-        return _make_token_response(access_token, refresh_token, config)
-
-
-@routes.get("/auth/webauthn/register")
-async def start_webauthn_registration(
-    request: Request,
-    webauthn_service: WebAuthnService,
-    auth_repo: AuthRepo,
-    access_token_service: AccessTokenService,
-) -> HTTPResponse:
-    """Start a WebAuthn registration."""
-    token = _validate_token(request, access_token_service)
-    if not token.email:
-        raise Forbidden
-    auth = await auth_repo.get(token.sub, lock=True)
-    if not auth:
-        raise Forbidden
-    challenge_token, challenge_json = webauthn_service.create_registration_challenge(
-        auth
-    )
-    return json(
-        {
-            "token": challenge_token,
-            "challenge": challenge_json,
-        }
-    )
-
-
-@routes.post("/auth/webauthn/register")
-async def complete_webauthn_registration(
-    request: Request,
-    webauthn_service: WebAuthnService,
-    auth_repo: AuthRepo,
-    access_token_service: AccessTokenService,
-    refresh_token_service: RefreshTokenService,
-    config: Config,
-    body: CattrsBody,
-) -> HTTPResponse:
-    """Start a WebAuthn registration."""
-    token = _validate_token(request, access_token_service)
-    if not token.email:
-        raise Forbidden
-    req = await body(CompleteWebAuthnRequest)
-    async with transaction():
-        auth = await auth_repo.get(token.sub, lock=True)
-        if not auth:
-            raise Forbidden
-        res = webauthn_service.complete_registration(auth, req.token, req.response)
-        if not res:
-            raise Forbidden
-        refresh_token = await refresh_token_service.create(auth)
-        access_token = refresh_token.make_access_token(now=refresh_token.date_created)
-        return _make_token_response(access_token, refresh_token, config)
-
-
-@routes.post("/auth/webauthn/start-authenticate")
-async def start_webauthn_authentication(
-    request: Request,
-    webauthn_service: WebAuthnService,
-    body: CattrsBody,
-) -> HTTPResponse:
-    """Start a WebAuthn authentication."""
-    req = await body(StartWebAuthnAuthenticationRequest)
-    try:
-        base64.urlsafe_b64decode(req.credential_id + "==")
-    except ValueError:
-        raise NotFound
-    challenge = await webauthn_service.create_authentication_challenge(
-        req.credential_id
-    )
-    if not challenge:
-        raise NotFound
-    challenge_token, challenge_json = challenge
-
-    return json(
-        {
-            "token": challenge_token,
-            "challenge": challenge_json,
-        }
-    )
-
-
-@routes.post("/auth/webauthn/authenticate")
-async def complete_webauthn_authentication(
-    request: Request,
-    webauthn_service: WebAuthnService,
-    refresh_token_service: RefreshTokenService,
-    config: Config,
-    body: CattrsBody,
-) -> HTTPResponse:
-    """Complete WebAuthn authentication."""
-    req = await body(CompleteWebAuthnRequest)
-    async with transaction():
-        auth = await webauthn_service.complete_authentication(req.token, req.response)
-        if not auth:
-            raise Forbidden
-
         refresh_token = await refresh_token_service.create(auth)
         access_token = refresh_token.make_access_token(now=refresh_token.date_created)
         return _make_token_response(access_token, refresh_token, config)
