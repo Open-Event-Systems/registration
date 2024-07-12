@@ -28,6 +28,12 @@ class PaymentMethodError(ValueError):
     pass
 
 
+class PaymentNotFoundError(ValueError):
+    """Payment is not found."""
+
+    pass
+
+
 class PaymentServiceUnsupported(PaymentMethodError):
     """Raised when a payment service is not found/not supported."""
 

@@ -4,8 +4,18 @@ db_url: postgresql+asyncpg:///payment
 
 services:
   mock: {}
+  square:
+    access_token:
+    location_id:
+    sandbox: true
 
 methods:
   mock:
     service: mock
     name: Mock
+
+  square-web:
+    service: square
+    name: Credit / Debit
+    when:
+      - pricing_result.total_price > 0
