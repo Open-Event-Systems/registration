@@ -48,6 +48,7 @@ class PaymentResponse:
     id: str
     service: str
     external_id: str
+    receipt_id: str | None
     status: PaymentStatus
     date_created: datetime
     date_closed: datetime | None
@@ -140,6 +141,7 @@ async def read_payment(
         id=payment.id,
         service=payment.service,
         external_id=payment.external_id,
+        receipt_id=payment.receipt_id,
         status=payment.status,
         date_created=payment.date_created,
         date_closed=payment.date_closed,
