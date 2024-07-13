@@ -247,6 +247,20 @@ class OrderResponseBody:
 
 
 @frozen
+class CustomerResponse:
+    """Customer response body."""
+
+    customer: Customer
+
+
+@frozen
+class CustomersResponse:
+    """Customers response body."""
+
+    customers: Sequence[Customer] | None = None
+
+
+@frozen
 class Customer:
     """Customer object."""
 

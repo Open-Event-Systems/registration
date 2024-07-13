@@ -2,7 +2,7 @@
 
 import asyncio
 import itertools
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from typing import Any, Optional, ParamSpec, Type, TypeVar, cast
 
 import nanoid
@@ -26,12 +26,15 @@ from oes.payment.payment import (
 )
 from oes.payment.pricing import LineItem, Modifier, PricingResult
 from oes.payment.services.square.models import (
+    CreateCustomerBody,
     CreateOrder,
     CreateOrderLineItem,
     CreateOrderLineItemAppliedDiscount,
     CreateOrderLineItemDiscount,
     CreateOrderLineItemModifier,
     CreatePayment,
+    CustomerResponse,
+    CustomersResponse,
     Error,
     ErrorResponse,
     Money,
@@ -45,7 +48,7 @@ from oes.payment.services.square.models import (
     PricingOptions,
     SquareConfig,
 )
-from oes.payment.types import PaymentMethod
+from oes.payment.types import CartData, PaymentMethod
 from square.client import Client, CustomersApi, OrdersApi, PaymentsApi
 
 _P = ParamSpec("_P")
@@ -133,7 +136,7 @@ class SquareService:
 
         # Cash not permitted via web
         method = request.data.get("method")
-        if method == "web" and source_id.upper() == "CASH":
+        if method == "web" and source_id.strip().upper() == "CASH":
             raise PaymentError
 
         order = await self._get_order(request.external_id)
@@ -144,6 +147,7 @@ class SquareService:
         amount = request.data["total_price"]
         currency = request.data["currency"]
         location_id = request.data["location_id"]
+        email = request.data.get("email")
 
         res = await self._req(
             self._payments.create_payment,
@@ -160,6 +164,7 @@ class SquareService:
                     delay_duration="PT30M",
                     order_id=order.id,
                     location_id=location_id,
+                    buyer_email_address=email,
                     verification_token=verification_token,
                 )
             ),
@@ -198,6 +203,59 @@ class SquareService:
 
         return res.order
 
+    async def _sync_customers(self, cart_data: CartData) -> str | None:
+        by_email = {}
+        for customer in _cart_to_customers(cart_data):
+            if not customer.email_address:
+                continue
+            by_email[customer.email_address] = customer
+
+        last_id = None
+
+        for email, customer in by_email.items():
+            cur = await self._get_customer(email)
+            res = await self._update_customer(cur, customer)
+            last_id = res or last_id
+
+        return last_id
+
+    async def _get_customer(self, email: str) -> str | None:
+        body = {"query": {"filter": {"email_address": {"exact": email}}}}
+        res = await self._req(self._customers.search_customers, CustomersResponse, body)
+        if isinstance(res, ErrorResponse) or not res.customers:
+            return None
+
+        return res.customers[0].id
+
+    async def _update_customer(
+        self, customer_id: str | None, customer: CreateCustomerBody
+    ) -> str | None:
+        if customer_id:
+            body = {
+                "email_address": customer.email_address,
+            }
+
+            if customer.given_name:
+                body["given_name"] = customer.given_name
+
+            if customer.family_name:
+                body["family_name"] = customer.family_name
+
+            res = await self._req(
+                self._customers.update_customer, CustomerResponse, customer_id, body
+            )
+        else:
+            res = await self._req(
+                self._customers.create_customer,
+                CustomerResponse,
+                _converter.unstructure(customer),
+            )
+
+        if isinstance(res, ErrorResponse):
+            return None
+        else:
+            return res.customer.id
+
     @property
     def _orders(self) -> OrdersApi:
         return cast(OrdersApi, self._client.orders)
@@ -235,8 +293,10 @@ class SquareWebPaymentMethod:
 
     async def create_payment(self, request: CreatePaymentRequest, /) -> PaymentResult:
         """Create a payment."""
+        customer_id = await self._service._sync_customers(request.cart_data)
+
         order_body = _build_order(
-            self._service.location_id, None, request.pricing_result
+            self._service.location_id, customer_id, request.pricing_result
         )
 
         res = await self._service._req(
@@ -264,6 +324,7 @@ class SquareWebPaymentMethod:
                 "currency": request.pricing_result.currency,
                 "total_price_str": currency_str,
                 "environment": self._service.environment,
+                "email": request.email,
                 "method": "web",
             },
             body={
@@ -354,6 +415,24 @@ def _build_discount(
     )
     discount_map[uid] = discount
     return CreateOrderLineItemAppliedDiscount(discount_uid=uid)
+
+
+def _cart_to_customers(cart: CartData) -> Iterator[CreateCustomerBody]:
+    regs = cart.get("registrations", [])
+    for reg in regs:
+        new_data = reg.get("new", {})
+        yield _reg_to_customer(new_data)
+
+
+def _reg_to_customer(reg: Mapping[str, Any]) -> CreateCustomerBody:
+    fname = reg.get("first_name")
+    lname = reg.get("last_name")
+    pname = reg.get("preferred_name")
+    email = reg.get("email")
+
+    name = pname or fname
+
+    return CreateCustomerBody(given_name=name, family_name=lname, email_address=email)
 
 
 def _order_status_to_payment_status(status: str) -> PaymentStatus:

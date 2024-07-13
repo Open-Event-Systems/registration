@@ -80,6 +80,7 @@ class PaymentSvc:
         cart_id: str,
         cart_data: CartData,
         pricing_result: PricingResult,
+        email: str | None,
     ) -> PaymentResult:
         """Create a payment."""
         svc = self._get_service(service)
@@ -90,6 +91,7 @@ class PaymentSvc:
             cart_id=cart_id,
             cart_data=cart_data,
             pricing_result=pricing_result,
+            email=email,
         )
         result = await method_obj.create_payment(req)
         payment = Payment(

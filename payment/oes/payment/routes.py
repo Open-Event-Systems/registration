@@ -96,6 +96,8 @@ async def create_payment(
     method_id = request.args.get("method")
     if not method_id:
         raise NotFound
+    email = request.headers.get("x-email")
+
     req = await body(CreatePaymentRequestBody)
     methods = dict(services_svc.get_methods(req.cart_data, req.pricing_result))
     method_config = raise_not_found(methods.get(method_id))
@@ -106,6 +108,7 @@ async def create_payment(
             req.cart_id,
             req.cart_data,
             req.pricing_result,
+            email,
         )
     except PaymentServiceUnsupported:
         raise NotFound

@@ -79,6 +79,7 @@ class CreatePaymentRequest:
     cart_id: str
     cart_data: CartData
     pricing_result: PricingResult
+    email: str | None
 
 
 @frozen
