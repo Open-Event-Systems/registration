@@ -1,5 +1,6 @@
 """Payment objects."""
 
+import secrets
 from datetime import datetime
 from enum import Enum
 from typing import Any, Mapping
@@ -12,6 +13,9 @@ from oes.utils.logic import WhenCondition
 from oes.utils.orm import JSON
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+
+RECEIPT_ID_LENGTH = 12
+"""Receipt ID length."""
 
 
 class PaymentStatus(str, Enum):
@@ -153,6 +157,9 @@ class Payment(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     service: Mapped[str]
     external_id: Mapped[str]
+    receipt_id: Mapped[str | None] = mapped_column(
+        String(RECEIPT_ID_LENGTH), unique=True
+    )
     status: Mapped[PaymentStatus] = mapped_column(String(16))
     cart_id: Mapped[str]
     cart_data: Mapped[JSON]
@@ -160,3 +167,11 @@ class Payment(Base):
     date_created: Mapped[datetime]
     date_closed: Mapped[datetime | None] = mapped_column(default=None)
     data: Mapped[JSON] = mapped_column(default_factory=dict)
+
+
+def make_receipt_id() -> str:
+    """Make a receipt ID."""
+    return "".join(secrets.choice(_alphabet) for _ in range(RECEIPT_ID_LENGTH))
+
+
+_alphabet = "BCDFGHJKLMNPQRSTVWXYZ0123456789"

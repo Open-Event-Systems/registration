@@ -58,6 +58,15 @@ class PaymentResponse:
 
 
 @frozen
+class ReceiptResponse:
+    """Receipt response body."""
+
+    date_created: datetime
+    date_closed: datetime | None
+    pricing_result: Mapping[str, Any]
+
+
+@frozen
 class PaymentResultResponse:
     """Payment result response body."""
 
@@ -183,4 +192,18 @@ async def cancel_payment(
         service=res.service,
         status=res.status,
         body=res.body,
+    )
+
+
+@routes.get("/receipts/<receipt_id>")
+@response_converter
+async def read_receipt(
+    request: Request, receipt_id: str, repo: PaymentRepo
+) -> ReceiptResponse:
+    """Read a payment by receipt id."""
+    payment = raise_not_found(await repo.get_by_receipt_id(receipt_id))
+    return ReceiptResponse(
+        date_created=payment.date_created,
+        date_closed=payment.date_closed,
+        pricing_result=payment.pricing_result,
     )
