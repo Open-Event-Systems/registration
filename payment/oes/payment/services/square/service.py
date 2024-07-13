@@ -87,6 +87,8 @@ class SquareService:
         access_token: str,
         location_id: str,
         sandbox: bool = False,
+        item_map: Mapping[str, str] | None = None,
+        modifier_map: Mapping[str, str] | None = None,
     ):
         self.application_id = application_id
         self.location_id = location_id
@@ -95,6 +97,8 @@ class SquareService:
             access_token=access_token,
             environment=self.environment,
         )
+        self._item_map = item_map or {}
+        self._modifier_map = modifier_map or {}
 
     def get_payment_method(self, config: PaymentMethodConfig, /) -> PaymentMethod:
         """Get a :class:`PaymentMethod`."""
@@ -296,7 +300,11 @@ class SquareWebPaymentMethod:
         customer_id = await self._service._sync_customers(request.cart_data)
 
         order_body = _build_order(
-            self._service.location_id, customer_id, request.pricing_result
+            self._service.location_id,
+            customer_id,
+            request.pricing_result,
+            self._service._item_map,
+            self._service._modifier_map,
         )
 
         res = await self._service._req(
@@ -339,14 +347,21 @@ class SquareWebPaymentMethod:
 
 
 def _build_order(
-    location_id: str, customer_id: str | None, pricing_result: PricingResult
+    location_id: str,
+    customer_id: str | None,
+    pricing_result: PricingResult,
+    item_map: Mapping[str, str],
+    modifier_map: Mapping[str, str],
 ) -> CreateOrder:
     discount_map = {}
     line_items = itertools.chain.from_iterable(
         r.line_items for r in pricing_result.registrations
     )
     sq_line_items = [
-        _build_line_item(pricing_result.currency, discount_map, li) for li in line_items
+        _build_line_item(
+            pricing_result.currency, discount_map, li, item_map, modifier_map
+        )
+        for li in line_items
     ]
     return CreateOrder(
         location_id=location_id,
@@ -361,9 +376,13 @@ def _build_line_item(
     currency: str,
     discount_map: dict[str, CreateOrderLineItemDiscount],
     line_item: LineItem,
+    item_map: Mapping[str, str],
+    modifier_map: Mapping[str, str],
 ) -> CreateOrderLineItem:
     modifiers = [
-        _build_modifier(currency, m) for m in line_item.modifiers if m.amount >= 0
+        _build_modifier(currency, m, modifier_map)
+        for m in line_item.modifiers
+        if m.amount >= 0
     ]
     discounts = [
         _build_discount(currency, discount_map, m)
@@ -373,7 +392,7 @@ def _build_line_item(
     return CreateOrderLineItem(
         item_type=OrderLineItemItemType.item,
         name=line_item.name,
-        # catalog_object_id=...,
+        catalog_object_id=item_map.get(line_item.id) if line_item.id else None,
         modifiers=modifiers,
         applied_discounts=discounts,
         base_price_money=Money(
@@ -383,9 +402,11 @@ def _build_line_item(
     )
 
 
-def _build_modifier(currency: str, modifier: Modifier) -> CreateOrderLineItemModifier:
+def _build_modifier(
+    currency: str, modifier: Modifier, modifier_map: Mapping[str, str]
+) -> CreateOrderLineItemModifier:
     return CreateOrderLineItemModifier(
-        # catalog_object_id=...,
+        catalog_object_id=modifier_map.get(modifier.id) if modifier.id else None,
         name=modifier.name,
         base_price_money=Money(
             amount=modifier.amount,

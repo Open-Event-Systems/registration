@@ -47,7 +47,7 @@ class PaymentService:
         return res.json()
 
     async def create_payment(
-        self, cart_id: str, method: str
+        self, cart_id: str, method: str, email: str | None
     ) -> tuple[int, Mapping[str, Any]] | None:
         """Create a payment.
 
@@ -71,10 +71,16 @@ class PaymentService:
         if check_res != 200:
             return check_res, check_body
 
+        headers = {}
+
+        if email:
+            headers["x-email"] = email
+
         res = await self.client.post(
             f"{self.config.payment_service_url}/payments",
             json=body,
             params={"method": method},
+            headers=headers,
         )
         if res.status_code == 404:
             return None

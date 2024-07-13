@@ -17,6 +17,8 @@ class SquareConfig:
     access_token: str
     sandbox: bool
     location_id: str
+    item_map: Mapping[str, str] = field(factory=dict)
+    modifier_map: Mapping[str, str] = field(factory=dict)
 
 
 class OrderState(str, Enum):
