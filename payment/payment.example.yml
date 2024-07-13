@@ -3,6 +3,7 @@
 db_url: postgresql+asyncpg:///payment
 
 services:
+  system: {}
   mock: {}
   square:
     application_id:
@@ -11,9 +12,16 @@ services:
     sandbox: true
 
 methods:
+  system:
+    service: system
+    name: Complete Order
+    when: pricing_result.total_price == 0
+
   mock:
     service: mock
     name: Mock
+    when:
+      - pricing_result.total_price > 0
 
   square-web:
     service: square
