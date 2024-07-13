@@ -10,6 +10,7 @@ from apimatic_core.http.response.api_response import ApiResponse
 from cattrs import Converter, override
 from cattrs.gen import make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
+from loguru import logger
 from oes.payment.currency import format_currency
 from oes.payment.payment import (
     CancelPaymentRequest,
@@ -77,7 +78,14 @@ class SquareService:
 
     id = "square"
 
-    def __init__(self, access_token: str, location_id: str, sandbox: bool = False):
+    def __init__(
+        self,
+        application_id: str,
+        access_token: str,
+        location_id: str,
+        sandbox: bool = False,
+    ):
+        self.application_id = application_id
         self.location_id = location_id
         self.environment = "production" if not sandbox else "sandbox"
         self._client = Client(
@@ -121,6 +129,8 @@ class SquareService:
         if not source_id:
             raise PaymentError
 
+        verification_token = request.body.get("verification_token")
+
         # Cash not permitted via web
         method = request.data.get("method")
         if method == "web" and source_id.upper() == "CASH":
@@ -150,11 +160,12 @@ class SquareService:
                     delay_duration="PT30M",
                     order_id=order.id,
                     location_id=location_id,
+                    verification_token=verification_token,
                 )
             ),
         )
         if isinstance(res, ErrorResponse):
-            raise PaymentMethodError(_format_error(res))
+            raise PaymentError(_format_error(res))
         payment = res.payment
 
         idempotency_key = nanoid.generate(size=14)
@@ -256,6 +267,7 @@ class SquareWebPaymentMethod:
                 "method": "web",
             },
             body={
+                "application_id": self._service.application_id,
                 "location_id": self._service.location_id,
                 "total_price": request.pricing_result.total_price,
                 "currency": request.pricing_result.currency,
@@ -356,17 +368,38 @@ def _order_status_to_payment_status(status: str) -> PaymentStatus:
 
 
 def _format_error(error_response: ErrorResponse) -> str:
-    return (error_response.errors[0].detail or error_response.errors[0].code) + (
-        error_response.errors[0].field or ""
-    )
+    code = error_response.errors[0].code
+
+    if code in _error_messages:
+        return _error_messages[code]
+    logger.error(f"Square error: {error_response.errors[0]}")
+
+    return "Payment failed"
+
+
+_error_messages = {
+    "CARD_EXPIRED": "Card expired",
+    "INVALID_EXPIRATION": "Invalid card",
+    "INVALID_CARD": "Invalid card",
+    "GENERIC_DECLINE": "Card declined",
+    "CVV_FAILURE": "Verification failed",
+    "INVALID_ACCOUNT": "Invalid card",
+    "INSUFFICIENT_FUNDS": "Insufficient funds",
+    "INVALID_CARD_DATA": "Invalid card",
+    "CARD_DECLINED": "Card declined",
+    "VERIFY_CVV_FAILURE": "Verification failed",
+    "CARD_DECLINED_CALL_ISSUER": "Card declined, contact issuer",
+    "CARD_DECLINED_VERIFICATION_REQUIRED": "Additional verification required",
+}
 
 
 def make_square_payment_service(
     config: Mapping[str, Any], converter: Converter
 ) -> SquareService:
-    """Create a mock payment service."""
+    """Create a Square payment service."""
     square_config = converter.structure(config, SquareConfig)
     return SquareService(
+        application_id=square_config.application_id,
         access_token=square_config.access_token,
         location_id=square_config.location_id,
         sandbox=square_config.sandbox,

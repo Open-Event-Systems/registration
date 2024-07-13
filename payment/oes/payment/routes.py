@@ -7,6 +7,7 @@ from typing import Any
 from attrs import frozen
 from oes.payment.payment import (
     PaymentError,
+    PaymentNotFoundError,
     PaymentOption,
     PaymentServiceUnsupported,
     PaymentStatus,
@@ -148,6 +149,8 @@ async def update_payment(
     payment = raise_not_found(await repo.get(payment_id, lock=True))
     try:
         res = await payment_svc.update_payment(payment, body)
+    except PaymentNotFoundError:
+        raise NotFound
     except PaymentServiceUnsupported:
         raise NotFound
     except PaymentError as e:

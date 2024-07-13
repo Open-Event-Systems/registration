@@ -13,6 +13,7 @@ from attrs import field, frozen
 class SquareConfig:
     """Square config."""
 
+    application_id: str
     access_token: str
     sandbox: bool
     location_id: str
@@ -311,6 +312,7 @@ class CreatePayment:
     order_id: str | None = None
     customer_id: str | None = None
     location_id: str | None = None
+    verification_token: str | None = None
     buyer_email_address: str | None = None
     cash_details: CreateCashPaymentDetails | None = None
 

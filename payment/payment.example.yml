@@ -5,6 +5,7 @@ db_url: postgresql+asyncpg:///payment
 services:
   mock: {}
   square:
+    application_id:
     access_token:
     location_id:
     sandbox: true
