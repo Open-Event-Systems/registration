@@ -174,6 +174,20 @@ class RegistrationBatchChangeFields(RegistrationDataFields):
         return registration
 
 
+@define
+class RegistrationChangeResult:
+    """Holds the result of a registration change."""
+
+    id: uuid.UUID
+    """The ID."""
+
+    old: Mapping[str, Any]
+    """The old data."""
+
+    registration: Registration
+    """The final registration entity."""
+
+
 class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
     """Registration repository."""
 
@@ -244,17 +258,23 @@ class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
 class RegistrationService:
     """Manages registration creation/updates."""
 
-    def __init__(self, session: AsyncSession, repo: RegistrationRepo):
+    def __init__(
+        self,
+        session: AsyncSession,
+        repo: RegistrationRepo,
+        converter: Converter,
+    ):
         self.session = session
         self.repo = repo
+        self.converter = converter
 
     async def create(
         self, event_id: str, data: RegistrationCreateFields
-    ) -> Registration:
+    ) -> RegistrationChangeResult:
         """Create a registration."""
         reg = data.create(event_id)
         self.repo.add(reg)
-        return reg
+        return RegistrationChangeResult(reg.id, {}, reg)
 
     async def update(
         self,
@@ -262,7 +282,7 @@ class RegistrationService:
         registration_id: uuid.UUID | str,
         data: RegistrationUpdateFields,
         etag: str | None = None,
-    ) -> Registration | None:
+    ) -> RegistrationChangeResult | None:
         """Update a registration."""
         reg = await self.repo.get(registration_id, event_id=event_id)
         if reg is None:
@@ -276,8 +296,10 @@ class RegistrationService:
         ):
             raise ConflictError
 
+        old_data = self.converter.unstructure(reg)
+
         data.apply(reg)
-        return reg
+        return RegistrationChangeResult(reg.id, old_data, reg)
 
     def get_etag(self, registration: Registration) -> str:
         """Get the ETag for a registration."""

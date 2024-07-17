@@ -14,6 +14,9 @@ class Config:
         converter=lambda v: make_url(v),
         help="the database URL",
     )
+    amqp_url: str = ts.option(
+        default="amqp://guest:guest@localhost/", help="the AMQP server URL"
+    )
 
 
 def get_config() -> Config:

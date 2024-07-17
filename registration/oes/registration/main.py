@@ -8,6 +8,7 @@ from oes.registration.access_code import AccessCodeRepo, AccessCodeService
 from oes.registration.batch import BatchChangeService
 from oes.registration.config import get_config
 from oes.registration.event import EventStatsRepo, EventStatsService
+from oes.registration.mq import MQService
 from oes.registration.registration import RegistrationService
 from oes.utils.sanic import setup_app, setup_database
 from sanic import Sanic
@@ -54,5 +55,16 @@ def create_app() -> Sanic:
     @app.after_server_stop
     async def stop_httpx(app: Sanic):
         await app.ctx.httpx.aclose()
+
+    @app.before_server_start
+    async def start_mq(app: Sanic):
+        mq = MQService(config, common.response_converter.converter)
+        app.ctx.mq = mq
+        app.ext.dependency(mq)
+        await mq.start()
+
+    @app.after_server_stop
+    async def stop_mq(app: Sanic):
+        await app.ctx.mq.stop()
 
     return app
