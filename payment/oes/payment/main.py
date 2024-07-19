@@ -5,6 +5,7 @@ import sys
 
 from cattrs import Converter
 from oes.payment.config import get_config
+from oes.payment.mq import MQService
 from oes.payment.service import PaymentRepo, PaymentServicesSvc, PaymentSvc
 from oes.utils import configure_converter
 from oes.utils.sanic import setup_app, setup_database
@@ -38,5 +39,16 @@ def create_app() -> Sanic:
     app.ext.add_dependency(PaymentRepo)
     app.ext.add_dependency(PaymentServicesSvc)
     app.ext.add_dependency(PaymentSvc)
+
+    @app.before_server_start
+    async def start_mq(app: Sanic):
+        mq = MQService(config, response_converter.converter)
+        app.ctx.mq = mq
+        app.ext.dependency(mq)
+        await mq.start()
+
+    @app.after_server_stop
+    async def stop_mq(app: Sanic):
+        await app.ctx.mq.stop()
 
     return app

@@ -1,11 +1,13 @@
 """Web routes."""
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
 from attrs import frozen
+from oes.payment.mq import MQService
 from oes.payment.payment import (
+    Payment,
     PaymentError,
     PaymentNotFoundError,
     PaymentOption,
@@ -153,28 +155,63 @@ async def read_payment(
 
 
 @routes.post("/payments/<payment_id>/update")
-@transaction
 @response_converter
 async def update_payment(
-    request: Request, payment_id: str, repo: PaymentRepo, payment_svc: PaymentSvc
+    request: Request,
+    payment_id: str,
+    repo: PaymentRepo,
+    payment_svc: PaymentSvc,
+    message_queue: MQService,
 ) -> PaymentResultResponse:
     """Update a payment."""
     body = request.json or {}
-    payment = raise_not_found(await repo.get(payment_id, lock=True))
-    try:
-        res = await payment_svc.update_payment(payment, body)
-    except PaymentNotFoundError:
-        raise NotFound
-    except PaymentServiceUnsupported:
-        raise NotFound
-    except PaymentError as e:
-        raise UnprocessableEntity(str(e))
+    async with transaction():
+        payment = raise_not_found(await repo.get(payment_id, lock=True))
+        try:
+            res = await payment_svc.update_payment(payment, body)
+        except PaymentNotFoundError:
+            raise NotFound
+        except PaymentServiceUnsupported:
+            raise NotFound
+        except PaymentError as e:
+            raise UnprocessableEntity(str(e))
+    await _send_receipt(message_queue, payment)
     return PaymentResultResponse(
         id=res.id,
         service=res.service,
         status=res.status,
         body=res.body,
     )
+
+
+async def _send_receipt(message_queue: MQService, payment: Payment):
+    if _should_send_receipt(payment.pricing_result):
+        for email in _get_emails(payment.cart_data):
+            await message_queue.publish(
+                "email.receipt",
+                {
+                    "to": email,
+                    "pricing_result": payment.pricing_result,
+                    "receipt_id": payment.receipt_id,
+                },
+            )
+
+
+def _should_send_receipt(pricing_result: Mapping[str, Any]):
+    """Send receipt if any item is not normally free."""
+    for reg in pricing_result["registrations"]:
+        for li in reg["line_items"]:
+            if li["price"] > 0:
+                return True
+    return False
+
+
+def _get_emails(cart_data: Mapping[str, Any]) -> Iterator[str]:
+    for reg in cart_data["registrations"]:
+        data = reg.get("new", {})
+        email = data.get("email")
+        if email:
+            yield email
 
 
 @routes.put("/payments/<payment_id>/cancel")
