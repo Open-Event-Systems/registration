@@ -47,7 +47,7 @@ class MQService:
     async def publish_registration_update(self, change: RegistrationChangeResult):
         """Publish a registration update message."""
         body = {
-            "id": change.id,
+            "id": str(change.id),
             "old": change.old,
             "new": self.converter.unstructure(change.registration),
         }

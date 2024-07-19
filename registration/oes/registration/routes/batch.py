@@ -6,7 +6,12 @@ from uuid import UUID
 
 from attrs import define, field
 from oes.registration.batch import BatchChangeResult, BatchChangeService
-from oes.registration.registration import Registration, RegistrationBatchChangeFields
+from oes.registration.mq import MQService
+from oes.registration.registration import (
+    Registration,
+    RegistrationBatchChangeFields,
+    RegistrationChangeResult,
+)
 from oes.registration.routes.common import response_converter
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
@@ -67,6 +72,7 @@ async def apply_changes(
     event_id: str,
     service: BatchChangeService,
     body: CattrsBody,
+    message_queue: MQService,
 ) -> HTTPResponse:
     """Apply a batch of changes."""
     req_body = await body(BatchChangeRequestBody)
@@ -75,6 +81,10 @@ async def apply_changes(
         current, access_codes, results = await service.check(
             event_id, req_body.changes, req_body.access_codes, lock=True
         )
+        old_data = {
+            cur.id: response_converter.converter.unstructure(cur)
+            for cur in current.values()
+        }
 
         if any(r.errors for r in results):
             response = response_converter.make_response(CheckResultBody(results))
@@ -94,6 +104,12 @@ async def apply_changes(
             if not payment_success:
                 return json(payment_res, status=payment_status_code)
             await transaction.commit()
+
+            for reg in final:
+                await message_queue.publish_registration_update(
+                    RegistrationChangeResult(reg.id, old_data.get(reg.id, {}), reg)
+                )
+
             response = response_converter.make_response(
                 ApplyResultBody(final, payment_res)
             )

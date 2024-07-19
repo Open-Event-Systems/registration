@@ -7,6 +7,7 @@ COPY internal/ internal/
 RUN go build ./cmd/worker
 
 FROM scratch
+COPY --from=build /etc/ssl /etc/ssl
 COPY --from=build --chown=1000:1000 /build/worker /worker
 COPY --chown=1000:1000 config.example.yml /config/sheets.yml
 ENV PATH="/"
