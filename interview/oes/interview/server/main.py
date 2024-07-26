@@ -11,6 +11,9 @@ from oes.interview.storage import StorageService
 from oes.utils import setup_logging
 from oes.utils.sanic import setup_app
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():

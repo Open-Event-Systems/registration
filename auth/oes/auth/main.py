@@ -11,6 +11,9 @@ from oes.auth.service import AccessTokenService, RefreshTokenService
 from oes.auth.token import RefreshTokenRepo
 from oes.utils.sanic import setup_app, setup_database
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():
