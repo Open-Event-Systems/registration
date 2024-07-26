@@ -11,6 +11,9 @@ from oes.web.cart import CartService
 from oes.web.config import get_config
 from oes.web.routes.common import response_converter
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():

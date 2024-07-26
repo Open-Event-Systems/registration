@@ -43,5 +43,5 @@ EXPOSE 8000
 USER app
 # ENTRYPOINT [ "/docker-entrypoint.sh" ]
 ENTRYPOINT [ "oes-web-service" ]
-HEALTHCHECK --start-interval=5s --start-period=30s --retries=1 CMD [ "/app/bin/python", "/healthcheck.py" ]
+HEALTHCHECK --start-interval=10s --start-period=5m --retries=1 CMD [ "/app/bin/python", "/healthcheck.py" ]
 CMD [ "-H", "0.0.0.0" ]
