@@ -10,6 +10,9 @@ from oes.payment.service import PaymentRepo, PaymentServicesSvc, PaymentSvc
 from oes.utils import configure_converter
 from oes.utils.sanic import setup_app, setup_database
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():

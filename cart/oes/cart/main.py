@@ -19,6 +19,9 @@ from oes.utils import configure_converter
 from oes.utils.sanic import setup_app, setup_database
 from redis.asyncio import Redis
 from sanic import Request, Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():
