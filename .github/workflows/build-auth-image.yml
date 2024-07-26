@@ -33,7 +33,7 @@ jobs:
 
       - uses: docker/build-push-action@v6.5.0
         with:
-          context: python/interview
+          context: auth
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
