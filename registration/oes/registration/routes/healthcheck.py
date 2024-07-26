@@ -4,7 +4,7 @@ from oes.registration.mq import MQService
 from oes.registration.registration import RegistrationRepo
 from sanic import Blueprint, HTTPResponse, Request
 
-routes = Blueprint("access_code")
+routes = Blueprint("healthcheck")
 
 
 @routes.get("/_healthcheck")
