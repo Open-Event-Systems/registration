@@ -1,5 +1,3 @@
-from uuid import UUID
-
 import pytest
 from oes.cart.cart import Cart, CartRegistration, CartRepo, CartService
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,9 +18,7 @@ def test_hash():
         event_id="test",
         meta={"meta": "meta"},
         registrations=[
-            CartRegistration(
-                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), old={}, new={}
-            )
+            CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605", old={}, new={})
         ],
     )
 
@@ -35,24 +31,16 @@ def test_hash_any_order():
         event_id="test",
         meta={"meta": "meta"},
         registrations=[
-            CartRegistration(
-                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), old={}, new={}
-            ),
-            CartRegistration(
-                UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"), old={}, new={}
-            ),
+            CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605", old={}, new={}),
+            CartRegistration("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c", old={}, new={}),
         ],
     )
     cart2 = Cart(
         event_id="test",
         meta={"meta": "meta"},
         registrations=[
-            CartRegistration(
-                UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"), old={}, new={}
-            ),
-            CartRegistration(
-                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), old={}, new={}
-            ),
+            CartRegistration("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c", old={}, new={}),
+            CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605", old={}, new={}),
         ],
     )
 
@@ -96,11 +84,11 @@ async def test_cart_add_registration(
     empty_entity = await repo.get(empty_id)
     assert empty_entity
     result_entity = await service.add_to_cart(
-        empty_entity, [CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"))]
+        empty_entity, [CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605")]
     )
     result = result_entity.get_cart()
     assert result.registrations == [
-        CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"))
+        CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605")
     ]
 
 
@@ -111,8 +99,8 @@ async def test_cart_add_registration_replace(
     base = Cart(
         "test",
         registrations=[
-            CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605")),
-            CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+            CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605"),
+            CartRegistration("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"),
         ],
     )
     base_entity = await service.add(base)
@@ -125,19 +113,15 @@ async def test_cart_add_registration_replace(
     result_entity = await service.add_to_cart(
         base_entity,
         [
-            CartRegistration(UUID("bdb33e19-1373-4c65-80ee-ac7364329932")),
-            CartRegistration(
-                UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), new={"new": True}
-            ),
+            CartRegistration("bdb33e19-1373-4c65-80ee-ac7364329932"),
+            CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605", new={"new": True}),
         ],
     )
     result = result_entity.get_cart()
     assert result.registrations == [
-        CartRegistration(
-            UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605"), new={"new": True}
-        ),
-        CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
-        CartRegistration(UUID("bdb33e19-1373-4c65-80ee-ac7364329932")),
+        CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605", new={"new": True}),
+        CartRegistration("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"),
+        CartRegistration("bdb33e19-1373-4c65-80ee-ac7364329932"),
     ]
 
 
@@ -148,8 +132,8 @@ async def test_cart_remove_registration(
     base = Cart(
         "test",
         registrations=[
-            CartRegistration(UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605")),
-            CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+            CartRegistration("c152e91e-5d8c-4219-a774-e2c7f08f9605"),
+            CartRegistration("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"),
         ],
     )
     base_entity = await service.add(base)
@@ -160,9 +144,9 @@ async def test_cart_remove_registration(
     assert base_entity
 
     result_entity = await service.remove_from_cart(
-        base_entity, UUID("c152e91e-5d8c-4219-a774-e2c7f08f9605")
+        base_entity, "c152e91e-5d8c-4219-a774-e2c7f08f9605"
     )
     result = result_entity.get_cart()
     assert result.registrations == [
-        CartRegistration(UUID("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c")),
+        CartRegistration("f4a87b29-78b3-4f0b-bd3f-9de1f1a3409c"),
     ]

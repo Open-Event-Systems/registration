@@ -1,7 +1,5 @@
 """Routes module."""
 
-from uuid import UUID
-
 from attrs import define
 from oes.cart.cart import (
     Cart,
@@ -63,13 +61,13 @@ async def add_to_cart(
     return await service.add_to_cart(cart_entity, add_body.registrations)
 
 
-@routes.delete("/carts/<cart_id>/registrations/<registration_id:uuid>")
+@routes.delete("/carts/<cart_id>/registrations/<registration_id>")
 @response_converter
 @transaction
 async def remove_from_cart(
     request: Request,
     cart_id: str,
-    registration_id: UUID,
+    registration_id: str,
     repo: CartRepo,
     service: CartService,
 ) -> CartEntity:

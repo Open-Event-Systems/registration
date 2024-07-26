@@ -27,6 +27,7 @@ oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", 
 ] }
 httpx = "^0.27.0"
 aio-pika = "^9.4.2"
+nanoid = "^2.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

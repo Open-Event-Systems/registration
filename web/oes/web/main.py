@@ -9,9 +9,6 @@ from oes.utils import configure_converter, setup_logging
 from oes.utils.sanic import setup_app
 from oes.web.cart import CartService
 from oes.web.config import get_config
-from oes.web.interview import InterviewService
-from oes.web.payment import PaymentService
-from oes.web.registration import RegistrationService
 from oes.web.routes.common import response_converter
 from sanic import Sanic
 
@@ -23,6 +20,9 @@ def main():
 
 def create_app() -> Sanic:
     """Main app factory."""
+    from oes.web.interview import InterviewService
+    from oes.web.payment import PaymentService
+    from oes.web.registration import RegistrationService
     from oes.web.routes import event, payment, selfservice
 
     config = get_config()
