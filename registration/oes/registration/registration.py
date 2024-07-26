@@ -48,7 +48,12 @@ class Registration(Base, kw_only=True):
     """Registration entity."""
 
     __tablename__ = "registration"
-    __table_args__ = (Index("ix_email", text("LOWER(email)")),)
+    __table_args__ = (
+        Index("ix_email", text("LOWER(email)")),
+        Index(
+            "ix_extra_data", text("extra_data jsonb_path_ops"), postgresql_using="gin"
+        ),
+    )
 
     id: Mapped[str] = mapped_column(
         String(REGISTRATION_ID_MAX_LENGTH),
