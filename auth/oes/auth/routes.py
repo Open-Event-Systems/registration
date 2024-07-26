@@ -9,8 +9,9 @@ from email_validator import EmailNotValidError, validate_email
 from oes.auth.auth import AuthRepo, AuthService, Scope
 from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
+from oes.auth.mq import MQService
 from oes.auth.service import AccessTokenService, RefreshTokenService
-from oes.auth.token import AccessToken, RefreshToken, TokenError
+from oes.auth.token import AccessToken, RefreshToken, RefreshTokenRepo, TokenError
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
 from sanic import Blueprint, Forbidden, HTTPResponse, Request, Unauthorized, json
@@ -208,3 +209,14 @@ def _make_token_response(
         ),
     }
     return HTTPResponse(orjson.dumps(resp_data), content_type="application/json")
+
+
+@routes.get("/_healthcheck")
+async def healthcheck(
+    request: Request, repo: RefreshTokenRepo, message_queue: MQService
+) -> HTTPResponse:
+    """Health check endpoint."""
+    await repo.get("")
+    if not message_queue.ready:
+        return HTTPResponse(status=503)
+    return HTTPResponse(status=204)

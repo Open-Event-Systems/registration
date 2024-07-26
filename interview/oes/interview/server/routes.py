@@ -15,7 +15,7 @@ from oes.interview.interview.update import update_interview
 from oes.interview.storage import StorageService
 from oes.utils.request import BadRequest, CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
-from sanic import Blueprint, NotFound, Request
+from sanic import Blueprint, HTTPResponse, NotFound, Request
 
 routes = Blueprint("interview")
 
@@ -141,3 +141,10 @@ async def completed_interview_route(
         context=interview.state.context,
         data=interview.state.data,
     )
+
+
+@routes.get("/_healthcheck")
+async def healthcheck(request: Request, storage: StorageService) -> HTTPResponse:
+    """Health check endpoint."""
+    await storage.get("")
+    return HTTPResponse(status=204)

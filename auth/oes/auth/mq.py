@@ -16,6 +16,7 @@ class MQService:
 
     def __init__(self, config: Config):
         self.config = config
+        self.ready = False
 
     async def start(self):
         self.run_task = asyncio.create_task(self._run())
@@ -32,6 +33,7 @@ class MQService:
             )
             self.queue = await channel.declare_queue("email.auth", durable=True)
             await self.queue.bind(self.exchange, "email.auth")
+            self.ready = True
             logger.debug("AMQP connected")
             while True:
                 await asyncio.sleep(3600)

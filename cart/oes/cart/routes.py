@@ -86,3 +86,10 @@ async def price_cart(
     cart_entity = raise_not_found(await repo.get(cart_id))
     res = await pricing_service.price_cart(cart_id, cart_entity.get_cart())
     return HTTPResponse(res, status=200, content_type="application/json")
+
+
+@routes.get("/_healthcheck")
+async def healthcheck(request: Request, repo: CartRepo) -> HTTPResponse:
+    """Health check endpoint."""
+    await repo.get("")
+    return HTTPResponse(status=204)

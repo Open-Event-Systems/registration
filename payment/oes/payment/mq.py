@@ -21,6 +21,7 @@ class MQService:
         self.config = config
         self.converter = converter
         self._ready = asyncio.Event()
+        self.ready = False
 
     async def start(self):
         """Start the service."""
@@ -37,6 +38,7 @@ class MQService:
                 "email", type=aio_pika.ExchangeType.TOPIC, durable=True
             )
             self._ready.set()
+            self.ready = True
             logger.debug("AMQP connected")
             while True:
                 await asyncio.sleep(3600)

@@ -27,6 +27,7 @@ nanoid = "^2.0.0"
 jinja2 = "^3.1.4"
 squareup = "^37.1.0.20240604"
 aio-pika = "^9.4.2"
+httpx = "^0.27.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.1"

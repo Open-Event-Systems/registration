@@ -20,7 +20,7 @@ from oes.payment.types import CartData
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
-from sanic import Blueprint, NotFound, Request
+from sanic import Blueprint, HTTPResponse, NotFound, Request
 from sanic.exceptions import HTTPException
 
 routes = Blueprint("payment")
@@ -246,3 +246,16 @@ async def read_receipt(
         date_closed=payment.date_closed,
         pricing_result=payment.pricing_result,
     )
+
+
+@routes.get("/_healthcheck")
+async def healthcheck(
+    request: Request,
+    repo: PaymentRepo,
+    message_queue: MQService,
+) -> HTTPResponse:
+    """Health check endpoint."""
+    await repo.get("")
+    if not message_queue.ready:
+        return HTTPResponse(status=503)
+    return HTTPResponse(status=204)

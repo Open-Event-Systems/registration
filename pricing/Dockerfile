@@ -8,12 +8,17 @@ RUN go build ./cmd/pricing
 
 
 FROM alpine:3.20.0
+RUN apk add curl
 RUN adduser -D app \
     && mkdir -p /config/scripts
+COPY scripts/healthcheck.sh /
+RUN chmod u=rwx,g=rx,o=rx /healthcheck.sh
 COPY --from=build /build/pricing /usr/local/bin/
 COPY --chown=app:app pricing.example.yml /config/pricing.yml
 VOLUME [ "/config" ]
 WORKDIR /config
 USER app
+ENV HEALTHCHECK_EVENT_ID=example-event
 ENTRYPOINT [ "/usr/local/bin/pricing" ]
+HEALTHCHECK --start-interval=5s --start-period=30s --retries=1 CMD [ "/healthcheck.sh" ]
 CMD [ "/config/pricing.yml" ]

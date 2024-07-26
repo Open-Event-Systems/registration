@@ -28,6 +28,8 @@ FROM base AS app
 RUN mkdir /app /config && adduser -D app
 WORKDIR /app
 
+COPY scripts/healthcheck.py /
+RUN chmod u=rw,g=r,o=r /healthcheck.py
 # COPY --chown=app:app alembic.ini /app/
 COPY --chown=app:app interview.example.yml /config/interview.yml
 COPY --chown=app:app interviews.example.yml /config/interviews.yml
@@ -39,4 +41,5 @@ VOLUME [ "/config" ]
 EXPOSE 8000
 USER app
 ENTRYPOINT [ "oes-interview-service" ]
+HEALTHCHECK --start-interval=5s --start-period=30s --retries=1 CMD [ "/app/bin/python", "/healthcheck.py" ]
 CMD [ "-H", "0.0.0.0" ]

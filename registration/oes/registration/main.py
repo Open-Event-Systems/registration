@@ -22,7 +22,13 @@ def main():
 def create_app() -> Sanic:
     """Main app entry point."""
     from oes.registration.registration import RegistrationRepo
-    from oes.registration.routes import access_code, batch, common, registration
+    from oes.registration.routes import (
+        access_code,
+        batch,
+        common,
+        healthcheck,
+        registration,
+    )
     from oes.registration.serialization import configure_converter
 
     config = get_config()
@@ -32,6 +38,7 @@ def create_app() -> Sanic:
     setup_database(app, config.db_url)
     configure_converter(common.response_converter.converter)
 
+    app.blueprint(healthcheck.routes)
     app.blueprint(registration.routes, url_prefix="/events/<event_id>/registrations")
     app.blueprint(batch.routes, url_prefix="/events/<event_id>/batch-change")
     app.blueprint(access_code.routes, url_prefix="/events/<event_id>/access-codes")
