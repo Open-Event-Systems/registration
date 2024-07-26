@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime, timedelta
 from unittest.mock import create_autospec
 
@@ -12,6 +11,7 @@ from oes.registration.registration import (
     RegistrationBatchChangeFields,
     RegistrationRepo,
     Status,
+    generate_registration_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -162,8 +162,12 @@ async def test_batch_check_create(
     change1 = RegistrationBatchChangeFields(
         id=reg1.id, event_id="test", version=reg1.version
     )
-    change3 = RegistrationBatchChangeFields(id=uuid.uuid4(), event_id="test", version=2)
-    change4 = RegistrationBatchChangeFields(id=uuid.uuid4(), event_id="test")
+    change3 = RegistrationBatchChangeFields(
+        id=generate_registration_id(), event_id="test", version=2
+    )
+    change4 = RegistrationBatchChangeFields(
+        id=generate_registration_id(), event_id="test"
+    )
 
     by_id = {reg1.id: reg1}
 
@@ -262,9 +266,11 @@ async def test_batch_apply(
     change1 = RegistrationBatchChangeFields(
         id=reg1.id, event_id="test", version=reg1.version, email="test@test.com"
     )
-    change2 = RegistrationBatchChangeFields(id=uuid.uuid4(), event_id="test", version=4)
+    change2 = RegistrationBatchChangeFields(
+        id=generate_registration_id(), event_id="test", version=4
+    )
     change3 = RegistrationBatchChangeFields(
-        id=uuid.uuid4(), event_id="test", status=Status.created
+        id=generate_registration_id(), event_id="test", status=Status.created
     )
 
     updated = await service.apply(

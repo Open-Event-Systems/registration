@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import logging
 
 from alembic import context
 from oes.registration.config import get_config
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 target_metadata = Base.metadata
 import_entities()
+logging.basicConfig()
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:

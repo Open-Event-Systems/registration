@@ -1,20 +1,27 @@
 """Registration module."""
 
-import uuid
+from __future__ import annotations
+
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
+import nanoid
+import oes.web.interview
 from attrs import evolve
 from oes.utils.logic import evaluate
 from oes.web.cart import CartService
 from oes.web.config import Config, Event, InterviewOption
-from oes.web.interview import (
-    CompletedInterview,
-    InterviewRegistration,
-    InterviewRegistrationFields,
-    converter,
-)
+
+if TYPE_CHECKING:
+    from oes.web.interview import (
+        CompletedInterview,
+        InterviewRegistration,
+        InterviewRegistrationFields,
+    )
+
+REGISTRATION_ID_LENGTH = 14
+"""Length of a registration ID."""
 
 
 class AddRegistrationError(ValueError):
@@ -226,7 +233,7 @@ async def add_to_cart(  # noqa: CCR001
 
     if completed_interview.registration:
         all_registrations = [
-            InterviewRegistration(
+            oes.web.interview.InterviewRegistration(
                 registration=completed_interview.registration,
                 meta=completed_interview.meta,
             ),
@@ -291,7 +298,7 @@ async def _make_cart_registration(
         "old": cur,
         "new": {
             "event_id": interview.event_id,
-            **converter.unstructure(new_data),
+            **oes.web.interview.converter.unstructure(new_data),
         },
         "meta": (
             {
@@ -304,13 +311,15 @@ async def _make_cart_registration(
     }
 
 
+_alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+
 async def _get_current_registration(
     event_id: str, id: str | None, service: RegistrationService
 ) -> tuple[bool, Mapping[str, Any]]:
     """Get the current registration data, or a default "empty" one."""
-    # TODO: generate properly once no longer using uuids
     orig_id = id
-    id = id or str(uuid.uuid4())
+    id = id or generate_registration_id()
     cur = await service.get_registration(event_id, orig_id) if orig_id else None
     if cur:
         return True, cur
@@ -351,3 +360,8 @@ def _get_access_codes(cart_data: Mapping[str, Any]) -> Mapping[str, Any]:
         if access_code:
             codes[registration["id"]] = access_code
     return codes
+
+
+def generate_registration_id() -> str:
+    """Generate a random registration ID."""
+    return nanoid.generate(_alphabet, REGISTRATION_ID_LENGTH)

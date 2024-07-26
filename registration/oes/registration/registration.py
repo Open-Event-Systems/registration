@@ -1,20 +1,26 @@
 """Registration module."""
 
-import uuid
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
 from typing import Any
 
+import nanoid
 from attr import fields
 from attrs import define, field
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.registration.orm import Base
 from oes.utils.orm import JSON, Repo
-from sqlalchemy import UUID, Index, func, or_, select, text
+from sqlalchemy import Index, String, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
+
+REGISTRATION_ID_LENGTH = 14
+"""Length of a registration ID."""
+
+REGISTRATION_ID_MAX_LENGTH = 36
+"""Max length of the registration ID field."""
 
 
 class Status(str, Enum):
@@ -44,8 +50,10 @@ class Registration(Base, kw_only=True):
     __tablename__ = "registration"
     __table_args__ = (Index("ix_email", text("LOWER(email)")),)
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID, default_factory=lambda: uuid.uuid4(), primary_key=True
+    id: Mapped[str] = mapped_column(
+        String(REGISTRATION_ID_MAX_LENGTH),
+        default_factory=lambda: generate_registration_id(),
+        primary_key=True,
     )
     event_id: Mapped[str]
     version: Mapped[int] = mapped_column(default=1)
@@ -147,7 +155,7 @@ class RegistrationUpdateFields(RegistrationDataFields):
 class RegistrationBatchChangeFields(RegistrationDataFields):
     """Fields for batch creation/update."""
 
-    id: uuid.UUID
+    id: str
     event_id: str
     status: Status = Status.pending
     version: int | None = None
@@ -178,7 +186,7 @@ class RegistrationBatchChangeFields(RegistrationDataFields):
 class RegistrationChangeResult:
     """Holds the result of a registration change."""
 
-    id: uuid.UUID
+    id: str
     """The ID."""
 
     old: Mapping[str, Any]
@@ -188,14 +196,14 @@ class RegistrationChangeResult:
     """The final registration entity."""
 
 
-class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
+class RegistrationRepo(Repo[Registration, str]):
     """Registration repository."""
 
     entity_type = Registration
 
     async def get(
         self,
-        id: str | uuid.UUID,
+        id: str,
         *,
         event_id: str | None = None,
         lock: bool = False,
@@ -205,7 +213,7 @@ class RegistrationRepo(Repo[Registration, str | uuid.UUID]):
 
     async def get_multi(
         self,
-        ids: Iterable[str | uuid.UUID],
+        ids: Iterable[str],
         *,
         event_id: str | None = None,
         lock: bool = False,
@@ -279,7 +287,7 @@ class RegistrationService:
     async def update(
         self,
         event_id: str,
-        registration_id: uuid.UUID | str,
+        registration_id: str,
         data: RegistrationUpdateFields,
         etag: str | None = None,
     ) -> RegistrationChangeResult | None:
@@ -369,3 +377,11 @@ def make_registration_batch_change_unstructure_fn(
 
 def _get_extra_data(data: Mapping[str, Any]) -> dict[str, Any]:
     return dict((k, v) for k, v in data.items() if k not in _registration_fields)
+
+
+def generate_registration_id() -> str:
+    """Generate a random registration ID."""
+    return nanoid.generate(_alphabet, REGISTRATION_ID_LENGTH)
+
+
+_alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"

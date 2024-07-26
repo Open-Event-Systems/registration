@@ -1,4 +1,3 @@
-import uuid
 from unittest.mock import create_autospec
 
 import pytest
@@ -12,6 +11,7 @@ from oes.registration.registration import (
     RegistrationUpdateFields,
     Status,
     StatusError,
+    generate_registration_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm.exc import StaleDataError
@@ -159,7 +159,7 @@ async def test_get_multi(session_factory: async_sessionmaker):
     async with session_factory() as session:
         repo = RegistrationRepo(session)
         regs = [Registration(event_id="test") for _ in range(3)]
-        ids = [r.id for r in regs] + [uuid.uuid4()]
+        ids = [r.id for r in regs] + [generate_registration_id()]
 
         for reg in regs:
             repo.add(reg)

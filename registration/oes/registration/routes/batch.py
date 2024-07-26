@@ -2,7 +2,6 @@
 
 from collections.abc import Mapping, Sequence
 from typing import Any
-from uuid import UUID
 
 from attrs import define, field
 from oes.registration.batch import BatchChangeResult, BatchChangeService
@@ -40,7 +39,7 @@ class BatchChangeRequestBody:
     """Batch change body."""
 
     changes: Sequence[RegistrationBatchChangeFields]
-    access_codes: Mapping[UUID, str] = field(factory=dict)
+    access_codes: Mapping[str, str] = field(factory=dict)
     payment_url: str | None = None
     payment_body: Mapping[str, Any] | None = None
 

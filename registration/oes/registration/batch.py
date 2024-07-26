@@ -6,7 +6,6 @@ import functools
 from collections.abc import Callable, Mapping, Sequence
 from enum import Enum
 from typing import Any
-from uuid import UUID
 
 import httpx
 from attrs import define
@@ -59,12 +58,12 @@ class BatchChangeService:
         self,
         event_id: str,
         changes: Sequence[RegistrationBatchChangeFields],
-        access_codes: Mapping[UUID, str],
+        access_codes: Mapping[str, str],
         *,
         lock: bool = False,
     ) -> tuple[
-        dict[UUID, Registration],
-        Mapping[UUID, AccessCode | None],
+        dict[str, Registration],
+        Mapping[str, AccessCode | None],
         list[BatchChangeResult],
     ]:
         """Check that a batch of changes can be applied."""
@@ -96,8 +95,8 @@ class BatchChangeService:
         self,
         event_id: str,
         changes: Sequence[RegistrationBatchChangeFields],
-        access_codes: Mapping[UUID, AccessCode | None],
-        current: Mapping[UUID, Registration],
+        access_codes: Mapping[str, AccessCode | None],
+        current: Mapping[str, Registration],
     ) -> list[Registration]:
         """Apply a batch of changes.
 
@@ -137,8 +136,8 @@ class BatchChangeService:
         return res.status_code, res.json()
 
     async def _get_access_codes(
-        self, event_id: str, access_codes: Mapping[UUID, str], *, lock: bool = False
-    ) -> Mapping[UUID, AccessCode | None]:
+        self, event_id: str, access_codes: Mapping[str, str], *, lock: bool = False
+    ) -> Mapping[str, AccessCode | None]:
         ids = sorted(access_codes.items(), key=lambda x: x[1])
         entities = {
             reg_id: await self.access_code_service.get(event_id, code, lock=lock)

@@ -1,10 +1,10 @@
 """Interview service."""
 
-import uuid
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any, Literal, TypeVar
 
 import httpx
+import oes.web.registration
 import orjson
 from attrs import evolve, field, fields, frozen
 from cattrs import Converter, override
@@ -77,7 +77,7 @@ class InterviewService:
         """Start an interview."""
         if registration is None:
             registration = {
-                "id": str(uuid.uuid4()),
+                "id": oes.web.registration.generate_registration_id(),
                 "status": "created",
                 "event_id": event.id,
                 "version": 1,

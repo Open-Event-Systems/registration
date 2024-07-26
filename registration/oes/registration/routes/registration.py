@@ -1,7 +1,6 @@
 """Registration routes."""
 
 from collections.abc import Sequence
-from uuid import UUID
 
 from oes.registration.event import EventStatsService
 from oes.registration.mq import MQService
@@ -55,11 +54,11 @@ async def create_registration(
     return response_converter.make_response(res.registration)
 
 
-@routes.get("/<registration_id:uuid>")
+@routes.get("/<registration_id>")
 async def read_registration(
     request: Request,
     event_id: str,
-    registration_id: UUID,
+    registration_id: str,
     repo: RegistrationRepo,
     reg_service: RegistrationService,
 ) -> HTTPResponse:
@@ -70,11 +69,11 @@ async def read_registration(
     return response
 
 
-@routes.put("/<registration_id:uuid>")
+@routes.put("/<registration_id>")
 async def update_registration(
     request: Request,
     event_id: str,
-    registration_id: UUID,
+    registration_id: str,
     reg_service: RegistrationService,
     message_queue: MQService,
     body: CattrsBody,
@@ -97,11 +96,11 @@ async def update_registration(
     return response
 
 
-@routes.put("/<registration_id:uuid>/complete")
+@routes.put("/<registration_id>/complete")
 async def complete_registration(
     request: Request,
     event_id: str,
-    registration_id: UUID,
+    registration_id: str,
     repo: RegistrationRepo,
     reg_service: RegistrationService,
     message_queue: MQService,
@@ -130,11 +129,11 @@ async def complete_registration(
     return response
 
 
-@routes.put("/<registration_id:uuid>/cancel")
+@routes.put("/<registration_id>/cancel")
 async def cancel_registration(
     request: Request,
     event_id: str,
-    registration_id: UUID,
+    registration_id: str,
     repo: RegistrationRepo,
     reg_service: RegistrationService,
     message_queue: MQService,
@@ -156,11 +155,11 @@ async def cancel_registration(
     return response
 
 
-@routes.put("/<registration_id:uuid>/assign-number")
+@routes.put("/<registration_id>/assign-number")
 async def assign_number(
     request: Request,
     event_id: str,
-    registration_id: UUID,
+    registration_id: str,
     repo: RegistrationRepo,
     reg_service: RegistrationService,
     event_stats_service: EventStatsService,
