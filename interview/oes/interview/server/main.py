@@ -21,6 +21,7 @@ def main():
     os.execlp(
         "sanic",
         "oes-interview-service",
+        "--single-process",
         "oes.interview.server.main:create_app",
         *sys.argv[1:]
     )

@@ -26,7 +26,13 @@ WorkerManager.THRESHOLD = 1200  # type: ignore
 
 def main():
     """CLI wrapper."""
-    os.execlp("sanic", "oes-cart-service", "oes.cart.main.create_app", *sys.argv[1:])
+    os.execlp(
+        "sanic",
+        "oes-cart-service",
+        "--single-process",
+        "oes.cart.main.create_app",
+        *sys.argv[1:]
+    )
 
 
 def create_app() -> Sanic:
