@@ -19,6 +19,7 @@ class Config:
         default="amqp://guest:guest@localhost/", help="the AMQP server URL"
     )
     disable_auth: bool = ts.option(default=False, help="disable auth")
+    allowed_origins: list[str] = ts.option(factory=list, help="list of allowed origins")
 
 
 def get_config() -> Config:

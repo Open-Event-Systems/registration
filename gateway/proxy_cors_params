@@ -1,4 +1,4 @@
-auth_request /auth/validate;
+auth_request /auth/cors;
 auth_request_set $auth_account_id $upstream_http_x_account_id;
 auth_request_set $auth_email $upstream_http_x_email;
 auth_request_set $cors_origin $upstream_http_access_control_allow_origin;

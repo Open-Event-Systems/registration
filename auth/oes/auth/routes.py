@@ -52,7 +52,8 @@ async def validate_token(
         return HTTPResponse(status=204)
 
     # return 204 for options
-    if request.headers.get("x-original-method", "") == "OPTIONS":
+    orig_method = request.headers.get("x-original-method", "")
+    if orig_method == "OPTIONS":
         return HTTPResponse(status=204)
 
     orig_uri = request.headers.get("x-original-uri", "")
@@ -69,12 +70,18 @@ async def validate_token(
 
     response_headers["x-scope"] = list(token.scope)
 
-    allowed = await is_allowed(request.method, orig_uri, token.scope)
+    allowed = await is_allowed(orig_method, orig_uri, token.scope)
 
     if not allowed:
         raise Forbidden
 
     return HTTPResponse(status=204, headers=response_headers)
+
+
+@routes.get("/auth/cors")
+async def cors(request: Request) -> HTTPResponse:
+    """No-op endpoint to provide CORS headers."""
+    return HTTPResponse(status=204)
 
 
 @routes.get("/auth/info")

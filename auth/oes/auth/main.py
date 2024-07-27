@@ -12,6 +12,7 @@ from oes.auth.token import RefreshTokenRepo
 from oes.utils.sanic import setup_app, setup_database
 from sanic import Sanic
 from sanic.worker.manager import WorkerManager
+from sanic_ext import Extend
 
 WorkerManager.THRESHOLD = 1200  # type: ignore
 
@@ -33,8 +34,10 @@ def create_app() -> Sanic:
 
     config = get_config()
 
-    app = Sanic("Auth")
+    app = Sanic("Auth", configure_logging=False)
     app.config.PROXIES_COUNT = 1
+    app.config.CORS_ORIGINS = config.allowed_origins
+    Extend(app)
     setup_app(app, config)
     setup_database(app, config.db_url)
 
