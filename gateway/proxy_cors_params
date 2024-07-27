@@ -6,3 +6,6 @@ proxy_set_header x-account-id $auth_account_id;
 proxy_set_header x-email $auth_email;
 proxy_set_header x-original-uri $request_uri;
 add_header access-control-allow-origin $cors_origin always;
+add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
+add_header Access-Control-Allow-Methods "HEAD, OPTIONS, GET, PUT, POST, DELETE" always;
+add_header Access-Control-Max-Age 3600;
