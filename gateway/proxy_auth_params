@@ -3,3 +3,4 @@ auth_request_set $auth_account_id $upstream_http_x_account_id;
 auth_request_set $auth_email $upstream_http_x_email;
 proxy_set_header x-account-id $auth_account_id;
 proxy_set_header x-email $auth_email;
+proxy_set_header x-original-uri $request_uri;
