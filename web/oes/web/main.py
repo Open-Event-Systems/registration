@@ -30,6 +30,7 @@ def create_app() -> Sanic:
 
     config = get_config()
     app = Sanic("Web", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
     setup_logging()
 
     configure_converter(response_converter.converter)

@@ -27,7 +27,8 @@ def create_app() -> Sanic:
     from oes.payment.routes import response_converter, routes
 
     config = get_config()
-    app = Sanic("Payment")
+    app = Sanic("Payment", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
 
     configure_converter(response_converter.converter)
 

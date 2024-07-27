@@ -28,6 +28,7 @@ def create_app() -> Sanic:
     config = get_config()
 
     app = Sanic("Auth")
+    app.config.PROXIES_COUNT = 1
     setup_app(app, config)
     setup_database(app, config.db_url)
 

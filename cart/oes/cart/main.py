@@ -34,7 +34,8 @@ def create_app() -> Sanic:
     uvloop.install()
 
     config = get_config()
-    app = Sanic("Cart")
+    app = Sanic("Cart", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
 
     configure_converter(response_converter.converter)
     response_converter.converter.register_unstructure_hook(

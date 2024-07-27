@@ -29,6 +29,7 @@ def main():
 def create_app():
     """Main app."""
     app = Sanic("Interview", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
     config = get_config()
     setup_logging()
 
