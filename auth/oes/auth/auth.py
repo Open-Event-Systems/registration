@@ -26,6 +26,9 @@ class Scope(str, Enum):
 
     selfservice = "self-service"
     cart = "cart"
+    registration = "registration"
+    registration_write = "registration:write"
+    admin = "admin"
 
 
 Scopes: TypeAlias = frozenset[str]

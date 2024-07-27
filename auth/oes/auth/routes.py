@@ -10,6 +10,7 @@ from oes.auth.auth import AuthRepo, AuthService, Scope
 from oes.auth.config import Config
 from oes.auth.email import EmailAuthService
 from oes.auth.mq import MQService
+from oes.auth.policy import is_allowed
 from oes.auth.service import AccessTokenService, RefreshTokenService
 from oes.auth.token import AccessToken, RefreshToken, RefreshTokenRepo, TokenError
 from oes.utils.orm import transaction
@@ -54,6 +55,8 @@ async def validate_token(
     if request.headers.get("x-original-method", "") == "OPTIONS":
         return HTTPResponse(status=204)
 
+    orig_uri = request.headers.get("x-original-uri", "")
+
     token = _validate_token(request, access_token_service)
 
     response_headers = {}
@@ -65,6 +68,11 @@ async def validate_token(
         response_headers["x-email"] = token.email
 
     response_headers["x-scope"] = list(token.scope)
+
+    allowed = await is_allowed(request.method, orig_uri, token.scope)
+
+    if not allowed:
+        raise Forbidden
 
     return HTTPResponse(status=204, headers=response_headers)
 
