@@ -199,7 +199,9 @@ class SelectFieldTemplateBase(FieldTemplateBase, ABC):
 
     def validate_type(self, value: object) -> Any | None:
         if self.multi:
-            if (
+            if value is None:
+                return []
+            elif (
                 not isinstance(value, Sequence)
                 or isinstance(value, str)
                 or any(not isinstance(v, str) for v in value)
