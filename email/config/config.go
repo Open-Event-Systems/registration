@@ -10,6 +10,7 @@ type Config struct {
 	AMQP_URL     string                   `yaml:"amqp_url"`
 	TemplatePath string                   `yaml:"template_path"`
 	From         string                   `yaml:"email_from"`
+	SMTPFrom     string                   `yaml:"smtp_from"`
 	Use          string                   `yaml:"use"`
 	SMTPConfig   SMTPConfig               `yaml:"smtp"`
 	Messages     map[string]MessageConfig `yaml:"messages"`
@@ -25,6 +26,7 @@ type SMTPConfig struct {
 
 type MessageConfig struct {
 	From    string `yaml:"email_from"`
+	SMTPFrom    string `yaml:"smtp_from"`
 	Subject string `yaml:"subject"`
 }
 

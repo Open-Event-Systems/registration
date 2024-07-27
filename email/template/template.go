@@ -22,10 +22,11 @@ type TemplateEnvironment struct {
 }
 
 type TemplateInput struct {
-	To      string
-	From    string
-	Subject string
-	Data    map[string]interface{}
+	To       string
+	From     string
+	SMTPFrom string
+	Subject  string
+	Data     map[string]interface{}
 }
 
 type TemplateResult struct {
@@ -50,6 +51,7 @@ func (env *TemplateEnvironment) Render(name string, input *TemplateInput) *Templ
 	emailData := map[string]interface{}{
 		"to":      input.To,
 		"from":    input.From,
+		"smtp_from": input.SMTPFrom,
 		"subject": input.Subject,
 	}
 	ctx := exec.NewContext(input.Data)
@@ -110,13 +112,13 @@ func processHTML(htmlStr string) string {
 
 	m := minify.New()
 	htmlMinifier := &html.Minifier{
-		KeepComments: false,
+		KeepComments:        false,
 		KeepSpecialComments: false,
 		KeepDefaultAttrVals: true,
-		KeepDocumentTags: true,
-		KeepEndTags: true,
-		KeepQuotes: true,
-		KeepWhitespace: false,
+		KeepDocumentTags:    true,
+		KeepEndTags:         true,
+		KeepQuotes:          true,
+		KeepWhitespace:      false,
 	}
 	m.AddFunc("text/html", htmlMinifier.Minify)
 

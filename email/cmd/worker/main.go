@@ -170,10 +170,15 @@ func sendMessage(emailType string, config *config.Config, msgCfg *config.Message
 		tmplInput.From = config.From
 	}
 
+	if tmplInput.SMTPFrom == "" {
+		tmplInput.SMTPFrom = config.SMTPFrom
+	}
+
 	result := env.Render(emailType, tmplInput)
 
 	email := &email.Email{
 		From:        tmplInput.From,
+		SMTPFrom:    tmplInput.SMTPFrom,
 		To:          tmplInput.To,
 		Subject:     tmplInput.Subject,
 		Attachments: result.Attachments.Attachments,

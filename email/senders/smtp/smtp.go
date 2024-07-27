@@ -49,9 +49,17 @@ func (s *smtpSender) Send(email *email.Email) error {
 		}
 	}
 
+	var smtpfrom string
+
+	if email.SMTPFrom != "" {
+		smtpfrom = email.SMTPFrom
+	} else {
+		smtpfrom = email.From
+	}
+
 	msg := createMessage(email)
 	msgReader := bytes.NewBuffer(msg)
-	err = client.SendMail(email.From, []string{email.To}, msgReader)
+	err = client.SendMail(smtpfrom, []string{email.To}, msgReader)
 	if err != nil {
 		return err
 	}
@@ -62,7 +70,15 @@ func createMessage(email *email.Email) []byte {
 	buf := bytes.Buffer{}
 	writer := multipart.NewWriter(&buf)
 
-	buf.WriteString(fmt.Sprintf("From: %s\r\n", email.From))
+	var msgfrom string
+
+	if email.From != "" {
+		msgfrom = email.From
+	} else {
+		msgfrom = email.SMTPFrom
+	}
+
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", msgfrom))
 	buf.WriteString(fmt.Sprintf("To: %s\r\n", email.To))
 	if email.Subject != "" {
 		buf.WriteString(fmt.Sprintf("Subject: %s\r\n", email.Subject))

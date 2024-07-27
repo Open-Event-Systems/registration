@@ -6,6 +6,7 @@ import (
 
 type Email struct {
 	From        string
+	SMTPFrom	string
 	To          string
 	Subject     string
 	Attachments []template.Attachment

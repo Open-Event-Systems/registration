@@ -8,6 +8,9 @@ amqp_url: amqp://guest:guest@localhost/
 # the default From address
 email_from: from@example.net
 
+# the default From header
+smtp_from: From <from@example.net>
+
 # What to use to send mail: mock | smtp
 use: mock
 
@@ -29,3 +32,4 @@ messages:
   auth:
     subject: Verify Your Email
     email_from: from@example.net
+    smtp_from: From <from@example.net>
