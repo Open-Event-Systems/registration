@@ -8,7 +8,7 @@ RUN go build ./cmd/pricing
 
 
 FROM alpine:3.20.0
-RUN apk add curl
+RUN apk add curl python3
 RUN adduser -D app \
     && mkdir -p /config/scripts
 COPY scripts/healthcheck.sh /
