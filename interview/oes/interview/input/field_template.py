@@ -103,7 +103,7 @@ class SelectFieldTemplateBase(FieldTemplateBase, ABC):
         return {
             self.get_option_id(idx, opt): opt
             for idx, opt in with_idx
-            if evaluate(opt, context)
+            if evaluate(opt.when, context)
         }
 
     def get_option_id(self, index: int, option: SelectFieldOptionBase) -> str:
