@@ -18,6 +18,7 @@ from oes.utils.template import (
     Expression,
     Template,
     TemplateContext,
+    make_expression_structure_fn,
     make_template_structure_fn,
 )
 
@@ -95,7 +96,7 @@ class Config:
 
 _converter = ts.converters.get_default_cattrs_converter()
 _converter.register_structure_hook(Template, make_template_structure_fn(jinja2_env))
-_converter.register_structure_hook(Expression, make_template_structure_fn(jinja2_env))
+_converter.register_structure_hook(Expression, make_expression_structure_fn(jinja2_env))
 _converter.register_structure_hook(
     WhenCondition, make_when_condition_structure_fn(_converter)
 )
