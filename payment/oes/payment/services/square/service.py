@@ -503,4 +503,6 @@ def make_square_payment_service(
         access_token=square_config.access_token,
         location_id=square_config.location_id,
         sandbox=square_config.sandbox,
+        item_map=square_config.item_map,
+        modifier_map=square_config.modifier_map,
     )
