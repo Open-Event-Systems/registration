@@ -215,7 +215,7 @@ def _make_token_response(
     resp_data = {
         "access_token": access_token.encode(key=config.token_secret),
         "token_type": "Bearer",
-        "scope": str(access_token.scope),
+        "scope": " ".join(access_token.scope),
         "account_id": access_token.acc,
         "email": access_token.email,
         "expires_in": int((access_token.exp - iat).total_seconds()),
