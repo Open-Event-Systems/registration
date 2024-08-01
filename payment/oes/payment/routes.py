@@ -186,7 +186,8 @@ async def update_payment(
 
 async def _send_receipt(message_queue: MQService, payment: Payment):
     if _should_send_receipt(payment.pricing_result):
-        for email in _get_emails(payment.cart_data):
+        email_set = set(_get_emails(payment.cart_data))
+        for email in email_set:
             await message_queue.publish(
                 "email.receipt",
                 {
