@@ -1,10 +1,11 @@
 """Access code module."""
 
 import secrets
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import datetime
+from typing import Any
 
-from attrs import frozen
+from attrs import field, frozen
 from cattrs.preconf.orjson import make_converter
 from oes.registration.orm import Base
 from oes.utils.orm import JSON, AsyncSession, Repo
@@ -22,6 +23,8 @@ class InterviewOption:
 
     id: str
     title: str | None = None
+    context: Mapping[str, Any] = field(factory=dict)
+    initial_data: Mapping[str, Any] = field(factory=dict)
 
 
 @frozen
