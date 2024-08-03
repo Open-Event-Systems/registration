@@ -193,8 +193,23 @@ async def start_interview(
     )
     target_url = request.url_for("selfservice.add_to_cart")
 
+    access_code_interview = _get_access_code_interview(
+        access_code_data, reg, interview_id
+    )
+    context, initial_data = _get_access_code_initial_data(
+        access_code, access_code_interview
+    )
+
     interview = await interview_service.start_interview(
-        event, interview_id, cart_id, target_url, account_id, email, reg, access_code
+        event,
+        interview_id,
+        cart_id,
+        target_url,
+        account_id,
+        email,
+        reg,
+        context,
+        initial_data,
     )
     return json({**interview, "update_url": update_url})
 
@@ -289,3 +304,31 @@ async def _check_access_code_use(
     if code is None:
         raise Conflict
     return code
+
+
+def _get_access_code_initial_data(
+    access_code: str | None,
+    interview_options: Mapping[str, Any] | None,
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    context = interview_options.get("context", {}) if interview_options else {}
+    if access_code:
+        context["access_code"] = access_code
+    initial_data = (
+        interview_options.get("initial_data", {}) if interview_options else {}
+    )
+    return context, initial_data
+
+
+def _get_access_code_interview(
+    access_code_data: Mapping[str, Any] | None,
+    reg: Mapping[str, Any] | None,
+    interview_id: str,
+) -> Mapping[str, Any] | None:
+    options = access_code_data.get("options", {}) if access_code_data else {}
+    interview_options = options.get(
+        "add_options" if reg is None else "change_options", []
+    )
+    by_id = next(
+        (opt for opt in interview_options if opt.get("id") == interview_id), None
+    )
+    return by_id

@@ -10,6 +10,7 @@ from attrs import evolve, field, fields, frozen
 from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
+from oes.utils.mapping import merge_mapping
 from oes.web.config import Config, Event
 
 _T = TypeVar("_T")
@@ -72,7 +73,8 @@ class InterviewService:
         account_id: str | None,
         email: str | None,
         registration: Mapping[str, Any] | None,
-        access_code: str | None,
+        context: Mapping[str, Any] | None,
+        initial_data: Mapping[str, Any] | None,
     ) -> Mapping[str, Any]:
         """Start an interview."""
         if registration is None:
@@ -84,20 +86,29 @@ class InterviewService:
                 "account_id": account_id,
             }
 
-        url = f"{self.config.interview_service_url}/interviews/{interview_id}"
-        body = {
-            "context": {
+        full_context = merge_mapping(
+            {
                 "event": event.get_template_context(),
                 "event_id": event.id,
                 "interview_id": interview_id,
                 "cart_id": cart_id,
-                "access_code": access_code,
                 "email": email,
             },
-            "data": {
+            context if context is not None else {},
+        )
+
+        full_data = merge_mapping(
+            {
                 "registration": registration,
                 "meta": {},
             },
+            initial_data if initial_data is not None else {},
+        )
+
+        url = f"{self.config.interview_service_url}/interviews/{interview_id}"
+        body = {
+            "context": full_context,
+            "data": full_data,
             "target": target,
         }
 
