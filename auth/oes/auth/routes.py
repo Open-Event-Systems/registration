@@ -8,6 +8,7 @@ from attrs import frozen
 from email_validator import EmailNotValidError, validate_email
 from oes.auth.auth import AuthRepo, AuthService, Scope
 from oes.auth.config import Config
+from oes.auth.device import DeviceAuthOptions, DeviceAuthService
 from oes.auth.email import EmailAuthService
 from oes.auth.mq import MQService
 from oes.auth.policy import is_allowed
@@ -16,7 +17,8 @@ from oes.auth.token import AccessToken, RefreshToken, RefreshTokenRepo, TokenErr
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
 from sanic import Blueprint, Forbidden, HTTPResponse, Request, Unauthorized, json
-from sanic.exceptions import HTTPException
+from sanic.exceptions import HTTPException, NotFound
+from sanic.request import RequestParameters
 
 routes = Blueprint("auth")
 
@@ -34,6 +36,21 @@ class CompleteEmailAuthRequest:
 
     email: str
     code: str
+
+
+@frozen
+class CheckDeviceAuthRequest:
+    """Check device auth request body."""
+
+    user_code: str
+
+
+@frozen
+class AuthorizeDeviceRequest:
+    """Authorize device request body."""
+
+    user_code: str
+    options: DeviceAuthOptions = DeviceAuthOptions()
 
 
 class UnprocessableEntity(HTTPException):
@@ -119,20 +136,37 @@ async def create_auth(
 
 
 @routes.post("/auth/token")
-async def refresh_token(
+async def token_endpoint(
     request: Request,
     refresh_token_service: RefreshTokenService,
+    device_auth_service: DeviceAuthService,
     config: Config,
 ) -> HTTPResponse:
-    """Create a new refresh token."""
+    """Token endpoint."""
     form = request.form
     if not form:
         raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
 
     grant_type = form.get("grant_type")
+    response_type = form.get("response_type")
     refresh_token_str = form.get("refresh_token")
 
-    if grant_type != "refresh_token" or not refresh_token_str:
+    if response_type == "device_code":
+        return await _start_device_auth(device_auth_service)
+    elif grant_type == "refresh_token":
+        return await _refresh_token(refresh_token_str, refresh_token_service, config)
+    elif grant_type == "device_code":
+        return await _complete_device_auth(form, device_auth_service, config)
+    else:
+        raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
+
+
+async def _refresh_token(
+    refresh_token_str: str | None,
+    refresh_token_service: RefreshTokenService,
+    config: Config,
+) -> HTTPResponse:
+    if not refresh_token_str:
         raise Unauthorized(headers={"WWW-Authenticate": 'Bearer realm="OES"'})
 
     async with transaction():
@@ -196,6 +230,78 @@ async def complete_email_auth(
         refresh_token = await refresh_token_service.create(auth)
         access_token = refresh_token.make_access_token(now=refresh_token.date_created)
         return _make_token_response(access_token, refresh_token, config)
+
+
+@routes.post("/auth/device/check")
+async def check_device_auth(
+    request: Request,
+    device_auth_service: DeviceAuthService,
+    access_token_service: AccessTokenService,
+    body: CattrsBody,
+) -> HTTPResponse:
+    """Check device auth user code."""
+    _validate_token(request, access_token_service)
+    req = await body(CheckDeviceAuthRequest)
+
+    if await device_auth_service.check_auth(req.user_code):
+        return HTTPResponse(status=204)
+    else:
+        raise NotFound
+
+
+@routes.post("/auth/device/authorize")
+async def authorize_device(
+    request: Request,
+    device_auth_service: DeviceAuthService,
+    access_token_service: AccessTokenService,
+    body: CattrsBody,
+) -> HTTPResponse:
+    """Authorize a device."""
+    token = _validate_token(request, access_token_service)
+    req = await body(AuthorizeDeviceRequest)
+
+    async with transaction():
+        res = await device_auth_service.authorize(req.user_code, token.sub, req.options)
+    if res is None:
+        raise NotFound
+    elif res is False:
+        raise Forbidden
+    else:
+        return HTTPResponse(status=204)
+
+
+async def _start_device_auth(
+    service: DeviceAuthService,
+) -> HTTPResponse:
+    """Start device auth."""
+    async with transaction():
+        auth = await service.create_auth()
+    return json(
+        {
+            "user_code": auth.user_code,
+            "device_code": auth.device_code,
+        }
+    )
+
+
+async def _complete_device_auth(
+    form: RequestParameters,
+    service: DeviceAuthService,
+    config: Config,
+) -> HTTPResponse:
+    """Complete device auth."""
+    device_code = form.get("code") or ""
+
+    async with transaction():
+        res = await service.complete_auth(device_code)
+
+    if res is None:
+        return json({"error": "access_denied"}, status=400)
+    elif res is False:
+        return json({"error": "authorization_pending"}, status=400)
+    else:
+        access_token = res.make_access_token()
+        return _make_token_response(access_token, res, config)
 
 
 def _validate_token(

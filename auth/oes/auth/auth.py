@@ -28,6 +28,7 @@ class Scope(str, Enum):
     cart = "cart"
     registration = "registration"
     registration_write = "registration:write"
+    set_email = "set-email"
     admin = "admin"
 
 
