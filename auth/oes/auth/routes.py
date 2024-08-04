@@ -85,6 +85,9 @@ async def validate_token(
     if token.email:
         response_headers["x-email"] = token.email
 
+    if token.role:
+        response_headers["x-role"] = token.role
+
     response_headers["x-scope"] = list(token.scope)
 
     allowed = await is_allowed(orig_method, orig_uri, token.scope)
