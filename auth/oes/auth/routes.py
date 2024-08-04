@@ -240,11 +240,19 @@ async def check_device_auth(
     body: CattrsBody,
 ) -> HTTPResponse:
     """Check device auth user code."""
-    _validate_token(request, access_token_service)
+    token = _validate_token(request, access_token_service)
     req = await body(CheckDeviceAuthRequest)
 
-    if await device_auth_service.check_auth(req.user_code):
-        return HTTPResponse(status=204)
+    res = await device_auth_service.check_auth(token.sub, req.user_code)
+    if res is not None:
+        return json(
+            {
+                "roles": {
+                    r: {"title": cfg.title, "scope": list(cfg.scope)}
+                    for r, cfg in res.items()
+                }
+            }
+        )
     else:
         raise NotFound
 

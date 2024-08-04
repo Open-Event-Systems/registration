@@ -1,12 +1,14 @@
 """Device auth module."""
 
 import secrets
+from collections.abc import Mapping
 from datetime import datetime, timedelta
 from typing import Literal
 
 import nanoid
 from attrs import frozen
 from oes.auth.auth import Authorization, AuthRepo, Scope, Scopes
+from oes.auth.config import Config, RoleConfig
 from oes.auth.orm import Base
 from oes.auth.service import RefreshTokenService
 from oes.auth.token import RefreshToken
@@ -30,6 +32,7 @@ EXPIRATION_TIME = timedelta(minutes=5)
 class DeviceAuthOptions:
     """Device auth authorization options."""
 
+    role: str | None = None
     email: str | None = None
     anonymous: bool = False
     scope: Scopes | None = None
@@ -92,11 +95,13 @@ class DeviceAuthService:
         repo: DeviceAuthRepo,
         auth_repo: AuthRepo,
         refresh_token_service: RefreshTokenService,
+        config: Config,
     ):
         self.db = db
         self.repo = repo
         self.auth_repo = auth_repo
         self.refresh_token_service = refresh_token_service
+        self.config = config
 
     async def create_auth(self) -> DeviceAuth:
         """Create a device auth entity."""
@@ -104,13 +109,28 @@ class DeviceAuthService:
         self.repo.add(entity)
         return entity
 
-    async def check_auth(self, user_code: str) -> bool:
+    async def check_auth(
+        self, parent_auth_id: str, user_code: str
+    ) -> Mapping[str, RoleConfig] | None:
         """Check a user code."""
+        parent_auth = await self.auth_repo.get(parent_auth_id)
+        if not parent_auth or not parent_auth.get_is_valid():
+            return None
+
         entity = await self.repo.get_by_user_code(user_code)
         if entity is None or not entity.get_is_valid():
-            return False
+            return None
         await self.db.refresh(entity, ("authorization",))
-        return entity.authorization is None
+        if entity.authorization is not None:
+            return None
+        if Scope.set_role not in parent_auth.scope:
+            return {}
+
+        return {
+            r: cfg
+            for r, cfg in self.config.roles.items()
+            if cfg.can_use(parent_auth.scope)
+        }
 
     async def authorize(  # noqa: CCR001
         self, user_code: str, parent_auth_id: str, options: DeviceAuthOptions
@@ -142,6 +162,16 @@ class DeviceAuthService:
                 params["email"] = None
             elif options.email:
                 params["email"] = options.email
+
+        if Scope.set_role in parent_auth.scope:
+            if options.role:
+                role_cfg = self.config.roles.get(options.role)
+                if role_cfg and role_cfg.can_use(parent_auth.scope):
+                    params["role"] = options.role
+                else:
+                    params["role"] = None
+            else:
+                params["role"] = None
 
         child = parent_auth.create_child(
             scope=options.scope if options.scope is not None else parent_auth.scope,
