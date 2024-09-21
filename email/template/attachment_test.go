@@ -44,6 +44,43 @@ SGVsbG8sIHdvcmxkIQ==
 	}
 }
 
+func TestAttachmentWrap(t *testing.T) {
+	att := Attachment{
+		Id:             "1",
+		Name:           "test.txt",
+		AttachmentType: AttachmentTypeInline,
+		MediaType:      "text/plain",
+		Data:           []byte(strings.Repeat("x", 80)),
+	}
+	var buf bytes.Buffer
+	mpWriter := multipart.NewWriter(&buf)
+	err := att.MakeMIMEPart(mpWriter)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mpWriter.Close()
+
+	res := buf.String()
+
+	expected := fmt.Sprintf(`--%s
+Content-Disposition: inline; filename="test.txt"
+Content-Id: <1>
+Content-Transfer-Encoding: base64
+Content-Type: text/plain
+
+eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4
+eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHg=
+--%s--
+`, mpWriter.Boundary(), mpWriter.Boundary())
+
+	expected = strings.ReplaceAll(expected, "\n", "\r\n")
+
+	if res != expected {
+		t.Fatalf("expected %s, got %s", expected, res)
+	}
+}
+
 func TestAttach(t *testing.T) {
 	atts := Attachments{}
 	attId, err := atts.AddAttachment(AttachmentTypeInline, ".", "test.gif")
