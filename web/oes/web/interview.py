@@ -99,7 +99,10 @@ class InterviewService:
 
         full_data = merge_mapping(
             {
-                "registration": registration,
+                "registration": {
+                    **registration,
+                    "account_id": account_id or registration.get("account_id"),
+                },
                 "meta": {},
             },
             initial_data if initial_data is not None else {},
