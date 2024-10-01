@@ -21,6 +21,8 @@ async def is_allowed(method: str, url: str, scope: Scopes) -> bool:  # noqa: CCR
             return await _check_registration_routes(method, scope)
         elif parts[2] == "access-codes" and len(parts) >= 5 and parts[4] == "check":
             return method in ("GET", "HEAD", "OPTIONS") and Scope.selfservice in scope
+        elif parts[2] == "access-codes" and len(parts) == 3:
+            return method == "POST" and Scope.admin in scope
 
     # /carts/<cart_id>
     elif len(parts) >= 2 and parts[0] == "carts":  # noqa: SIM114
