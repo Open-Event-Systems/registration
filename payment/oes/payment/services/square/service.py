@@ -423,6 +423,7 @@ def _build_discount(
     uid = nanoid.generate(size=14)
     discount = CreateOrderLineItemDiscount(
         uid=uid,
+        name=modifier.name,
         type=OrderLineItemDiscountType.fixed_amount,
         scope=OrderLineItemDiscountScope.line_item,
         amount_money=Money(
