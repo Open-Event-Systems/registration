@@ -9,7 +9,7 @@ from loguru import logger
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.template import TemplateContext
 from oes.web.cart import CartService
-from oes.web.config import Config, Event, InterviewOption, RegistrationDisplay
+from oes.web.config import Config, ConfigInterviewOption, Event, RegistrationDisplay
 from oes.web.interview import InterviewService
 from oes.web.registration import AddRegistrationError, RegistrationService, add_to_cart
 from oes.web.routes.common import Conflict, response_converter
@@ -45,7 +45,7 @@ class SelfServiceRegistration:
         cls,
         display: RegistrationDisplay,
         event_ctx: TemplateContext,
-        change_opts: Sequence[InterviewOption],
+        change_opts: Sequence[ConfigInterviewOption],
         registration: Mapping[str, Any],
     ) -> Self:
         """Create from a registration object."""
@@ -93,7 +93,9 @@ class SelfServiceAddToCartRequest:
 async def list_selfservice_events(request: Request, config: Config) -> list[Event]:
     """List self-service events."""
     return sorted(
-        (e for e in config.events if e.visible), key=lambda e: e.date, reverse=True
+        (e for e in config.events.values() if e.visible),
+        key=lambda e: e.date,
+        reverse=True,
     )
 
 
@@ -103,11 +105,11 @@ async def list_selfservice_events(request: Request, config: Config) -> list[Even
 )
 @response_converter
 async def list_selfservice_registrations(
-    request: Request, event_id: str, service: RegistrationService
+    request: Request, event_id: str, service: RegistrationService, config: Config
 ) -> SelfServiceRegistrationsResponse:
     """List self-service registrations."""
     # TODO: should include cart ID
-    event = raise_not_found(service.get_event(event_id))
+    event = raise_not_found(config.get_event(event_id))
     if not event.visible:
         raise NotFound
 
@@ -129,7 +131,7 @@ async def list_selfservice_registrations(
         change_opts = list(service.get_change_options(event, reg, access_code))
         results.append(
             SelfServiceRegistration.from_registration(
-                event.registration_display, event_ctx, change_opts, reg
+                event.self_service.display, event_ctx, change_opts, reg
             )
         )
 
@@ -150,9 +152,10 @@ async def start_interview(
     reg_service: RegistrationService,
     interview_service: InterviewService,
     cart_service: CartService,
+    config: Config,
 ) -> HTTPResponse:
     """Start an interview to add a registration to a cart."""
-    event = raise_not_found(reg_service.get_event(event_id))
+    event = raise_not_found(config.get_event(event_id))
     if not event.visible:
         raise NotFound
     elif not event.open:
@@ -221,6 +224,7 @@ async def self_service_add_to_cart(
     interview_service: InterviewService,
     cart_service: CartService,
     registration_service: RegistrationService,
+    config: Config,
 ) -> HTTPResponse:
     """Add a change to a cart via interview state."""
     req = await body(SelfServiceAddToCartRequest)
@@ -236,7 +240,7 @@ async def self_service_add_to_cart(
 
     try:
         result = await add_to_cart(
-            completed_interview, registration_service, cart_service
+            completed_interview, registration_service, cart_service, config
         )
     except AddRegistrationError as e:
         logger.error(f"Cannot add to cart: {e}")

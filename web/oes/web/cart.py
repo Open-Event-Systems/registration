@@ -5,6 +5,8 @@ from typing import Any
 
 import httpx
 from oes.web.config import Config
+from oes.web.registration2 import make_placeholder_registration, make_registration
+from oes.web.types import JSON, Registration
 
 
 class CartService:
@@ -42,3 +44,17 @@ class CartService:
         )
         res.raise_for_status()
         return res.json()
+
+
+def make_cart_registration(
+    old: Registration | None,
+    new: Registration,
+    meta: JSON | None,
+) -> JSON:
+    """Make a cart registration entry."""
+    return {
+        "id": new.id,
+        "old": dict(old if old is not None else make_placeholder_registration(new)),
+        "new": dict(new),
+        "meta": meta or {},
+    }
