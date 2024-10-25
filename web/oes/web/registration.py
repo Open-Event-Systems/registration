@@ -34,11 +34,6 @@ class RegistrationService:
     def __init__(self, config: Config, client: httpx.AsyncClient):
         self.config = config
         self.client = client
-        self._events_by_id = {e.id: e for e in self.config.events}
-
-    def get_event(self, event_id: str) -> Event | None:
-        """Get an event by ID."""
-        return self._events_by_id.get(event_id)
 
     async def get_registrations(
         self,
@@ -88,7 +83,7 @@ class RegistrationService:
         ctx = {
             "event": event.get_template_context(),
         }
-        for opt in event.add_options:
+        for opt in event.self_service.add_options:
             if evaluate(opt.when, ctx):
                 yield opt
 
@@ -109,7 +104,7 @@ class RegistrationService:
             "event": event.get_template_context(),
             "registration": registration,
         }
-        for opt in event.change_options:
+        for opt in event.self_service.change_options:
             if evaluate(opt.when, ctx):
                 yield opt
 
@@ -225,7 +220,7 @@ async def add_to_cart(  # noqa: CCR001
     cart_service: CartService,
 ) -> Mapping[str, Any]:
     """Add a completed interview to a cart."""
-    event = registration_service.get_event(completed_interview.event_id)
+    event = registration_service.config.events.get(completed_interview.event_id)
     if not event or not event.visible or not event.open:
         raise AddRegistrationError(f"Event not valid: {completed_interview.event_id}")
 
