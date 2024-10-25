@@ -32,11 +32,15 @@ async def add_to_cart_from_interview(
     if interview.target != request.url:
         raise NotFound
 
+    # TODO: check access code
+
     cart = raise_not_found(await cart_service.get_cart(cart_id))
 
     int_regs = get_interview_registrations(interview)
     cur_regs = await _get_registrations(
-        registration_service, cart["event_id"], (i.registration.id for i in int_regs)
+        registration_service,
+        cart["cart"]["event_id"],
+        (i.registration.id for i in int_regs),
     )
     cart_regs = [
         make_cart_registration(cur_regs.get(r.registration.id), r.registration, r.meta)

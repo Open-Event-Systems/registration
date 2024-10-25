@@ -30,9 +30,11 @@ def main():
 def create_app() -> Sanic:
     """Main app factory."""
     from oes.web.interview import InterviewService
+    from oes.web.interview2 import InterviewService as InterviewService2
     from oes.web.payment import PaymentService
     from oes.web.registration import RegistrationService
-    from oes.web.routes import event, payment, selfservice
+    from oes.web.registration2 import RegistrationService as RegistrationService2
+    from oes.web.routes import cart, event, payment, selfservice
 
     config = get_config()
     app = Sanic("Web", configure_logging=False)
@@ -52,13 +54,16 @@ def create_app() -> Sanic:
     setup_app(app, config, response_converter.converter)
 
     app.blueprint(event.routes)
+    app.blueprint(cart.routes)
     app.blueprint(payment.routes)
     app.blueprint(selfservice.routes)
 
     app.ctx.config = config
     app.ext.dependency(config)
     app.ext.add_dependency(RegistrationService)
+    app.ext.add_dependency(RegistrationService2)
     app.ext.add_dependency(InterviewService)
+    app.ext.add_dependency(InterviewService2)
     app.ext.add_dependency(CartService)
     app.ext.add_dependency(PaymentService)
 

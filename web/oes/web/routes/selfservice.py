@@ -194,7 +194,7 @@ async def start_interview(
     update_url = urlunparse(
         (request.scheme, request.host, "/update-interview", None, None, None)
     )
-    target_url = request.url_for("selfservice.add_to_cart")
+    target_url = request.url_for("carts.add_to_cart_from_interview", cart_id=cart_id)
 
     access_code_interview = _get_access_code_interview(
         access_code_data, reg, interview_id

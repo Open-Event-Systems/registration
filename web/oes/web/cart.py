@@ -4,6 +4,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 import httpx
+import orjson
 from oes.web.config import Config
 from oes.web.registration2 import make_placeholder_registration, make_registration
 from oes.web.types import JSON, Registration
@@ -39,8 +40,11 @@ class CartService:
     ) -> Mapping[str, Any]:
         """Add a registration to a cart."""
         body = {"registrations": cart_registrations}
+        body_bytes = orjson.dumps(body)
         res = await self.client.post(
-            f"{self.config.cart_service_url}/carts/{cart_id}/registrations", json=body
+            f"{self.config.cart_service_url}/carts/{cart_id}/registrations",
+            content=body_bytes,
+            headers={"Content-Type": "application/json"},
         )
         res.raise_for_status()
         return res.json()

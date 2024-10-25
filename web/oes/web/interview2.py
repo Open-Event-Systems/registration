@@ -28,7 +28,6 @@ class CompletedInterview:
 
     date_started: datetime
     date_expires: datetime
-    interview_id: str  # TODO: add at interview service
     target: str
     context: JSON
     data: JSON
@@ -40,7 +39,7 @@ class InterviewState:
 
     state: str
     completed: bool
-    update_url: str | None = None
+    target: str
     content: JSON | None = None
 
 
