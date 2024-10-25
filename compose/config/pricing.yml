@@ -14,7 +14,7 @@ events:
             amount: -1000
             when: registration.new.early_bird == true
         when:
-          - '"basic" not in registration.old.options'
+          - '"basic" not in registration.old.options | default([])'
           - '"basic" in registration.new.options'
 
       - id: sponsor
@@ -22,5 +22,5 @@ events:
         description: Sponsor level upgrade.
         price: 2500
         when:
-          - '"sponsor" not in registration.old.options'
+          - '"sponsor" not in registration.old.options | default([])'
           - '"sponsor" in registration.new.options'
