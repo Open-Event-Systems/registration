@@ -2,13 +2,15 @@
 
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, Literal, Union
+from typing import Any, Literal, Union, cast
 
 from attrs import field, frozen
 from immutabledict import immutabledict
 from oes.interview.input.question import ValidationError
 from oes.interview.interview.interview import Interview, make_interview_context
 from oes.interview.interview.state import InterviewState, ParentInterviewContext
+from oes.interview.interview.step_types.ask import AskResult
+from oes.interview.interview.step_types.exit import ExitResult
 from oes.interview.interview.update import update_interview
 from oes.interview.storage import StorageService
 from oes.utils.request import BadRequest, CattrsBody, raise_not_found
@@ -53,12 +55,12 @@ class IncompleteInterviewResponse:
     state: str
     completed: Literal[False]
     target: str
-    content: object | None = None
+    content: AskResult | ExitResult | None = None
 
 
 @frozen
 class CompleteInterviewResponse:
-    """Completed interview response."""
+    """Completed response body."""
 
     state: str
     completed: Literal[True]
@@ -102,7 +104,6 @@ async def start_interview(
         interview.questions, interview.steps, state, interviews
     )
     key = await storage.put(context)
-
     return _make_response(request, key, state, None)
 
 
@@ -160,8 +161,10 @@ def _make_response(
     request: Request, key: str, state: InterviewState, content: object | None
 ) -> InterviewResponse:
     if state.completed:
-        update_url = request.url_for("interview.update_interview_route")
-        return CompleteInterviewResponse(key, state.completed, update_url)
-    else:
         assert isinstance(state.target, str)
-        return IncompleteInterviewResponse(key, state.completed, state.target, content)
+        return CompleteInterviewResponse(key, state.completed, state.target)
+    else:
+        update_url = request.url_for("interview.update_interview_route")
+        return IncompleteInterviewResponse(
+            key, state.completed, update_url, cast(AskResult, content)
+        )

@@ -109,7 +109,7 @@ async def list_selfservice_registrations(
 ) -> SelfServiceRegistrationsResponse:
     """List self-service registrations."""
     # TODO: should include cart ID
-    event = raise_not_found(config.get_event(event_id))
+    event = raise_not_found(config.events.get(event_id))
     if not event.visible:
         raise NotFound
 
@@ -155,7 +155,7 @@ async def start_interview(
     config: Config,
 ) -> HTTPResponse:
     """Start an interview to add a registration to a cart."""
-    event = raise_not_found(config.get_event(event_id))
+    event = raise_not_found(config.events.get(event_id))
     if not event.visible:
         raise NotFound
     elif not event.open:
@@ -207,6 +207,7 @@ async def start_interview(
         event,
         interview_id,
         cart_id,
+        request.host,
         target_url,
         account_id,
         email,

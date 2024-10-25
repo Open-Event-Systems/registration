@@ -11,12 +11,13 @@ events:
     open: true
     visible: true
 
-    add_options:
-      - id: new-registration
-        title: New Registration
-    change_options:
-      - id: upgrade
-        title: Upgrade
+    self_service:
+      add_options:
+        - id: new-registration
+          title: New Registration
+      change_options:
+        - id: upgrade
+          title: Upgrade
 
-    registration_display:
-      title: "{{ registration.preferred_name or registration.first_name }}"
+      display:
+        title: "{{ registration.preferred_name or registration.first_name }}"

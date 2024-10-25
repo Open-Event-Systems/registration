@@ -221,7 +221,7 @@ async def add_to_cart(  # noqa: CCR001
     config: Config,
 ) -> Mapping[str, Any]:
     """Add a completed interview to a cart."""
-    event = config.get_event(completed_interview.event_id)
+    event = config.events.get(completed_interview.event_id)
     if not event or not event.visible or not event.open:
         raise AddRegistrationError(f"Event not valid: {completed_interview.event_id}")
 

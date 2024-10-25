@@ -34,4 +34,4 @@ async def list_events(request: Request, config: Config) -> list[Event]:
 @response_converter(EventResponse)
 async def read_event(request: Request, event_id: str, config: Config) -> Event:
     """Read an event."""
-    return raise_not_found(config.get_event(event_id))
+    return raise_not_found(config.events.get(event_id))

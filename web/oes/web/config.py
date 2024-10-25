@@ -51,7 +51,7 @@ class RegistrationDisplay:
 
 @frozen
 class SelfServiceConfig:
-    """Self service configuration."""
+    """Self service config."""
 
     add_options: Sequence[ConfigInterviewOption] = ()
     change_options: Sequence[ConfigInterviewOption] = ()
@@ -84,7 +84,7 @@ class Event:
         }
 
 
-class _EventMapping(dict[str, Event]):
+class _EventsMapping(dict[str, Event]):
     pass
 
 
@@ -104,20 +104,17 @@ class Config:
     interview_service_url: str = ts.option(
         default="http://interview:8000", help="the interview service url"
     )
-    events: _EventMapping = ts.option(help="the events", default=_EventMapping())
-
-    def get_event(self, event_id: str) -> Event | None:
-        """Get an event by ID."""
-        return self.events.get(event_id)
+    events: _EventsMapping = ts.option(factory=_EventsMapping)
 
 
-def _structure_event_mapping(v: Any, t: Any) -> _EventMapping:
-    if isinstance(v, _EventMapping):
+def _structure_events(v: Any, t: Any) -> _EventsMapping:
+    if isinstance(v, _EventsMapping):
         return v
-    if not isinstance(v, Mapping):
+    elif not isinstance(v, Mapping):
         raise TypeError(f"Not a mapping: {v}")
-    items = {k: {**v, "id": k} for k, v in v.items()}
-    return _EventMapping(_converter.structure(items, Mapping[str, Event]))
+
+    items = {k: {**d, "id": k} for k, d in v.items()}
+    return _EventsMapping(_converter.structure(items, Mapping[str, Event]))
 
 
 _converter = ts.converters.get_default_cattrs_converter()
@@ -126,9 +123,9 @@ _converter.register_structure_hook(Expression, make_expression_structure_fn(jinj
 _converter.register_structure_hook(
     WhenCondition, make_when_condition_structure_fn(_converter)
 )
+_converter.register_structure_hook(_EventsMapping, _structure_events)
 _converter.register_unstructure_hook(LogicAnd, make_logic_unstructure_fn(_converter))
 _converter.register_unstructure_hook(LogicOr, make_logic_unstructure_fn(_converter))
-_converter.register_structure_hook(_EventMapping, _structure_event_mapping)
 
 
 def get_config(config_file: str = "events.yml") -> Config:
@@ -136,5 +133,5 @@ def get_config(config_file: str = "events.yml") -> Config:
     return ts.load_settings(
         Config,
         get_loaders("OES_WEB_", (config_file,)),
-        converter=cast(ts.converters.Converter, _converter),
+        converter=cast(Any, _converter),
     )
