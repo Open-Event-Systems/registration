@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Literal, Union, cast
 
 from attrs import field, frozen
 from immutabledict import immutabledict
@@ -16,6 +16,7 @@ from oes.interview.storage import StorageService
 from oes.utils.request import BadRequest, CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
 from sanic import Blueprint, HTTPResponse, NotFound, Request
+from typing_extensions import TypeAlias
 
 routes = Blueprint("interview")
 
@@ -34,7 +35,7 @@ response_converter = ResponseConverter(json_default=_json_default)
 class InterviewStartRequest:
     """Request body to start an interview."""
 
-    target: str | None = None
+    target: str
     context: Mapping[str, Any] = field(factory=dict)
     data: Mapping[str, Any] = field(factory=dict)
 
@@ -48,13 +49,28 @@ class InterviewUpdateRequest:
 
 
 @frozen
-class InterviewResponse:
-    """Interview response body."""
+class IncompleteInterviewResponse:
+    """Incomplete interview response body."""
 
     state: str
-    completed: bool
-    update_url: str | None = None
+    completed: Literal[False]
+    target: str
     content: AskResult | ExitResult | None = None
+
+
+@frozen
+class CompleteInterviewResponse:
+    """Completed response body."""
+
+    state: str
+    completed: Literal[True]
+    target: str
+
+
+InterviewResponse: TypeAlias = Union[
+    IncompleteInterviewResponse, CompleteInterviewResponse
+]
+"""Interview response."""
 
 
 @frozen
@@ -88,10 +104,7 @@ async def start_interview(
         interview.questions, interview.steps, state, interviews
     )
     key = await storage.put(context)
-    update_url = request.url_for("interview.update_interview_route")
-    return InterviewResponse(
-        key, state.completed, update_url if not state.completed else None, None
-    )
+    return _make_response(request, key, state, None)
 
 
 @routes.post("/update-interview", name="update_interview_route")
@@ -109,14 +122,8 @@ async def update_interview_route(
         exc = BadRequest("Invalid input")
         exc.status_code = 422
         raise exc
-    update_url = request.url_for("interview.update_interview_route")
     key = await storage.put(result_ctx)
-    return InterviewResponse(
-        key,
-        result_ctx.state.completed,
-        update_url if not result_ctx.state.completed else None,
-        cast(AskResult, content),
-    )
+    return _make_response(request, key, result_ctx.state, content)
 
 
 @routes.get("/completed-interviews/<state>")
@@ -148,3 +155,16 @@ async def healthcheck(request: Request, storage: StorageService) -> HTTPResponse
     """Health check endpoint."""
     await storage.get("")
     return HTTPResponse(status=204)
+
+
+def _make_response(
+    request: Request, key: str, state: InterviewState, content: object | None
+) -> InterviewResponse:
+    if state.completed:
+        assert isinstance(state.target, str)
+        return CompleteInterviewResponse(key, state.completed, state.target)
+    else:
+        update_url = request.url_for("interview.update_interview_route")
+        return IncompleteInterviewResponse(
+            key, state.completed, update_url, cast(AskResult, content)
+        )

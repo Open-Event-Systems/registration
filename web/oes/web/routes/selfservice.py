@@ -204,6 +204,7 @@ async def start_interview(
         event,
         interview_id,
         cart_id,
+        request.host,
         target_url,
         account_id,
         email,
