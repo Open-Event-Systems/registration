@@ -4,6 +4,7 @@ import (
 	"context"
 	"sheets_hook/internal/config"
 
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/api/sheets/v4"
 )
@@ -45,4 +46,13 @@ func (c *Client) Append(row Row) error {
 	).ValueInputOption("RAW").Do()
 
 	return err
+}
+
+// Return whether an error is a rate limit error.
+func IsRateLimitError(err error) bool {
+	if apiErr, ok := err.(*googleapi.Error); ok {
+		return apiErr.Code == 429
+	} else {
+		return false
+	}
 }
