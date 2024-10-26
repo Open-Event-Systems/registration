@@ -52,13 +52,13 @@ class InterviewService:
 
     async def start_interview(
         self,
+        host: str,
         interview_id: str,
         target: str,
         context: Mapping[str, Any] | None,
         initial_data: Mapping[str, Any] | None,
     ) -> InterviewState:
         """Start an interview."""
-
         url = f"{self.config.interview_service_url}/interviews/{interview_id}"
         body = {
             "context": context,
@@ -68,7 +68,9 @@ class InterviewService:
 
         body_bytes = orjson.dumps(body)
         res = await self.client.post(
-            url, content=body_bytes, headers={"Content-Type": "application/json"}
+            url,
+            content=body_bytes,
+            headers={"Content-Type": "application/json", "Host": host},
         )
         res.raise_for_status()
         return _converter.structure(res.json(), InterviewState)
