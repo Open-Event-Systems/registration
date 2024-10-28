@@ -1,15 +1,13 @@
 """Cart routes."""
 
 import asyncio
-from collections.abc import AsyncGenerator, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.web.cart import CartService, make_cart_registration
 from oes.web.interview2 import InterviewService, get_interview_registrations
-from oes.web.registration2 import RegistrationService
+from oes.web.registration2 import Registration, RegistrationService
 from oes.web.routes.common import InterviewStateRequestBody
-from oes.web.selfservice import SelfServiceService
-from oes.web.types import Registration
 from sanic import Blueprint, HTTPResponse, NotFound, Request, json
 
 routes = Blueprint("carts")

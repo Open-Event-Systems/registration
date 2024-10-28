@@ -9,11 +9,10 @@ from oes.web.access_code import AccessCodeService
 from oes.web.cart import CartService
 from oes.web.config import Config, Event, RegistrationDisplay
 from oes.web.interview2 import InterviewService, InterviewState
-from oes.web.registration2 import InterviewOption, RegistrationService
+from oes.web.registration2 import InterviewOption, Registration, RegistrationService
 from oes.web.routes.common import response_converter
 from oes.web.routes.event import EventResponse
 from oes.web.selfservice import SelfServiceService, get_interview_data, options_include
-from oes.web.types import Registration
 from sanic import Blueprint, Forbidden, NotFound, Request
 from typing_extensions import Self
 
@@ -135,8 +134,10 @@ async def list_selfservice_registrations(
 
     results = []
     for reg, opts in registrations_opts:
-        SelfServiceRegistration.from_registration(
-            event.self_service.display, event_ctx, list(opts), reg
+        results.append(
+            SelfServiceRegistration.from_registration(
+                event.self_service.display, event_ctx, list(opts), reg
+            )
         )
 
     results.reverse()
@@ -170,8 +171,6 @@ async def start_interview(  # noqa: CCR001
         raise Forbidden
 
     account_id = request.headers.get("x-account-id")
-    if not account_id:
-        raise Forbidden
     email = request.headers.get("x-email")
 
     cart_id = request.args.get("cart_id")

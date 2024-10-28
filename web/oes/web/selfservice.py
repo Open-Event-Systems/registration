@@ -11,10 +11,10 @@ from oes.web.access_code import AccessCode, AccessCodeInterviewOption, AccessCod
 from oes.web.config import Config, Event, RegistrationDisplay
 from oes.web.registration2 import (
     InterviewOption,
+    Registration,
     RegistrationService,
     make_new_registration,
 )
-from oes.web.types import Registration
 from typing_extensions import Self
 
 

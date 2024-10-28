@@ -10,8 +10,8 @@ from attrs import field, frozen
 from cattrs.preconf.orjson import make_converter
 from oes.utils.mapping import merge_mapping
 from oes.web.config import Config
-from oes.web.registration2 import generate_registration_id, make_registration
-from oes.web.types import JSON, Registration
+from oes.web.registration2 import Registration, generate_registration_id
+from oes.web.types import JSON
 
 
 @frozen
@@ -125,7 +125,7 @@ def _with_required_fields(event_id: str, reg: JSON) -> Registration:
         },
         data,
     )
-    return make_registration({**merged, "id": id})
+    return Registration({**merged, "id": id})
 
 
 _converter = make_converter()

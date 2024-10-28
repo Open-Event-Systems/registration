@@ -5,9 +5,21 @@ from typing import Any
 
 import httpx
 import orjson
+from attrs import field, frozen
+from cattrs.preconf.orjson import make_converter
 from oes.web.config import Config
-from oes.web.registration2 import make_placeholder_registration, make_registration
-from oes.web.types import JSON, Registration
+from oes.web.registration2 import Registration
+from oes.web.types import JSON
+
+
+@frozen
+class CartRegistration:
+    """Cart registration object."""
+
+    id: str
+    old: Registration
+    new: Registration
+    meta: JSON = field(factory=dict)
 
 
 class CartService:
@@ -36,10 +48,10 @@ class CartService:
         return res.json()
 
     async def add_to_cart(
-        self, cart_id: str, cart_registrations: Sequence[Mapping[str, Any]]
+        self, cart_id: str, cart_registrations: Sequence[CartRegistration]
     ) -> Mapping[str, Any]:
         """Add a registration to a cart."""
-        body = {"registrations": cart_registrations}
+        body = {"registrations": _converter.unstructure(cart_registrations)}
         body_bytes = orjson.dumps(body)
         res = await self.client.post(
             f"{self.config.cart_service_url}/carts/{cart_id}/registrations",
@@ -54,11 +66,22 @@ def make_cart_registration(
     old: Registration | None,
     new: Registration,
     meta: JSON | None,
-) -> JSON:
+) -> CartRegistration:
     """Make a cart registration entry."""
-    return {
-        "id": new.id,
-        "old": dict(old if old is not None else make_placeholder_registration(new)),
-        "new": dict(new),
-        "meta": meta or {},
-    }
+    old = old if old is not None else make_placeholder_registration(new)
+    return CartRegistration(new.id, old, new, meta or {})
+
+
+def make_placeholder_registration(reg: Registration) -> Registration:
+    """Create a placeholder registration."""
+    return Registration(
+        {
+            "id": reg.id,
+            "event_id": reg.event_id,
+            "status": "pending",
+            "version": 1,
+        }
+    )
+
+
+_converter = make_converter()
