@@ -18,7 +18,10 @@ async def is_allowed(method: str, url: str, scope: Scopes) -> bool:  # noqa: CCR
     # /events/<event_id>
     elif len(parts) >= 3 and parts[0] == "events":
         if parts[2] == "registrations":
-            return await _check_registration_routes(method, scope)
+            if len(parts) == 4 and parts[3] == "add":
+                return True
+            else:
+                return await _check_registration_routes(method, scope)
         elif parts[2] == "access-codes" and len(parts) >= 5 and parts[4] == "check":
             return method in ("GET", "HEAD", "OPTIONS") and Scope.selfservice in scope
         elif parts[2] == "access-codes" and len(parts) == 3:

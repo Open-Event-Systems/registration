@@ -217,6 +217,16 @@ def options_include(
     return any(o.id == interview_id for o in options)
 
 
+def get_option(
+    interview_id: str, options: Iterable[InterviewOption]
+) -> InterviewOption | None:
+    """Get the interview option for an ID."""
+    for option in options:
+        if option.id == interview_id:
+            return option
+    return None
+
+
 def get_access_code_interview(
     interview_id: str,
     registration: Registration | None,

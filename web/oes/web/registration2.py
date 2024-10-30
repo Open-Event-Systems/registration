@@ -1,6 +1,6 @@
 """Registration module."""
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime
 from typing import Any, Literal
 
@@ -134,6 +134,62 @@ class RegistrationService:
             return None
         res.raise_for_status()
         return Registration(res.json())
+
+    async def check_batch_change(
+        self,
+        event_id: str,
+        registrations: Iterable[Registration],
+        access_codes: Mapping[str, str] | None = None,
+    ) -> tuple[int, JSON]:
+        """Check that cart changes can be applied.
+
+        Returns:
+            A pair of a response status code and a response body.
+        """
+        body = {
+            "changes": [dict(r) for r in registrations],
+            "access_codes": access_codes or {},
+        }
+        res = await self.client.post(
+            f"{self.config.registration_service_url}/events"
+            f"/{event_id}/batch-change/check",
+            json=body,
+        )
+        return res.status_code, res.json()
+
+    async def apply_batch_change(
+        self,
+        event_id: str,
+        registrations: Iterable[Registration],
+        access_codes: Mapping[str, str] | None = None,
+        payment_id: str | None = None,
+        payment_body: JSON | None = None,
+    ) -> tuple[int, JSON]:
+        """Apply a batch change.
+
+        Returns:
+            A pair of a response status code and a response body.
+        """
+        if payment_id is not None:
+            payment_url = (
+                f"{self.config.payment_service_url}/payments/{payment_id}/update"
+            )
+        else:
+            payment_url = None
+
+        req_body = {
+            "changes": [dict(r) for r in registrations],
+            "payment_url": payment_url,
+            "payment_body": payment_body,
+            "access_codes": access_codes or {},
+        }
+
+        res = await self.client.post(
+            f"{self.config.registration_service_url}/events"
+            f"/{event_id}/batch-change/apply",
+            json=req_body,
+        )
+        return res.status_code, res.json()
 
 
 def make_new_registration(

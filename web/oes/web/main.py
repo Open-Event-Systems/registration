@@ -35,7 +35,7 @@ def create_app() -> Sanic:
     from oes.web.payment import PaymentService
     from oes.web.registration import RegistrationService
     from oes.web.registration2 import RegistrationService as RegistrationService2
-    from oes.web.routes import cart, event, payment, selfservice
+    from oes.web.routes import cart, event, payment, registration, selfservice
     from oes.web.selfservice import SelfServiceService
 
     config = get_config()
@@ -58,6 +58,7 @@ def create_app() -> Sanic:
     app.blueprint(event.routes)
     app.blueprint(cart.routes)
     app.blueprint(payment.routes)
+    app.blueprint(registration.routes)
     app.blueprint(selfservice.routes)
 
     app.ctx.config = config

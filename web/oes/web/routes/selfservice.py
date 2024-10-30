@@ -12,7 +12,12 @@ from oes.web.interview2 import InterviewService, InterviewState
 from oes.web.registration2 import InterviewOption, Registration, RegistrationService
 from oes.web.routes.common import response_converter
 from oes.web.routes.event import EventResponse
-from oes.web.selfservice import SelfServiceService, get_interview_data, options_include
+from oes.web.selfservice import (
+    SelfServiceService,
+    get_interview_data,
+    get_option,
+    options_include,
+)
 from sanic import Blueprint, Forbidden, NotFound, Request
 from typing_extensions import Self
 
@@ -25,6 +30,7 @@ class SelfServiceInterviewOption:
 
     id: str
     title: str | None = None
+    direct: bool = False
 
 
 @frozen
@@ -68,7 +74,10 @@ class SelfServiceRegistration:
             description,
             header_color,
             header_image,
-            tuple(SelfServiceInterviewOption(opt.id, opt.title) for opt in change_opts),
+            tuple(
+                SelfServiceInterviewOption(opt.id, opt.title, opt.direct)
+                for opt in change_opts
+            ),
         )
 
 
@@ -143,7 +152,7 @@ async def list_selfservice_registrations(
     results.reverse()
 
     add_opts = [
-        SelfServiceInterviewOption(opt.id, opt.title)
+        SelfServiceInterviewOption(opt.id, opt.title, opt.direct)
         for opt in self_service_service.get_add_options(event_id, access_code)
     ]
 
@@ -194,18 +203,37 @@ async def start_interview(  # noqa: CCR001
     else:
         options = self_service_service.get_add_options(event_id, access_code)
 
+    option = get_option(interview_id, options)
+
     if (
-        not cart
-        or cart.get("cart", {}).get("event_id") != event_id
+        # no matching option
+        not option
+        # cart not found
+        or cart_id
+        and not cart
+        # specified no cart w/ non-direct option
+        or not cart_id
+        and not option.direct
+        # cart doesn't match event
+        or cart
+        and cart.get("cart", {}).get("event_id") != event_id
+        # no registration found
         or registration_id
         and reg is None
+        # no access code
         or access_code_str
         and access_code is None
-        or not options_include(interview_id, options)
     ):
-        raise NotFound
+        raise Forbidden
 
-    target_url = request.url_for("carts.add_to_cart_from_interview", cart_id=cart_id)
+    if option.direct:
+        target_url = request.url_for(
+            "registrations.add_registration_from_interview", event_id=event_id
+        )
+    else:
+        target_url = request.url_for(
+            "carts.add_to_cart_from_interview", cart_id=cart_id
+        )
 
     context, initial_data = get_interview_data(
         event, reg, interview_id, access_code, email, account_id
