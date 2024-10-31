@@ -18,10 +18,14 @@ async def is_allowed(method: str, url: str, scope: Scopes) -> bool:  # noqa: CCR
     # /events/<event_id>
     elif len(parts) >= 3 and parts[0] == "events":
         if parts[2] == "registrations":
-            if len(parts) == 4 and parts[3] == "add":
-                return True
+            if len(parts) >= 5 and parts[4] == "self-service":
+                return Scope.selfservice in scope
             else:
                 return await _check_registration_routes(method, scope)
+        elif parts[2] == "update-registrations":
+            return True
+        elif parts[2] == "self-service":
+            return Scope.selfservice in scope
         elif parts[2] == "access-codes" and len(parts) >= 5 and parts[4] == "check":
             return method in ("GET", "HEAD", "OPTIONS") and Scope.selfservice in scope
         elif parts[2] == "access-codes" and len(parts) == 3:
@@ -29,7 +33,10 @@ async def is_allowed(method: str, url: str, scope: Scopes) -> bool:  # noqa: CCR
 
     # /carts/<cart_id>
     elif len(parts) >= 2 and parts[0] == "carts":  # noqa: SIM114
-        return Scope.cart in scope
+        if len(parts) == 5 and parts[2] == "self-service":
+            return Scope.cart in scope and Scope.selfservice in scope
+        else:
+            return Scope.cart in scope
 
     # /payments/<payment_id>
     elif (

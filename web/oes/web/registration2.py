@@ -6,6 +6,7 @@ from typing import Any, Literal
 
 import httpx
 import nanoid
+import orjson
 from attrs import frozen
 from oes.web.config import Config
 from oes.web.types import JSON
@@ -150,10 +151,12 @@ class RegistrationService:
             "changes": [dict(r) for r in registrations],
             "access_codes": access_codes or {},
         }
+        req_json = orjson.dumps(body)
         res = await self.client.post(
             f"{self.config.registration_service_url}/events"
             f"/{event_id}/batch-change/check",
-            json=body,
+            content=req_json,
+            headers={"Content-Type": "application/json"},
         )
         return res.status_code, res.json()
 
@@ -183,11 +186,13 @@ class RegistrationService:
             "payment_body": payment_body,
             "access_codes": access_codes or {},
         }
+        req_json = orjson.dumps(req_body)
 
         res = await self.client.post(
             f"{self.config.registration_service_url}/events"
             f"/{event_id}/batch-change/apply",
-            json=req_body,
+            content=req_json,
+            headers={"Content-Type": "application/json"},
         )
         return res.status_code, res.json()
 

@@ -8,7 +8,7 @@ from oes.web.cart import CartService, make_cart_registration
 from oes.web.interview2 import InterviewService, get_interview_registrations
 from oes.web.registration2 import Registration, RegistrationService
 from oes.web.routes.common import InterviewStateRequestBody
-from sanic import Blueprint, HTTPResponse, NotFound, Request, json
+from sanic import Blueprint, Forbidden, HTTPResponse, Request, json
 
 routes = Blueprint("carts")
 
@@ -28,7 +28,7 @@ async def add_to_cart_from_interview(
         await interview_service.get_completed_interview(req_body.state)
     )
     if interview.target != request.url:
-        raise NotFound
+        raise Forbidden
 
     # TODO: check access code
 
