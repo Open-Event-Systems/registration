@@ -34,13 +34,13 @@ class ParentInterviewContext:
 class InterviewState:
     """An interview's state data."""
 
+    target: str | ParentInterviewContext
     date_started: datetime = field(factory=lambda: datetime.now().astimezone())
     date_expires: datetime = field(
         default=Factory(
             lambda s: s.date_started + DEFAULT_INTERVIEW_EXPIRATION, takes_self=True
         )
     )
-    target: str | ParentInterviewContext | None = None
     context: Mapping[str, Any] = field(
         default=immutabledict(), converter=immutable_converter(Mapping[str, Any])
     )

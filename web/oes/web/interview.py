@@ -69,6 +69,7 @@ class InterviewService:
         event: Event,
         interview_id: str,
         cart_id: str,
+        host: str,
         target: str,
         account_id: str | None,
         email: str | None,
@@ -117,7 +118,9 @@ class InterviewService:
 
         body_bytes = orjson.dumps(body)
         res = await self.client.post(
-            url, content=body_bytes, headers={"Content-Type": "application/json"}
+            url,
+            content=body_bytes,
+            headers={"Content-Type": "application/json", "Host": host},
         )
         res.raise_for_status()
         return res.json()

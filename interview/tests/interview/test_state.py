@@ -3,7 +3,9 @@ from oes.interview.interview.state import InterviewState
 
 
 def test_state_template_context():
-    state = InterviewState(data={"a": 1, "b": [2, 3]}, context={"a": 2, "c": 3})
+    state = InterviewState(
+        target="test", data={"a": 1, "b": [2, 3]}, context={"a": 2, "c": 3}
+    )
     assert state.template_context == make_immutable(
         {
             "a": 2,
@@ -14,7 +16,7 @@ def test_state_template_context():
 
 
 def test_state_update():
-    state = InterviewState(data={"a": 1, "b": 2}, context={"ctx": "ctx"})
+    state = InterviewState(target="test", data={"a": 1, "b": 2}, context={"ctx": "ctx"})
     updated = state.update(
         data={"b": 3, "ctx": "other"},
         completed=True,

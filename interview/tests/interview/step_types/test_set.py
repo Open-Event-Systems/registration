@@ -12,7 +12,7 @@ from oes.utils.template import Expression
 
 @pytest.fixture
 def state():
-    return InterviewState(data={"a": {"b": "c"}}, context={"c": True})
+    return InterviewState(target="test", data={"a": {"b": "c"}}, context={"c": True})
 
 
 def test_set(state: InterviewState):

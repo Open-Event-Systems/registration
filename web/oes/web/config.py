@@ -1,10 +1,11 @@
 """Configuration module."""
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from datetime import date
 from typing import Any, TypeAlias, cast
 
 import typed_settings as ts
+from attrs import Factory, field, frozen
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 from oes.utils.config import get_loaders
 from oes.utils.logic import (
@@ -27,16 +28,17 @@ dt_date: TypeAlias = date
 jinja2_env = ImmutableSandboxedEnvironment()
 
 
-@ts.settings
-class InterviewOption:
+@frozen
+class ConfigInterviewOption:
     """Interview option."""
 
     id: str
-    title: str | None = None
+    title: str
+    direct: bool = False
     when: WhenCondition = True
 
 
-@ts.settings
+@frozen
 class RegistrationDisplay:
     """Registration display options."""
 
@@ -47,21 +49,28 @@ class RegistrationDisplay:
     header_image: Template | None = None
 
 
-@ts.settings
+@frozen
+class SelfServiceConfig:
+    """Self service config."""
+
+    add_options: Sequence[ConfigInterviewOption] = ()
+    change_options: Sequence[ConfigInterviewOption] = ()
+
+    display: RegistrationDisplay = RegistrationDisplay()
+
+
+@frozen
 class Event:
     """Event config."""
 
     id: str
     date: dt_date
-    title: str | None = None
+    title: str = field(default=Factory(lambda s: s.id, takes_self=True))
     description: str | None = None
     open: bool = False
     visible: bool = False
 
-    add_options: Sequence[InterviewOption] = ()
-    change_options: Sequence[InterviewOption] = ()
-
-    registration_display: RegistrationDisplay = RegistrationDisplay()
+    self_service: SelfServiceConfig = SelfServiceConfig()
 
     def get_template_context(self) -> TemplateContext:
         """Get the template context for evaluating conditions."""
@@ -73,6 +82,10 @@ class Event:
             "open": self.open,
             "visible": self.visible,
         }
+
+
+class _EventsMapping(dict[str, Event]):
+    pass
 
 
 @ts.settings
@@ -91,7 +104,17 @@ class Config:
     interview_service_url: str = ts.option(
         default="http://interview:8000", help="the interview service url"
     )
-    events: Sequence[Event] = ()
+    events: _EventsMapping = ts.option(factory=_EventsMapping)
+
+
+def _structure_events(v: Any, t: Any) -> _EventsMapping:
+    if isinstance(v, _EventsMapping):
+        return v
+    elif not isinstance(v, Mapping):
+        raise TypeError(f"Not a mapping: {v}")
+
+    items = {k: {**d, "id": k} for k, d in v.items()}
+    return _EventsMapping(_converter.structure(items, Mapping[str, Event]))
 
 
 _converter = ts.converters.get_default_cattrs_converter()
@@ -100,14 +123,15 @@ _converter.register_structure_hook(Expression, make_expression_structure_fn(jinj
 _converter.register_structure_hook(
     WhenCondition, make_when_condition_structure_fn(_converter)
 )
+_converter.register_structure_hook(_EventsMapping, _structure_events)
 _converter.register_unstructure_hook(LogicAnd, make_logic_unstructure_fn(_converter))
 _converter.register_unstructure_hook(LogicOr, make_logic_unstructure_fn(_converter))
 
 
-def get_config() -> Config:
+def get_config(config_file: str = "events.yml") -> Config:
     """Get the config."""
     return ts.load_settings(
         Config,
-        get_loaders("OES_WEB_", ("events.yml",)),
+        get_loaders("OES_WEB_", (config_file,)),
         converter=cast(Any, _converter),
     )

@@ -7,7 +7,6 @@ import httpx
 from cattrs.gen import make_dict_unstructure_fn
 from oes.utils import configure_converter, setup_logging
 from oes.utils.sanic import setup_app
-from oes.web.cart import CartService
 from oes.web.config import get_config
 from oes.web.routes.common import response_converter
 from sanic import Sanic
@@ -29,10 +28,15 @@ def main():
 
 def create_app() -> Sanic:
     """Main app factory."""
+    from oes.web.access_code import AccessCodeService
+    from oes.web.cart import CartService
     from oes.web.interview import InterviewService
+    from oes.web.interview2 import InterviewService as InterviewService2
     from oes.web.payment import PaymentService
     from oes.web.registration import RegistrationService
-    from oes.web.routes import event, payment, selfservice
+    from oes.web.registration2 import RegistrationService as RegistrationService2
+    from oes.web.routes import cart, event, payment, registration, selfservice
+    from oes.web.selfservice import SelfServiceService
 
     config = get_config()
     app = Sanic("Web", configure_logging=False)
@@ -52,15 +56,21 @@ def create_app() -> Sanic:
     setup_app(app, config, response_converter.converter)
 
     app.blueprint(event.routes)
+    app.blueprint(cart.routes)
     app.blueprint(payment.routes)
+    app.blueprint(registration.routes)
     app.blueprint(selfservice.routes)
 
     app.ctx.config = config
     app.ext.dependency(config)
     app.ext.add_dependency(RegistrationService)
+    app.ext.add_dependency(RegistrationService2)
     app.ext.add_dependency(InterviewService)
+    app.ext.add_dependency(InterviewService2)
     app.ext.add_dependency(CartService)
     app.ext.add_dependency(PaymentService)
+    app.ext.add_dependency(AccessCodeService)
+    app.ext.add_dependency(SelfServiceService)
 
     @app.before_server_start
     async def setup_log(app: Sanic):

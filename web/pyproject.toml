@@ -7,15 +7,15 @@ packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "7132f9bb2fc529ad960d1c868e0b497dbbfd2532", extras = [
+oes-utils = {git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "1fb175fe16e985a81ebe4cb9a764fc63f3684968", extras = [
     "typed-settings",
     "sanic",
     "sqlalchemy",
 ] }
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
 sanic = {extras = ["ext"], version = "^23.12.1"}
-attrs = "^23.2.0"
-cattrs = "^23.2.3"
+attrs = "^24.2.0"
+cattrs = "^24.1.2"
 uvloop = "^0.19.0"
 alembic = "^1.13.1"
 loguru = "^0.7.2"
