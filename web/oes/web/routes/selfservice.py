@@ -5,12 +5,13 @@ from typing import Any
 from urllib.parse import urlunparse
 
 from attrs import frozen
+from loguru import logger
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.template import TemplateContext
 from oes.web.cart import CartService
 from oes.web.config import Config, Event, InterviewOption, RegistrationDisplay
 from oes.web.interview import InterviewService
-from oes.web.registration import RegistrationService
+from oes.web.registration import AddRegistrationError, RegistrationService, add_to_cart
 from oes.web.routes.common import Conflict, response_converter
 from oes.web.routes.event import EventResponse
 from sanic import Blueprint, Forbidden, HTTPResponse, NotFound, Request, json
@@ -112,25 +113,31 @@ async def list_selfservice_registrations(
 
     account_id = request.headers.get("x-account-id")
     email = request.headers.get("x-email")
-
-    regs = await service.get_registrations(
-        event_id=event_id, account_id=account_id, email=email
+    access_code_str = request.args.get("access_code")
+    access_code = (
+        await service.get_access_code(event_id, access_code_str)
+        if access_code_str
+        else None
     )
+
+    regs = await _get_regs(service, event_id, account_id, email, access_code)
 
     event_ctx = event.get_template_context()
     results = []
 
     for reg in regs:
-        change_opts = list(service.get_change_options(event, reg))
+        change_opts = list(service.get_change_options(event, reg, access_code))
         results.append(
             SelfServiceRegistration.from_registration(
                 event.registration_display, event_ctx, change_opts, reg
             )
         )
 
+    results.reverse()
+
     add_opts = [
         SelfServiceInterviewOption(opt.id, opt.title)
-        for opt in service.get_add_options(event)
+        for opt in service.get_add_options(event, access_code)
     ]
     return SelfServiceRegistrationsResponse(results, add_opts)
 
@@ -152,21 +159,32 @@ async def start_interview(
         raise Forbidden
 
     account_id = request.headers.get("x-account-id")
+    email = request.headers.get("x-email")
 
     cart_id = request.args.get("cart_id")
     registration_id = request.args.get("registration_id")
+    access_code = request.args.get("access_code")
     cart = await cart_service.get_cart(cart_id) if cart_id else None
     reg = (
         await reg_service.get_registration(event_id, registration_id)
         if registration_id
         else None
     )
+
+    access_code_data = (
+        await _check_access_code_use(access_code, event.id, cart, reg_service)
+        if cart
+        else None
+    )
+
     if (
         not cart
         or cart.get("cart", {}).get("event_id") != event_id
         or registration_id
         and reg is None
-        or not reg_service.is_interview_allowed(interview_id, event, reg)
+        or not reg_service.is_interview_allowed(
+            interview_id, event, reg, access_code_data
+        )
     ):
         raise NotFound
 
@@ -175,14 +193,29 @@ async def start_interview(
     )
     target_url = request.url_for("selfservice.add_to_cart")
 
+    access_code_interview = _get_access_code_interview(
+        access_code_data, reg, interview_id
+    )
+    context, initial_data = _get_access_code_initial_data(
+        access_code, access_code_interview
+    )
+
     interview = await interview_service.start_interview(
-        event, interview_id, cart_id, target_url, account_id, reg
+        event,
+        interview_id,
+        cart_id,
+        target_url,
+        account_id,
+        email,
+        reg,
+        context,
+        initial_data,
     )
     return json({**interview, "update_url": update_url})
 
 
 @routes.post("/self-service/add-to-cart", name="add_to_cart")
-async def add_to_cart(
+async def self_service_add_to_cart(
     request: Request,
     body: CattrsBody,
     interview_service: InterviewService,
@@ -196,50 +229,43 @@ async def add_to_cart(
         await interview_service.get_completed_interview(state)
     )
 
-    target = completed_interview.get("target")
+    target = completed_interview.target
     expected_target = request.url
     if target != expected_target:
         raise Forbidden
 
-    data = completed_interview.get("data", {})
-    context = completed_interview.get("context", {})
-    meta = data.get("meta", {})
-    cart_id = context.get("cart_id")
-    interview_id = context.get("interview_id")
-    event_id = context.get("event_id")
-    registration = data.get("registration", {})
-
-    event = raise_not_found(
-        registration_service.get_event(event_id) if event_id else None
-    )
-    cur_exists, cur_reg = await _get_cur_registration(
-        event.id, registration, registration_service
-    )
-
-    if (
-        not cart_id
-        or not interview_id
-        or not event.visible
-        or not event.open
-        or not registration_service.is_interview_allowed(
-            interview_id, event, cur_reg if cur_exists else None
+    try:
+        result = await add_to_cart(
+            completed_interview, registration_service, cart_service
         )
-    ):
-        raise Conflict
+    except AddRegistrationError as e:
+        logger.error(f"Cannot add to cart: {e}")
+        raise Conflict from e
 
-    if cur_reg.get("version") != registration.get("version"):
-        raise Conflict
+    return json({"id": result.get("id")})
 
-    new_cart = await cart_service.add_to_cart(
-        cart_id,
-        {
-            "id": registration.get("id"),
-            "old": cur_reg,
-            "new": registration,
-            "meta": meta,
-        },
+
+async def _get_regs(
+    service: RegistrationService,
+    event_id: str,
+    account_id: str | None,
+    email: str | None,
+    access_code: Mapping[str, Any] | None,
+) -> Sequence[Mapping[str, Any]]:
+    if access_code:
+        opts = access_code.get("options", {})
+        registration_ids = opts.get("registration_ids", [])
+        if registration_ids:
+            # could make a batch get method to improve this
+            regs = [
+                await service.get_registration(event_id, reg_id)
+                for reg_id in registration_ids
+            ]
+            return [r for r in regs if r]
+
+    return await service.get_registrations(
+        event_id=event_id, account_id=account_id, email=email
     )
-    return json({"id": new_cart.get("id")})
 
 
 async def _get_cur_registration(
@@ -255,3 +281,54 @@ async def _get_cur_registration(
             "status": "pending",
             "version": 1,
         }
+
+
+async def _check_access_code_use(
+    access_code: str | None,
+    event_id: str,
+    cart: Mapping[str, Any],
+    registration_service: RegistrationService,
+) -> Mapping[str, Any] | None:
+    if not access_code:
+        return None
+
+    cart_data = cart.get("cart", {})
+    registrations = cart_data.get("registrations", [])
+    for reg in registrations:
+        meta = reg.get("meta", {})
+        reg_access_code = meta.get("access_code")
+        if access_code == reg_access_code:
+            raise Conflict
+
+    code = await registration_service.get_access_code(event_id, access_code)
+    if code is None:
+        raise Conflict
+    return code
+
+
+def _get_access_code_initial_data(
+    access_code: str | None,
+    interview_options: Mapping[str, Any] | None,
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
+    context = interview_options.get("context", {}) if interview_options else {}
+    if access_code:
+        context["access_code"] = access_code
+    initial_data = (
+        interview_options.get("initial_data", {}) if interview_options else {}
+    )
+    return context, initial_data
+
+
+def _get_access_code_interview(
+    access_code_data: Mapping[str, Any] | None,
+    reg: Mapping[str, Any] | None,
+    interview_id: str,
+) -> Mapping[str, Any] | None:
+    options = access_code_data.get("options", {}) if access_code_data else {}
+    interview_options = options.get(
+        "add_options" if reg is None else "change_options", []
+    )
+    by_id = next(
+        (opt for opt in interview_options if opt.get("id") == interview_id), None
+    )
+    return by_id

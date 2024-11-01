@@ -65,7 +65,7 @@ questions = {
 )
 def test_resolve_questions(provide, asked_ids, expected_id):
     interview_context = make_interview_context(
-        questions, [], InterviewState(data={"value": 0})
+        questions, [], InterviewState(data={"value": 0}), {}
     )
     id, _, _ = resolve_question_providing_path(provide, interview_context, asked_ids)
     assert id == expected_id
@@ -144,7 +144,7 @@ questions2 = {
 def test_resolve_context(eval, data, expected_id):
     expr = Expression(eval, default_jinja2_env)
     interview_context = make_interview_context(
-        questions2, [], InterviewState(data=data)
+        questions2, [], InterviewState(data=data), {}
     )
     with resolve_undefined_values(interview_context) as resolver:
         bool(expr.evaluate(interview_context.state.template_context))
@@ -164,7 +164,7 @@ def test_resolve_context(eval, data, expected_id):
 def test_resolve_context_errors(eval, data):
     expr = Expression(eval, default_jinja2_env)
     interview_context = make_interview_context(
-        questions2, [], InterviewState(data=data)
+        questions2, [], InterviewState(data=data), {}
     )
     with pytest.raises(InterviewError), resolve_undefined_values(interview_context):
         bool(expr.evaluate(interview_context.state.template_context))

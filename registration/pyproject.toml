@@ -20,11 +20,14 @@ sanic = {extras = ["ext"], version = "^23.12.1"}
 loguru = "^0.7.2"
 typed-settings = {extras = ["attrs", "cattrs"], version = "^24.2.0"}
 ruamel-yaml = "^0.18.6"
-oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "93057f461249c6d6b40fdbb676da770827d246fa", extras = [
+oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "7132f9bb2fc529ad960d1c868e0b497dbbfd2532", extras = [
     "typed-settings",
     "sanic",
     "sqlalchemy",
 ] }
+httpx = "^0.27.0"
+aio-pika = "^9.4.2"
+nanoid = "^2.0.0"
 
 
 [tool.poetry.group.dev.dependencies]

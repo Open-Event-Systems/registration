@@ -1,3 +1,0 @@
-Subject is {{ email.subject }}
-{% set email.subject = "Subject" -%}
-Subject is {{ email.subject }}

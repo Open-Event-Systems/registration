@@ -1,0 +1,2 @@
+{% set cid = inline("test.gif") -%}
+Attachment: {{ cid }}

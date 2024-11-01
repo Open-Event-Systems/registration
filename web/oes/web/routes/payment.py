@@ -27,8 +27,11 @@ async def create_payment(
     method = request.args.get("method")
     if not method:
         raise NotFound
+
+    email = request.headers.get("x-email")
+
     res_status, res_body = raise_not_found(
-        await payment_service.create_payment(cart_id, method)
+        await payment_service.create_payment(cart_id, method, email)
     )
 
     if res_status == 409:
@@ -50,6 +53,9 @@ async def update_payment(
 
     if res_status == 409:
         resp = json(_strip_cart_error(res_body), status=res_status)
+    elif res_status == 200:
+        payment = res_body.get("payment", {})
+        resp = json(payment, status=res_status)
     else:
         resp = json(res_body, status=res_status)
     return resp

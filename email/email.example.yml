@@ -1,10 +1,17 @@
 ---
-amqp_url: amqp://guest:guest@localhost/
-email_from: test@test.com
-debug: false
+# path to the template directory
 template_path: templates
 
-# What to use to send mail: null | mock | smtp | mailgun
+# AMQP URL
+amqp_url: amqp://guest:guest@localhost/
+
+# the default From address
+email_from: from@example.net
+
+# the default From header
+smtp_from: From <from@example.net>
+
+# What to use to send mail: mock | smtp
 use: mock
 
 # Settings for using SMTP
@@ -13,18 +20,16 @@ smtp:
   server: smtp.example.com
   port: 587
 
+  # SMTP credentials
   username: you@example.com
   password: password
 
   # null, ssl, or starttls
   tls: starttls
 
-# Settings for using Mailgun
-mailgun:
-  domain: example.com
-  api_key: api_key
-
 # Messages to handle
 messages:
   auth:
     subject: Verify Your Email
+    email_from: from@example.net
+    smtp_from: From <from@example.net>

@@ -1,0 +1,10 @@
+---
+amqp_url: amqp://guest:guest@localhost
+credentials_file: account.json
+spreadsheet_id:
+range: "A1:B2"
+columns:
+  - new.id
+  - new.first_name
+  - new.last_name
+  - new.preferred_name

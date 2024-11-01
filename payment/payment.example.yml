@@ -1,11 +1,31 @@
 ---
 # Payment config
 db_url: postgresql+asyncpg:///payment
+amqp_url: amqp://guest:guest@localhost/
 
 services:
+  system: {}
   mock: {}
+  square:
+    application_id:
+    access_token:
+    location_id:
+    sandbox: true
 
 methods:
+  system:
+    service: system
+    name: Complete Order
+    when: pricing_result.total_price == 0
+
   mock:
     service: mock
     name: Mock
+    when:
+      - pricing_result.total_price > 0
+
+  square-web:
+    service: square
+    name: Credit / Debit
+    when:
+      - pricing_result.total_price > 0

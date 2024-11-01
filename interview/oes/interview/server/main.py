@@ -11,6 +11,9 @@ from oes.interview.storage import StorageService
 from oes.utils import setup_logging
 from oes.utils.sanic import setup_app
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():
@@ -18,6 +21,7 @@ def main():
     os.execlp(
         "sanic",
         "oes-interview-service",
+        "--single-process",
         "oes.interview.server.main:create_app",
         *sys.argv[1:]
     )
@@ -26,6 +30,7 @@ def main():
 def create_app():
     """Main app."""
     app = Sanic("Interview", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
     config = get_config()
     setup_logging()
 

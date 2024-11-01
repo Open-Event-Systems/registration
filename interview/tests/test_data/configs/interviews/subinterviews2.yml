@@ -1,0 +1,7 @@
+questions:
+  - ../questions/questions1.yml
+steps:
+  - sub: simple-with-set
+    map: range(2)
+    map_var: n
+    result: results

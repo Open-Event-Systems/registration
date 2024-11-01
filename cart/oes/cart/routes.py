@@ -1,7 +1,5 @@
 """Routes module."""
 
-from uuid import UUID
-
 from attrs import define
 from oes.cart.cart import (
     Cart,
@@ -63,13 +61,13 @@ async def add_to_cart(
     return await service.add_to_cart(cart_entity, add_body.registrations)
 
 
-@routes.delete("/carts/<cart_id>/registrations/<registration_id:uuid>")
+@routes.delete("/carts/<cart_id>/registrations/<registration_id>")
 @response_converter
 @transaction
 async def remove_from_cart(
     request: Request,
     cart_id: str,
-    registration_id: UUID,
+    registration_id: str,
     repo: CartRepo,
     service: CartService,
 ) -> CartEntity:
@@ -86,3 +84,10 @@ async def price_cart(
     cart_entity = raise_not_found(await repo.get(cart_id))
     res = await pricing_service.price_cart(cart_id, cart_entity.get_cart())
     return HTTPResponse(res, status=200, content_type="application/json")
+
+
+@routes.get("/_healthcheck")
+async def healthcheck(request: Request, repo: CartRepo) -> HTTPResponse:
+    """Health check endpoint."""
+    await repo.get("")
+    return HTTPResponse(status=204)

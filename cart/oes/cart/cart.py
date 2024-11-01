@@ -7,7 +7,6 @@ import hashlib
 from collections.abc import Iterable
 from datetime import datetime
 from typing import Any
-from uuid import UUID
 
 import httpx
 import orjson
@@ -45,7 +44,7 @@ class CartEntity(Base, kw_only=True):
 class CartRegistration:
     """A registration in a cart."""
 
-    id: UUID
+    id: str
     old: JSON = field(factory=dict)
     new: JSON = field(factory=dict)
     meta: JSON = field(factory=dict)
@@ -82,10 +81,6 @@ class CartResponse:
 
 
 _converter = make_converter()
-_converter.register_structure_hook(UUID, lambda v, t: UUID(v))
-_converter.register_unstructure_hook_func(
-    lambda cls: isinstance(cls, type) and issubclass(cls, UUID), str
-)
 
 
 def unstructure_cart_entity(v: CartEntity) -> Any:
@@ -137,7 +132,7 @@ class CartService:
         return await self.add(cart)
 
     async def remove_from_cart(
-        self, cart_entity: CartEntity, registration_id: UUID
+        self, cart_entity: CartEntity, registration_id: str
     ) -> CartEntity:
         """Remove a registration from a cart.
 
@@ -177,9 +172,9 @@ class CartPricingService:
         data = _converter.unstructure(cart)
         res = await self.client.post(
             f"{self.config.pricing_url}/price-cart",
-            json={"currency": self.config.currency, "cart": data},
+            json={"currency": self.config.currency, "cart_data": data},
         )
-        res.raise_for_status
+        res.raise_for_status()
         res_bytes = res.content
         if self.redis:
             await self.redis.set(

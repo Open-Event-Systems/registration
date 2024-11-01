@@ -1,4 +1,3 @@
-import uuid
 from unittest.mock import create_autospec
 
 import pytest
@@ -12,6 +11,7 @@ from oes.registration.registration import (
     RegistrationUpdateFields,
     Status,
     StatusError,
+    generate_registration_id,
 )
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.orm.exc import StaleDataError
@@ -159,7 +159,7 @@ async def test_get_multi(session_factory: async_sessionmaker):
     async with session_factory() as session:
         repo = RegistrationRepo(session)
         regs = [Registration(event_id="test") for _ in range(3)]
-        ids = [r.id for r in regs] + [uuid.uuid4()]
+        ids = [r.id for r in regs] + [generate_registration_id()]
 
         for reg in regs:
             repo.add(reg)
@@ -175,55 +175,55 @@ async def test_get_multi(session_factory: async_sessionmaker):
 
 
 @pytest.mark.asyncio
-async def test_service_create(mock_repo, mock_session):
-    service = RegistrationService(mock_session, mock_repo)
-    reg = await service.create("test", RegistrationCreateFields(email="test@test.com"))
-    assert reg.event_id == "test"
-    assert reg.email == "test@test.com"
-    mock_repo.add.assert_called_with(reg)
+async def test_service_create(mock_repo, mock_session, converter: Converter):
+    service = RegistrationService(mock_session, mock_repo, converter)
+    res = await service.create("test", RegistrationCreateFields(email="test@test.com"))
+    assert res.registration.event_id == "test"
+    assert res.registration.email == "test@test.com"
+    mock_repo.add.assert_called_with(res.registration)
 
 
 @pytest.mark.asyncio
-async def test_service_update(mock_repo, mock_session):
+async def test_service_update(mock_repo, mock_session, converter: Converter):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = cur
 
-    service = RegistrationService(mock_session, mock_repo)
+    service = RegistrationService(mock_session, mock_repo, converter)
 
     update = RegistrationUpdateFields(version=cur.version, email="other@test.com")
 
     cur_id = cur.id
-    updated = await service.update("test", cur.id, update)
-    assert updated
-    assert updated.id == cur_id
-    assert updated.email == "other@test.com"
+    res = await service.update("test", cur.id, update)
+    assert res
+    assert res.registration.id == cur_id
+    assert res.registration.email == "other@test.com"
     # version change happens on flush...
 
 
 @pytest.mark.asyncio
-async def test_service_update_etag(mock_repo, mock_session):
+async def test_service_update_etag(mock_repo, mock_session, converter: Converter):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = cur
 
-    service = RegistrationService(mock_session, mock_repo)
+    service = RegistrationService(mock_session, mock_repo, converter)
 
     update = RegistrationUpdateFields(email="other@test.com")
 
     cur_id = cur.id
     cur_etag = service.get_etag(cur)
-    updated = await service.update("test", cur.id, update, etag=cur_etag)
-    assert updated
-    assert updated.id == cur_id
-    assert updated.email == "other@test.com"
+    res = await service.update("test", cur.id, update, etag=cur_etag)
+    assert res
+    assert res.registration.id == cur_id
+    assert res.registration.email == "other@test.com"
     # version change happens on flush...
 
 
 @pytest.mark.asyncio
-async def test_service_update_conflict(mock_repo, mock_session):
+async def test_service_update_conflict(mock_repo, mock_session, converter: Converter):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = cur
 
-    service = RegistrationService(mock_session, mock_repo)
+    service = RegistrationService(mock_session, mock_repo, converter)
 
     update = RegistrationUpdateFields(version=3, email="other@test.com")
 
@@ -232,11 +232,13 @@ async def test_service_update_conflict(mock_repo, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_service_update_conflict_etag(mock_repo, mock_session):
+async def test_service_update_conflict_etag(
+    mock_repo, mock_session, converter: Converter
+):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = cur
 
-    service = RegistrationService(mock_session, mock_repo)
+    service = RegistrationService(mock_session, mock_repo, converter)
 
     update = RegistrationUpdateFields(email="other@test.com")
 
@@ -245,11 +247,11 @@ async def test_service_update_conflict_etag(mock_repo, mock_session):
 
 
 @pytest.mark.asyncio
-async def test_service_update_not_found(mock_repo, mock_session):
+async def test_service_update_not_found(mock_repo, mock_session, converter: Converter):
     cur = Registration(event_id="test", email="test@test.com")
     mock_repo.get.return_value = None
 
-    service = RegistrationService(mock_session, mock_repo)
+    service = RegistrationService(mock_session, mock_repo, converter)
 
     update = RegistrationUpdateFields(version=cur.version, email="other@test.com")
 

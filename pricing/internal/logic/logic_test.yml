@@ -1,0 +1,18 @@
+---
+test1: true
+test2:
+  - true
+  - 1
+test3:
+  - 0
+  - true
+test4:
+  - or:
+      - a == 1
+      - b == 2
+test5:
+  or:
+    - a == 1
+    - and:
+        - a > 0
+        - b == 2

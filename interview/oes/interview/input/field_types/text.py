@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator, Mapping
 from enum import Enum
 from typing import Any, Literal
 
-from attrs import field, frozen
+from attrs import frozen
 from cattrs import Converter
 from email_validator import EmailNotValidError, validate_email
 from oes.interview.input.field_template import FieldTemplateBase
@@ -31,10 +31,10 @@ class TextFieldTemplate(FieldTemplateBase):
         return str
 
     type: Literal["text"] = "text"
-    _optional: bool = field(default=False, alias="optional")
+    optional: bool = False
     default: str | None = None
     default_expr: Expression | None = None
-    min: int = 0
+    min: int = 1
     max: int = 300
     regex: str | None = None
     regex_js: str | None = None
@@ -44,13 +44,13 @@ class TextFieldTemplate(FieldTemplateBase):
     autocomplete: str | None = None
 
     @property
-    def optional(self) -> bool:
-        return self._optional
+    def is_optional(self) -> bool:
+        return self.optional
 
     def get_schema(self, context: TemplateContext) -> dict[str, Any]:
         schema = {
             **super().get_schema(context),
-            "type": ["string", "null"] if self.optional else "string",
+            "type": ["string", "null"] if self.is_optional else "string",
             "minLength": self.min,
             "maxLength": self.max,
         }
@@ -67,10 +67,10 @@ class TextFieldTemplate(FieldTemplateBase):
             schema["pattern"] = pattern
 
         if self.input_mode:
-            schema["x-input-mode"] = self.input_mode
+            schema["x-inputMode"] = self.input_mode
 
         if self.autocomplete:
-            schema["x-autocomplete"] = self.autocomplete
+            schema["x-autoComplete"] = self.autocomplete
 
         format_str = _get_format_str(self.format)
         if format_str:

@@ -1,2 +1,3 @@
 ---
 db_url: postgresql+asyncpg:///
+amqp_url: amqp://guest:guest@localhost/

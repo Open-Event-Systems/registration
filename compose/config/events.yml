@@ -18,9 +18,9 @@ events:
       - id: upgrade-registration
         title: Upgrade Registration
         when: >-
-          "sponsor" not in registration.option_ids
+          "sponsor" not in registration.options
 
     registration_display:
       title: "{{ registration.preferred_name or registration.first_name }}"
       subtitle: >-
-        {{ "Sponsor" if "sponsor" in registration.option_ids else "Basic" }}
+        {{ "Sponsor" if "sponsor" in registration.options else "Basic" }}

@@ -19,28 +19,28 @@ def test_set(state: InterviewState):
     context = InterviewContext(state=state)
     step = SetStep(parse_pointer("a.x"), Expression("'y'", default_jinja2_env))
     result = step(context)
-    assert result.state.data == make_immutable({"a": {"b": "c", "x": "y"}})
+    assert result.context.state.data == make_immutable({"a": {"b": "c", "x": "y"}})
 
 
 def test_set_referencing_context(state: InterviewState):
     context = InterviewContext(state=state)
     step = SetStep(parse_pointer("a.x"), Expression("c", default_jinja2_env))
     result = step(context)
-    assert result.state.data == make_immutable({"a": {"b": "c", "x": True}})
+    assert result.context.state.data == make_immutable({"a": {"b": "c", "x": True}})
 
 
 def test_set_diff(state: InterviewState):
     context = InterviewContext(state=state)
     step = SetStep(parse_pointer("a.b"), Expression("1", default_jinja2_env))
     result = step(context)
-    assert result.state.data == make_immutable({"a": {"b": 1}})
+    assert result.context.state.data == make_immutable({"a": {"b": 1}})
 
 
 def test_set_no_diff(state: InterviewState):
     context = InterviewContext(state=state)
     step = SetStep(parse_pointer("a.b"), Expression("'c'", default_jinja2_env))
     result = step(context)
-    assert result.state == state
+    assert result.context.state == state
 
 
 def test_set_raises_proxy_error(state: InterviewState):

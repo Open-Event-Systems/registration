@@ -9,24 +9,34 @@ from oes.utils import configure_converter, setup_logging
 from oes.utils.sanic import setup_app
 from oes.web.cart import CartService
 from oes.web.config import get_config
-from oes.web.interview import InterviewService
-from oes.web.payment import PaymentService
-from oes.web.registration import RegistrationService
 from oes.web.routes.common import response_converter
 from sanic import Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():
     """CLI wrapper."""
-    os.execlp("sanic", "oes-web-service", "oes.web.main.create_app", *sys.argv[1:])
+    os.execlp(
+        "sanic",
+        "oes-web-service",
+        "--single-process",
+        "oes.web.main.create_app",
+        *sys.argv[1:]
+    )
 
 
 def create_app() -> Sanic:
     """Main app factory."""
+    from oes.web.interview import InterviewService
+    from oes.web.payment import PaymentService
+    from oes.web.registration import RegistrationService
     from oes.web.routes import event, payment, selfservice
 
     config = get_config()
     app = Sanic("Web", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
     setup_logging()
 
     configure_converter(response_converter.converter)

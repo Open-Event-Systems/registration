@@ -3,20 +3,21 @@
 from datetime import datetime
 
 from loguru import logger
+from oes.auth.auth import Authorization, AuthRepo
 from oes.auth.config import Config
 from oes.auth.token import (
     DEFAULT_REFRESH_TOKEN_LIFETIME,
-    GUEST_REFRESH_TOKEN_LIFETIME,
     REFRESH_TOKEN_REUSE_GRACE_PERIOD,
     AccessToken,
     RefreshToken,
+    RefreshTokenRepo,
     TokenError,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class AuthService:
-    """Auth service."""
+class AccessTokenService:
+    """Access token service."""
 
     def __init__(self, config: Config):
         self.config = config
@@ -40,55 +41,55 @@ class AuthService:
 class RefreshTokenService:
     """Refresh token service."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, repo: RefreshTokenRepo, auth_repo: AuthRepo, db: AsyncSession):
+        self.repo = repo
+        self.auth_repo = auth_repo
         self.db = db
 
-    async def create(
-        self, account_id: str | None = None, email: str | None = None
-    ) -> RefreshToken:
-        """Create a new refresh token."""
+    async def create(self, authorization: Authorization) -> RefreshToken:
+        """Create a new refresh token for an authorization."""
         now = datetime.now().astimezone()
-        # TODO: revisit this
-        exp = now + (
-            DEFAULT_REFRESH_TOKEN_LIFETIME if email else GUEST_REFRESH_TOKEN_LIFETIME
+        exp = now + DEFAULT_REFRESH_TOKEN_LIFETIME
+        exp = (
+            min(exp, authorization.date_expires) if authorization.date_expires else exp
         )
+
+        current = await self.repo.get(authorization.id)
+        if current:
+            await self.repo.delete(current)
+
         token = RefreshToken(
-            date_issued=now,
+            auth_id=authorization.id,
+            date_created=now,
             date_expires=exp,
-            account_id=account_id,
-            email=email,
-            date_last_used=now,
+            authorization=authorization,
         )
-        self.db.add(token)
-        await self.db.flush()
+        self.repo.add(token)
         return token
 
     async def refresh(self, token_str: str) -> RefreshToken:
         """Get an updated refresh token."""
         now = datetime.now().astimezone()
-        token_id, token_value = _split_token_str(token_str)
-        token = await self.db.get(RefreshToken, token_id, with_for_update=True)
+        auth_id, token_value = _split_token_str(token_str)
+        auth = await self.auth_repo.get(auth_id, lock=True)
+        if not auth:
+            raise TokenError("No auth found")
+
+        token = await self.repo.get(auth_id)
         if not token:
             raise TokenError("Refresh token not found")
-        if not token.is_valid(now=now):
+        elif not token.is_valid(now=now):
             raise TokenError("Refresh token is expired")
-
-        if token.token != token_value:
-            if now >= token.date_last_used + REFRESH_TOKEN_REUSE_GRACE_PERIOD:
-                logger.warning(f"Revoked token {token.id} due to re-use")
+        elif token.token != token_value:
+            if now >= token.date_created + REFRESH_TOKEN_REUSE_GRACE_PERIOD:
+                logger.warning(f"Revoked token for {auth.id} due to re-use")
                 await self.revoke_token(token)
                 await self.db.commit()
             raise TokenError("Token value did not match")
 
-        # TODO: revisit this
-        exp = now + (
-            DEFAULT_REFRESH_TOKEN_LIFETIME
-            if token.email
-            else GUEST_REFRESH_TOKEN_LIFETIME
-        )
-        token.refresh(exp=exp, now=now)
+        new_token = await self.create(auth)
 
-        return token
+        return new_token
 
     async def revoke_token(self, token: RefreshToken):
         """Revoke a token."""
@@ -96,5 +97,5 @@ class RefreshTokenService:
 
 
 def _split_token_str(token_str: str) -> tuple[str, str]:
-    token_id, _, token = token_str.partition("-")
-    return token_id, token
+    auth_id, _, token = token_str.partition("-")
+    return auth_id, token

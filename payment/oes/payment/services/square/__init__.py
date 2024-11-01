@@ -1,0 +1,1 @@
+"""Square payment package."""

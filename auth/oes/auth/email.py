@@ -20,7 +20,7 @@ MIN_RESEND_INTERVAL = timedelta(minutes=2)
 EXPIRATION_TIME = timedelta(minutes=10)
 """Email expiration time."""
 
-TOKEN_LENGTH = 9
+TOKEN_LENGTH = 6
 """Token length."""
 
 
@@ -90,7 +90,7 @@ class EmailAuthService:
         if send:
             await self.mq.publish(
                 {
-                    "email": email,
+                    "to": email,
                     "code": f"{entity.code[0:3]} {entity.code[3:6]} {entity.code[6:9]}",
                     "date": entity.date_sent.isoformat(),
                 }

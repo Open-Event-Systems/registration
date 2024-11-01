@@ -8,14 +8,14 @@ from attrs import field, frozen
 from immutabledict import immutabledict
 from oes.interview.input.question import ValidationError
 from oes.interview.interview.interview import Interview, make_interview_context
-from oes.interview.interview.state import InterviewState
+from oes.interview.interview.state import InterviewState, ParentInterviewContext
 from oes.interview.interview.step_types.ask import AskResult
 from oes.interview.interview.step_types.exit import ExitResult
 from oes.interview.interview.update import update_interview
 from oes.interview.storage import StorageService
 from oes.utils.request import BadRequest, CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
-from sanic import Blueprint, NotFound, Request
+from sanic import Blueprint, HTTPResponse, NotFound, Request
 
 routes = Blueprint("interview")
 
@@ -84,7 +84,9 @@ async def start_interview(
         context=req.context,
         data=req.data,
     )
-    context = make_interview_context(interview.questions, interview.steps, state)
+    context = make_interview_context(
+        interview.questions, interview.steps, state, interviews
+    )
     key = await storage.put(context)
     update_url = request.url_for("interview.update_interview_route")
     return InterviewResponse(
@@ -107,8 +109,8 @@ async def update_interview_route(
         exc = BadRequest("Invalid input")
         exc.status_code = 422
         raise exc
-    key = await storage.put(result_ctx)
     update_url = request.url_for("interview.update_interview_route")
+    key = await storage.put(result_ctx)
     return InterviewResponse(
         key,
         result_ctx.state.completed,
@@ -130,6 +132,8 @@ async def completed_interview_route(
     if now >= interview.state.date_expires:
         raise NotFound
 
+    assert not isinstance(interview.state.target, ParentInterviewContext)
+
     return InterviewResultResponse(
         date_started=interview.state.date_started,
         date_expires=interview.state.date_expires,
@@ -137,3 +141,10 @@ async def completed_interview_route(
         context=interview.state.context,
         data=interview.state.data,
     )
+
+
+@routes.get("/_healthcheck")
+async def healthcheck(request: Request, storage: StorageService) -> HTTPResponse:
+    """Health check endpoint."""
+    await storage.get("")
+    return HTTPResponse(status=204)

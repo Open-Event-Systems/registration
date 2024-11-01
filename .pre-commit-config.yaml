@@ -21,8 +21,8 @@ repos:
     hooks:
       - id: black
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v3.1.0
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.3.0
     hooks:
       - id: prettier
         types_or:
@@ -71,11 +71,6 @@ repos:
         args: [-p, cart]
 
       - id: pyright
-        name: pyright (pricing)
-        files: ^pricing/
-        args: [-p, pricing]
-
-      - id: pyright
         name: pyright (payment)
         files: ^payment/
         args: [-p, payment]
@@ -84,11 +79,6 @@ repos:
         name: pyright (registration)
         files: ^registration/
         args: [-p, registration]
-
-      - id: pyright
-        name: pyright (email)
-        files: ^email/
-        args: [-p, email]
 
       - id: pyright
         name: pyright (web)

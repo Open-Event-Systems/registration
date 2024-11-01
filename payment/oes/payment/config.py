@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import typed_settings as ts
 from cattrs import Converter
+from jinja2.sandbox import ImmutableSandboxedEnvironment
 from oes.payment.payment import PaymentMethodConfig
 from oes.payment.types import PaymentService
 from oes.utils.config import get_loaders
@@ -15,6 +16,7 @@ from oes.utils.logic import (
     make_value_or_evaluable_structure_fn,
     make_when_condition_structure_fn,
 )
+from oes.utils.template import Expression, make_expression_structure_fn
 from sqlalchemy import URL, make_url
 
 ENTRY_POINT_GROUP = "oes.payment.services"
@@ -28,6 +30,9 @@ class Config:
         default=make_url("postgresql+asyncpg:///payment"),
         converter=lambda v: make_url(v),
         help="the database URL",
+    )
+    amqp_url: str = ts.option(
+        default="amqp://guest:guest@localhost/", help="the AMQP server URL"
     )
 
     services: Mapping[str, Mapping[str, Any]] = ts.option(
@@ -60,10 +65,15 @@ def get_payment_service_factory(
 
 _converter = ts.converters.get_default_cattrs_converter()
 
+_jinja2_env = ImmutableSandboxedEnvironment()
+
 _converter.register_structure_hook(
-    ValueOrEvaluable,
+    Expression, make_expression_structure_fn(_jinja2_env)
+)
+_converter.register_structure_hook_func(
+    lambda cls: cls == ValueOrEvaluable,
     make_value_or_evaluable_structure_fn(_converter),
 )
-_converter.register_structure_hook(
-    WhenCondition, make_when_condition_structure_fn(_converter)
+_converter.register_structure_hook_func(
+    lambda cls: cls == WhenCondition, make_when_condition_structure_fn(_converter)
 )

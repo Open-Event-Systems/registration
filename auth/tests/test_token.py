@@ -7,7 +7,7 @@ from oes.auth.token import AccessToken, TokenError
 def test_encode_decode():
     now = datetime.now().astimezone().replace(microsecond=0)
     exp = now + timedelta(hours=1)
-    tok = AccessToken("oes", exp, "at")
+    tok = AccessToken("oes", exp, "at", "1")
     enc = tok.encode(key="test")
     dec = tok.decode(enc, key="test")
     assert dec == tok
@@ -16,7 +16,7 @@ def test_encode_decode():
 def test_decode_key_error():
     now = datetime.now().astimezone().replace(microsecond=0)
     exp = now + timedelta(hours=1)
-    tok = AccessToken("oes", exp, "at")
+    tok = AccessToken("oes", exp, "at", "1")
     enc = tok.encode(key="test")
     with pytest.raises(TokenError):
         tok.decode(enc, key="wrong")
@@ -25,7 +25,7 @@ def test_decode_key_error():
 def test_decode_expired_error():
     now = datetime.now().astimezone().replace(microsecond=0)
     exp = now - timedelta(hours=1)
-    tok = AccessToken("oes", exp, "at")
+    tok = AccessToken("oes", exp, "at", "1")
     enc = tok.encode(key="test")
     with pytest.raises(TokenError):
         tok.decode(enc, key="test")
@@ -34,7 +34,7 @@ def test_decode_expired_error():
 def test_decode_type_error():
     now = datetime.now().astimezone().replace(microsecond=0)
     exp = now + timedelta(hours=1)
-    tok = AccessToken("oes", exp, "X")  # type: ignore
+    tok = AccessToken("oes", exp, "X", "1")  # type: ignore
     enc = tok.encode(key="test")
     with pytest.raises(TokenError):
         tok.decode(enc, key="test")
@@ -43,7 +43,7 @@ def test_decode_type_error():
 def test_decode_aud_error():
     now = datetime.now().astimezone().replace(microsecond=0)
     exp = now + timedelta(hours=1)
-    tok = AccessToken("other", exp, "at")  # type: ignore
+    tok = AccessToken("other", exp, "at", "1")  # type: ignore
     enc = tok.encode(key="test")
     with pytest.raises(TokenError):
         tok.decode(enc, key="test")

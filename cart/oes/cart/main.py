@@ -19,11 +19,20 @@ from oes.utils import configure_converter
 from oes.utils.sanic import setup_app, setup_database
 from redis.asyncio import Redis
 from sanic import Request, Sanic
+from sanic.worker.manager import WorkerManager
+
+WorkerManager.THRESHOLD = 1200  # type: ignore
 
 
 def main():
     """CLI wrapper."""
-    os.execlp("sanic", "oes-cart-service", "oes.cart.main.create_app", *sys.argv[1:])
+    os.execlp(
+        "sanic",
+        "oes-cart-service",
+        "--single-process",
+        "oes.cart.main.create_app",
+        *sys.argv[1:]
+    )
 
 
 def create_app() -> Sanic:
@@ -31,7 +40,8 @@ def create_app() -> Sanic:
     uvloop.install()
 
     config = get_config()
-    app = Sanic("Cart")
+    app = Sanic("Cart", configure_logging=False)
+    app.config.PROXIES_COUNT = 1
 
     configure_converter(response_converter.converter)
     response_converter.converter.register_unstructure_hook(

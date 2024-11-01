@@ -28,7 +28,7 @@ class ExitStep:
 
     def __call__(self, context: InterviewContext) -> UpdateResult:
         return UpdateResult(
-            context.state,
+            context,
             ExitResult(
                 title=self.exit.render(context.state.template_context),
                 description=(

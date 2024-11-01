@@ -13,18 +13,27 @@ from oes.payment.payment import (
     PaymentMethodConfig,
     PaymentResult,
     PaymentServiceUnsupported,
+    PaymentStatus,
     UpdatePaymentRequest,
+    make_receipt_id,
 )
 from oes.payment.pricing import PricingResult
 from oes.payment.types import CartData, PaymentService, UpdatablePaymentService
 from oes.utils.logic import evaluate
 from oes.utils.orm import Repo
+from sqlalchemy import select
 
 
 class PaymentRepo(Repo[Payment, str]):
     """Payment repository."""
 
     entity_type = Payment
+
+    async def get_by_receipt_id(self, receipt_id: str) -> Payment | None:
+        """Get a payment by receipt ID."""
+        q = select(Payment).where(Payment.receipt_id == receipt_id)
+        res = await self.session.execute(q)
+        return res.scalar()
 
 
 class PaymentServicesSvc:
@@ -80,6 +89,7 @@ class PaymentSvc:
         cart_id: str,
         cart_data: CartData,
         pricing_result: PricingResult,
+        email: str | None,
     ) -> PaymentResult:
         """Create a payment."""
         svc = self._get_service(service)
@@ -90,12 +100,14 @@ class PaymentSvc:
             cart_id=cart_id,
             cart_data=cart_data,
             pricing_result=pricing_result,
+            email=email,
         )
         result = await method_obj.create_payment(req)
         payment = Payment(
             id=result.id,
             service=result.service,
             external_id=result.external_id,
+            receipt_id=None,
             status=result.status,
             cart_id=cart_id,
             cart_data=dict(cart_data),
@@ -125,6 +137,11 @@ class PaymentSvc:
         payment.status = res.status
         payment.date_closed = res.date_closed
         payment.data = {**payment.data, **res.data}
+
+        # assign receipt ID
+        if payment.receipt_id is None and payment.status == PaymentStatus.completed:
+            payment.receipt_id = make_receipt_id()
+
         return res
 
     async def cancel_payment(self, payment: Payment) -> PaymentResult:

@@ -26,12 +26,12 @@ class FieldTemplateBase(ABC):
 
     @property
     @abstractmethod
-    def optional(self) -> bool: ...
+    def is_optional(self) -> bool: ...
 
     def get_field(self, context: TemplateContext) -> Field:
         schema = self.get_schema(context)
         validators = self.get_validators(context)
-        return Field(self.python_type, self.optional, schema, tuple(validators))
+        return Field(self.python_type, self.is_optional, schema, tuple(validators))
 
     def get_schema(self, context: TemplateContext) -> dict[str, Any]:
         schema = {
@@ -52,10 +52,8 @@ class FieldTemplateBase(ABC):
 
     def validate_type(self, value):
         """Validate the value type."""
-        if (
-            value is None
-            and not self.optional
-            or not isinstance(value, self.python_type)
+        if not (value is None and self.is_optional) and not isinstance(
+            value, self.python_type
         ):
             raise ValueError("Invalid value")
         return value
@@ -105,7 +103,7 @@ class SelectFieldTemplateBase(FieldTemplateBase, ABC):
         return {
             self.get_option_id(idx, opt): opt
             for idx, opt in with_idx
-            if evaluate(opt, context)
+            if evaluate(opt.when, context)
         }
 
     def get_option_id(self, index: int, option: SelectFieldOptionBase) -> str:
@@ -136,11 +134,11 @@ class SelectFieldTemplateBase(FieldTemplateBase, ABC):
     def _get_scalar_schema(self, context: TemplateContext) -> dict[str, Any]:
         opts = self.get_options(context)
         items = [opt.get_schema(opt_id, context) for opt_id, opt in opts.items()]
-        if self.optional:
+        if self.is_optional:
             items.append({"type": "null"})
         schema = {
             **super().get_schema(context),
-            "type": ["string", "null"] if self.optional else "string",
+            "type": ["string", "null"] if self.is_optional else "string",
             "oneOf": items,
         }
         return schema
@@ -164,7 +162,7 @@ class SelectFieldTemplateBase(FieldTemplateBase, ABC):
             converted = self.convert_options(options, context, value)
             return converted
         else:
-            if value is None and self.optional:
+            if value is None and self.is_optional:
                 return value
             return self.convert_option(options, context, value)
 
@@ -201,7 +199,9 @@ class SelectFieldTemplateBase(FieldTemplateBase, ABC):
 
     def validate_type(self, value: object) -> Any | None:
         if self.multi:
-            if (
+            if value is None:
+                return []
+            elif (
                 not isinstance(value, Sequence)
                 or isinstance(value, str)
                 or any(not isinstance(v, str) for v in value)

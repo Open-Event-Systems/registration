@@ -1,5 +1,6 @@
 """Field/question serialization."""
 
+import functools
 from collections.abc import Callable, Mapping
 from importlib.metadata import entry_points
 from typing import Any
@@ -25,6 +26,7 @@ def make_field_template_structure_fn(
     return structure
 
 
+@functools.cache
 def get_field_template_factory(
     field_type: str,
 ) -> Callable[[Mapping[str, Any], Converter], FieldTemplate]:
