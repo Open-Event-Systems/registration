@@ -2,136 +2,270 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	print "print/pkg"
-	"strconv"
+	"path/filepath"
+	"print/internal/config"
+	"print/internal/render"
+	"print/internal/storage"
+
+	"github.com/nikolalohinski/gonja/v2"
+	"github.com/nikolalohinski/gonja/v2/loaders"
 )
 
-func makeMux(config *print.Config) *http.ServeMux {
+var ErrNotFound = errors.New("not found")
 
-	templates, err := config.LoadTemplates()
-	if err != nil {
-		panic(err)
-	}
+func makeMux(cfg *config.Config) *http.ServeMux {
 
-	limitChan := make(chan struct{}, 1)
+	tmplConfig := gonja.DefaultConfig
+	loader := loaders.MustNewFileSystemLoader(".")
+	env := gonja.DefaultEnvironment
 
-	createFile := func(eventId string, id string, version int, data map[string]any) (*os.File, error) {
-		template := templates[eventId]
-		if template == nil {
-			return nil, fmt.Errorf("no template for event: %s", eventId)
+	eventDocTypes := cfg.LoadEventDocumentTypes(tmplConfig, loader, env)
+
+	storageObj := storage.NewStorage(cfg.Storage)
+	renderer := render.NewRenderer(cfg.ChromiumExec, 1)
+
+	// Get a registration from the registration service
+	getRegistration := func(eventId string, id string) (map[string]any, error) {
+		res, err := http.Get(fmt.Sprintf("%s/events/%s/registrations/%s", cfg.RegistrationURL, eventId, id))
+		if err != nil {
+			return nil, err
+		}
+		defer res.Body.Close()
+		if res.StatusCode != 200 {
+			return nil, ErrNotFound
 		}
 
-		outputFileName := print.GetFilePath(config.Storage, eventId, id, version)
-		err := print.EnsureStoragePathExists(config.Storage, eventId, id)
+		bodyData, err := io.ReadAll(res.Body)
 		if err != nil {
 			return nil, err
 		}
 
-		limitChan <- struct{}{}
-		err = print.RenderPDF(config.ChromiumExec, template, outputFileName, data)
-		<-limitChan
+		var data map[string]any
+		err = json.Unmarshal(bodyData, &data)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	}
+
+	// Get a slice of available document types and their hashes
+	listDocTypes := func(eventId string, registration map[string]any) ([][2]string, error) {
+		types, ok := eventDocTypes[eventId]
+		if !ok {
+			return nil, ErrNotFound
+		}
+
+		var res [][2]string
+
+		for tid, typ := range types {
+			if typ.EvaluateCondition(registration) {
+				hash, err := typ.GetHash(registration)
+				if err != nil {
+					return nil, err
+				} else {
+					res = append(res, [2]string{tid, hash})
+				}
+			}
+		}
+		return res, nil
+	}
+
+	// Render a document
+	renderDoc := func(eventId string, id string, docType string, hash string, registration map[string]any) error {
+		typ := config.GetDocumentType(eventDocTypes, eventId, docType)
+		if typ == nil {
+			return ErrNotFound
+		}
+
+		os.MkdirAll(storageObj.GetDocDir(eventId, id, docType), 0o755)
+		tmpf, err := os.CreateTemp("", "render-*.html")
+		if err != nil {
+			return err
+		}
+		defer os.Remove(tmpf.Name())
+		defer tmpf.Close()
+
+		err = typ.Render(tmpf, registration)
+		if err != nil {
+			return err
+		}
+		tmpf.Close()
+
+		err = renderer.Render(tmpf.Name(), storageObj.GetDocPath(eventId, id, docType, hash))
+		return err
+	}
+
+	getFile := func(eventId string, id string, docType string, filename string) *os.File {
+		path := filepath.Join(storageObj.GetDocDir(eventId, id, docType), filename)
+		f, err := os.Open(path)
+		if err != nil {
+			return nil
+		}
+		return f
+	}
+
+	getOrRenderFile := func(eventId string, id string, docType string, filename string) (*os.File, error) {
+		existingFile := getFile(eventId, id, docType, filename)
+		if existingFile != nil {
+			return existingFile, nil
+		}
+
+		registration, err := getRegistration(eventId, id)
 		if err != nil {
 			return nil, err
 		}
 
-		return os.Open(outputFileName)
+		typ := config.GetDocumentType(eventDocTypes, eventId, docType)
+		if typ == nil {
+			return nil, ErrNotFound
+		}
+
+		if !typ.EvaluateCondition(registration) {
+			return nil, ErrNotFound
+		}
+
+		hash, err := typ.GetHash(registration)
+		if err != nil {
+			return nil, err
+		}
+
+		hashFilename := fmt.Sprintf("%s.pdf", hash)
+		if hashFilename != filename {
+			return nil, ErrNotFound
+		}
+
+		err = renderDoc(eventId, id, docType, hash, registration)
+		if err != nil {
+			return nil, err
+		}
+
+		return os.Open(storageObj.GetDocPath(eventId, id, docType, hash))
 	}
 
-	getPDF := func(w http.ResponseWriter, req *http.Request) {
-		eventId := req.PathValue("event_id")
-		id := req.PathValue("id")
-		versionStr := req.URL.Query().Get("version")
+	mux := http.NewServeMux()
 
-		if len(id) < 2 {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		version, err := strconv.ParseInt(versionStr, 10, 32)
-		if err != nil {
-			version = 1
-		}
-
-		fileName := print.GetFilePath(config.Storage, eventId, id, int(version))
-		file, err := os.Open(fileName)
-		if err != nil {
-			http.NotFound(w, req)
-			return
-		}
-
-		data, err := io.ReadAll(file)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Printf("error reading %s: %s", fileName, err)
-			return
-		}
-
-		w.Write(data)
-	}
-
-	printToPDF := func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "POST" {
+	mux.HandleFunc("/events/{event_id}/document-types", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
-		body, err := io.ReadAll(req.Body)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+		eventId := req.PathValue("event_id")
+		types, ok := eventDocTypes[eventId]
+		if !ok {
+			http.NotFound(w, req)
 			return
 		}
 
-		jsonBody := make(map[string]any)
-		err = json.Unmarshal(body, &jsonBody)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
+		res := make(map[string]string)
+		for tid, typ := range types {
+			res[tid] = typ.Name
 		}
 
-		eventId, eventIdOk := jsonBody["event_id"].(string)
-		versionFloat, verOk := jsonBody["version"].(float64)
-		id, idOk := jsonBody["id"].(string)
-
-		if !eventIdOk || !idOk || len(id) < 2 {
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-
-		var version int
-
-		if !verOk {
-			version = 1
-		} else {
-			version = int(versionFloat)
-		}
-
-		outputFile, err := createFile(eventId, id, version, jsonBody)
-
+		jsonData, err := json.Marshal(res)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Print(err)
 			return
 		}
-		defer outputFile.Close()
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Length", fmt.Sprintf("%d", len(jsonData)))
+		w.WriteHeader(200)
+		w.Write(jsonData)
+	})
 
-		outputData, err := io.ReadAll(outputFile)
+	mux.HandleFunc("/events/{event_id}/registrations/{id}/documents", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		eventId := req.PathValue("event_id")
+		id := req.PathValue("id")
+		registration, err := getRegistration(eventId, id)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				http.NotFound(w, req)
+				return
+			} else {
+				log.Print(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		types, err := listDocTypes(eventId, registration)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				http.NotFound(w, req)
+				return
+			} else {
+				log.Print(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+
+		res := make(map[string]string)
+		var scheme string = "http:"
+		fwdProto := req.Header.Get("X-Forwarded-Proto")
+		if fwdProto != "" {
+			scheme = fwdProto + ":"
+		}
+
+		for _, entry := range types {
+			res[entry[0]] = fmt.Sprintf("%s//%s/events/%s/registrations/%s/documents/%s/%s.pdf", scheme, req.Host, eventId, id, entry[0], entry[1])
+		}
+		jsonData, err := json.Marshal(res)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			log.Print(err)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add("Content-Length", fmt.Sprintf("%d", len(jsonData)))
+		w.WriteHeader(200)
+		w.Write(jsonData)
+	})
+
+	mux.HandleFunc("/events/{event_id}/registrations/{id}/documents/{type}/{filename}", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method != "GET" && req.Method != "HEAD" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
 		}
 
-		w.Write(outputData)
-	}
+		eventId := req.PathValue("event_id")
+		id := req.PathValue("id")
+		docType := req.PathValue("type")
+		filename := req.PathValue("filename")
+		f, err := getOrRenderFile(eventId, id, docType, filename)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				http.NotFound(w, req)
+				return
+			} else {
+				log.Print(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+		}
+		defer f.Close()
+		data, _ := io.ReadAll(f)
+		f.Close()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/events/{event_id}/registrations/{id}/badge", getPDF)
-	mux.HandleFunc("/print-to-pdf", printToPDF)
+		w.Header().Add("Content-Type", "application/pdf")
+		w.Header().Add("Content-Length", fmt.Sprintf("%d", len(data)))
+		w.WriteHeader(200)
+
+		if req.Method == "GET" {
+			w.Write(data)
+		}
+	})
+
 	return mux
 }
 
@@ -141,10 +275,7 @@ func main() {
 	}
 
 	cfgFileName := os.Args[1]
-	cfg, err := print.LoadConfig(cfgFileName)
-	if err != nil {
-		panic(err)
-	}
+	cfg := config.LoadConfig(cfgFileName)
 
 	mux := makeMux(cfg)
 

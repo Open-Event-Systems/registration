@@ -1,5 +1,18 @@
 ---
+registration_url: http://registration:8000
+print_url: http://print:8000
+amqp_url: amqp://guest:guest@localhost
 storage: /data
-templates:
-  example-event: /config/template.html
+events:
+  example-event:
+    document_types:
+      example:
+        name: Example
+        template: template.example.html
+        dependencies: [version]
+        when: status == "created"
+        print:
+          - server: localhost
+            destination: example
+            when: true
 chromium-exec: chromium-browser

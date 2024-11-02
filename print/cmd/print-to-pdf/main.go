@@ -7,26 +7,31 @@ import (
 	"io"
 	"log"
 	"os"
-	print "print/pkg"
+	"print/internal/config"
+	"print/internal/render"
+
+	"github.com/nikolalohinski/gonja/v2"
+	"github.com/nikolalohinski/gonja/v2/loaders"
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		log.Fatalf("usage: %s <config file> <output file>", os.Args[0])
+	if len(os.Args) != 4 {
+		log.Fatalf("usage: %s <config file> <document type> <output file>", os.Args[0])
 	}
 
 	cfgFileName := os.Args[1]
-	outputFileName := os.Args[2]
+	docType := os.Args[2]
+	outputFileName := os.Args[3]
 
-	cfg, err := print.LoadConfig(cfgFileName)
-	if err != nil {
-		panic(err)
-	}
+	cfg := config.LoadConfig(cfgFileName)
 
-	templates, err := cfg.LoadTemplates()
-	if err != nil {
-		panic(err)
-	}
+	tmplCfg := gonja.DefaultConfig
+	loader := loaders.MustNewFileSystemLoader(".")
+	env := gonja.DefaultEnvironment
+
+	eventDocTypes := cfg.LoadEventDocumentTypes(tmplCfg, loader, env)
+
+	renderer := render.NewRenderer(cfg.ChromiumExec, 1)
 
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
@@ -44,12 +49,25 @@ func main() {
 		panic(errors.New("invalid event_id"))
 	}
 
-	template := templates[eventId]
-	if template == nil {
-		panic(fmt.Errorf("no template for event: %s", eventId))
+	docTypeObj := config.GetDocumentType(eventDocTypes, eventId, docType)
+	if docTypeObj == nil {
+		panic(fmt.Errorf("invalid event/type: %s/%s", eventId, docType))
 	}
 
-	err = print.RenderPDF(cfg.ChromiumExec, template, outputFileName, dataObj)
+	tmpf, err := os.CreateTemp("", "render-*.html")
+	if err != nil {
+		panic(err)
+	}
+	defer os.Remove(tmpf.Name())
+	defer tmpf.Close()
+
+	err = docTypeObj.Render(tmpf, dataObj)
+	if err != nil {
+		panic(err)
+	}
+	tmpf.Close()
+
+	err = renderer.Render(tmpf.Name(), outputFileName)
 	if err != nil {
 		panic(err)
 	}

@@ -1,6 +1,6 @@
 **/*
 !cmd
-!pkg
+!internal
 !print.go
 !go.mod
 !go.sum

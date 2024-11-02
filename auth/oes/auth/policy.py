@@ -20,9 +20,15 @@ async def is_allowed(method: str, url: str, scope: Scopes) -> bool:  # noqa: CCR
         if parts[2] == "registrations":
             if len(parts) >= 5 and parts[4] == "self-service":
                 return Scope.selfservice in scope
+            elif len(parts) >= 5 and parts[4] == "documents":
+                # TODO: scope
+                return True
             else:
                 return await _check_registration_routes(method, scope)
         elif parts[2] == "update-registrations":
+            return True
+        elif parts[2] == "document-types":
+            # TODO: scope
             return True
         elif parts[2] == "self-service":
             return Scope.selfservice in scope

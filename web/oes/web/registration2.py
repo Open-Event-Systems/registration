@@ -88,6 +88,8 @@ class Registration(dict[str, Any]):
             and account_id == self.get("account_id")
             or bool(email)
             and email == self.get("email")
+            or not account_id
+            and not email  # when auth is disabled
         )
 
 

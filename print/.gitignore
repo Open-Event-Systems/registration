@@ -1,4 +1,6 @@
-print.yml
+/print.yml
+/template.html
 /print-api
 /print-to-pdf
+/print-worker
 /data
