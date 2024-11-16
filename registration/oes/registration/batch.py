@@ -27,6 +27,7 @@ class ErrorCode(str, Enum):
     status = "status"
     event = "event"
     access_code = "access_code"
+    check_in_id = "check_in_id"
 
 
 @define
@@ -80,7 +81,7 @@ class BatchChangeService:
             current,
             access_code_entities,
             [
-                self._check_change(
+                await self._check_change(
                     event_id,
                     current.get(c.id),
                     c,
@@ -145,7 +146,7 @@ class BatchChangeService:
         }
         return entities
 
-    def _check_change(
+    async def _check_change(
         self,
         event_id: str,
         registration: Registration | None,
@@ -153,6 +154,12 @@ class BatchChangeService:
         access_code: str | None,
         access_code_entity: AccessCode | None,
     ) -> BatchChangeResult:
+        check_in_id = change.extra_data.get("check_in_id")
+        if check_in_id:
+            from_check_in_id = await self.repo.get_by_check_in_id(event_id, check_in_id)
+        else:
+            from_check_in_id = None
+
         checks: list[Callable[[RegistrationBatchChangeFields], BatchChangeResult]] = [
             lambda c: _check_version(registration, c),
             lambda c: _check_status(registration, c),
@@ -160,6 +167,7 @@ class BatchChangeService:
             lambda c: _check_access_code(
                 access_code, access_code_entity, registration, c
             ),
+            lambda c: _check_check_in_id(from_check_in_id, registration, c),
         ]
         return functools.reduce(_apply_check, checks, BatchChangeResult(change))
 
@@ -234,3 +242,20 @@ def _check_access_code(
         change,
         ([ErrorCode.access_code] if access_code and not access_code_entity else []),
     )
+
+
+def _check_check_in_id(
+    from_check_in_id: Registration | None,
+    registration: Registration | None,
+    change: RegistrationBatchChangeFields,
+) -> BatchChangeResult:
+    # not a 100% guarantee, an ID could be set after the check but before
+    # applying the changes
+    check_in_id = change.extra_data.get("check_in_id")
+    if (
+        check_in_id
+        and from_check_in_id is not None
+        and (registration is None or registration.id != from_check_in_id.id)
+    ):
+        return BatchChangeResult(change, [ErrorCode.check_in_id])
+    return BatchChangeResult(change, [])

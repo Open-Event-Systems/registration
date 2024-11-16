@@ -69,6 +69,21 @@ async def read_registration(
     return response
 
 
+@routes.get("/by-check-in/<check_in_id>")
+@response_converter
+async def read_registration_by_check_in_id(
+    request: Request,
+    event_id: str,
+    check_in_id: str,
+    registration_repo: RegistrationRepo,
+) -> Registration:
+    """Read a registration by check-in ID."""
+    reg = raise_not_found(
+        await registration_repo.get_by_check_in_id(event_id, check_in_id)
+    )
+    return reg
+
+
 @routes.put("/<registration_id>")
 async def update_registration(
     request: Request,

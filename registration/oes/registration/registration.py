@@ -22,6 +22,9 @@ REGISTRATION_ID_LENGTH = 14
 REGISTRATION_ID_MAX_LENGTH = 36
 """Max length of the registration ID field."""
 
+CHECK_IN_ID_MAX_LENGTH = 8
+"""Max length of a check in ID."""
+
 
 class Status(str, Enum):
     """Registration status values."""
@@ -53,6 +56,12 @@ class Registration(Base, kw_only=True):
         Index(
             "ix_extra_data", text("extra_data jsonb_path_ops"), postgresql_using="gin"
         ),
+        Index(
+            "ix_check_in_id",
+            "event_id",
+            "check_in_id",
+            unique=True,
+        ),
     )
 
     id: Mapped[str] = mapped_column(
@@ -74,6 +83,9 @@ class Registration(Base, kw_only=True):
     last_name: Mapped[str | None] = mapped_column(default=None)
     email: Mapped[str | None] = mapped_column(default=None)
     account_id: Mapped[str | None] = mapped_column(default=None, index=True)
+    check_in_id: Mapped[str | None] = mapped_column(
+        String(CHECK_IN_ID_MAX_LENGTH), default=None
+    )
     extra_data: Mapped[JSON] = mapped_column(default_factory=dict)
 
     __mapper_args__ = {"version_id_col": version}
@@ -238,6 +250,17 @@ class RegistrationRepo(Repo[Registration, str]):
 
         res = await self.session.execute(q)
         return res.scalars().all()
+
+    async def get_by_check_in_id(
+        self, event_id: str, check_in_id: str
+    ) -> Registration | None:
+        """Get a registration by check-in ID."""
+        q = select(Registration).where(
+            Registration.event_id == event_id,
+            Registration.check_in_id == check_in_id,
+        )
+        res = await self.session.execute(q)
+        return res.scalar_one_or_none()
 
     async def search(
         self,
