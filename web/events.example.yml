@@ -21,3 +21,8 @@ events:
 
       display:
         title: "{{ registration.preferred_name or registration.first_name }}"
+
+    admin:
+      change_options:
+        - id: upgrade
+          title: Upgrade
