@@ -19,6 +19,7 @@ from sqlalchemy import (
     String,
     and_,
     func,
+    null,
     or_,
     select,
     text,
@@ -303,6 +304,15 @@ class RegistrationRepo(Repo[Registration, str]):
         )
         res = await self.session.execute(q)
         return res.scalar_one_or_none()
+
+    async def list_by_check_in_id(self, event_id: str) -> Sequence[Registration]:
+        """List registrations with check in IDs."""
+        q = select(Registration).where(
+            Registration.event_id == event_id, Registration.check_in_id != null()
+        )
+        q.order_by(Registration.check_in_id)
+        res = await self.session.execute(q)
+        return res.scalars().all()
 
     async def search(
         self,

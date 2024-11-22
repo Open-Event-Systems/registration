@@ -1,13 +1,37 @@
 """Registration module."""
 
+from collections.abc import Sequence
+
+from attrs import frozen
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.web.interview import InterviewService, get_interview_registrations
-from oes.web.registration import RegistrationService
-from oes.web.routes.common import InterviewStateRequestBody
+from oes.web.registration import Registration, RegistrationService
+from oes.web.routes.common import InterviewStateRequestBody, response_converter
 from oes.web.types import JSON
 from sanic import Blueprint, Forbidden, HTTPResponse, Request, json
 
 routes = Blueprint("registrations")
+
+
+@frozen
+class RegistrationCheckInResponse:
+    """By check-in ID response."""
+
+    registration: Registration
+    check_in_status: str | None
+
+
+@routes.get("/events/<event_id>/registrations/by-check-in-id")
+@response_converter
+async def list_registrations_by_check_in_id(
+    request: Request, event_id: str, registration_service: RegistrationService
+) -> Sequence[RegistrationCheckInResponse]:
+    """List registrations by check in ID."""
+    res = await registration_service.get_registrations_by_check_in_id(event_id)
+    return [
+        RegistrationCheckInResponse(registration=r, check_in_status="Pick up badge")
+        for r in res
+    ]
 
 
 @routes.post(

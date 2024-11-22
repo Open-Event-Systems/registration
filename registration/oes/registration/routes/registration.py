@@ -92,7 +92,19 @@ async def read_registration(
     return response
 
 
-@routes.get("/by-check-in/<check_in_id>")
+@routes.get("/by-check-in-id")
+@response_converter
+async def list_registrations_by_check_in_id(
+    request: Request,
+    event_id: str,
+    registration_repo: RegistrationRepo,
+) -> Sequence[Registration]:
+    """Read a registration by check-in ID."""
+    res = await registration_repo.list_by_check_in_id(event_id)
+    return res
+
+
+@routes.get("/by-check-in-id/<check_in_id>")
 @response_converter
 async def read_registration_by_check_in_id(
     request: Request,

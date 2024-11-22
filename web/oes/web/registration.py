@@ -1,7 +1,6 @@
 """Registration module."""
 
 from collections.abc import Iterable, Mapping, Sequence
-from datetime import datetime
 from typing import Any, Literal
 
 import httpx
@@ -75,11 +74,11 @@ class Registration(dict[str, Any]):
         return self["version"]
 
     @property
-    def date_created(self) -> datetime:
+    def date_created(self) -> str:
         return self["date_created"]
 
     @property
-    def date_updated(self) -> datetime | None:
+    def date_updated(self) -> str | None:
         return self["date_updated"]
 
     def has_permission(self, account_id: str | None, email: str | None) -> bool:
@@ -137,6 +136,18 @@ class RegistrationService:
             return None
         res.raise_for_status()
         return Registration(res.json())
+
+    async def get_registrations_by_check_in_id(
+        self, event_id: str
+    ) -> Sequence[Registration]:
+        """Get registrations by check in ID."""
+        url = (
+            f"{self.config.registration_service_url}/events"
+            f"/{event_id}/registrations/by-check-in-id"
+        )
+        res = await self.client.get(url)
+        res.raise_for_status()
+        return [Registration(r) for r in res.json()]
 
     async def check_batch_change(
         self,
