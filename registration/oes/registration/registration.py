@@ -253,6 +253,8 @@ class RegistrationRepo(Repo[Registration, str]):
             .order_by(Registration.date_created.desc())
         )
 
+        q = q.where(Registration.status == Status.created)
+
         or_clauses = []
 
         if account_id:
