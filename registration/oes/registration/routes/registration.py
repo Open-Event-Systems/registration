@@ -1,6 +1,7 @@
 """Registration routes."""
 
 from collections.abc import Sequence
+from datetime import datetime
 
 from oes.registration.event import EventStatsService
 from oes.registration.mq import MQService
@@ -29,11 +30,33 @@ async def list_registrations(
     registration_repo: RegistrationRepo,
 ) -> Sequence[Registration]:
     """List registrations."""
+    q = request.args.get("q", "")
+    all = request.args.get("all") == "true"
+    before_date_str = request.args.get("before_date")
+    before_id = request.args.get("before_id")
+    before_date = _parse_date(before_date_str) if before_date_str else None
     account_id = request.args.get("account_id")
     email = request.args.get("email")
+
+    if before_date and before_id:
+        before = (before_date, before_id)
+    else:
+        before = None
     return await registration_repo.search(
-        event_id=event_id, account_id=account_id, email=email
+        event_id=event_id,
+        query=q.lower().strip(),
+        all=all,
+        account_id=account_id,
+        email=email,
+        before=before,
     )
+
+
+def _parse_date(s: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(s).astimezone()
+    except Exception:
+        return None
 
 
 @routes.post("/")
