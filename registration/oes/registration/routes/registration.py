@@ -32,6 +32,7 @@ async def list_registrations(
     """List registrations."""
     q = request.args.get("q", "")
     all = request.args.get("all") == "true"
+    check_in_id = request.args.get("check_in_id")
     before_date_str = request.args.get("before_date")
     before_id = request.args.get("before_id")
     before_date = _parse_date(before_date_str) if before_date_str else None
@@ -46,6 +47,7 @@ async def list_registrations(
         event_id=event_id,
         query=q.lower().strip(),
         all=all,
+        check_in_id=check_in_id,
         account_id=account_id,
         email=email,
         before=before,
@@ -90,33 +92,6 @@ async def read_registration(
     response = response_converter.make_response(reg)
     response.headers["ETag"] = reg_service.get_etag(reg)
     return response
-
-
-@routes.get("/by-check-in-id")
-@response_converter
-async def list_registrations_by_check_in_id(
-    request: Request,
-    event_id: str,
-    registration_repo: RegistrationRepo,
-) -> Sequence[Registration]:
-    """Read a registration by check-in ID."""
-    res = await registration_repo.list_by_check_in_id(event_id)
-    return res
-
-
-@routes.get("/by-check-in-id/<check_in_id>")
-@response_converter
-async def read_registration_by_check_in_id(
-    request: Request,
-    event_id: str,
-    check_in_id: str,
-    registration_repo: RegistrationRepo,
-) -> Registration:
-    """Read a registration by check-in ID."""
-    reg = raise_not_found(
-        await registration_repo.get_by_check_in_id(event_id, check_in_id)
-    )
-    return reg
 
 
 @routes.put("/<registration_id>")

@@ -75,6 +75,8 @@ class AdminConfig:
     add_options: Sequence[AdminInterviewOption] = ()
     change_options: Sequence[AdminInterviewOption] = ()
 
+    registration_summary: Template | None = None
+
 
 @frozen
 class Event:

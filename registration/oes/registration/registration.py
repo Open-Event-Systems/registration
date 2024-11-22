@@ -305,15 +305,6 @@ class RegistrationRepo(Repo[Registration, str]):
         res = await self.session.execute(q)
         return res.scalar_one_or_none()
 
-    async def list_by_check_in_id(self, event_id: str) -> Sequence[Registration]:
-        """List registrations with check in IDs."""
-        q = select(Registration).where(
-            Registration.event_id == event_id, Registration.check_in_id != null()
-        )
-        q.order_by(Registration.check_in_id)
-        res = await self.session.execute(q)
-        return res.scalars().all()
-
     async def search(
         self,
         query: str = "",
@@ -321,6 +312,7 @@ class RegistrationRepo(Repo[Registration, str]):
         event_id: str,
         before: tuple[datetime, str] | None = None,
         all: bool = False,
+        check_in_id: str | None = None,
         account_id: str | None = None,
         email: str | None = None,
     ) -> Sequence[Registration]:
@@ -329,6 +321,11 @@ class RegistrationRepo(Repo[Registration, str]):
 
         if not all:
             q = q.where(Registration.status == Status.created)
+
+        if check_in_id == "":
+            q = q.where(Registration.check_in_id != null())
+        elif check_in_id is not None:
+            q = q.where(Registration.check_in_id.startswith(check_in_id.upper()))
 
         if account_id or email:
             acc_clauses = []

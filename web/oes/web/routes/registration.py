@@ -1,9 +1,8 @@
 """Registration module."""
 
-from collections.abc import Sequence
-
 from attrs import frozen
 from oes.utils.request import CattrsBody, raise_not_found
+from oes.web.config import Config
 from oes.web.interview import InterviewService, get_interview_registrations
 from oes.web.registration import Registration, RegistrationService
 from oes.web.routes.common import InterviewStateRequestBody, response_converter
@@ -21,17 +20,35 @@ class RegistrationCheckInResponse:
     check_in_status: str | None
 
 
-@routes.get("/events/<event_id>/registrations/by-check-in-id")
+@frozen
+class RegistrationSummaryResponse:
+    """Registration summary."""
+
+    summary: str | None
+
+
+@routes.get("/events/<event_id>/registrations/<registration_id>/summary")
 @response_converter
-async def list_registrations_by_check_in_id(
-    request: Request, event_id: str, registration_service: RegistrationService
-) -> Sequence[RegistrationCheckInResponse]:
-    """List registrations by check in ID."""
-    res = await registration_service.get_registrations_by_check_in_id(event_id)
-    return [
-        RegistrationCheckInResponse(registration=r, check_in_status="Pick up badge")
-        for r in res
-    ]
+async def read_registration_summary(
+    request: Request,
+    event_id: str,
+    registration_id: str,
+    config: Config,
+    registration_service: RegistrationService,
+) -> RegistrationSummaryResponse:
+    """Read a registration summary."""
+    event = raise_not_found(config.events.get(event_id))
+    reg = raise_not_found(
+        await registration_service.get_registration(event_id, registration_id)
+    )
+    # TODO: user info?
+    ctx = {"event": event.get_template_context(), "registration": dict(reg)}
+    summary = (
+        event.admin.registration_summary.render(ctx)
+        if event.admin.registration_summary
+        else None
+    )
+    return RegistrationSummaryResponse(summary)
 
 
 @routes.post(
