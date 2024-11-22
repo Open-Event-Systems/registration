@@ -8,8 +8,8 @@ from oes.utils.template import TemplateContext
 from oes.web.access_code import AccessCodeService
 from oes.web.cart import CartService
 from oes.web.config import Config, Event, RegistrationDisplay
-from oes.web.interview2 import InterviewService, InterviewState
-from oes.web.registration2 import InterviewOption, Registration, RegistrationService
+from oes.web.interview import InterviewService, InterviewState
+from oes.web.registration import InterviewOption, Registration, RegistrationService
 from oes.web.routes.common import response_converter
 from oes.web.routes.event import EventResponse
 from oes.web.selfservice import SelfServiceService, get_interview_data, get_option

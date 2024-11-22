@@ -8,7 +8,7 @@ import orjson
 from attrs import field, frozen
 from cattrs.preconf.orjson import make_converter
 from oes.web.config import Config
-from oes.web.registration2 import Registration
+from oes.web.registration import Registration
 from oes.web.types import JSON
 
 

@@ -9,7 +9,7 @@ from oes.utils.mapping import merge_mapping
 from oes.utils.template import TemplateContext
 from oes.web.access_code import AccessCode, AccessCodeInterviewOption, AccessCodeService
 from oes.web.config import Config, Event, RegistrationDisplay
-from oes.web.registration2 import (
+from oes.web.registration import (
     InterviewOption,
     Registration,
     RegistrationService,

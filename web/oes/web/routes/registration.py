@@ -1,8 +1,8 @@
 """Registration module."""
 
 from oes.utils.request import CattrsBody, raise_not_found
-from oes.web.interview2 import InterviewService, get_interview_registrations
-from oes.web.registration2 import RegistrationService
+from oes.web.interview import InterviewService, get_interview_registrations
+from oes.web.registration import RegistrationService
 from oes.web.routes.common import InterviewStateRequestBody
 from oes.web.types import JSON
 from sanic import Blueprint, Forbidden, HTTPResponse, Request, json

@@ -6,8 +6,8 @@ from attrs import frozen
 from oes.utils.request import raise_not_found
 from oes.web.admin import AdminService
 from oes.web.config import Config
-from oes.web.interview2 import InterviewService, InterviewState
-from oes.web.registration2 import RegistrationService
+from oes.web.interview import InterviewService, InterviewState
+from oes.web.registration import RegistrationService
 from oes.web.routes.common import response_converter
 from sanic import Blueprint, Request
 

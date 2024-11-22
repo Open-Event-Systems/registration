@@ -1,4 +1,4 @@
-from oes.web.registration2 import Registration
+from oes.web.registration import Registration
 
 
 def test_registration_object():

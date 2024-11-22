@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from oes.utils.logic import evaluate
 from oes.web.config import AdminInterviewOption, Config
-from oes.web.registration2 import Registration
+from oes.web.registration import Registration
 
 
 class AdminService:
