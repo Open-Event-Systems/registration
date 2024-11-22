@@ -42,6 +42,7 @@ func (r *Renderer) Render(inputFileName string, outputFileName string) error {
 		"--no-sandbox",
 		"--print-to-pdf="+tmpFile.Name(),
 		"--no-pdf-header-footer",
+		"--virtual-time-budget=5000",
 		inputFileName,
 	)
 	err = cmd.Run()

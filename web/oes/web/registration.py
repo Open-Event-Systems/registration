@@ -121,7 +121,7 @@ class RegistrationService:
 
         res = await self.client.get(url, params=params)
         res.raise_for_status()
-        return [Registration(r) for r in res.json()]
+        return [Registration(r["registration"]) for r in res.json()]
 
     async def get_registration(
         self, event_id: str, registration_id: str
@@ -135,7 +135,7 @@ class RegistrationService:
         if res.status_code == 404:
             return None
         res.raise_for_status()
-        return Registration(res.json())
+        return Registration(res.json()["registration"])
 
     async def get_registrations_by_check_in_id(
         self, event_id: str
@@ -147,7 +147,7 @@ class RegistrationService:
         )
         res = await self.client.get(url)
         res.raise_for_status()
-        return [Registration(r) for r in res.json()]
+        return [Registration(r["registration"]) for r in res.json()]
 
     async def check_batch_change(
         self,

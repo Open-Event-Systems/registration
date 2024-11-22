@@ -3,6 +3,7 @@
 from collections.abc import Sequence
 from datetime import datetime
 
+from attrs import frozen
 from oes.registration.event import EventStatsService
 from oes.registration.mq import MQService
 from oes.registration.registration import (
@@ -22,13 +23,34 @@ from sanic import Blueprint, HTTPResponse, Request, SanicException
 routes = Blueprint("registrations")
 
 
+@frozen
+class RegistrationResponse:
+    """Registration response."""
+
+    registration: Registration
+
+
+@frozen
+class RegistrationCreateRequestBody:
+    """Request body to create a registration."""
+
+    registration: RegistrationCreateFields
+
+
+@frozen
+class RegistrationUpdateRequestBody:
+    """Request body to update a registration."""
+
+    registration: RegistrationUpdateFields
+
+
 @routes.get("/")
 @response_converter
 async def list_registrations(
     request: Request,
     event_id: str,
     registration_repo: RegistrationRepo,
-) -> Sequence[Registration]:
+) -> Sequence[RegistrationResponse]:
     """List registrations."""
     q = request.args.get("q", "")
     all = request.args.get("all") == "true"
@@ -43,7 +65,7 @@ async def list_registrations(
         before = (before_date, before_id)
     else:
         before = None
-    return await registration_repo.search(
+    res = await registration_repo.search(
         event_id=event_id,
         query=q.lower().strip(),
         all=all,
@@ -52,6 +74,7 @@ async def list_registrations(
         email=email,
         before=before,
     )
+    return [RegistrationResponse(r) for r in res]
 
 
 def _parse_date(s: str) -> datetime | None:
@@ -70,13 +93,13 @@ async def create_registration(
     body: CattrsBody,
 ) -> HTTPResponse:
     """Create a registration."""
-    reg_create = await body(RegistrationCreateFields)
+    reg_create = await body(RegistrationCreateRequestBody)
     async with transaction():
-        res = await reg_service.create(event_id, reg_create)
+        res = await reg_service.create(event_id, reg_create.registration)
 
     await message_queue.publish_registration_update(res)
 
-    return response_converter.make_response(res.registration)
+    return response_converter.make_response(RegistrationResponse(res.registration))
 
 
 @routes.get("/<registration_id>")
@@ -89,7 +112,7 @@ async def read_registration(
 ) -> HTTPResponse:
     """Read a registration."""
     reg = raise_not_found(await repo.get(registration_id, event_id=event_id))
-    response = response_converter.make_response(reg)
+    response = response_converter.make_response(RegistrationResponse(reg))
     response.headers["ETag"] = reg_service.get_etag(reg)
     return response
 
@@ -105,18 +128,20 @@ async def update_registration(
 ) -> HTTPResponse:
     """Update a registration."""
     etag = request.headers.get("ETag")
-    update = await body(RegistrationUpdateFields)
-    if update.version is None and etag is None:
+    update = await body(RegistrationUpdateRequestBody)
+    if update.registration.version is None and etag is None:
         raise SanicException("Version or ETag required", status_code=428)
 
     async with transaction():
         res = raise_not_found(
-            await reg_service.update(event_id, registration_id, update, etag=etag)
+            await reg_service.update(
+                event_id, registration_id, update.registration, etag=etag
+            )
         )
 
     await message_queue.publish_registration_update(res)
 
-    response = response_converter.make_response(res.registration)
+    response = response_converter.make_response(RegistrationResponse(res.registration))
     response.headers["ETag"] = reg_service.get_etag(res.registration)
     return response
 
@@ -149,7 +174,7 @@ async def complete_registration(
         change = RegistrationChangeResult(reg.id, old, reg)
         await message_queue.publish_registration_update(change)
 
-    response = response_converter.make_response(reg)
+    response = response_converter.make_response(RegistrationResponse(reg))
     response.headers["ETag"] = reg_service.get_etag(reg)
     return response
 
@@ -175,7 +200,7 @@ async def cancel_registration(
         change = RegistrationChangeResult(reg.id, old, reg)
         await message_queue.publish_registration_update(change)
 
-    response = response_converter.make_response(reg)
+    response = response_converter.make_response(RegistrationResponse(reg))
     response.headers["ETag"] = reg_service.get_etag(reg)
     return response
 
@@ -203,6 +228,6 @@ async def assign_number(
         change = RegistrationChangeResult(reg.id, old, reg)
         await message_queue.publish_registration_update(change)
 
-    response = response_converter.make_response(reg)
+    response = response_converter.make_response(RegistrationResponse(reg))
     response.headers["ETag"] = reg_service.get_etag(reg)
     return response
