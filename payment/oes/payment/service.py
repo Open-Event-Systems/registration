@@ -1,6 +1,6 @@
 """Service objects."""
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Any, Mapping
 
 import nanoid
@@ -34,6 +34,25 @@ class PaymentRepo(Repo[Payment, str]):
         q = select(Payment).where(Payment.receipt_id == receipt_id)
         res = await self.session.execute(q)
         return res.scalar()
+
+    async def get_by_registration_id(
+        self, event_id: str, registration_id: str
+    ) -> Sequence[Payment]:
+        """Get payments by registration ID."""
+        q = select(Payment).where(
+            Payment.cart_data.contains(
+                {
+                    "event_id": event_id,
+                    "registrations": [
+                        {
+                            "id": registration_id,
+                        }
+                    ],
+                }
+            )
+        )
+        res = await self.session.execute(q)
+        return res.scalars().all()
 
 
 class PaymentServicesSvc:
