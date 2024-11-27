@@ -24,6 +24,7 @@ class MockPaymentService:
     """Mock payment service."""
 
     id = "mock"
+    name = "Mock"
 
     def get_payment_method(self, config: PaymentMethodConfig) -> Self:
         """Get the payment method."""

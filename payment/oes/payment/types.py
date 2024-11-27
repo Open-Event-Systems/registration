@@ -11,6 +11,7 @@ if TYPE_CHECKING:
         CancelPaymentRequest,
         CreatePaymentRequest,
         ParsedWebhook,
+        Payment,
         PaymentMethodConfig,
         PaymentResult,
         UpdatePaymentRequest,
@@ -34,6 +35,12 @@ class PaymentMethod(Protocol):
 class PaymentService(Protocol):
     """A payment service."""
 
+    @property
+    @abstractmethod
+    def name(self) -> str:
+        """The service name."""
+        ...
+
     @abstractmethod
     def get_payment_method(self, config: PaymentMethodConfig, /) -> PaymentMethod:
         """Get a :class:`PaymentMethod`."""
@@ -42,6 +49,16 @@ class PaymentService(Protocol):
     @abstractmethod
     async def cancel_payment(self, request: CancelPaymentRequest, /) -> PaymentResult:
         """Cancel a payment."""
+        ...
+
+
+@runtime_checkable
+class PaymentInfoURLService(Protocol):
+    """A payment service that can provide a link to payment info."""
+
+    @abstractmethod
+    def get_payment_info_url(self, payment: Payment, /) -> str | None:
+        """Get the URL of a payment."""
         ...
 
 
