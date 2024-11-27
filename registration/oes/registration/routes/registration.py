@@ -52,14 +52,15 @@ async def list_registrations(
     registration_repo: RegistrationRepo,
 ) -> Sequence[RegistrationResponse]:
     """List registrations."""
-    q = request.args.get("q", "")
-    all = request.args.get("all") == "true"
-    check_in_id = request.args.get("check_in_id")
-    before_date_str = request.args.get("before_date")
-    before_id = request.args.get("before_id")
+    args = request.get_args(keep_blank_values=True)
+    q = args.get("q", "") or ""
+    all = args.get("all") == "true"
+    check_in_id = args.get("check_in_id")
+    before_date_str = args.get("before_date")
+    before_id = args.get("before_id")
     before_date = _parse_date(before_date_str) if before_date_str else None
-    account_id = request.args.get("account_id")
-    email = request.args.get("email")
+    account_id = args.get("account_id")
+    email = args.get("email")
 
     if before_date and before_id:
         before = (before_date, before_id)

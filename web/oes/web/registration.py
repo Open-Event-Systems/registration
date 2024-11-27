@@ -101,17 +101,19 @@ class RegistrationService:
 
     async def get_registrations(
         self,
+        query: str,
         *,
         event_id: str,
         account_id: str | None = None,
         email: str | None = None,
+        args: Mapping[str, str] | None = None,
     ) -> Sequence[Registration]:
         """Get registrations from the registration service."""
         url = (
             f"{self.config.registration_service_url}/events"
             f"/{event_id}/registrations"
         )
-        params = {}
+        params = {"q": query, **(args or {})}
 
         if account_id:
             params["account_id"] = account_id
@@ -148,6 +150,22 @@ class RegistrationService:
         res = await self.client.get(url)
         res.raise_for_status()
         return [Registration(r["registration"]) for r in res.json()]
+
+    def get_registration_summary(self, registration: Registration) -> str | None:
+        """Get a registration summary."""
+        # TODO: user info?
+        event = self.config.events.get(registration.event_id)
+        if not event:
+            return None
+        ctx = {
+            "event": event.get_template_context(),
+            "registration": dict(registration),
+        }
+        return (
+            event.admin.registration_summary.render(ctx)
+            if event.admin.registration_summary
+            else None
+        )
 
     async def check_batch_change(
         self,

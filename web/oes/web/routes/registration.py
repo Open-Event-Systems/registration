@@ -1,8 +1,9 @@
 """Registration module."""
 
+from collections.abc import Sequence
+
 from attrs import frozen
 from oes.utils.request import CattrsBody, raise_not_found
-from oes.web.config import Config
 from oes.web.interview import InterviewService, get_interview_registrations
 from oes.web.registration import Registration, RegistrationService
 from oes.web.routes.common import InterviewStateRequestBody, response_converter
@@ -13,42 +14,49 @@ routes = Blueprint("registrations")
 
 
 @frozen
-class RegistrationCheckInResponse:
-    """By check-in ID response."""
+class RegistrationResponse:
+    """Registration response."""
 
     registration: Registration
-    check_in_status: str | None
-
-
-@frozen
-class RegistrationSummaryResponse:
-    """Registration summary."""
-
     summary: str | None
 
 
-@routes.get("/events/<event_id>/registrations/<registration_id>/summary")
+@routes.get("/events/<event_id>/registrations")
 @response_converter
-async def read_registration_summary(
+async def list_registrations(
+    request: Request,
+    event_id: str,
+    registration_service: RegistrationService,
+) -> Sequence[RegistrationResponse]:
+    """List registrations."""
+    args = request.get_args(keep_blank_values=True)
+    q = args.get("q", "") or ""
+    account_id = args.get("account_id")
+    email = args.get("email")
+    results = await registration_service.get_registrations(
+        q, event_id=event_id, account_id=account_id, email=email, args=args
+    )
+
+    return [
+        RegistrationResponse(reg, registration_service.get_registration_summary(reg))
+        for reg in results
+    ]
+
+
+@routes.get("/events/<event_id>/registrations/<registration_id>")
+@response_converter
+async def read_registration(
     request: Request,
     event_id: str,
     registration_id: str,
-    config: Config,
     registration_service: RegistrationService,
-) -> RegistrationSummaryResponse:
-    """Read a registration summary."""
-    event = raise_not_found(config.events.get(event_id))
+) -> RegistrationResponse:
+    """Read a registration."""
     reg = raise_not_found(
         await registration_service.get_registration(event_id, registration_id)
     )
-    # TODO: user info?
-    ctx = {"event": event.get_template_context(), "registration": dict(reg)}
-    summary = (
-        event.admin.registration_summary.render(ctx)
-        if event.admin.registration_summary
-        else None
-    )
-    return RegistrationSummaryResponse(summary)
+    summary = registration_service.get_registration_summary(reg)
+    return RegistrationResponse(reg, summary)
 
 
 @routes.post(
