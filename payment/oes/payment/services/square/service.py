@@ -15,6 +15,7 @@ from oes.payment.currency import format_currency
 from oes.payment.payment import (
     CancelPaymentRequest,
     CreatePaymentRequest,
+    Payment,
     PaymentError,
     PaymentMethodConfig,
     PaymentMethodError,
@@ -80,6 +81,7 @@ class SquareService:
     """Square service."""
 
     id = "square"
+    name = "Square"
 
     def __init__(
         self,
@@ -128,6 +130,13 @@ class SquareService:
             external_id=final_order.id,
             status=_order_status_to_payment_status(final_order.state),
             date_closed=final_order.closed_at,
+        )
+
+    def get_payment_info_url(self, payment: Payment, /) -> str | None:
+        """Get the URL to a payment info page."""
+        return (
+            "https://app.squareup.com/dashboard/sales/transactions"
+            f"/{payment.external_id}"
         )
 
     async def update_payment(self, request: UpdatePaymentRequest, /) -> PaymentResult:

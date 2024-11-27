@@ -42,6 +42,11 @@ async def is_allowed(method: str, url: str, scope: Scopes) -> bool:  # noqa: CCR
         else:
             return Scope.cart in scope
 
+    # /payments
+    elif len(parts) == 1 and parts[0] == "payments":
+        # TODO: a more specific scope?
+        return Scope.registration in scope
+
     # /payments/<payment_id>
     elif (
         len(parts) >= 3 and parts[0] == "payments" and parts[2] in ("update", "cancel")

@@ -11,7 +11,7 @@ from oes.payment.pricing import PricingResult
 from oes.payment.types import CartData
 from oes.utils.logic import WhenCondition
 from oes.utils.orm import JSON
-from sqlalchemy import String
+from sqlalchemy import Index, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 RECEIPT_ID_LENGTH = 12
@@ -153,6 +153,9 @@ class Payment(Base):
     """Payment entity."""
 
     __tablename__ = "payment"
+    __table_args__ = (
+        Index("ix_cart_data", text("cart_data jsonb_path_ops"), postgresql_using="gin"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     service: Mapped[str]
