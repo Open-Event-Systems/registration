@@ -1,13 +1,14 @@
 """Registration module."""
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import httpx
 import nanoid
 import orjson
 from attrs import frozen
-from oes.web.config import Config
+from oes.utils.logic import evaluate
+from oes.web.config import AdminInterviewOption, Config
 from oes.web.types import JSON
 from typing_extensions import Self
 
@@ -166,6 +167,35 @@ class RegistrationService:
             if event.admin.registration_summary
             else None
         )
+
+    def get_display_data(self, registration: Registration) -> Sequence[tuple[str, str]]:
+        """Get display data for a registration."""
+        event = self.config.events.get(registration.event_id)
+        if not event:
+            return ()
+        ctx = {
+            "event": event.get_template_context(),
+            "registration": dict(registration),
+        }
+        entries = (
+            (d[0], str(d[1].render(ctx)) if d[1] else None)
+            for d in event.admin.display_data
+        )
+        return cast(tuple[tuple[str, str], ...], tuple(e for e in entries if e[1]))
+
+    def get_admin_change_options(
+        self, registration: Registration
+    ) -> Sequence[AdminInterviewOption]:
+        """Get admin change options for a registration."""
+        # TODO: user info?
+        event = self.config.events.get(registration.event_id)
+        if not event:
+            return ()
+        ctx = {
+            "event": event.get_template_context(),
+            "registration": dict(registration),
+        }
+        return tuple(o for o in event.admin.change_options if evaluate(o.when, ctx))
 
     async def check_batch_change(
         self,

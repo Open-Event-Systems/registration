@@ -14,11 +14,21 @@ routes = Blueprint("registrations")
 
 
 @frozen
+class RegistrationChangeOption:
+    """Registration change option."""
+
+    title: str
+    url: str
+
+
+@frozen
 class RegistrationResponse:
     """Registration response."""
 
     registration: Registration
-    summary: str | None
+    summary: str | None = None
+    display_data: Sequence[tuple[str, str]] = ()
+    change_options: Sequence[RegistrationChangeOption] = ()
 
 
 @routes.get("/events/<event_id>/registrations")
@@ -33,12 +43,15 @@ async def list_registrations(
     q = args.get("q", "") or ""
     account_id = args.get("account_id")
     email = args.get("email")
+    summary = args.get("summary")
     results = await registration_service.get_registrations(
         q, event_id=event_id, account_id=account_id, email=email, args=args
     )
 
     return [
-        RegistrationResponse(reg, registration_service.get_registration_summary(reg))
+        RegistrationResponse(
+            reg, registration_service.get_registration_summary(reg) if summary else None
+        )
         for reg in results
     ]
 
@@ -56,7 +69,26 @@ async def read_registration(
         await registration_service.get_registration(event_id, registration_id)
     )
     summary = registration_service.get_registration_summary(reg)
-    return RegistrationResponse(reg, summary)
+    display_data = registration_service.get_display_data(reg)
+    change_options = registration_service.get_admin_change_options(reg)
+
+    return RegistrationResponse(
+        reg,
+        summary,
+        display_data,
+        [
+            RegistrationChangeOption(
+                c.title,
+                request.url_for(
+                    "admin.start_admin_change_interview",
+                    event_id=event_id,
+                    registration_id=reg.id,
+                    interview_id=c.id,
+                ),
+            )
+            for c in change_options
+        ],
+    )
 
 
 @routes.post(

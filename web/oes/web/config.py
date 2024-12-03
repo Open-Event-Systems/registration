@@ -76,6 +76,7 @@ class AdminConfig:
     change_options: Sequence[AdminInterviewOption] = ()
 
     registration_summary: Template | None = None
+    display_data: Sequence[tuple[str, Template]] = ()
 
 
 @frozen

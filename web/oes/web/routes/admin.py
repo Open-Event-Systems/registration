@@ -1,10 +1,7 @@
 """Admin routes."""
 
-from collections.abc import Sequence
-
 from attrs import frozen
 from oes.utils.request import raise_not_found
-from oes.web.admin import AdminService
 from oes.web.config import Config
 from oes.web.interview import InterviewService, InterviewState
 from oes.web.registration import RegistrationService
@@ -22,36 +19,6 @@ class AdminInterviewOption:
     title: str | None = None
 
 
-@routes.get("/events/<event_id>/registrations/<registration_id>/admin/change")
-@response_converter
-async def list_admin_change_interview(
-    request: Request,
-    config: Config,
-    event_id: str,
-    registration_id: str,
-    registration_service: RegistrationService,
-    admin_service: AdminService,
-) -> Sequence[AdminInterviewOption]:
-    """List available admin change interview options."""
-    event = raise_not_found(config.events.get(event_id))
-    reg = raise_not_found(
-        await registration_service.get_registration(event_id, registration_id)
-    )
-    opts = [
-        AdminInterviewOption(
-            request.url_for(
-                "admin.start_admin_change_interview",
-                event_id=event.id,
-                registration_id=reg.id,
-                interview_id=o.id,
-            ),
-            o.title,
-        )
-        for o in admin_service.get_change_options(event_id, reg)
-    ]
-    return opts
-
-
 @routes.get(
     "/events/<event_id>/registrations/<registration_id>/admin/change/<interview_id>",
     name="start_admin_change_interview",
@@ -65,7 +32,6 @@ async def start_admin_change_interview(
     interview_id: str,
     registration_service: RegistrationService,
     interview_service: InterviewService,
-    admin_service: AdminService,
 ) -> InterviewState:
     """Start an admin change interview."""
     event = raise_not_found(config.events.get(event_id))
@@ -76,7 +42,7 @@ async def start_admin_change_interview(
         next(
             (
                 o
-                for o in admin_service.get_change_options(event_id, reg)
+                for o in registration_service.get_admin_change_options(reg)
                 if o.id == interview_id
             ),
             None,
