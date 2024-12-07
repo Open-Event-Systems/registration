@@ -157,6 +157,7 @@ func updateDocument(printURL string, eventId string, id string, docType *documen
 	}
 
 	docUrl := fmt.Sprintf("%s/events/%s/registrations/%s/documents/%s/%s.pdf", printURL, eventId, id, docType.Id, hash)
+
 	res, err := http.Get(docUrl)
 	if err != nil {
 		log.Printf("error updating %s/%s/%s: %v", eventId, id, docType.Id, err)
