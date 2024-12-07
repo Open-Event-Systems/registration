@@ -59,6 +59,13 @@ class PaymentService:
             return None
         pricing_result = await self.cart_service.get_pricing_result(cart_id)
         cart_data = cart.get("cart", {})
+        updated_data = [r["new"] for r in cart_data["registrations"]]
+        access_codes = {
+            r["id"]: r["meta"]["access_code"]
+            for r in cart_data["registrations"]
+            if "meta" in r and r["meta"].get("access_code")
+        }
+
         body = {
             "cart_id": cart_id,
             "cart_data": cart_data,
@@ -66,7 +73,7 @@ class PaymentService:
         }
 
         check_res, check_body = await self.registration_service.check_batch_change(
-            cart_data.get("event_id", ""), cart_data
+            cart_data.get("event_id", ""), updated_data, access_codes
         )
         if check_res != 200:
             return check_res, check_body
@@ -109,8 +116,14 @@ class PaymentService:
         if payment is None:
             return None
         cart_data = payment.get("cart_data", {})
+        updated_data = [r["new"] for r in cart_data["registrations"]]
+        access_codes = {
+            r["id"]: r["meta"]["access_code"]
+            for r in cart_data["registrations"]
+            if "meta" in r and r["meta"].get("access_code")
+        }
 
         apply_res, apply_body = await self.registration_service.apply_batch_change(
-            cart_data.get("event_id", ""), cart_data, payment_id, body
+            cart_data.get("event_id", ""), updated_data, access_codes, payment_id, body
         )
         return apply_res, apply_body

@@ -105,7 +105,7 @@ class SelfServiceService:
             return await self._get_access_code_registrations(event_id, access_code)
         else:
             return await self.registration_service.get_registrations(
-                event_id=event_id, account_id=account_id, email=email
+                query="", event_id=event_id, account_id=account_id, email=email
             )
 
     async def _get_access_code_registrations(
