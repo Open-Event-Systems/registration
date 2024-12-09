@@ -124,7 +124,8 @@ class RegistrationService:
 
         res = await self.client.get(url, params=params)
         res.raise_for_status()
-        return [Registration(r["registration"]) for r in res.json()]
+        resp_body = res.json()
+        return [Registration(r["registration"]) for r in resp_body["registrations"]]
 
     async def get_registration(
         self, event_id: str, registration_id: str
@@ -138,19 +139,8 @@ class RegistrationService:
         if res.status_code == 404:
             return None
         res.raise_for_status()
-        return Registration(res.json()["registration"])
-
-    async def get_registrations_by_check_in_id(
-        self, event_id: str
-    ) -> Sequence[Registration]:
-        """Get registrations by check in ID."""
-        url = (
-            f"{self.config.registration_service_url}/events"
-            f"/{event_id}/registrations/by-check-in-id"
-        )
-        res = await self.client.get(url)
-        res.raise_for_status()
-        return [Registration(r["registration"]) for r in res.json()]
+        resp_body = res.json()
+        return Registration(resp_body["registration"])
 
     def get_registration_summary(self, registration: Registration) -> str | None:
         """Get a registration summary."""
@@ -182,6 +172,17 @@ class RegistrationService:
             for d in event.admin.display_data
         )
         return cast(tuple[tuple[str, str], ...], tuple(e for e in entries if e[1]))
+
+    def get_admin_add_options(self, event_id: str) -> Iterable[AdminInterviewOption]:
+        """Get admin add options."""
+        # TODO: pass in user role
+        event = self.config.events[event_id]
+        ctx = {
+            "event": event.get_template_context(),
+        }
+        for opt in event.admin.add_options:
+            if evaluate(opt.when, ctx):
+                yield opt
 
     def get_admin_change_options(
         self, registration: Registration

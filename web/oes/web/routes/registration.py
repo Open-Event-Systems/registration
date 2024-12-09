@@ -14,6 +14,14 @@ routes = Blueprint("registrations")
 
 
 @frozen
+class RegistrationAddOption:
+    """Registration add option."""
+
+    title: str
+    url: str
+
+
+@frozen
 class RegistrationChangeOption:
     """Registration change option."""
 
@@ -31,13 +39,21 @@ class RegistrationResponse:
     change_options: Sequence[RegistrationChangeOption] = ()
 
 
+@frozen
+class RegistrationListResponse:
+    """Registration list response."""
+
+    registrations: Sequence[RegistrationResponse]
+    add_options: Sequence[RegistrationAddOption] = ()
+
+
 @routes.get("/events/<event_id>/registrations")
 @response_converter
 async def list_registrations(
     request: Request,
     event_id: str,
     registration_service: RegistrationService,
-) -> Sequence[RegistrationResponse]:
+) -> RegistrationListResponse:
     """List registrations."""
     args = request.get_args(keep_blank_values=True)
     q = args.get("q", "") or ""
@@ -48,12 +64,29 @@ async def list_registrations(
         q, event_id=event_id, account_id=account_id, email=email, args=args
     )
 
-    return [
+    registrations = [
         RegistrationResponse(
             reg, registration_service.get_registration_summary(reg) if summary else None
         )
         for reg in results
     ]
+
+    add_opts = registration_service.get_admin_add_options(event_id)
+
+    return RegistrationListResponse(
+        registrations,
+        tuple(
+            RegistrationAddOption(
+                o.title,
+                request.url_for(
+                    "admin.start_admin_add_interview",
+                    event_id=event_id,
+                    interview_id=o.id,
+                ),
+            )
+            for o in add_opts
+        ),
+    )
 
 
 @routes.get("/events/<event_id>/registrations/<registration_id>")

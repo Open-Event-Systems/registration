@@ -31,6 +31,13 @@ class RegistrationResponse:
 
 
 @frozen
+class RegistrationListResponse:
+    """Registration list response."""
+
+    registrations: Sequence[RegistrationResponse]
+
+
+@frozen
 class RegistrationCreateRequestBody:
     """Request body to create a registration."""
 
@@ -50,7 +57,7 @@ async def list_registrations(
     request: Request,
     event_id: str,
     registration_repo: RegistrationRepo,
-) -> Sequence[RegistrationResponse]:
+) -> RegistrationListResponse:
     """List registrations."""
     args = request.get_args(keep_blank_values=True)
     q = args.get("q", "") or ""
@@ -75,7 +82,9 @@ async def list_registrations(
         email=email,
         before=before,
     )
-    return [RegistrationResponse(r) for r in res]
+    return RegistrationListResponse(
+        registrations=tuple(RegistrationResponse(r) for r in res)
+    )
 
 
 def _parse_date(s: str) -> datetime | None:

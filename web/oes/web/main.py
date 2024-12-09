@@ -29,7 +29,6 @@ def main():
 def create_app() -> Sanic:
     """Main app factory."""
     from oes.web.access_code import AccessCodeService
-    from oes.web.admin import AdminService
     from oes.web.cart import CartService
     from oes.web.interview import InterviewService
     from oes.web.payment import PaymentService
@@ -69,7 +68,6 @@ def create_app() -> Sanic:
     app.ext.add_dependency(PaymentService)
     app.ext.add_dependency(AccessCodeService)
     app.ext.add_dependency(SelfServiceService)
-    app.ext.add_dependency(AdminService)
 
     @app.before_server_start
     async def setup_log(app: Sanic):

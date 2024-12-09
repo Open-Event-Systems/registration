@@ -33,6 +33,9 @@ events:
       display_data:
         - ["Extra 1", "TODO"]
         - ["Extra 2", "TODO"]
+      add_options:
+        - id: new-registration
+          title: New Registration
       change_options:
-        - id: upgrade
+        - id: upgrade-registration
           title: Upgrade
