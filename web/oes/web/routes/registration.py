@@ -136,6 +136,7 @@ async def update_registrations_from_interview(
     body: CattrsBody,
 ) -> HTTPResponse:
     """Add a registration from an interview."""
+    scope = [s.strip() for s in request.headers.get("x-scope", "").split(",")]
     req_body = await body(InterviewStateRequestBody)
     interview = raise_not_found(
         await interview_service.get_completed_interview(req_body.state)
@@ -159,7 +160,10 @@ async def update_registrations_from_interview(
     if res_code == 409:
         return json(_strip_cart_error(res_body), status=res_code)
     elif res_code == 200:
-        return HTTPResponse(status=204)
+        if "registration" in scope:
+            return json(res_body, status=res_code)
+        else:
+            return HTTPResponse(status=204)
     else:
         return json(res_body, status=res_code)
 
