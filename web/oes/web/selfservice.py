@@ -9,7 +9,7 @@ from oes.utils.mapping import merge_mapping
 from oes.utils.template import TemplateContext
 from oes.web.access_code import AccessCode, AccessCodeInterviewOption, AccessCodeService
 from oes.web.config import Config, Event, RegistrationDisplay
-from oes.web.registration2 import (
+from oes.web.registration import (
     InterviewOption,
     Registration,
     RegistrationService,
@@ -105,7 +105,7 @@ class SelfServiceService:
             return await self._get_access_code_registrations(event_id, access_code)
         else:
             return await self.registration_service.get_registrations(
-                event_id=event_id, account_id=account_id, email=email
+                query="", event_id=event_id, account_id=account_id, email=email
             )
 
     async def _get_access_code_registrations(

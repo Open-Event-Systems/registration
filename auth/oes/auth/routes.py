@@ -16,6 +16,7 @@ from oes.auth.token import AccessToken, RefreshToken, RefreshTokenRepo, TokenErr
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody
 from sanic import Blueprint, Forbidden, HTTPResponse, Request, Unauthorized, json
+from sanic.compat import Header
 from sanic.exceptions import HTTPException
 
 routes = Blueprint("auth")
@@ -49,7 +50,9 @@ async def validate_token(
 ) -> HTTPResponse:
     """Validate a token."""
     if config.disable_auth:
-        return HTTPResponse(status=204)
+        return HTTPResponse(
+            status=204, headers=Header(("x-scope", s.value) for s in Scope)
+        )
 
     # return 204 for options
     orig_method = request.headers.get("x-original-method", "")

@@ -3,3 +3,5 @@ token_secret: changeit
 db_url: postgresql+asyncpg://registration:changeit@db/auth
 amqp_url: amqp://registration:changeit@rabbitmq/
 disable_auth: true
+allowed_origins:
+  - http://localhost:8080

@@ -31,11 +31,9 @@ def create_app() -> Sanic:
     from oes.web.access_code import AccessCodeService
     from oes.web.cart import CartService
     from oes.web.interview import InterviewService
-    from oes.web.interview2 import InterviewService as InterviewService2
     from oes.web.payment import PaymentService
     from oes.web.registration import RegistrationService
-    from oes.web.registration2 import RegistrationService as RegistrationService2
-    from oes.web.routes import cart, event, payment, registration, selfservice
+    from oes.web.routes import admin, cart, event, payment, registration, selfservice
     from oes.web.selfservice import SelfServiceService
 
     config = get_config()
@@ -60,13 +58,12 @@ def create_app() -> Sanic:
     app.blueprint(payment.routes)
     app.blueprint(registration.routes)
     app.blueprint(selfservice.routes)
+    app.blueprint(admin.routes)
 
     app.ctx.config = config
     app.ext.dependency(config)
     app.ext.add_dependency(RegistrationService)
-    app.ext.add_dependency(RegistrationService2)
     app.ext.add_dependency(InterviewService)
-    app.ext.add_dependency(InterviewService2)
     app.ext.add_dependency(CartService)
     app.ext.add_dependency(PaymentService)
     app.ext.add_dependency(AccessCodeService)

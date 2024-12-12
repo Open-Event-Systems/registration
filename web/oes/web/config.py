@@ -39,6 +39,15 @@ class ConfigInterviewOption:
 
 
 @frozen
+class AdminInterviewOption:
+    """Admin interview option."""
+
+    id: str
+    title: str
+    when: WhenCondition = True
+
+
+@frozen
 class RegistrationDisplay:
     """Registration display options."""
 
@@ -60,6 +69,17 @@ class SelfServiceConfig:
 
 
 @frozen
+class AdminConfig:
+    """Admin options config."""
+
+    add_options: Sequence[AdminInterviewOption] = ()
+    change_options: Sequence[AdminInterviewOption] = ()
+
+    registration_summary: Template | None = None
+    display_data: Sequence[tuple[str, Template]] = ()
+
+
+@frozen
 class Event:
     """Event config."""
 
@@ -71,6 +91,8 @@ class Event:
     visible: bool = False
 
     self_service: SelfServiceConfig = SelfServiceConfig()
+
+    admin: AdminConfig = AdminConfig()
 
     def get_template_context(self) -> TemplateContext:
         """Get the template context for evaluating conditions."""

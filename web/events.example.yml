@@ -21,3 +21,12 @@ events:
 
       display:
         title: "{{ registration.preferred_name or registration.first_name }}"
+
+    admin:
+      registration_summary: "'TODO'"
+      display_data:
+        - ["Extra 1", "'TODO'"]
+        - ["Extra 2", "'TODO'"]
+      change_options:
+        - id: upgrade
+          title: Upgrade

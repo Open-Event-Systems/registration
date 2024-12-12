@@ -1,0 +1,10 @@
+---
+db_url: postgresql+asyncpg:///checkin
+registration_service_url: http://registration:8000
+interview_service_url: http://interview:8000
+events:
+  example-event:
+    actions:
+      - id: check-in
+        title: Check In
+        when: registration.status == "created"

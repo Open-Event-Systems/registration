@@ -51,7 +51,8 @@ func makeMux(cfg *config.Config) *http.ServeMux {
 		if err != nil {
 			return nil, err
 		}
-		return data, nil
+		regData := data["registration"].(map[string]any)
+		return regData, nil
 	}
 
 	// Get a slice of available document types and their hashes
@@ -151,6 +152,11 @@ func makeMux(cfg *config.Config) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/events/{event_id}/document-types", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "OPTIONS" {
+			w.WriteHeader(204)
+			return
+		}
+
 		if req.Method != "GET" {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
@@ -180,6 +186,11 @@ func makeMux(cfg *config.Config) *http.ServeMux {
 	})
 
 	mux.HandleFunc("/events/{event_id}/registrations/{id}/documents", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "OPTIONS" {
+			w.WriteHeader(204)
+			return
+		}
+
 		if req.Method != "GET" {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return
@@ -233,6 +244,11 @@ func makeMux(cfg *config.Config) *http.ServeMux {
 	})
 
 	mux.HandleFunc("/events/{event_id}/registrations/{id}/documents/{type}/{filename}", func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == "OPTIONS" {
+			w.WriteHeader(204)
+			return
+		}
+
 		if req.Method != "GET" && req.Method != "HEAD" {
 			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 			return

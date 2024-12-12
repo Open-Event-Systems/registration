@@ -15,9 +15,11 @@ events:
       add_options:
         - id: new-registration
           title: New Registration
+          #direct: true
       change_options:
         - id: upgrade-registration
           title: Upgrade Registration
+          #direct: true
           when: >-
             "sponsor" not in registration.options
 
@@ -25,3 +27,15 @@ events:
         title: "{{ registration.preferred_name or registration.first_name }}"
         subtitle: >-
           {{ "Sponsor" if "sponsor" in registration.options else "Basic" }}
+
+    admin:
+      registration_summary: "TODO"
+      display_data:
+        - ["Extra 1", "TODO"]
+        - ["Extra 2", "TODO"]
+      add_options:
+        - id: new-registration
+          title: New Registration
+      change_options:
+        - id: upgrade-registration
+          title: Upgrade

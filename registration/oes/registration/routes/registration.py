@@ -1,6 +1,7 @@
 """Registration routes."""
 
 from collections.abc import Sequence
+from datetime import datetime
 
 from attrs import frozen
 from oes.registration.event import EventStatsService
@@ -30,6 +31,13 @@ class RegistrationResponse:
 
 
 @frozen
+class RegistrationListResponse:
+    """Registration list response."""
+
+    registrations: Sequence[RegistrationResponse]
+
+
+@frozen
 class RegistrationCreateRequestBody:
     """Request body to create a registration."""
 
@@ -49,14 +57,41 @@ async def list_registrations(
     request: Request,
     event_id: str,
     registration_repo: RegistrationRepo,
-) -> Sequence[RegistrationResponse]:
+) -> RegistrationListResponse:
     """List registrations."""
-    account_id = request.args.get("account_id")
-    email = request.args.get("email")
+    args = request.get_args(keep_blank_values=True)
+    q = args.get("q", "") or ""
+    all = args.get("all") == "true"
+    check_in_id = args.get("check_in_id")
+    before_date_str = args.get("before_date")
+    before_id = args.get("before_id")
+    before_date = _parse_date(before_date_str) if before_date_str else None
+    account_id = args.get("account_id")
+    email = args.get("email")
+
+    if before_date and before_id:
+        before = (before_date, before_id)
+    else:
+        before = None
     res = await registration_repo.search(
-        event_id=event_id, account_id=account_id, email=email
+        event_id=event_id,
+        query=q.lower().strip(),
+        all=all,
+        check_in_id=check_in_id,
+        account_id=account_id,
+        email=email,
+        before=before,
     )
-    return [RegistrationResponse(r) for r in res]
+    return RegistrationListResponse(
+        registrations=tuple(RegistrationResponse(r) for r in res)
+    )
+
+
+def _parse_date(s: str) -> datetime | None:
+    try:
+        return datetime.fromisoformat(s).astimezone()
+    except Exception:
+        return None
 
 
 @routes.post("/")
