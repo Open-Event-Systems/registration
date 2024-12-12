@@ -1,10 +1,12 @@
 auth_request /auth/validate;
 auth_request_set $auth_account_id $upstream_http_x_account_id;
 auth_request_set $auth_email $upstream_http_x_email;
+auth_request_set $auth_role $upstream_http_x_role;
 auth_request_set $auth_scope $upstream_http_x_scope;
 auth_request_set $cors_origin $upstream_http_access_control_allow_origin;
 proxy_set_header x-account-id $auth_account_id;
 proxy_set_header x-email $auth_email;
+proxy_set_header x-role $auth_role;
 proxy_set_header x-scope $auth_scope;
 proxy_set_header x-original-uri $request_uri;
 add_header access-control-allow-origin $cors_origin always;

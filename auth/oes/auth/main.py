@@ -5,6 +5,7 @@ import sys
 
 from oes.auth.auth import AuthRepo, AuthService
 from oes.auth.config import get_config
+from oes.auth.device import DeviceAuthRepo, DeviceAuthService
 from oes.auth.email import EmailAuthRepo, EmailAuthService
 from oes.auth.mq import MQService
 from oes.auth.service import AccessTokenService, RefreshTokenService
@@ -51,6 +52,8 @@ def create_app() -> Sanic:
     app.ext.add_dependency(RefreshTokenService)
     app.ext.add_dependency(EmailAuthRepo)
     app.ext.add_dependency(EmailAuthService)
+    app.ext.add_dependency(DeviceAuthRepo)
+    app.ext.add_dependency(DeviceAuthService)
 
     @app.before_server_start
     async def start_mq(app: Sanic):
