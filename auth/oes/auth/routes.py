@@ -132,10 +132,15 @@ async def create_auth(
     config: Config,
 ) -> HTTPResponse:
     """Create a guest authorization."""
+    if config.disable_auth:
+        scope = tuple(s.value for s in Scope)
+        path_length = 3
+    else:
+        scope = (Scope.selfservice, Scope.cart)
+        path_length = 0
+
     async with transaction():
-        auth = auth_service.create_auth(
-            scope=(Scope.selfservice, Scope.cart), path_length=0
-        )
+        auth = auth_service.create_auth(scope=scope, path_length=path_length)
         refresh_token = await refresh_token_service.create(auth)
         access_token = refresh_token.make_access_token(now=refresh_token.date_created)
         return _make_token_response(access_token, refresh_token, config)
