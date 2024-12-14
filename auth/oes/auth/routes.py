@@ -93,7 +93,7 @@ async def validate_token(
 
     response_headers["x-scope"] = list(token.scope)
 
-    allowed = await is_allowed(orig_method, orig_uri, token.scope)
+    allowed = is_allowed(orig_method, orig_uri, token.scope)
 
     if not allowed:
         raise Forbidden

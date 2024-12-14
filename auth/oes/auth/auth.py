@@ -29,9 +29,10 @@ class Scope(str, Enum):
     cart = "cart"
     registration = "registration"
     registration_write = "registration:write"
-    set_role = "set-role"
-    set_email = "set-email"
+    set_role = "auth:set-role"
+    set_email = "auth:set-email"
     admin = "admin"
+    admin_write = "admin:write"
 
 
 Scopes: TypeAlias = frozenset[str]
