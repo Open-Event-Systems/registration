@@ -21,11 +21,17 @@ from oes.utils.template import (
     TemplateContext,
     make_expression_structure_fn,
     make_template_structure_fn,
+    template_filter_date,
+    template_filter_datetime,
+    template_fn_get_now,
 )
 
 dt_date: TypeAlias = date
 
 jinja2_env = ImmutableSandboxedEnvironment()
+jinja2_env.globals["get_now"] = template_fn_get_now
+jinja2_env.filters["datetime"] = template_filter_datetime
+jinja2_env.filters["date"] = template_filter_date
 
 
 @frozen
