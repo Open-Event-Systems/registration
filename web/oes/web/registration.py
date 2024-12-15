@@ -131,16 +131,24 @@ class RegistrationService:
         self, event_id: str, registration_id: str
     ) -> Registration | None:
         """Get a registration from the registration service."""
+        res = await self.get_registration_with_etag(event_id, registration_id)
+        return res[0]
+
+    async def get_registration_with_etag(
+        self, event_id: str, registration_id: str
+    ) -> tuple[Registration | None, str | None]:
+        """Get a registration from the registration service, including the ETag."""
         url = (
             f"{self.config.registration_service_url}/events"
             f"/{event_id}/registrations/{registration_id}"
         )
         res = await self.client.get(url)
         if res.status_code == 404:
-            return None
+            return None, None
         res.raise_for_status()
         resp_body = res.json()
-        return Registration(resp_body["registration"])
+        etag = res.headers.get("ETag")
+        return Registration(resp_body["registration"]), etag
 
     def get_registration_summary(self, registration: Registration) -> str | None:
         """Get a registration summary."""
@@ -257,6 +265,29 @@ class RegistrationService:
             headers={"Content-Type": "application/json"},
         )
         return res.status_code, res.json()
+
+    async def proxy_registration_request(
+        self,
+        method: str,
+        path: str,
+        body: JSON | None = None,
+        if_match: str | None = None,
+    ) -> tuple[int, JSON | None, str | None]:
+        """Proxy a request to the registration service."""
+        headers = {}
+        if if_match:
+            headers["If-Match"] = if_match
+        res = await self.client.request(
+            method,
+            f"{self.config.registration_service_url}{path}",
+            json=body,
+            headers=headers,
+        )
+        if res.status_code == 204:
+            body = None
+        else:
+            body = res.json()
+        return res.status_code, body, res.headers.get("ETag")
 
 
 def make_new_registration(

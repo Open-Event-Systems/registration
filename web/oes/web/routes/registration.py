@@ -90,21 +90,129 @@ async def list_registrations(
 
 
 @routes.get("/events/<event_id>/registrations/<registration_id>")
-@response_converter
 async def read_registration(
     request: Request,
     event_id: str,
     registration_id: str,
     registration_service: RegistrationService,
-) -> RegistrationResponse:
+) -> HTTPResponse:
     """Read a registration."""
-    reg = raise_not_found(
-        await registration_service.get_registration(event_id, registration_id)
+    reg, etag = await registration_service.get_registration_with_etag(
+        event_id, registration_id
     )
+    reg = raise_not_found(reg)
+
+    reg_body = response_converter.converter.unstructure(
+        _make_registration_response(request, reg, registration_service)
+    )
+    headers = {"ETag": etag} if etag else {}
+    return json(reg_body, headers=headers)
+
+
+@routes.put("/events/<event_id>/registrations/<registration_id>")
+async def update_registration(
+    request: Request,
+    event_id: str,
+    registration_id: str,
+    registration_service: RegistrationService,
+) -> HTTPResponse:
+    """Update a registration."""
+    body = request.json
+    if_match = request.headers.get("If-Match")
+    status, resp, etag = await registration_service.proxy_registration_request(
+        "PUT", f"/events/{event_id}/registrations/{registration_id}", body, if_match
+    )
+    if resp is None:
+        return HTTPResponse(status=status)
+    elif status != 200:
+        return json(resp, status)
+    else:
+        reg = Registration(resp["registration"])
+        reg_body = response_converter.converter.unstructure(
+            _make_registration_response(request, reg, registration_service)
+        )
+        headers = {"ETag": etag} if etag else {}
+        return json(reg_body, headers=headers)
+
+
+@routes.put("/events/<event_id>/registrations/<registration_id>/complete")
+async def complete_registration(
+    request: Request,
+    event_id: str,
+    registration_id: str,
+    registration_service: RegistrationService,
+) -> HTTPResponse:
+    """Complete a registration."""
+    status, resp, etag = await registration_service.proxy_registration_request(
+        "PUT", f"/events/{event_id}/registrations/{registration_id}/complete"
+    )
+    if resp is None:
+        return HTTPResponse(status=status)
+    elif status != 200:
+        return json(resp, status)
+    else:
+        reg = Registration(resp["registration"])
+        reg_body = response_converter.converter.unstructure(
+            _make_registration_response(request, reg, registration_service)
+        )
+        headers = {"ETag": etag} if etag else {}
+        return json(reg_body, headers=headers)
+
+
+@routes.put("/events/<event_id>/registrations/<registration_id>/cancel")
+async def cancel_registration(
+    request: Request,
+    event_id: str,
+    registration_id: str,
+    registration_service: RegistrationService,
+) -> HTTPResponse:
+    """Complete a registration."""
+    status, resp, etag = await registration_service.proxy_registration_request(
+        "PUT", f"/events/{event_id}/registrations/{registration_id}/cancel"
+    )
+    if resp is None:
+        return HTTPResponse(status=status)
+    elif status != 200:
+        return json(resp, status)
+    else:
+        reg = Registration(resp["registration"])
+        reg_body = response_converter.converter.unstructure(
+            _make_registration_response(request, reg, registration_service)
+        )
+        headers = {"ETag": etag} if etag else {}
+        return json(reg_body, headers=headers)
+
+
+@routes.put("/events/<event_id>/registrations/<registration_id>/assign-number")
+async def assign_number_to_registration(
+    request: Request,
+    event_id: str,
+    registration_id: str,
+    registration_service: RegistrationService,
+) -> HTTPResponse:
+    """Complete a registration."""
+    status, resp, etag = await registration_service.proxy_registration_request(
+        "PUT", f"/events/{event_id}/registrations/{registration_id}/assign-number"
+    )
+    if resp is None:
+        return HTTPResponse(status=status)
+    elif status != 200:
+        return json(resp, status)
+    else:
+        reg = Registration(resp["registration"])
+        reg_body = response_converter.converter.unstructure(
+            _make_registration_response(request, reg, registration_service)
+        )
+        headers = {"ETag": etag} if etag else {}
+        return json(reg_body, headers=headers)
+
+
+def _make_registration_response(
+    request: Request, reg: Registration, registration_service: RegistrationService
+):
     summary = registration_service.get_registration_summary(reg)
     display_data = registration_service.get_display_data(reg)
     change_options = registration_service.get_admin_change_options(reg)
-
     return RegistrationResponse(
         reg,
         summary,
@@ -114,7 +222,7 @@ async def read_registration(
                 c.title,
                 request.url_for(
                     "admin.start_admin_change_interview",
-                    event_id=event_id,
+                    event_id=reg.event_id,
                     registration_id=reg.id,
                     interview_id=c.id,
                 ),

@@ -434,7 +434,8 @@ class RegistrationService:
         if (
             etag is not None
             and etag != self.get_etag(reg)
-            or data.version is not None
+            or etag is None
+            and data.version is not None
             and data.version != reg.version
         ):
             raise ConflictError

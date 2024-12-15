@@ -7,6 +7,7 @@ from attrs import frozen
 from oes.registration.event import EventStatsService
 from oes.registration.mq import MQService
 from oes.registration.registration import (
+    ConflictError,
     Registration,
     RegistrationChangeResult,
     RegistrationCreateFields,
@@ -18,7 +19,8 @@ from oes.registration.registration import (
 from oes.registration.routes.common import response_converter
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
-from sanic import Blueprint, HTTPResponse, Request, SanicException
+from sanic import Blueprint, HTTPResponse, Request
+from sanic.exceptions import HTTPException
 
 routes = Blueprint("registrations")
 
@@ -49,6 +51,22 @@ class RegistrationUpdateRequestBody:
     """Request body to update a registration."""
 
     registration: RegistrationUpdateFields
+
+
+class Conflict(HTTPException):
+    """Conflict exception."""
+
+    message = "Version mismatch"
+    status_code = 409
+    quiet = True
+
+
+class PreconditionFailed(HTTPException):
+    """Precondition failed exception."""
+
+    message = "Version or If-Match required"
+    status_code = 428
+    quiet = True
 
 
 @routes.get("/")
@@ -137,17 +155,20 @@ async def update_registration(
     body: CattrsBody,
 ) -> HTTPResponse:
     """Update a registration."""
-    etag = request.headers.get("ETag")
+    if_match = request.headers.get("If-Match")
     update = await body(RegistrationUpdateRequestBody)
-    if update.registration.version is None and etag is None:
-        raise SanicException("Version or ETag required", status_code=428)
+    if update.registration.version is None and if_match is None:
+        raise PreconditionFailed
 
-    async with transaction():
-        res = raise_not_found(
-            await reg_service.update(
-                event_id, registration_id, update.registration, etag=etag
+    try:
+        async with transaction():
+            res = raise_not_found(
+                await reg_service.update(
+                    event_id, registration_id, update.registration, etag=if_match
+                )
             )
-        )
+    except ConflictError:
+        raise Conflict
 
     await message_queue.publish_registration_update(res)
 
@@ -175,7 +196,7 @@ async def complete_registration(
         try:
             changed = reg.complete()
         except StatusError as e:
-            raise SanicException(str(e), status_code=409) from e
+            raise Conflict(str(e)) from e
 
         if changed:
             await event_stats_service.assign_numbers(event_id, (reg,))
