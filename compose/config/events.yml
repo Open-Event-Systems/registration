@@ -29,7 +29,16 @@ events:
           {{ "Sponsor" if "sponsor" in registration.options else "Basic" }}
 
     admin:
-      registration_summary: "TODO"
+      registration_summary: >-
+        {% if registration.checked_in %}
+        Checked in at
+        {{ (registration.checked_in_at | datetime).strftime("%m/%d, %I:%M %p") }}
+        {% elif registration.id_checked %}
+        Ready for badge pickup since
+        {{ (registration.id_checked_at | datetime).strftime("%m/%d, %I:%M %p") }}
+        {% else %}
+        Check in not started
+        {% endif %}
       display_data:
         - ["Extra 1", "TODO"]
         - ["Extra 2", "TODO"]
@@ -39,3 +48,9 @@ events:
       change_options:
         - id: upgrade-registration
           title: Upgrade
+        - id: id-check
+          title: Begin Check-In
+          when: not registration.id_checked | default(false)
+        - id: badge-pickup
+          title: Badge Pickup
+          when: registration.id_checked | default(false) and not registration.checked_in | default(false)
