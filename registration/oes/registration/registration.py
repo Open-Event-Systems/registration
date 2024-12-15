@@ -172,7 +172,9 @@ class RegistrationDataFields:
     nickname: str | None = None
     email: str | None = None
     account_id: str | None = None
-    check_in_id: str | None = None
+    check_in_id: str | None = field(
+        default=None, converter=lambda s: s.upper() if s else s
+    )
 
 
 _registration_data_fields: frozenset[str] = frozenset(
@@ -360,6 +362,7 @@ def _get_search_clauses(query: str) -> Iterable[ColumnElement]:
             yield _get_name_search_clause(query)
         if " " not in query:
             yield _get_email_search_clause(query)
+            yield _get_check_in_id_search_clause(query)
 
 
 def _get_number_search_clause(number: int) -> ColumnElement:
@@ -396,6 +399,10 @@ def _get_full_name_search_clause(first: str, last: str) -> ColumnElement:
             func.lower(Registration.last_name).startswith(first),
         ),
     )
+
+
+def _get_check_in_id_search_clause(check_in_id: str) -> ColumnElement:
+    return func.upper(Registration.check_in_id) == check_in_id.upper()
 
 
 class RegistrationService:
