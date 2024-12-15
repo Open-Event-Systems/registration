@@ -1,6 +1,7 @@
 """Template logic module."""
 
 from collections.abc import Callable, Mapping
+from datetime import date, datetime
 from typing import Any, TypeAlias
 
 import jinja2
@@ -11,6 +12,9 @@ __all__ = [
     "TemplateContext",
     "Expression",
     "Template",
+    "template_fn_get_now",
+    "template_filter_datetime",
+    "template_filter_date",
     "make_expression_structure_fn",
     "unstructure_expression",
     "make_template_structure_fn",
@@ -71,6 +75,35 @@ class Template:
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Template) and other.source == self.source
+
+
+def template_fn_get_now() -> datetime:
+    """Template function to get the current datetime."""
+    return datetime.now().astimezone()
+
+
+def template_filter_datetime(dt: object) -> datetime | None:
+    """Template filter to parse a datetime."""
+    if dt is None or isinstance(dt, datetime):
+        return dt
+    elif isinstance(dt, (int, float)):
+        return datetime.fromtimestamp(dt).astimezone()
+    elif isinstance(dt, str):
+        return datetime.fromisoformat(dt).astimezone()
+    else:
+        raise TypeError(f"Invalid datetime: {dt}")
+
+
+def template_filter_date(dt: object) -> date | None:
+    """Template filter to parse a date."""
+    if dt is None or isinstance(dt, date):
+        return dt
+    elif isinstance(dt, datetime):
+        return dt.date()
+    elif isinstance(dt, str):
+        return date.fromisoformat(dt)
+    else:
+        raise TypeError(f"Invalid date: {dt}")
 
 
 def make_expression_structure_fn(env: Environment) -> Callable[[Any, Any], Expression]:
