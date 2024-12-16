@@ -12,6 +12,7 @@ RUN go build ./cmd/print-worker
 
 
 FROM base AS target
+RUN apk add font-noto-all
 RUN apk add chromium chromium-swiftshader cups-client
 RUN adduser -D app
 RUN mkdir /config /data && chown app:app /data
