@@ -42,6 +42,7 @@ text = "oes.interview.input.field_types.text:make_text_field_template"
 number = "oes.interview.input.field_types.number:make_number_field_template"
 date = "oes.interview.input.field_types.date:make_date_field_template"
 select = "oes.interview.input.field_types.select:make_select_field_template"
+button = "oes.interview.input.field_types.button:make_button_field_template"
 
 [tool.poetry.scripts]
 oes-interview-service = "oes.interview.server.main:main"
