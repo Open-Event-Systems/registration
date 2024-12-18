@@ -255,8 +255,6 @@ async def update_registrations_from_interview(
     registrations = get_interview_registrations(interview)
     access_code = interview.context.get("access_code")
 
-    # TODO: check access code
-
     access_codes = (
         {r.registration.id: access_code for r in registrations} if access_code else {}
     )

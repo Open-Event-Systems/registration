@@ -48,6 +48,7 @@ class SelfServiceRegistration:
         event_ctx: TemplateContext,
         change_opts: Sequence[InterviewOption],
         registration: Registration,
+        access_code: str | None,
     ) -> Self:
         """Create from a registration object."""
         ctx = {
@@ -78,6 +79,7 @@ class SelfServiceRegistration:
                             event_id=event_ctx["id"],
                             interview_id=opt.id,
                             registration_id=registration["id"],
+                            **({"access_code": access_code} if access_code else {}),
                         )
                         if opt.direct
                         else request.url_for(
@@ -85,6 +87,7 @@ class SelfServiceRegistration:
                             cart_id=cart_id,
                             interview_id=opt.id,
                             registration_id=registration["id"],
+                            **({"access_code": access_code} if access_code else {}),
                         )
                     ),
                     opt.title,
@@ -158,7 +161,13 @@ async def list_selfservice_registrations(
     for reg, opts in registrations_opts:
         results.append(
             SelfServiceRegistration.from_registration(
-                request, cart_id, event.self_service.display, event_ctx, list(opts), reg
+                request,
+                cart_id,
+                event.self_service.display,
+                event_ctx,
+                list(opts),
+                reg,
+                access_code_str,
             )
         )
 
@@ -171,12 +180,14 @@ async def list_selfservice_registrations(
                     "selfservice.start_direct_add_interview",
                     interview_id=opt.id,
                     event_id=event_id,
+                    **({"access_code": access_code_str} if access_code_str else {}),
                 )
                 if opt.direct
                 else request.url_for(
                     "selfservice.start_cart_add_interview",
                     interview_id=opt.id,
                     cart_id=cart_id,
+                    **({"access_code": access_code_str} if access_code_str else {}),
                 )
             ),
             opt.title,

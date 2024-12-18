@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from datetime import datetime
 
 import httpx
-from attrs import frozen
+from attrs import field, frozen
 from cattrs.preconf.orjson import make_converter
 from oes.web.config import Config
 from oes.web.types import JSON
@@ -16,9 +16,9 @@ class AccessCodeInterviewOption:
 
     id: str
     title: str
-    direct: bool
-    context: JSON
-    initial_data: JSON
+    direct: bool = False
+    context: JSON = field(factory=dict)
+    initial_data: JSON = field(factory=dict)
 
 
 @frozen
