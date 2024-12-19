@@ -55,6 +55,7 @@ async def list_registrations(
     registration_service: RegistrationService,
 ) -> RegistrationListResponse:
     """List registrations."""
+    user_role = request.headers.get("x-role")
     args = request.get_args(keep_blank_values=True)
     q = args.get("q", "") or ""
     account_id = args.get("account_id")
@@ -71,7 +72,7 @@ async def list_registrations(
         for reg in results
     ]
 
-    add_opts = registration_service.get_admin_add_options(event_id)
+    add_opts = registration_service.get_admin_add_options(event_id, user_role)
 
     return RegistrationListResponse(
         registrations,
@@ -210,9 +211,10 @@ async def assign_number_to_registration(
 def _make_registration_response(
     request: Request, reg: Registration, registration_service: RegistrationService
 ):
+    user_role = request.headers.get("x-role")
     summary = registration_service.get_registration_summary(reg)
     display_data = registration_service.get_display_data(reg)
-    change_options = registration_service.get_admin_change_options(reg)
+    change_options = registration_service.get_admin_change_options(reg, user_role)
     return RegistrationResponse(
         reg,
         summary,

@@ -35,12 +35,13 @@ async def start_admin_add_interview(
     interview_service: InterviewService,
 ) -> InterviewState:
     """Start an admin add interview."""
+    user_role = request.headers.get("x-role")
     event = raise_not_found(config.events.get(event_id))
     opt = raise_not_found(
         next(
             (
                 o
-                for o in registration_service.get_admin_add_options(event_id)
+                for o in registration_service.get_admin_add_options(event_id, user_role)
                 if o.id == interview_id
             ),
             None,
@@ -85,6 +86,7 @@ async def start_admin_change_interview(
     interview_service: InterviewService,
 ) -> InterviewState:
     """Start an admin change interview."""
+    user_role = request.headers.get("x-role")
     event = raise_not_found(config.events.get(event_id))
     reg = raise_not_found(
         await registration_service.get_registration(event_id, registration_id)
@@ -93,7 +95,7 @@ async def start_admin_change_interview(
         next(
             (
                 o
-                for o in registration_service.get_admin_change_options(reg)
+                for o in registration_service.get_admin_change_options(reg, user_role)
                 if o.id == interview_id
             ),
             None,

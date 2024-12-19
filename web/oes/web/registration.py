@@ -181,11 +181,15 @@ class RegistrationService:
         )
         return cast(tuple[tuple[str, str], ...], tuple(e for e in entries if e[1]))
 
-    def get_admin_add_options(self, event_id: str) -> Iterable[AdminInterviewOption]:
+    def get_admin_add_options(
+        self, event_id: str, user_role: str | None
+    ) -> Iterable[AdminInterviewOption]:
         """Get admin add options."""
-        # TODO: pass in user role
         event = self.config.events[event_id]
         ctx = {
+            "user": {
+                "role": user_role,
+            },
             "event": event.get_template_context(),
         }
         for opt in event.admin.add_options:
@@ -193,14 +197,16 @@ class RegistrationService:
                 yield opt
 
     def get_admin_change_options(
-        self, registration: Registration
+        self, registration: Registration, user_role: str | None
     ) -> Sequence[AdminInterviewOption]:
         """Get admin change options for a registration."""
-        # TODO: user info?
         event = self.config.events.get(registration.event_id)
         if not event:
             return ()
         ctx = {
+            "user": {
+                "role": user_role,
+            },
             "event": event.get_template_context(),
             "registration": dict(registration),
         }
