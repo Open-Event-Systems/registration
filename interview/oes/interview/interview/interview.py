@@ -28,7 +28,7 @@ class Interview:
 class InterviewContext:
     """Interview context."""
 
-    state: InterviewState = field(factory=InterviewState)
+    state: InterviewState
     question_templates: Mapping[str, QuestionTemplate] = field(
         default=immutabledict(), converter=immutable_mapping[str, QuestionTemplate]
     )

@@ -107,7 +107,10 @@ async def test_interview(
     interviews = cfg.get_interviews(base_dir, converter)
     interview = interviews[interview_id]
     interview_context = make_interview_context(
-        interview.questions, interview.steps, InterviewState(target="test"), interviews
+        interview.questions,
+        interview.steps,
+        InterviewState(target="test"),
+        interviews,
     )
 
     responses = list(responses)

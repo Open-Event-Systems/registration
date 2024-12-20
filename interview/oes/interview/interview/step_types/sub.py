@@ -114,7 +114,10 @@ class SubStep:
         )
 
         new_interview_context = make_interview_context(
-            interview.questions, interview.steps, state, context.interviews
+            interview.questions,
+            interview.steps,
+            state,
+            context.interviews,
         )
 
         return UpdateResult(new_interview_context)

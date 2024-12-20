@@ -101,7 +101,10 @@ async def start_interview(
         data=req.data,
     )
     context = make_interview_context(
-        interview.questions, interview.steps, state, interviews
+        interview.questions,
+        interview.steps,
+        state,
+        interviews,
     )
     key = await storage.put(context)
     return _make_response(request, key, state, None)

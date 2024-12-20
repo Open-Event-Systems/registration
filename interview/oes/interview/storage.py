@@ -9,6 +9,7 @@ from typing import Any
 
 import orjson
 from cattrs import Converter
+from httpx import AsyncClient
 from immutabledict import immutabledict
 from oes.interview.interview.interview import InterviewContext
 from redis.asyncio import Redis
@@ -18,9 +19,10 @@ from typing_extensions import Self
 class StorageService:
     """Storage service."""
 
-    def __init__(self, url: str, converter: Converter):
+    def __init__(self, url: str, http_client: AsyncClient, converter: Converter):
         self._url = url
         self._client = Redis.from_url(url)
+        self._http_client = http_client
         self._converter = converter
 
     async def put(self, context: InterviewContext) -> str:
