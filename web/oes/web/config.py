@@ -50,6 +50,7 @@ class AdminInterviewOption:
 
     id: str
     title: str
+    auto: bool = False
     when: WhenCondition = True
 
 

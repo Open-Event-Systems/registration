@@ -26,6 +26,7 @@ class RegistrationChangeOption:
     """Registration change option."""
 
     title: str
+    auto: bool
     url: str
 
 
@@ -222,6 +223,7 @@ def _make_registration_response(
         [
             RegistrationChangeOption(
                 c.title,
+                c.auto,
                 request.url_for(
                     "admin.start_admin_change_interview",
                     event_id=reg.event_id,
