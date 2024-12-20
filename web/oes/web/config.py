@@ -11,8 +11,10 @@ from oes.utils.config import get_loaders
 from oes.utils.logic import (
     LogicAnd,
     LogicOr,
+    ValueOrEvaluable,
     WhenCondition,
     make_logic_unstructure_fn,
+    make_value_or_evaluable_structure_fn,
     make_when_condition_structure_fn,
 )
 from oes.utils.template import (
@@ -149,6 +151,9 @@ def _structure_events(v: Any, t: Any) -> _EventsMapping:
 _converter = ts.converters.get_default_cattrs_converter()
 _converter.register_structure_hook(Template, make_template_structure_fn(jinja2_env))
 _converter.register_structure_hook(Expression, make_expression_structure_fn(jinja2_env))
+_converter.register_structure_hook(
+    ValueOrEvaluable, make_value_or_evaluable_structure_fn(_converter)
+)
 _converter.register_structure_hook(
     WhenCondition, make_when_condition_structure_fn(_converter)
 )
