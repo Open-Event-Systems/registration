@@ -363,6 +363,7 @@ def _get_search_clauses(query: str) -> Iterable[ColumnElement]:
         if " " not in query:
             yield _get_email_search_clause(query)
             yield _get_check_in_id_search_clause(query)
+            yield _get_other_ids_search_clause(query)
 
 
 def _get_number_search_clause(number: int) -> ColumnElement:
@@ -403,6 +404,10 @@ def _get_full_name_search_clause(first: str, last: str) -> ColumnElement:
 
 def _get_check_in_id_search_clause(check_in_id: str) -> ColumnElement:
     return func.upper(Registration.check_in_id) == check_in_id.upper()
+
+
+def _get_other_ids_search_clause(query: str) -> ColumnElement:
+    return Registration.extra_data.contains({"other_ids": [query]})
 
 
 class RegistrationService:
