@@ -39,6 +39,7 @@ class TextFieldTemplate(FieldTemplateBase):
     regex: str | None = None
     regex_js: str | None = None
     format: str | None = None
+    multiline: bool = False
 
     input_mode: str | None = None
     autocomplete: str | None = None
@@ -75,6 +76,9 @@ class TextFieldTemplate(FieldTemplateBase):
         format_str = _get_format_str(self.format)
         if format_str:
             schema["format"] = format_str
+
+        if self.multiline:
+            schema["x-multiline"] = True
 
         return schema
 
