@@ -52,7 +52,9 @@ class SelectFieldTemplate(SelectFieldTemplateBase):
     def get_schema(self, context: Mapping[str, Any]) -> dict[str, Any]:
         schema = super().get_schema(context)
         options = self.get_options(context)
-        defaults = [opt_id for opt_id, opt in options.items() if opt.default]
+        defaults = [
+            opt_id for opt_id, opt in options.items() if self._get_default(opt, context)
+        ]
         if self.multi:
             schema["minItems"] = self.min
             schema["maxItems"] = self.max
@@ -68,6 +70,14 @@ class SelectFieldTemplate(SelectFieldTemplateBase):
         schema["x-component"] = self.component
 
         return schema
+
+    def _get_default(
+        self, opt: SelectFieldOptionBase, context: Mapping[str, Any]
+    ) -> bool:
+        if opt.default_expr is not None:
+            return opt.default_expr.evaluate(context)
+        else:
+            return opt.default
 
     def get_validators(
         self, context: TemplateContext
