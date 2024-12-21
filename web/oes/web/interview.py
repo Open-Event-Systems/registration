@@ -53,6 +53,7 @@ class InterviewService:
     async def start_interview(
         self,
         host: str,
+        proto: str | None,
         interview_id: str,
         target: str,
         context: Mapping[str, Any] | None,
@@ -66,11 +67,16 @@ class InterviewService:
             "target": target,
         }
 
+        headers = {"Content-Type": "application/json", "Host": host}
+
+        if proto:
+            headers["X-Forwarded-Proto"] = proto
+
         body_bytes = orjson.dumps(body)
         res = await self.client.post(
             url,
             content=body_bytes,
-            headers={"Content-Type": "application/json", "Host": host},
+            headers=headers,
         )
         res.raise_for_status()
         return _converter.structure(res.json(), InterviewState)

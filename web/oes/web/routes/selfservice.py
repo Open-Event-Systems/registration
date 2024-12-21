@@ -252,8 +252,10 @@ async def start_cart_add_interview(
         event, None, interview_id, access_code, email, account_id
     )
 
+    proto = request.headers.get("X-Forwarded-Proto")
+
     interview_state = await interview_service.start_interview(
-        request.host, interview_id, target_url, context, initial_data
+        request.host, proto, interview_id, target_url, context, initial_data
     )
     return interview_state
 
@@ -327,8 +329,10 @@ async def start_cart_change_interview(
         event, registration, interview_id, access_code, email, account_id
     )
 
+    proto = request.headers.get("X-Forwarded-Proto")
+
     interview_state = await interview_service.start_interview(
-        request.host, interview_id, target_url, context, initial_data
+        request.host, proto, interview_id, target_url, context, initial_data
     )
     return interview_state
 
@@ -384,8 +388,10 @@ async def start_direct_add_interview(
         event, None, interview_id, access_code, email, account_id
     )
 
+    proto = request.headers.get("X-Forwarded-Proto")
+
     interview_state = await interview_service.start_interview(
-        request.host, interview_id, target_url, context, initial_data
+        request.host, proto, interview_id, target_url, context, initial_data
     )
     return interview_state
 
@@ -458,7 +464,9 @@ async def start_direct_change_interview(
         event, registration, interview_id, access_code, email, account_id
     )
 
+    proto = request.headers.get("X-Forwarded-Proto")
+
     interview_state = await interview_service.start_interview(
-        request.host, interview_id, target_url, context, initial_data
+        request.host, proto, interview_id, target_url, context, initial_data
     )
     return interview_state
