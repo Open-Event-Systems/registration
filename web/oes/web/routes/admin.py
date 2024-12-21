@@ -65,10 +65,8 @@ async def start_admin_add_interview(
         },
     }
 
-    proto = request.headers.get("X-Forwarded-Proto")
-
     state = await interview_service.start_interview(
-        request.host, proto, opt.id, target_url, context, data
+        request, opt.id, target_url, context, data
     )
     return state
 
@@ -115,9 +113,7 @@ async def start_admin_change_interview(
         "registration": dict(reg),
     }
 
-    proto = request.headers.get("X-Forwarded-Proto")
-
     state = await interview_service.start_interview(
-        request.host, proto, opt.id, target_url, context, data
+        request, opt.id, target_url, context, data
     )
     return state
