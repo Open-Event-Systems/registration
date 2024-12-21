@@ -57,7 +57,12 @@ POLICY: PolicyTree = {
                     "complete": Scope.registration_write,
                     "cancel": Scope.registration_write,
                     "assign-number": Scope.registration_write,
-                    "documents": Scope.registration,
+                    "documents": {
+                        "/": Scope.registration,
+                        "*": {
+                            "*": Scope.registration,
+                        },
+                    },
                     # /events/<event_id>/registrations/<registration_id>
                     # /self-service/change/<interview_id>
                     "self-service": {"change": {"*": Scope.selfservice}},
