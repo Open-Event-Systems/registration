@@ -37,6 +37,8 @@ POLICY: PolicyTree = {
         # /events/<event_id>
         "*": {
             "/": Scope.admin,
+            # /events/<event_id>/overview
+            "overview": Scope.admin,
             # /events/<event_id>/registrations
             "registrations": {
                 "/": (
