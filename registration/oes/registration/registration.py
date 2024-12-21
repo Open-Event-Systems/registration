@@ -1,5 +1,6 @@
 """Registration module."""
 
+import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from datetime import datetime
 from enum import Enum
@@ -12,7 +13,18 @@ from cattrs import Converter, override
 from cattrs.gen import make_dict_structure_fn, make_dict_unstructure_fn
 from oes.registration.orm import Base
 from oes.utils.orm import JSON, Repo
-from sqlalchemy import Index, String, func, or_, select, text
+from sqlalchemy import (
+    ColumnElement,
+    Index,
+    String,
+    and_,
+    func,
+    null,
+    or_,
+    select,
+    text,
+    tuple_,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -21,6 +33,9 @@ REGISTRATION_ID_LENGTH = 14
 
 REGISTRATION_ID_MAX_LENGTH = 36
 """Max length of the registration ID field."""
+
+CHECK_IN_ID_MAX_LENGTH = 8
+"""Max length of a check in ID."""
 
 
 class Status(str, Enum):
@@ -53,6 +68,38 @@ class Registration(Base, kw_only=True):
         Index(
             "ix_extra_data", text("extra_data jsonb_path_ops"), postgresql_using="gin"
         ),
+        Index(
+            "ix_check_in_id",
+            "event_id",
+            "check_in_id",
+            unique=True,
+        ),
+        Index(
+            "ix_number",
+            "event_id",
+            "number",
+        ),
+        Index(
+            "ix_first_name",
+            text("LOWER(first_name)"),
+        ),
+        Index(
+            "ix_last_name",
+            text("LOWER(last_name)"),
+        ),
+        Index(
+            "ix_preferred_name",
+            text("LOWER(preferred_name)"),
+        ),
+        Index(
+            "ix_nickname",
+            text("LOWER(nickname)"),
+        ),
+        Index(
+            "ix_pagination",
+            "date_created",
+            "id",
+        ),
     )
 
     id: Mapped[str] = mapped_column(
@@ -72,8 +119,13 @@ class Registration(Base, kw_only=True):
     number: Mapped[int | None] = mapped_column(default=None)
     first_name: Mapped[str | None] = mapped_column(default=None)
     last_name: Mapped[str | None] = mapped_column(default=None)
+    preferred_name: Mapped[str | None] = mapped_column(default=None)
+    nickname: Mapped[str | None] = mapped_column(default=None)
     email: Mapped[str | None] = mapped_column(default=None)
     account_id: Mapped[str | None] = mapped_column(default=None, index=True)
+    check_in_id: Mapped[str | None] = mapped_column(
+        String(CHECK_IN_ID_MAX_LENGTH), default=None
+    )
     extra_data: Mapped[JSON] = mapped_column(default_factory=dict)
 
     __mapper_args__ = {"version_id_col": version}
@@ -116,8 +168,13 @@ class RegistrationDataFields:
     number: int | None = None
     first_name: str | None = None
     last_name: str | None = None
+    preferred_name: str | None = None
+    nickname: str | None = None
     email: str | None = None
     account_id: str | None = None
+    check_in_id: str | None = field(
+        default=None, converter=lambda s: s.upper() if s else s
+    )
 
 
 _registration_data_fields: frozenset[str] = frozenset(
@@ -239,35 +296,118 @@ class RegistrationRepo(Repo[Registration, str]):
         res = await self.session.execute(q)
         return res.scalars().all()
 
+    async def get_by_check_in_id(
+        self, event_id: str, check_in_id: str
+    ) -> Registration | None:
+        """Get a registration by check-in ID."""
+        q = select(Registration).where(
+            Registration.event_id == event_id,
+            Registration.check_in_id == check_in_id,
+        )
+        res = await self.session.execute(q)
+        return res.scalar_one_or_none()
+
     async def search(
         self,
+        query: str = "",
         *,
         event_id: str,
+        before: tuple[datetime, str] | None = None,
+        all: bool = False,
+        check_in_id: str | None = None,
         account_id: str | None = None,
         email: str | None = None,
     ) -> Sequence[Registration]:
         """Search registrations."""
-        q = (
-            select(Registration)
-            .where(Registration.event_id == event_id)
-            .order_by(Registration.date_created.desc())
-        )
+        q = select(Registration).where(Registration.event_id == event_id)
 
-        q = q.where(Registration.status == Status.created)
+        if not all:
+            q = q.where(Registration.status == Status.created)
 
-        or_clauses = []
+        if check_in_id == "":
+            q = q.where(Registration.check_in_id != null())
+        elif check_in_id is not None:
+            q = q.where(Registration.check_in_id.startswith(check_in_id.upper()))
 
-        if account_id:
-            or_clauses.append(Registration.account_id == account_id)
+        if account_id or email:
+            acc_clauses = []
+            if account_id:
+                acc_clauses.append(Registration.account_id == account_id)
+            if email:
+                acc_clauses.append(Registration.email == email)
+            q = q.where(or_(*acc_clauses))
 
-        if email:
-            or_clauses.append(func.lower(Registration.email) == email.lower())
+        if query:
+            q = q.where(or_(*_get_search_clauses(query)))
 
-        if or_clauses:
-            q = q.where(or_(*or_clauses))
+        if before:
+            q = q.where(
+                tuple_(Registration.date_created, Registration.id) < before,
+            )
 
+        q = q.order_by(Registration.date_created.desc(), Registration.id.desc())
+        q = q.limit(20)
         res = await self.session.execute(q)
         return res.scalars().all()
+
+
+def _get_search_clauses(query: str) -> Iterable[ColumnElement]:
+    parts = query.split()
+    if len(parts) == 2:
+        yield _get_full_name_search_clause(parts[0], parts[1])
+    else:
+        if re.match(r"^[0-9]+$", query):
+            yield _get_number_search_clause(int(query))
+        if "@" not in query:
+            yield _get_name_search_clause(query)
+        if " " not in query:
+            yield _get_email_search_clause(query)
+            yield _get_check_in_id_search_clause(query)
+            yield _get_other_ids_search_clause(query)
+
+
+def _get_number_search_clause(number: int) -> ColumnElement:
+    return Registration.number == number
+
+
+def _get_email_search_clause(email: str) -> ColumnElement:
+    return func.lower(Registration.email).startswith(email)
+
+
+def _get_name_search_clause(name: str) -> ColumnElement:
+    return or_(
+        func.lower(Registration.first_name).startswith(name),
+        func.lower(Registration.preferred_name).startswith(name),
+        func.lower(Registration.last_name).startswith(name),
+        func.lower(Registration.nickname).startswith(name),
+    )
+
+
+def _get_full_name_search_clause(first: str, last: str) -> ColumnElement:
+    return or_(
+        and_(
+            or_(
+                func.lower(Registration.first_name).startswith(first),
+                func.lower(Registration.preferred_name).startswith(first),
+            ),
+            func.lower(Registration.last_name).startswith(last),
+        ),
+        and_(
+            or_(
+                func.lower(Registration.first_name).startswith(last),
+                func.lower(Registration.preferred_name).startswith(last),
+            ),
+            func.lower(Registration.last_name).startswith(first),
+        ),
+    )
+
+
+def _get_check_in_id_search_clause(check_in_id: str) -> ColumnElement:
+    return func.upper(Registration.check_in_id) == check_in_id.upper()
+
+
+def _get_other_ids_search_clause(query: str) -> ColumnElement:
+    return Registration.extra_data.contains({"other_ids": [query]})
 
 
 class RegistrationService:
@@ -306,7 +446,8 @@ class RegistrationService:
         if (
             etag is not None
             and etag != self.get_etag(reg)
-            or data.version is not None
+            or etag is None
+            and data.version is not None
             and data.version != reg.version
         ):
             raise ConflictError

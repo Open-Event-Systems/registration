@@ -2,6 +2,7 @@ name: registration-example
 
 volumes:
   db:
+  documents:
 
 configs:
   auth:
@@ -24,6 +25,10 @@ configs:
     file: ./config/email.yml
   rabbitmq:
     file: ./config/rabbitmq.conf
+  print:
+    file: ./config/print.yml
+  badge:
+    file: ./config/badge.html
 
 services:
   db:
@@ -96,6 +101,31 @@ services:
     depends_on:
       - db
 
+  print:
+    build: ../print
+    configs:
+      - source: print
+        target: /config/print.yml
+      - source: badge
+        target: /config/badge.html
+    volumes:
+      - documents:/data
+    depends_on:
+      - registration
+
+  print-worker:
+    build: ../print
+    command: [print-worker, /config/print.yml]
+    configs:
+      - source: print
+        target: /config/print.yml
+      - source: badge
+        target: /config/badge.html
+    depends_on:
+      - rabbitmq
+      - registration
+      - print
+
   web:
     build: ../web
     configs:
@@ -126,4 +156,5 @@ services:
       - payment
       - interview
       - registration
+      - print
       - web

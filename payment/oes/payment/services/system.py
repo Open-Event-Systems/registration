@@ -22,6 +22,7 @@ class SystemPaymentService:
     """System payment service."""
 
     id = "system"
+    name = "System"
 
     def get_payment_method(self, config: PaymentMethodConfig) -> PaymentMethod:
         """Get the payment method."""

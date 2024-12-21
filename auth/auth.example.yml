@@ -5,3 +5,19 @@ amqp_url: amqp://guest:guest@localhost/
 disable_auth: false
 allowed_origins:
   - http://localhost:8080
+roles:
+  staff:
+    title: Staff
+    scope: [self-service, cart, registration, "registration:write"]
+  admin:
+    title: Admin
+    scope:
+      [
+        self-service,
+        cart,
+        registration,
+        "registration:write",
+        set-email,
+        set-role,
+        admin,
+      ]

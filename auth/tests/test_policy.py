@@ -60,6 +60,12 @@ from oes.auth.policy import is_allowed
             "GET",
             "/carts/cart-id",
             (Scope.cart,),
+            False,
+        ),
+        (
+            "GET",
+            "/carts/cart-id",
+            (Scope.admin,),
             True,
         ),
         (
@@ -68,9 +74,14 @@ from oes.auth.policy import is_allowed
             (),
             False,
         ),
+        (
+            "GET",
+            "/events/event-id/registrations/reg-id/unknown",
+            (Scope.selfservice, Scope.registration_write, Scope.registration),
+            False,
+        ),
     ],
 )
-@pytest.mark.asyncio
-async def test_policy(method: str, url: str, scope: Iterable[str], expected: bool):
-    res = await is_allowed(method, url, frozenset(scope))
+def test_policy(method: str, url: str, scope: Iterable[str], expected: bool):
+    res = is_allowed(method, url, frozenset(scope))
     assert res is expected

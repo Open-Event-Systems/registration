@@ -16,11 +16,11 @@ from oes.payment.payment import (
 )
 from oes.payment.pricing import PricingResult
 from oes.payment.service import PaymentRepo, PaymentServicesSvc, PaymentSvc
-from oes.payment.types import CartData
+from oes.payment.types import CartData, PaymentInfoURLService, PaymentService
 from oes.utils.orm import transaction
 from oes.utils.request import CattrsBody, raise_not_found
 from oes.utils.response import ResponseConverter
-from sanic import Blueprint, HTTPResponse, NotFound, Request
+from sanic import BadRequest, Blueprint, HTTPResponse, NotFound, Request
 from sanic.exceptions import HTTPException
 
 routes = Blueprint("payment")
@@ -41,6 +41,20 @@ class CreatePaymentRequestBody:
     cart_id: str
     cart_data: CartData
     pricing_result: PricingResult
+
+
+@frozen
+class PaymentSearchResult:
+    """Payment search response body."""
+
+    id: str
+    service_name: str
+    external_id: str
+    receipt_id: str | None
+    payment_url: str | None
+    status: PaymentStatus
+    date_created: datetime
+    date_closed: datetime | None
 
 
 @frozen
@@ -93,6 +107,47 @@ async def list_options(
         options.append(PaymentOption(id=method_id, name=method_config.name))
 
     return options
+
+
+@routes.get("/payments")
+@response_converter
+async def list_payments(
+    request: Request,
+    payment_repo: PaymentRepo,
+    payment_services_svc: PaymentServicesSvc,
+) -> Sequence[PaymentSearchResult]:
+    """List payments."""
+    event_id = request.args.get("event_id")
+    registration_id = request.args.get("registration_id")
+    if not event_id or not registration_id:
+        raise BadRequest
+
+    res = await payment_repo.get_by_registration_id(event_id, registration_id)
+    svc_ids = {r.service for r in res}
+    services = {s: payment_services_svc.get_service(s) for s in svc_ids}
+    services = {s: v for s, v in services.items() if v}
+    svc_names = {s: services[s].name for s in services}
+
+    return [
+        PaymentSearchResult(
+            r.id,
+            svc_names.get(r.service, r.service),
+            r.external_id,
+            r.receipt_id,
+            _get_payment_url(r, services.get(r.service)),
+            r.status,
+            r.date_created,
+            r.date_closed,
+        )
+        for r in res
+    ]
+
+
+def _get_payment_url(payment: Payment, service: PaymentService | None) -> str | None:
+    if isinstance(service, PaymentInfoURLService):
+        return service.get_payment_info_url(payment)
+    else:
+        return None
 
 
 @routes.post("/payments")

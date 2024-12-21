@@ -122,3 +122,80 @@ interviews:
         when:
           - "'sponsor' not in registration.options"
           - level == "sponsor"
+
+  - id: id-check
+    questions:
+      - id: dob-check
+        title: Verify ID
+        description: |
+          Verify the attendee's ID.
+
+          Check and enter the last 2 digits of the birth year.
+        fields:
+          dob_check:
+            type: text
+            min: 2
+            max: 2
+            label: "DOB Year"
+
+      - id: set-check-in-id
+        title: Assign Number
+        description: |
+          Enter the number of a check-in card.
+        fields:
+          check_in_id:
+            type: text
+            max: 4
+            label: Card No
+            optional: true
+
+    steps:
+      - exit: Incorrect Birth Year
+        description: |
+          Double check the name on the ID.
+
+          Are you checking in {{ registration.first_name | default("unknown") }}
+          {{ registration.last_name | default("unknown") }}?
+        when:
+          - registration.birth_date is defined
+          - registration.birth_date[2:4] != dob_check
+
+      - set: registration.check_in_id
+        value: check_in_id
+        when: check_in_id
+
+      - set: registration.id_checked
+        value: "true"
+
+      - set: registration.id_checked_at
+        value: "get_now()"
+        when: not registration.id_checked_at | default(false)
+
+  - id: badge-pickup
+    questions:
+      - id: badge-number
+        title: Confirm Badge Number
+        description: |
+          Confirm the badge number being picked up.
+        fields:
+          badge_no:
+            type: text
+            label: Badge No
+    steps:
+      - exit: Verify Badge Number
+        description: |
+          The badge number does not match. Please check again.
+        when:
+          - registration.number is defined
+          - registration.number != none
+          - badge_no != registration.number | string
+
+      - set: registration.checked_in
+        value: "true"
+
+      - set: registration.checked_in_at
+        value: "get_now()"
+        when: not registration.checked_in_at | default(false)
+
+      - set: registration.check_in_id
+        value: "none"

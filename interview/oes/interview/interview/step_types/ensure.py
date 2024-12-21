@@ -19,11 +19,7 @@ class EnsureStep:
 
     def __call__(self, context: InterviewContext) -> UpdateResult:
         """Run the step."""
-        items = (
-            self.ensure
-            if isinstance(self.ensure, Sequence) and not isinstance(self.ensure, str)
-            else [self.ensure]
-        )
+        items = self.ensure if isinstance(self.ensure, Sequence) else [self.ensure]
         for item in items:
             self._eval(item, context)
         return UpdateResult(context, None)

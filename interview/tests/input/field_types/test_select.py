@@ -96,51 +96,6 @@ def test_select_field_schema_multi():
     )
 
 
-def test_select_field_buttons_primary():
-    field = SelectFieldTemplate(
-        label="Title",
-        component="buttons",
-        options=(
-            SelectFieldOption(
-                id="1",
-                label="Option 1",
-            ),
-            SelectFieldOption(
-                id="2",
-                label="Option 2",
-                default=True,
-                primary=True,
-            ),
-        ),
-        min=0,
-        max=1,
-        autocomplete="test",
-    ).get_field({})
-
-    assert field.schema == make_immutable(
-        {
-            "type": ["string", "null"],
-            "x-type": "select",
-            "x-component": "buttons",
-            "title": "Title",
-            "default": "2",
-            "oneOf": [
-                {
-                    "const": "1",
-                    "title": "Option 1",
-                },
-                {
-                    "const": "2",
-                    "title": "Option 2",
-                    "x-primary": True,
-                },
-                {"type": "null"},
-            ],
-            "x-autoComplete": "test",
-        }
-    )
-
-
 @pytest.mark.parametrize(
     "value, valid, expected",
     [

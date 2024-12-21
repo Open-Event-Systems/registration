@@ -1,0 +1,8 @@
+**/*
+!cmd
+!internal
+!print.go
+!go.mod
+!go.sum
+!print.example.yml
+!template.example.html

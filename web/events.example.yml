@@ -4,19 +4,29 @@ payment_service_url: http://payment:8000
 registration_service_url: http://registration:8000
 interview_service_url: http://interview:8000
 events:
-  - id: example-event
+  example-event:
     title: Example Event
     description: An example event.
     date: 2025-01-01
     open: true
     visible: true
 
-    add_options:
-      - id: new-registration
-        title: New Registration
-    change_options:
-      - id: upgrade
-        title: Upgrade
+    self_service:
+      add_options:
+        - id: new-registration
+          title: New Registration
+      change_options:
+        - id: upgrade
+          title: Upgrade
 
-    registration_display:
-      title: "{{ registration.preferred_name or registration.first_name }}"
+      display:
+        title: "{{ registration.preferred_name or registration.first_name }}"
+
+    admin:
+      registration_summary: "'TODO'"
+      display_data:
+        - ["Extra 1", "'TODO'"]
+        - ["Extra 2", "'TODO'"]
+      change_options:
+        - id: upgrade
+          title: Upgrade

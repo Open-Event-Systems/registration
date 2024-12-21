@@ -99,6 +99,7 @@ func consume(config *config.Config, client *api.Client, ctx context.Context, cha
 	errChan := make(chan error, 1)
 	go func() {
 		defer close(errChan)
+		waiter := api.Waiter{}
 		deliveryChan, err := channel.ConsumeWithContext(ctx, QUEUE_NAME, "", false, false, false, false, nil)
 		log.Println("listening to update queue")
 		if err != nil {
@@ -129,16 +130,34 @@ func consume(config *config.Config, client *api.Client, ctx context.Context, cha
 			log.Printf("handling update for %v\n", id)
 
 			cols := config.Columns.EvaluateColumns(data)
-			err = client.Append(cols)
+			err = retryAppend(ctx, client, &waiter, cols)
 			if err != nil {
 				log.Printf("error appending row: %v\n", err)
 				msg.Reject(!msg.Redelivered)
 				continue
 			}
 
+			waiter.Reset()
+
 			msg.Ack(false)
 		}
 	}()
 
 	return errChan
+}
+
+func retryAppend(ctx context.Context, client *api.Client, waiter *api.Waiter, cols []any) error {
+	for {
+		err := client.Append(cols)
+		if err != nil {
+			if api.IsRateLimitError(err) {
+				log.Print("rate limit exceeded, waiting and retrying\n")
+				waiter.Wait(ctx)
+			} else {
+				return err
+			}
+		} else {
+			return nil
+		}
+	}
 }

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from oes.auth.token import RefreshToken
 
 AUTH_ID_LEN = 14
+MAX_ROLE_ID_LEN = 64
 
 
 class Scope(str, Enum):
@@ -28,7 +29,10 @@ class Scope(str, Enum):
     cart = "cart"
     registration = "registration"
     registration_write = "registration:write"
+    set_role = "auth:set-role"
+    set_email = "auth:set-email"
     admin = "admin"
+    admin_write = "admin:write"
 
 
 Scopes: TypeAlias = frozenset[str]
@@ -72,6 +76,7 @@ class Authorization(Base):
     date_expires: Mapped[datetime | None] = mapped_column(default=None)
     scope: Mapped[Scopes] = mapped_column(_ScopesType, default=frozenset())
     path_length: Mapped[int] = mapped_column(default=0)
+    role: Mapped[str | None] = mapped_column(String(MAX_ROLE_ID_LEN), default=None)
 
     parent: Mapped[Authorization | None] = relationship(
         "Authorization",
@@ -123,6 +128,7 @@ class Authorization(Base):
         date_expires: datetime | None | _Unset = _unset,
         scope: Iterable[str] | _Unset = _unset,
         path_length: int | _Unset = _unset,
+        role: str | None | _Unset = _unset,
     ) -> Self:
         """Create a child authorization."""
         id_ = nanoid.generate(alphabet=_alphabet, size=AUTH_ID_LEN)
@@ -150,6 +156,7 @@ class Authorization(Base):
                     else self.path_length - 1
                 ),
             ),
+            role=role if not isinstance(role, _Unset) else self.role,
             parent=self,
         )
 

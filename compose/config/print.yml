@@ -1,0 +1,18 @@
+---
+registration_url: http://registration:8000
+print_url: http://print:8000
+amqp_url: amqp://registration:changeit@rabbitmq/
+storage: /data
+events:
+  example-event:
+    document_types:
+      badge:
+        name: Badge
+        template: badge.html
+        dependencies: [version]
+        #print:
+        #  - server: server
+        #    destination: printer
+        #    when: print_badge == true
+        when: true
+chromium-exec: chromium-browser

@@ -68,6 +68,7 @@ class AccessToken(TokenBase):
     acc: str | None = None
     email: str | None = None
     scope: Scopes = frozenset()
+    role: str | None = None
 
 
 class RefreshToken(Base, kw_only=True):
@@ -113,6 +114,7 @@ class RefreshToken(Base, kw_only=True):
             acc=self.authorization.account_id,
             email=self.authorization.email,
             scope=self.authorization.scope,
+            role=self.authorization.role,
         )
 
     @staticmethod
