@@ -28,7 +28,6 @@ class Config:
 
     db_url: URL = ts.option(
         default=make_url("postgresql+asyncpg:///payment"),
-        converter=lambda v: make_url(v),
         help="the database URL",
     )
     amqp_url: str = ts.option(
@@ -64,6 +63,7 @@ def get_payment_service_factory(
 
 
 _converter = ts.converters.get_default_cattrs_converter()
+_converter.register_structure_hook(URL, lambda v, t: make_url(v))
 
 _jinja2_env = ImmutableSandboxedEnvironment()
 

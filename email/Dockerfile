@@ -1,4 +1,4 @@
-FROM golang:1.22.4-alpine3.20 AS build
+FROM golang:1.23.4-alpine3.21 AS build
 WORKDIR /build
 COPY go.mod go.sum email.go ./
 RUN go mod download
