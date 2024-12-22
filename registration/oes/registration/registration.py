@@ -198,7 +198,7 @@ class RegistrationDataFields:
         default=None, converter=lambda s: s.upper() if s else s
     )
     checked_in: bool | None = None
-    date_checked_in: datetime | None = field(converter=_convert_datetime)
+    date_checked_in: datetime | None = field(converter=_convert_datetime, default=None)
 
 
 _registration_data_fields: frozenset[str] = frozenset(

@@ -53,6 +53,7 @@ class AdminInterviewOption:
     id: str
     title: str
     auto: bool = False
+    direct: bool = False
     when: WhenCondition = True
 
 

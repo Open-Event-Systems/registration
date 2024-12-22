@@ -115,6 +115,19 @@ POLICY: PolicyTree = {
                     }
                 },
             },
+            "admin": {
+                "add": {
+                    # /carts/<cart_id>/admin/add/<interview_id>
+                    "*": (lambda p, m, s: Scope.admin in s and Scope.cart in s),
+                },
+                "change": {
+                    "*": {
+                        # /carts/<cart_id>/admin/change/<registration_id>
+                        # /<interview_id>
+                        "*": (lambda p, m, s: Scope.admin in s and Scope.cart in s),
+                    }
+                },
+            },
         },
     },
     "payments": {
