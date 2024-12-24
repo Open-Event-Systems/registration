@@ -186,88 +186,6 @@ class SquareService:
 
         return res.order
 
-    async def _create_payment(
-        self,
-        order_id: str,
-        req_body: SquarePaymentUpdateRequestBody,
-        data: SquarePaymentData,
-    ) -> SquarePayment:
-        idempotency_key = nanoid.generate(size=14)
-
-        if req_body.source_id.strip().upper() in ("CASH", "EXTERNAL"):
-            raise PaymentError
-
-        create_body = CreatePayment(
-            source_id=req_body.source_id,
-            idempotency_key=idempotency_key,
-            amount_money=Money(
-                data.total_price,
-                data.currency,
-            ),
-            autocomplete=False,
-            delay_duration="PT30M",
-            order_id=order_id,
-            location_id=data.location_id,
-            buyer_email_address=data.email,
-            verification_token=req_body.verification_token,
-        )
-
-        response = await self._req(
-            self._payments.create_payment,
-            PaymentResponse,
-            _converter.unstructure(create_body),
-        )
-
-        if isinstance(response, ErrorResponse):
-            raise PaymentError(_format_error(response))
-
-        payment = response.payment
-        return payment
-
-    async def _create_cash_payment(
-        self,
-        order_id: str,
-        req_body: SquarePaymentUpdateRequestBody,
-        data: SquarePaymentData,
-    ) -> SquarePayment:
-        idempotency_key = nanoid.generate(size=14)
-
-        if req_body.source_id != "CASH" or req_body.cash_amount is None:
-            raise PaymentError
-
-        create_body = CreatePayment(
-            source_id=req_body.source_id,
-            idempotency_key=idempotency_key,
-            amount_money=Money(
-                data.total_price,
-                data.currency,
-            ),
-            cash_details=CreateCashPaymentDetails(
-                buyer_supplied_money=Money(
-                    req_body.cash_amount,
-                    data.currency,
-                )
-            ),
-            autocomplete=False,
-            delay_duration="PT30M",
-            order_id=order_id,
-            location_id=data.location_id,
-            buyer_email_address=data.email,
-            verification_token=req_body.verification_token,
-        )
-
-        response = await self._req(
-            self._payments.create_payment,
-            PaymentResponse,
-            _converter.unstructure(create_body),
-        )
-
-        if isinstance(response, ErrorResponse):
-            raise PaymentError(_format_error(response))
-
-        payment = response.payment
-        return payment
-
     async def _pay_order(self, order_id: str, payment_id: str) -> Order:
         idempotency_key = nanoid.generate(size=14)
 
@@ -595,7 +513,7 @@ class SquareCashPaymentMethod:
             or req_body.cash_amount is None
             or req_body.cash_amount < data.total_price
         ):
-            raise PaymentError
+            raise PaymentError("Invalid amount")
 
         create_body = CreatePayment(
             source_id=req_body.source_id,
@@ -611,7 +529,6 @@ class SquareCashPaymentMethod:
                 )
             ),
             autocomplete=False,
-            delay_duration="PT30M",
             order_id=order_id,
             location_id=data.location_id,
             buyer_email_address=data.email,
