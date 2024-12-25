@@ -26,6 +26,7 @@ class Method(str, Enum):
 
     web = "web"
     cash = "cash"
+    terminal = "terminal"
 
 
 class Environment(str, Enum):
@@ -40,6 +41,7 @@ class SquareMethodOptions:
     """Square payment method options."""
 
     method: Method = Method.web
+    terminal_id: str | None = None
 
 
 @frozen
@@ -53,6 +55,7 @@ class SquarePaymentData:
     total_price_str: str
     currency: str
     email: str | None = None
+    terminal_id: str | None = None
 
 
 @frozen
@@ -396,3 +399,39 @@ class PaymentResponse:
     """Payment response."""
 
     payment: Payment
+
+
+@frozen
+class TerminalCheckoutPaymentOptions:
+    """Payment options for a terminal checkout."""
+
+    autocomplete: bool = True
+
+
+@frozen
+class TerminalDeviceOptions:
+    """Square terminal device options."""
+
+    device_id: str
+
+
+@frozen(kw_only=True)
+class CreateTerminalCheckout:
+    """Create terminal checkout body."""
+
+    amount_money: Money
+    order_id: str | None = None
+    payment_options: TerminalCheckoutPaymentOptions
+    device_options: TerminalDeviceOptions
+
+
+@frozen
+class TerminalCheckout:
+    """Terminal checkout."""
+
+
+@frozen
+class TerminalCheckoutResponse:
+    """Terminal chekout response."""
+
+    checkout: TerminalCheckout

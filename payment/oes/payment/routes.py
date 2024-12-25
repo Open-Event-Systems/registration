@@ -8,7 +8,7 @@ from attrs import frozen
 from oes.payment.mq import MQService
 from oes.payment.payment import (
     Payment,
-    PaymentError,
+    PaymentMethodError,
     PaymentNotFoundError,
     PaymentOption,
     PaymentServiceUnsupported,
@@ -228,7 +228,7 @@ async def update_payment(
             raise NotFound
         except PaymentServiceUnsupported:
             raise NotFound
-        except PaymentError as e:
+        except PaymentMethodError as e:
             raise UnprocessableEntity(str(e))
     await _send_receipt(message_queue, payment)
     return PaymentResultResponse(
