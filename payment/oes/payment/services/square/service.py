@@ -54,6 +54,7 @@ from oes.payment.services.square.models import (
     PaymentResponse,
     PricingOptions,
     SquareConfig,
+    SquareMethodOptions,
     SquarePaymentBody,
     SquarePaymentData,
     SquarePaymentUpdateRequestBody,
@@ -115,13 +116,13 @@ class SquareService:
 
     def get_payment_method(self, config: PaymentMethodConfig, /) -> PaymentMethod:
         """Get a :class:`PaymentMethod`."""
-        method = config.options.get("method", Method.web)
-        if method == Method.web:
+        options = _converter.structure(config.options, SquareMethodOptions)
+        if options.method == Method.web:
             return SquareWebPaymentMethod(self)
-        elif method == Method.cash:
+        elif options.method == Method.cash:
             return SquareCashPaymentMethod(self)
         else:
-            raise ValueError(f"Invalid Square payment method: {method}")
+            raise ValueError(f"Invalid Square payment method: {options.method}")
 
     async def cancel_payment(self, request: CancelPaymentRequest, /) -> PaymentResult:
         """Cancel a payment."""
@@ -286,7 +287,6 @@ class SquareWebPaymentMethod:
 
     def __init__(self, service: SquareService):
         self._service = service
-        self._method = Method.web
 
     async def create_payment(self, request: CreatePaymentRequest, /) -> PaymentResult:
         """Create a payment."""
