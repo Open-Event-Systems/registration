@@ -36,6 +36,13 @@ class Environment(str, Enum):
 
 
 @frozen
+class SquareMethodOptions:
+    """Square payment method options."""
+
+    method: Method = Method.web
+
+
+@frozen
 class SquarePaymentData:
     """Square payment data."""
 
