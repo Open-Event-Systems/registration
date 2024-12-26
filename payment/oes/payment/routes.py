@@ -50,6 +50,7 @@ class PaymentSearchResult:
     id: str
     service_name: str
     external_id: str
+    cart_id: str
     receipt_id: str | None
     payment_url: str | None
     status: PaymentStatus
@@ -119,10 +120,15 @@ async def list_payments(
     """List payments."""
     event_id = request.args.get("event_id")
     registration_id = request.args.get("registration_id")
-    if not event_id or not registration_id:
+    suspended = request.args.get("suspended")
+    q = request.args.get("q")
+    if not event_id or (not registration_id and not (suspended and q)):
         raise BadRequest
 
-    res = await payment_repo.get_by_registration_id(event_id, registration_id)
+    if registration_id:
+        res = await payment_repo.get_by_registration_id(event_id, registration_id)
+    else:
+        res = await payment_repo.get_suspended(event_id, q or "")
     svc_ids = {r.service for r in res}
     services = {s: payment_services_svc.get_service(s) for s in svc_ids}
     services = {s: v for s, v in services.items() if v}
@@ -133,6 +139,7 @@ async def list_payments(
             r.id,
             svc_names.get(r.service, r.service),
             r.external_id,
+            r.cart_id,
             r.receipt_id,
             _get_payment_url(r, services.get(r.service)),
             r.status,
