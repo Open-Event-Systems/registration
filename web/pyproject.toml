@@ -7,7 +7,7 @@ packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-oes-utils = {git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "a2c4b5fa29ac561f06302683614fb319d605222f", extras = [
+oes-utils = {git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "16a9631ab53a16cdd940f2df890d2bc63449d2f5", extras = [
     "typed-settings",
     "sanic",
     "sqlalchemy",

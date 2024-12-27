@@ -62,6 +62,7 @@ async def list_registrations(
     account_id = args.get("account_id")
     email = args.get("email")
     summary = args.get("summary")
+    cart_id = args.get("cart_id")
     results = await registration_service.get_registrations(
         q, event_id=event_id, account_id=account_id, email=email, args=args
     )
@@ -80,13 +81,22 @@ async def list_registrations(
         tuple(
             RegistrationAddOption(
                 o.title,
-                request.url_for(
-                    "admin.start_admin_add_interview",
-                    event_id=event_id,
-                    interview_id=o.id,
+                (
+                    request.url_for(
+                        "admin.start_admin_add_interview",
+                        event_id=event_id,
+                        interview_id=o.id,
+                    )
+                    if o.direct
+                    else request.url_for(
+                        "admin.start_cart_admin_add_interview",
+                        cart_id=cart_id,
+                        interview_id=o.id,
+                    )
                 ),
             )
             for o in add_opts
+            if o.direct or not o.direct and cart_id
         ),
     )
 
@@ -213,6 +223,7 @@ def _make_registration_response(
     request: Request, reg: Registration, registration_service: RegistrationService
 ):
     user_role = request.headers.get("x-role")
+    cart_id = request.args.get("cart_id")
     summary = registration_service.get_registration_summary(reg)
     display_data = registration_service.get_display_data(reg)
     change_options = registration_service.get_admin_change_options(reg, user_role)
@@ -224,14 +235,24 @@ def _make_registration_response(
             RegistrationChangeOption(
                 c.title,
                 c.auto,
-                request.url_for(
-                    "admin.start_admin_change_interview",
-                    event_id=reg.event_id,
-                    registration_id=reg.id,
-                    interview_id=c.id,
+                (
+                    request.url_for(
+                        "admin.start_admin_change_interview",
+                        event_id=reg.event_id,
+                        registration_id=reg.id,
+                        interview_id=c.id,
+                    )
+                    if c.direct
+                    else request.url_for(
+                        "admin.start_cart_admin_change_interview",
+                        cart_id=cart_id,
+                        registration_id=reg.id,
+                        interview_id=c.id,
+                    )
                 ),
             )
             for c in change_options
+            if c.direct or not c.direct and cart_id
         ],
     )
 

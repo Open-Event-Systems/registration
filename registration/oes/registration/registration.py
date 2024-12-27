@@ -100,6 +100,15 @@ class Registration(Base, kw_only=True):
             "date_created",
             "id",
         ),
+        Index(
+            "ix_checked_in",
+            "event_id",
+            "checked_in",
+        ),
+        Index(
+            "ix_date_checked_in",
+            "date_checked_in",
+        ),
     )
 
     id: Mapped[str] = mapped_column(
@@ -126,6 +135,8 @@ class Registration(Base, kw_only=True):
     check_in_id: Mapped[str | None] = mapped_column(
         String(CHECK_IN_ID_MAX_LENGTH), default=None
     )
+    checked_in: Mapped[bool | None] = mapped_column(default=None)
+    date_checked_in: Mapped[datetime | None] = mapped_column(default=None)
     extra_data: Mapped[JSON] = mapped_column(default_factory=dict)
 
     __mapper_args__ = {"version_id_col": version}
@@ -161,6 +172,17 @@ _registration_meta_fields = frozenset(
 )
 
 
+def _convert_datetime(s: object) -> datetime | None:
+    if isinstance(s, datetime):
+        return s
+    elif isinstance(s, str):
+        return datetime.fromisoformat(s).astimezone()
+    elif s is None:
+        return None
+    else:
+        raise ValueError(f"Invalid datetime: {s}")
+
+
 @define(kw_only=True)
 class RegistrationDataFields:
     """Registration data fields."""
@@ -175,6 +197,8 @@ class RegistrationDataFields:
     check_in_id: str | None = field(
         default=None, converter=lambda s: s.upper() if s else s
     )
+    checked_in: bool | None = None
+    date_checked_in: datetime | None = field(converter=_convert_datetime, default=None)
 
 
 _registration_data_fields: frozenset[str] = frozenset(
@@ -349,6 +373,30 @@ class RegistrationRepo(Repo[Registration, str]):
         q = q.limit(20)
         res = await self.session.execute(q)
         return res.scalars().all()
+
+    async def count(
+        self,
+        event_id: str,
+        checked_in: bool | None = None,
+        since: datetime | None = None,
+    ) -> int:
+        """Count registrations."""
+        q = (
+            select(func.count(1))
+            .select_from(Registration)
+            .where(Registration.event_id == event_id)
+        )
+
+        q = q.where(Registration.status == Status.created)
+
+        if checked_in:
+            q = q.where(Registration.checked_in == checked_in)
+
+        if since:
+            q = q.where(Registration.date_checked_in >= since)
+
+        res = await self.session.execute(q)
+        return res.scalar_one()
 
 
 def _get_search_clauses(query: str) -> Iterable[ColumnElement]:

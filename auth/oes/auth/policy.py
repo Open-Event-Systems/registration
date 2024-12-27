@@ -37,6 +37,8 @@ POLICY: PolicyTree = {
         # /events/<event_id>
         "*": {
             "/": Scope.admin,
+            # /events/<event_id>/overview
+            "overview": Scope.admin,
             # /events/<event_id>/registrations
             "registrations": {
                 "/": (
@@ -115,6 +117,19 @@ POLICY: PolicyTree = {
                         "*": (
                             lambda p, m, s: Scope.selfservice in s and Scope.cart in s
                         ),
+                    }
+                },
+            },
+            "admin": {
+                "add": {
+                    # /carts/<cart_id>/admin/add/<interview_id>
+                    "*": (lambda p, m, s: Scope.admin in s and Scope.cart in s),
+                },
+                "change": {
+                    "*": {
+                        # /carts/<cart_id>/admin/change/<registration_id>
+                        # /<interview_id>
+                        "*": (lambda p, m, s: Scope.admin in s and Scope.cart in s),
                     }
                 },
             },

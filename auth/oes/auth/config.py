@@ -1,6 +1,7 @@
 """Config."""
 
 from collections.abc import Mapping
+from typing import Any, cast
 
 import typed_settings as ts
 from oes.auth.auth import Scopes
@@ -27,7 +28,6 @@ class Config:
     token_secret: ts.SecretStr = ts.secret(help="the secret for signing tokens")
     db_url: URL = ts.option(
         default=make_url("postgresql+asyncpg:///auth"),
-        converter=lambda v: make_url(v),
         help="the database URL",
     )
     amqp_url: str = ts.option(
@@ -41,4 +41,8 @@ class Config:
 def get_config() -> Config:
     """Load the config."""
     loaders = get_loaders("OES_AUTH_SERVICE_", ("auth.yml",))
-    return ts.load_settings(Config, loaders)
+    return ts.load_settings(Config, loaders, converter=cast(Any, _converter))
+
+
+_converter = ts.converters.get_default_cattrs_converter()
+_converter.register_structure_hook(URL, lambda v, t: make_url(v))

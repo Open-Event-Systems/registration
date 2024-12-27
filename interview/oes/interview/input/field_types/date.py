@@ -50,7 +50,9 @@ class DateFieldTemplate(FieldTemplateBase):
                 else self.default
             )
             schema["default"] = (
-                default_date.isoformat() if default_date is not None else None
+                default_date.isoformat()
+                if isinstance(default_date, date)
+                else default_date if default_date is not None else None
             )
 
         if self.min_expr is not None or self.min is not None:

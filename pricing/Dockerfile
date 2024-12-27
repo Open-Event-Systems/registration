@@ -1,4 +1,4 @@
-FROM golang:1.22.4-alpine3.20 AS build
+FROM golang:1.23.4-alpine3.21 AS build
 WORKDIR /build
 COPY go.mod go.sum pricing.go ./
 RUN go mod download
@@ -7,7 +7,7 @@ COPY cmd/ cmd/
 RUN go build ./cmd/pricing
 
 
-FROM alpine:3.20.0
+FROM alpine:3.21.0
 RUN apk add curl python3
 RUN adduser -D app \
     && mkdir -p /config/scripts

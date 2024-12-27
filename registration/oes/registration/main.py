@@ -36,6 +36,7 @@ def create_app() -> Sanic:
         batch,
         common,
         healthcheck,
+        overview,
         registration,
     )
     from oes.registration.serialization import configure_converter
@@ -52,6 +53,7 @@ def create_app() -> Sanic:
     app.blueprint(registration.routes, url_prefix="/events/<event_id>/registrations")
     app.blueprint(batch.routes, url_prefix="/events/<event_id>/batch-change")
     app.blueprint(access_code.routes, url_prefix="/events/<event_id>/access-codes")
+    app.blueprint(overview.routes, url_prefix="/events/<event_id>")
 
     app.ext.add_dependency(RegistrationRepo)
     app.ext.add_dependency(RegistrationService)

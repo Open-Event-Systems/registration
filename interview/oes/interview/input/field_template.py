@@ -68,6 +68,7 @@ class SelectFieldOptionBase:
     value: Any = None
     value_expr: Expression | None = None
     default: bool = False
+    default_expr: Expression | None = None
     when: WhenCondition = True
 
     def get_schema(self, id: str, context: TemplateContext) -> dict[str, Any]:
