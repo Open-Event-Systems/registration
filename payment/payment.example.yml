@@ -11,6 +11,7 @@ services:
     access_token:
     location_id:
     sandbox: true
+  suspend: {}
 
 methods:
   system:
@@ -27,5 +28,11 @@ methods:
   square-web:
     service: square
     name: Credit / Debit
+    when:
+      - pricing_result.total_price > 0
+
+  suspend:
+    service: suspend
+    name: In-Person Cash/Card
     when:
       - pricing_result.total_price > 0
