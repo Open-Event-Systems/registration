@@ -358,7 +358,7 @@ class RegistrationRepo(Repo[Registration, str]):
             if account_id:
                 acc_clauses.append(Registration.account_id == account_id)
             if email:
-                acc_clauses.append(Registration.email == email)
+                acc_clauses.append(func.lower(Registration.email) == email.lower())
             q = q.where(or_(*acc_clauses))
 
         if query:
