@@ -39,6 +39,7 @@ pytest-cov = "^5.0.0"
 [tool.poetry.plugins."oes.payment.services"]
 system = "oes.payment.services.system:make_system_payment_service"
 mock = "oes.payment.services.mock:make_mock_payment_service"
+suspend = "oes.payment.services.suspend:make_suspend_payment_service"
 square = "oes.payment.services.square.service:make_square_payment_service"
 
 [tool.poetry.scripts]
