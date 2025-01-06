@@ -51,6 +51,7 @@ class PaymentSearchResult:
     service_name: str
     external_id: str
     cart_id: str
+    cart_data: CartData
     receipt_id: str | None
     payment_url: str | None
     status: PaymentStatus
@@ -140,6 +141,7 @@ async def list_payments(
             svc_names.get(r.service, r.service),
             r.external_id,
             r.cart_id,
+            r.cart_data,
             r.receipt_id,
             _get_payment_url(r, services.get(r.service)),
             r.status,
