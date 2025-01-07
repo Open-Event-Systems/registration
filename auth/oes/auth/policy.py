@@ -59,10 +59,18 @@ POLICY: PolicyTree = {
                     "complete": Scope.registration_write,
                     "cancel": Scope.registration_write,
                     "assign-number": Scope.registration_write,
-                    "documents": Scope.registration,
+                    "documents": {
+                        "/": Scope.registration,
+                        "*": {
+                            "*": Scope.registration,
+                        },
+                    },
                     # /events/<event_id>/registrations/<registration_id>
                     # /self-service/change/<interview_id>
                     "self-service": {"change": {"*": Scope.selfservice}},
+                    # /events/<event_id>/registrations/<registration_id>
+                    # /ad,om/change/<interview_id>
+                    "admin": {"change": {"*": Scope.registration}},
                 },
             },
             "update-registrations": (
@@ -83,6 +91,12 @@ POLICY: PolicyTree = {
                 "add-registration": {
                     # /events/<event_id>/self-service/add-registration/<interview_id>
                     "*": Scope.selfservice
+                }
+            },
+            "admin": {
+                "add-registration": {
+                    # /events/<event_id>/admin/add-registration/<interview_id>
+                    "*": Scope.registration
                 }
             },
         },
