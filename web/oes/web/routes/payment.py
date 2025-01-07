@@ -15,7 +15,8 @@ async def list_payment_methods(
     request: Request, cart_id: str, payment_service: PaymentService
 ) -> HTTPResponse:
     """List payment options for a cart."""
-    res = raise_not_found(await payment_service.get_payment_options(cart_id))
+    role = request.headers.get("x-role")
+    res = raise_not_found(await payment_service.get_payment_options(cart_id, role))
     return json(res)
 
 
@@ -29,9 +30,10 @@ async def create_payment(
         raise NotFound
 
     email = request.headers.get("x-email")
+    role = request.headers.get("x-role")
 
     res_status, res_body = raise_not_found(
-        await payment_service.create_payment(cart_id, method, email)
+        await payment_service.create_payment(cart_id, method, email, role)
     )
 
     if res_status == 409:

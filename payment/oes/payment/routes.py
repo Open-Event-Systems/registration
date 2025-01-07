@@ -102,9 +102,10 @@ async def list_options(
 ) -> Sequence[PaymentOption]:
     """List available payment options."""
     req = await body(CreatePaymentRequestBody)
+    role = request.headers.get("x-role")
     options = []
     for method_id, method_config in services_svc.get_methods(
-        req.cart_data, req.pricing_result
+        req.cart_data, req.pricing_result, role
     ):
         options.append(PaymentOption(id=method_id, name=method_config.name))
 
@@ -173,9 +174,10 @@ async def create_payment(
     if not method_id:
         raise NotFound
     email = request.headers.get("x-email")
+    role = request.headers.get("x-role")
 
     req = await body(CreatePaymentRequestBody)
-    methods = dict(services_svc.get_methods(req.cart_data, req.pricing_result))
+    methods = dict(services_svc.get_methods(req.cart_data, req.pricing_result, role))
     method_config = raise_not_found(methods.get(method_id))
     try:
         res = await payment_svc.create_payment(

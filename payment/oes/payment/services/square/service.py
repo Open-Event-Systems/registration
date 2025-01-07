@@ -436,7 +436,6 @@ class SquareCashPaymentMethod:
             total_price=request.pricing_result.total_price,
             total_price_str=total_price_str,
             currency=request.pricing_result.currency,
-            email=request.email,
         )
         payment_body = SquarePaymentBody(
             method=Method.cash,
@@ -585,7 +584,6 @@ class SquareTerminalPaymentMethod:
             total_price=request.pricing_result.total_price,
             total_price_str=total_price_str,
             currency=request.pricing_result.currency,
-            email=request.email,
             terminal_id=self.terminal_id,
         )
         payment_body = SquarePaymentBody(
