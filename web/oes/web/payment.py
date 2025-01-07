@@ -25,7 +25,9 @@ class PaymentService:
         self.config = config
 
     async def get_payment_options(
-        self, cart_id: str
+        self,
+        cart_id: str,
+        user_role: str | None,
     ) -> Sequence[Mapping[str, Any]] | None:
         """Get payment options."""
         cart = await self.cart_service.get_cart(cart_id)
@@ -33,13 +35,20 @@ class PaymentService:
             return None
         pricing_result = await self.cart_service.get_pricing_result(cart_id)
         cart_data = cart.get("cart")
+        headers = {}
+
+        if user_role:
+            headers["x-role"] = user_role
+
         body = {
             "cart_id": cart_id,
             "cart_data": cart_data,
             "pricing_result": pricing_result,
         }
         res = await self.client.post(
-            f"{self.config.payment_service_url}/payment-methods", json=body
+            f"{self.config.payment_service_url}/payment-methods",
+            json=body,
+            headers=headers,
         )
         if res.status_code == 404:
             return None
@@ -47,7 +56,11 @@ class PaymentService:
         return res.json()
 
     async def create_payment(
-        self, cart_id: str, method: str, email: str | None
+        self,
+        cart_id: str,
+        method: str,
+        email: str | None,
+        user_role: str | None,
     ) -> tuple[int, Mapping[str, Any]] | None:
         """Create a payment.
 
@@ -66,6 +79,8 @@ class PaymentService:
             if "meta" in r and r["meta"].get("access_code")
         }
 
+        headers = {}
+
         body = {
             "cart_id": cart_id,
             "cart_data": cart_data,
@@ -78,10 +93,11 @@ class PaymentService:
         if check_res != 200:
             return check_res, check_body
 
-        headers = {}
-
         if email:
             headers["x-email"] = email
+
+        if user_role:
+            headers["x-role"] = user_role
 
         res = await self.client.post(
             f"{self.config.payment_service_url}/payments",
