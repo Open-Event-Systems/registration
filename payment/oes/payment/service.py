@@ -21,7 +21,7 @@ from oes.payment.pricing import PricingResult
 from oes.payment.types import CartData, PaymentService, UpdatablePaymentService
 from oes.utils.logic import evaluate
 from oes.utils.orm import Repo
-from sqlalchemy import select
+from sqlalchemy import ColumnElement, func, or_, select
 
 
 class PaymentRepo(Repo[Payment, str]):
@@ -53,6 +53,48 @@ class PaymentRepo(Repo[Payment, str]):
         )
         res = await self.session.execute(q)
         return res.scalars().all()
+
+    async def get_suspended(self, event_id: str, q: str) -> Sequence[Payment]:
+        """Search suspended checkouts."""
+        query = (
+            select(Payment)
+            .where(Payment.service == "suspend")
+            .where(Payment.cart_data.contains({"event_id": event_id}))
+        )
+
+        q = q.lower().strip()
+        if q:
+            query = query.where(_get_search(q))
+
+        query.order_by(Payment.date_created.desc())
+        query = query.limit(20)
+
+        res = await self.session.execute(query)
+        return res.scalars().all()
+
+
+def _get_search(q: str) -> ColumnElement:
+    exprs = or_(
+        func.lower(
+            Payment.cart_data["registrations"][0]["new"]["last_name"].as_string()
+        ).startswith(q),
+        func.lower(
+            Payment.cart_data["registrations"][1]["new"]["last_name"].as_string()
+        ).startswith(q),
+        func.lower(
+            Payment.cart_data["registrations"][2]["new"]["last_name"].as_string()
+        ).startswith(q),
+        func.lower(
+            Payment.cart_data["registrations"][0]["new"]["email"].as_string()
+        ).startswith(q),
+        func.lower(
+            Payment.cart_data["registrations"][1]["new"]["email"].as_string()
+        ).startswith(q),
+        func.lower(
+            Payment.cart_data["registrations"][2]["new"]["email"].as_string()
+        ).startswith(q),
+    )
+    return exprs
 
 
 class PaymentServicesSvc:

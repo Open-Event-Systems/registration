@@ -12,6 +12,7 @@ from oes.utils.mapping import merge_mapping
 from oes.web.config import Config
 from oes.web.registration import Registration, generate_registration_id
 from oes.web.types import JSON
+from sanic import Request
 
 
 @frozen
@@ -52,7 +53,7 @@ class InterviewService:
 
     async def start_interview(
         self,
-        host: str,
+        request: Request,
         interview_id: str,
         target: str,
         context: Mapping[str, Any] | None,
@@ -66,11 +67,22 @@ class InterviewService:
             "target": target,
         }
 
+        fwd = request.headers.get("X-Forwarded-For")
+        proto = request.headers.get("X-Forwarded-Proto")
+
+        headers = {"Content-Type": "application/json", "Host": request.host}
+
+        if fwd:
+            headers["X-Forwarded-For"] = fwd
+
+        if proto:
+            headers["X-Forwarded-Proto"] = proto
+
         body_bytes = orjson.dumps(body)
         res = await self.client.post(
             url,
             content=body_bytes,
-            headers={"Content-Type": "application/json", "Host": host},
+            headers=headers,
         )
         res.raise_for_status()
         return _converter.structure(res.json(), InterviewState)
