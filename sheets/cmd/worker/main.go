@@ -153,6 +153,9 @@ func retryAppend(ctx context.Context, client *api.Client, waiter *api.Waiter, co
 			if api.IsRateLimitError(err) {
 				log.Print("rate limit exceeded, waiting and retrying\n")
 				waiter.Wait(ctx)
+			} else if api.IsServerError(err) {
+				log.Printf("server error, waiting and retrying: %v", err)
+				waiter.Wait(ctx)
 			} else {
 				return err
 			}
