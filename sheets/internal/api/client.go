@@ -56,3 +56,12 @@ func IsRateLimitError(err error) bool {
 		return false
 	}
 }
+
+// Return whether an error is a server error
+func IsServerError(err error) bool {
+	if apiErr, ok := err.(*googleapi.Error); ok {
+		return apiErr.Code >= 500
+	} else {
+		return false
+	}
+}

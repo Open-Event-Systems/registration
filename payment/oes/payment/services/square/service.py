@@ -7,7 +7,7 @@ from typing import Any, Optional, ParamSpec, Type, TypeVar, cast
 
 import nanoid
 from apimatic_core.http.response.api_response import ApiResponse
-from cattrs import Converter, override
+from cattrs import BaseValidationError, Converter, override
 from cattrs.gen import make_dict_unstructure_fn
 from cattrs.preconf.orjson import make_converter
 from loguru import logger
@@ -27,6 +27,7 @@ from oes.payment.payment import (
 )
 from oes.payment.pricing import LineItem, Modifier, PricingResult
 from oes.payment.services.square.models import (
+    CreateCashPaymentDetails,
     CreateCustomerBody,
     CreateOrder,
     CreateOrderLineItem,
@@ -34,10 +35,13 @@ from oes.payment.services.square.models import (
     CreateOrderLineItemDiscount,
     CreateOrderLineItemModifier,
     CreatePayment,
+    CreateTerminalCheckout,
     CustomerResponse,
     CustomersResponse,
+    Environment,
     Error,
     ErrorResponse,
+    Method,
     Money,
     Order,
     OrderLineItemDiscountScope,
@@ -45,12 +49,22 @@ from oes.payment.services.square.models import (
     OrderLineItemItemType,
     OrderResponseBody,
     OrderState,
+)
+from oes.payment.services.square.models import Payment as SquarePayment
+from oes.payment.services.square.models import (
     PaymentResponse,
     PricingOptions,
     SquareConfig,
+    SquareMethodOptions,
+    SquarePaymentBody,
+    SquarePaymentData,
+    SquarePaymentUpdateRequestBody,
+    TerminalCheckoutPaymentOptions,
+    TerminalCheckoutResponse,
+    TerminalDeviceOptions,
 )
 from oes.payment.types import CartData, PaymentMethod
-from square.client import Client, CustomersApi, OrdersApi, PaymentsApi
+from square.client import Client, CustomersApi, OrdersApi, PaymentsApi, TerminalApi
 
 _P = ParamSpec("_P")
 _T = TypeVar("_T")
@@ -94,7 +108,9 @@ class SquareService:
     ):
         self.application_id = application_id
         self.location_id = location_id
-        self.environment = "production" if not sandbox else "sandbox"
+        self.environment = (
+            Environment.production if not sandbox else Environment.sandbox
+        )
         self._client = Client(
             access_token=access_token,
             environment=self.environment,
@@ -104,7 +120,17 @@ class SquareService:
 
     def get_payment_method(self, config: PaymentMethodConfig, /) -> PaymentMethod:
         """Get a :class:`PaymentMethod`."""
-        return SquareWebPaymentMethod(self)
+        options = _converter.structure(config.options, SquareMethodOptions)
+        if options.method == Method.web:
+            return SquareWebPaymentMethod(self)
+        elif options.method == Method.cash:
+            return SquareCashPaymentMethod(self)
+        elif options.method == Method.terminal:
+            if not options.terminal_id:
+                raise ValueError("Missing terminal ID")
+            return SquareTerminalPaymentMethod(self, options.terminal_id)
+        else:
+            raise ValueError(f"Invalid Square payment method: {options.method}")
 
     async def cancel_payment(self, request: CancelPaymentRequest, /) -> PaymentResult:
         """Cancel a payment."""
@@ -141,70 +167,25 @@ class SquareService:
 
     async def update_payment(self, request: UpdatePaymentRequest, /) -> PaymentResult:
         """Update a payment."""
-        source_id = request.body.get("source_id")
-        if not source_id:
+        try:
+            body = _converter.structure(request.body, SquarePaymentUpdateRequestBody)
+        except BaseValidationError:
             raise PaymentError
 
-        verification_token = request.body.get("verification_token")
-
-        # Cash not permitted via web
-        method = request.data.get("method")
-        if method == "web" and source_id.strip().upper() == "CASH":
-            raise PaymentError
+        data = _converter.structure(request.data, SquarePaymentData)
 
         order = await self._get_order(request.external_id)
-        if order.state != OrderState.open:
-            raise PaymentStateError("Order is already closed")
 
-        idempotency_key = nanoid.generate(size=14)
-        amount = request.data["total_price"]
-        currency = request.data["currency"]
-        location_id = request.data["location_id"]
-        email = request.data.get("email")
+        if data.method == Method.cash:
+            method = SquareCashPaymentMethod(self)
+        elif data.method == Method.terminal:
+            if not data.terminal_id:
+                raise ValueError("Missing terminal ID")
+            method = SquareTerminalPaymentMethod(self, data.terminal_id)
+        else:
+            method = SquareWebPaymentMethod(self)
 
-        res = await self._req(
-            self._payments.create_payment,
-            PaymentResponse,
-            _converter.unstructure(
-                CreatePayment(
-                    source_id=source_id,
-                    idempotency_key=idempotency_key,
-                    amount_money=Money(
-                        amount,
-                        currency,
-                    ),
-                    autocomplete=False,
-                    delay_duration="PT30M",
-                    order_id=order.id,
-                    location_id=location_id,
-                    buyer_email_address=email,
-                    verification_token=verification_token,
-                )
-            ),
-        )
-        if isinstance(res, ErrorResponse):
-            raise PaymentError(_format_error(res))
-        payment = res.payment
-
-        idempotency_key = nanoid.generate(size=14)
-
-        res = await self._req(
-            self._orders.pay_order,
-            OrderResponseBody,
-            order.id,
-            {"idempotency_key": idempotency_key, "payment_ids": [payment.id]},
-        )
-        if isinstance(res, ErrorResponse):
-            raise PaymentError(_format_error(res))
-
-        final_order = res.order
-        return PaymentResult(
-            id=request.id,
-            service=self.id,
-            external_id=final_order.id,
-            status=_order_status_to_payment_status(final_order.state),
-            date_closed=final_order.closed_at,
-        )
+        return await method.update_payment(request.id, order, data, body)
 
     async def _get_order(self, id: str) -> Order:
         res = await self._req(self._orders.retrieve_order, OrderResponseBody, id)
@@ -214,6 +195,19 @@ class SquareService:
             else:
                 raise PaymentMethodError(_format_error(res))
 
+        return res.order
+
+    async def _pay_order(self, order_id: str, payment_id: str) -> Order:
+        idempotency_key = nanoid.generate(size=14)
+
+        res = await self._req(
+            self._orders.pay_order,
+            OrderResponseBody,
+            order_id,
+            {"idempotency_key": idempotency_key, "payment_ids": [payment_id]},
+        )
+        if isinstance(res, ErrorResponse):
+            raise PaymentError(_format_error(res))
         return res.order
 
     async def _sync_customers(self, cart_data: CartData) -> str | None:
@@ -281,6 +275,10 @@ class SquareService:
     def _customers(self) -> CustomersApi:
         return cast(CustomersApi, self._client.customers)
 
+    @property
+    def _terminal(self) -> TerminalApi:
+        return cast(TerminalApi, self._client.terminal)
+
     async def _req(
         self,
         method: Callable[_P, Optional[ApiResponse]],
@@ -306,6 +304,28 @@ class SquareWebPaymentMethod:
 
     async def create_payment(self, request: CreatePaymentRequest, /) -> PaymentResult:
         """Create a payment."""
+        total_price_str = format_currency(
+            request.pricing_result.currency, request.pricing_result.total_price
+        )
+        payment_data = SquarePaymentData(
+            method=Method.web,
+            environment=self._service.environment,
+            location_id=self._service.location_id,
+            total_price=request.pricing_result.total_price,
+            total_price_str=total_price_str,
+            currency=request.pricing_result.currency,
+            email=request.email,
+        )
+        payment_body = SquarePaymentBody(
+            method=Method.web,
+            environment=self._service.environment,
+            application_id=self._service.application_id,
+            location_id=self._service.location_id,
+            total_price=request.pricing_result.total_price,
+            total_price_str=total_price_str,
+            currency=request.pricing_result.currency,
+        )
+
         customer_id = await self._service._sync_customers(request.cart_data)
 
         order_body = _build_order(
@@ -325,7 +345,7 @@ class SquareWebPaymentMethod:
             raise PaymentMethodError(_format_error(res))
 
         order = res.order
-        currency_str = format_currency(
+        total_price_str = format_currency(
             request.pricing_result.currency, request.pricing_result.total_price
         )
 
@@ -335,23 +355,333 @@ class SquareWebPaymentMethod:
             external_id=order.id,
             status=_order_status_to_payment_status(order.state),
             date_created=order.created_at,
-            data={
-                "location_id": self._service.location_id,
-                "total_price": request.pricing_result.total_price,
-                "currency": request.pricing_result.currency,
-                "total_price_str": currency_str,
-                "environment": self._service.environment,
-                "email": request.email,
-                "method": "web",
+            data=_converter.unstructure(payment_data),
+            body=_converter.unstructure(payment_body),
+        )
+
+    async def update_payment(
+        self,
+        id: str,
+        order: Order,
+        data: SquarePaymentData,
+        body: SquarePaymentUpdateRequestBody,
+    ) -> PaymentResult:
+        """Update a payment."""
+        if order.state != OrderState.open:
+            raise PaymentStateError("Order is already closed")
+        payment = await self._create_square_payment(order.id, body, data)
+        final_order = await self._service._pay_order(order.id, payment.id)
+        return PaymentResult(
+            id=id,
+            service=self._service.id,
+            external_id=final_order.id,
+            status=_order_status_to_payment_status(final_order.state),
+            date_closed=final_order.closed_at,
+        )
+
+    async def _create_square_payment(
+        self,
+        order_id: str,
+        req_body: SquarePaymentUpdateRequestBody,
+        data: SquarePaymentData,
+    ) -> SquarePayment:
+        idempotency_key = nanoid.generate(size=14)
+
+        if req_body.source_id.strip().upper() in ("CASH", "EXTERNAL"):
+            raise PaymentError
+
+        create_body = CreatePayment(
+            source_id=req_body.source_id,
+            idempotency_key=idempotency_key,
+            amount_money=Money(
+                data.total_price,
+                data.currency,
+            ),
+            autocomplete=False,
+            delay_duration="PT30M",
+            order_id=order_id,
+            location_id=data.location_id,
+            buyer_email_address=data.email,
+            verification_token=req_body.verification_token,
+        )
+
+        response = await self._service._req(
+            self._service._payments.create_payment,
+            PaymentResponse,
+            _converter.unstructure(create_body),
+        )
+
+        if isinstance(response, ErrorResponse):
+            raise PaymentError(_format_error(response))
+
+        payment = response.payment
+        return payment
+
+
+class SquareCashPaymentMethod:
+    """Square cash payment method."""
+
+    def __init__(self, service: SquareService):
+        self._service = service
+
+    async def create_payment(self, request: CreatePaymentRequest, /) -> PaymentResult:
+        """Create a payment."""
+        total_price_str = format_currency(
+            request.pricing_result.currency, request.pricing_result.total_price
+        )
+        payment_data = SquarePaymentData(
+            method=Method.cash,
+            environment=self._service.environment,
+            location_id=self._service.location_id,
+            total_price=request.pricing_result.total_price,
+            total_price_str=total_price_str,
+            currency=request.pricing_result.currency,
+        )
+        payment_body = SquarePaymentBody(
+            method=Method.cash,
+            environment=self._service.environment,
+            application_id=self._service.application_id,
+            location_id=self._service.location_id,
+            total_price=request.pricing_result.total_price,
+            total_price_str=total_price_str,
+            currency=request.pricing_result.currency,
+        )
+
+        customer_id = await self._service._sync_customers(request.cart_data)
+
+        order_body = _build_order(
+            self._service.location_id,
+            customer_id,
+            request.pricing_result,
+            self._service._item_map,
+            self._service._modifier_map,
+        )
+
+        res = await self._service._req(
+            self._service._orders.create_order,
+            OrderResponseBody,
+            {"order": _converter.unstructure(order_body)},
+        )
+        if isinstance(res, ErrorResponse):
+            raise PaymentMethodError(_format_error(res))
+
+        order = res.order
+        total_price_str = format_currency(
+            request.pricing_result.currency, request.pricing_result.total_price
+        )
+
+        return PaymentResult(
+            id=request.id,
+            service=self._service.id,
+            external_id=order.id,
+            status=_order_status_to_payment_status(order.state),
+            date_created=order.created_at,
+            data=_converter.unstructure(payment_data),
+            body=_converter.unstructure(payment_body),
+        )
+
+    async def update_payment(
+        self,
+        id: str,
+        order: Order,
+        data: SquarePaymentData,
+        body: SquarePaymentUpdateRequestBody,
+    ) -> PaymentResult:
+        """Update a payment."""
+        if order.state != OrderState.open:
+            raise PaymentStateError("Order is already closed")
+        payment = await self._create_square_payment(order.id, body, data)
+        final_order = await self._service._pay_order(order.id, payment.id)
+
+        result_body = SquarePaymentBody(
+            method=Method.cash,
+            environment=self._service.environment,
+            application_id=self._service.application_id,
+            location_id=self._service.location_id,
+            total_price=data.total_price,
+            total_price_str=data.total_price_str,
+            currency=data.currency,
+            change=(
+                payment.cash_details.change_back_money.amount
+                if payment.cash_details
+                else None
+            ),
+        )
+
+        return PaymentResult(
+            id=id,
+            service=self._service.id,
+            external_id=final_order.id,
+            status=_order_status_to_payment_status(final_order.state),
+            date_closed=final_order.closed_at,
+            body=_converter.unstructure(result_body),
+        )
+
+    async def _create_square_payment(
+        self,
+        order_id: str,
+        req_body: SquarePaymentUpdateRequestBody,
+        data: SquarePaymentData,
+    ) -> SquarePayment:
+        idempotency_key = nanoid.generate(size=14)
+
+        if (
+            req_body.source_id.strip().upper() != "CASH"
+            or req_body.cash_amount is None
+            or req_body.cash_amount < data.total_price
+        ):
+            raise PaymentError("Invalid amount")
+
+        create_body = CreatePayment(
+            source_id=req_body.source_id,
+            idempotency_key=idempotency_key,
+            amount_money=Money(
+                data.total_price,
+                data.currency,
+            ),
+            cash_details=CreateCashPaymentDetails(
+                buyer_supplied_money=Money(
+                    req_body.cash_amount,
+                    data.currency,
+                )
+            ),
+            autocomplete=False,
+            order_id=order_id,
+            location_id=data.location_id,
+            buyer_email_address=data.email,
+            verification_token=req_body.verification_token,
+        )
+
+        response = await self._service._req(
+            self._service._payments.create_payment,
+            PaymentResponse,
+            _converter.unstructure(create_body),
+        )
+
+        if isinstance(response, ErrorResponse):
+            raise PaymentError(_format_error(response))
+
+        payment = response.payment
+        return payment
+
+
+class SquareTerminalPaymentMethod:
+    """Square Terminal payment method."""
+
+    def __init__(self, service: SquareService, terminal_id: str):
+        self._service = service
+        self.terminal_id = terminal_id
+
+    async def create_payment(self, request: CreatePaymentRequest, /) -> PaymentResult:
+        """Create a payment."""
+        total_price_str = format_currency(
+            request.pricing_result.currency, request.pricing_result.total_price
+        )
+        payment_data = SquarePaymentData(
+            method=Method.terminal,
+            environment=self._service.environment,
+            location_id=self._service.location_id,
+            total_price=request.pricing_result.total_price,
+            total_price_str=total_price_str,
+            currency=request.pricing_result.currency,
+            terminal_id=self.terminal_id,
+        )
+        payment_body = SquarePaymentBody(
+            method=Method.terminal,
+            environment=self._service.environment,
+            application_id=self._service.application_id,
+            location_id=self._service.location_id,
+            total_price=request.pricing_result.total_price,
+            total_price_str=total_price_str,
+            currency=request.pricing_result.currency,
+        )
+
+        customer_id = await self._service._sync_customers(request.cart_data)
+
+        order_body = _build_order(
+            self._service.location_id,
+            customer_id,
+            request.pricing_result,
+            self._service._item_map,
+            self._service._modifier_map,
+        )
+
+        res = await self._service._req(
+            self._service._orders.create_order,
+            OrderResponseBody,
+            {"order": _converter.unstructure(order_body)},
+        )
+        if isinstance(res, ErrorResponse):
+            raise PaymentMethodError(_format_error(res))
+
+        order = res.order
+        total_price_str = format_currency(
+            request.pricing_result.currency, request.pricing_result.total_price
+        )
+
+        idempotency_key = nanoid.generate(size=14)
+
+        create_checkout = CreateTerminalCheckout(
+            amount_money=Money(
+                request.pricing_result.total_price,
+                request.pricing_result.currency,
+            ),
+            order_id=order.id,
+            payment_options=TerminalCheckoutPaymentOptions(
+                autocomplete=True,
+            ),
+            device_options=TerminalDeviceOptions(device_id=self.terminal_id),
+        )
+
+        res = await self._service._req(
+            self._service._terminal.create_terminal_checkout,
+            TerminalCheckoutResponse,
+            {
+                "idempotency_key": idempotency_key,
+                "checkout": _converter.unstructure(create_checkout),
             },
-            body={
-                "application_id": self._service.application_id,
-                "location_id": self._service.location_id,
-                "total_price": request.pricing_result.total_price,
-                "currency": request.pricing_result.currency,
-                "total_price_str": currency_str,
-                "environment": self._service.environment,
-            },
+        )
+        if isinstance(res, ErrorResponse):
+            raise PaymentMethodError(_format_error(res))
+
+        return PaymentResult(
+            id=request.id,
+            service=self._service.id,
+            external_id=order.id,
+            status=_order_status_to_payment_status(order.state),
+            date_created=order.created_at,
+            data=_converter.unstructure(payment_data),
+            body=_converter.unstructure(payment_body),
+        )
+
+    async def update_payment(
+        self,
+        id: str,
+        order: Order,
+        data: SquarePaymentData,
+        body: SquarePaymentUpdateRequestBody,
+    ) -> PaymentResult:
+        """Update a payment."""
+        if order.state != OrderState.completed:
+            raise PaymentMethodError("Payment not completed")
+
+        result_body = SquarePaymentBody(
+            method=Method.terminal,
+            environment=self._service.environment,
+            application_id=self._service.application_id,
+            location_id=self._service.location_id,
+            total_price=data.total_price,
+            total_price_str=data.total_price_str,
+            currency=data.currency,
+        )
+
+        return PaymentResult(
+            id=id,
+            service=self._service.id,
+            external_id=order.id,
+            status=_order_status_to_payment_status(order.state),
+            date_closed=order.closed_at,
+            body=_converter.unstructure(result_body),
         )
 
 
