@@ -101,6 +101,32 @@ async def list_registrations(
     )
 
 
+@routes.post("/events/<event_id>/registrations")
+async def create_registration(
+    request: Request,
+    event_id: str,
+    registration_service: RegistrationService,
+) -> HTTPResponse:
+    """Create a registration."""
+    body = request.json
+    status, resp, etag = await registration_service.proxy_registration_request(
+        "POST",
+        f"/events/{event_id}/registrations",
+        body,
+    )
+    if resp is None:
+        return HTTPResponse(status=status)
+    elif status != 200:
+        return json(resp, status)
+    else:
+        reg = Registration(resp["registration"])
+        reg_body = response_converter.converter.unstructure(
+            _make_registration_response(request, reg, registration_service)
+        )
+        headers = {"ETag": etag} if etag else {}
+        return json(reg_body, headers=headers)
+
+
 @routes.get("/events/<event_id>/registrations/<registration_id>")
 async def read_registration(
     request: Request,
