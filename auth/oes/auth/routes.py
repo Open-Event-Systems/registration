@@ -80,7 +80,7 @@ async def validate_token(
 
     token = _validate_token(request, access_token_service)
 
-    response_headers = {}
+    response_headers = Header()
 
     if token.sub:
         response_headers["x-account-id"] = token.sub
@@ -91,7 +91,8 @@ async def validate_token(
     if token.role:
         response_headers["x-role"] = token.role
 
-    response_headers["x-scope"] = list(token.scope)
+    for scope in token.scope:
+        response_headers.add("x-scope", scope)
 
     allowed = is_allowed(orig_method, orig_uri, token.scope)
 
