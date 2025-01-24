@@ -53,9 +53,14 @@ func main() {
 		input.From = cfg.From
 	}
 
+	if input.SMTPFrom == "" {
+		input.SMTPFrom = cfg.SMTPFrom
+	}
+
 	tmplResult := env.Render(emailType, input)
 	email := &email.Email{
 		From:        input.From,
+		SMTPFrom:    input.SMTPFrom,
 		To:          input.To,
 		Subject:     input.Subject,
 		Attachments: tmplResult.Attachments.Attachments,
