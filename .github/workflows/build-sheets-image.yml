@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.5.1
         with:
-          images: ghcr.io/waweber/oes-sheets
+          images: ghcr.io/Open-Event-Systems/registration-sheets
           tags: |
             type=raw,value=latest
 
