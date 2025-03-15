@@ -27,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.5.1
         with:
-          images: ghcr.io/waweber/oes-cart
+          images: ghcr.io/Open-Event-Systems/registration-cart
           tags: |
             type=raw,value=latest
 
