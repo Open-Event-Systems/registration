@@ -25,12 +25,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/price-cart", func(w http.ResponseWriter, req *http.Request) {
-		if req.Method != "POST" {
-			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-			return
-		}
-
+	mux.HandleFunc("POST /price-cart", func(w http.ResponseWriter, req *http.Request) {
 		var request structs.PricingRequest
 		err := json.NewDecoder(req.Body).Decode(&request)
 		if err != nil {

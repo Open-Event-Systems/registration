@@ -5,6 +5,7 @@ import (
 	"pricing/internal/config"
 	"pricing/internal/structs"
 
+	"github.com/Open-Event-Systems/gonjaexpr/logic"
 	"github.com/nikolalohinski/gonja/v2/exec"
 )
 
@@ -87,7 +88,12 @@ func (p *defaultPricer) handleRegistration(reg *structs.CartRegistration) (*stru
 }
 
 func (p *defaultPricer) handleLineItem(regCtx *exec.Context, li *config.LineItemConfig) (*structs.LineItem, error) {
-	if !li.When.EvaluateBool(regCtx) {
+	cond, err := li.When.Evaluate(regCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !logic.ToBoolean(cond) {
 		return nil, nil
 	}
 
@@ -115,7 +121,12 @@ func (p *defaultPricer) handleLineItem(regCtx *exec.Context, li *config.LineItem
 }
 
 func (p *defaultPricer) handleModifier(regCtx *exec.Context, m *config.ModifierConfig) (*structs.Modifier, error) {
-	if !m.When.EvaluateBool(regCtx) {
+	cond, err := m.When.Evaluate(regCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !logic.ToBoolean(cond) {
 		return nil, nil
 	}
 
@@ -127,6 +138,10 @@ func (p *defaultPricer) handleModifier(regCtx *exec.Context, m *config.ModifierC
 }
 
 func getDisplayName(regCtx *exec.Context, cfg *config.EventConfig) string {
-	displayName := cfg.DisplayName.Evaluate(regCtx)
+	displayName, err := cfg.DisplayName.Evaluate(regCtx)
+	if err != nil {
+		return ""
+	}
+
 	return fmt.Sprintf("%v", displayName)
 }

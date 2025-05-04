@@ -1,17 +1,17 @@
-FROM golang:1.23.4-alpine3.21 AS build
+FROM golang:1.24.2-alpine3.21 AS build
 WORKDIR /build
-COPY go.mod go.sum pricing.go ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY internal/ internal/
 COPY cmd/ cmd/
 RUN go build ./cmd/pricing
 
 
-FROM alpine:3.21.0
+FROM alpine:3.21.3
 RUN apk add curl python3
 RUN adduser -D app \
     && mkdir -p /config/scripts
-COPY scripts/healthcheck.sh /
+COPY healthcheck.sh /
 RUN chmod u=rwx,g=rx,o=rx /healthcheck.sh
 COPY --from=build /build/pricing /usr/local/bin/
 COPY --chown=app:app pricing.example.yml /config/pricing.yml
