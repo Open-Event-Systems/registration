@@ -7,11 +7,11 @@ packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-attrs = "^24.3.0"
-cattrs = "^24.1.2"
+attrs = "^25.3.0"
+cattrs = "^25.1.1"
 pyjwt = "^2.8.0"
 orjson = "^3.10.3"
-oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "16a9631ab53a16cdd940f2df890d2bc63449d2f5", extras = [
+oes-utils = { git = "https://github.com/Open-Event-Systems/registration", subdirectory = "utils", rev = "11e5814bfea800250af8bd7f71b663bd33eb9370", extras = [
     "typed-settings",
     "sanic",
     "sqlalchemy",
