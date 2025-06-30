@@ -7,13 +7,13 @@ packages = [{include = "oes"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-attrs = "^24.2.0"
-cattrs = "^24.1.2"
+attrs = "^25.3.0"
+cattrs = "^25.1.1"
 typed-settings = "^24.2.0"
 jinja2 = "^3.1.3"
 orjson = "^3.10.3"
 loguru = "^0.7.2"
-oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "16a9631ab53a16cdd940f2df890d2bc63449d2f5", extras = [
+oes-utils = { git = "https://github.com/Open-Event-Systems/registration", subdirectory = "utils", rev = "657cb63d91b49c3af1a36a32a5f1d86dd8b7162f", extras = [
     "typed-settings",
     "sanic",
     "template",
@@ -24,7 +24,7 @@ email-validator = "^2.1.1"
 publicsuffixlist = "^0.10.0.20240503"
 ruamel-yaml = "^0.18.6"
 redis = "^5.0.4"
-sanic = {extras = ["ext"], version = "^23.12.1"}
+sanic = {version = "^25.3.0", extras = ["ext"]}
 uvloop = "^0.19.0"
 hypercorn = "^0.16.0"
 typing-extensions = "^4.12.2"
