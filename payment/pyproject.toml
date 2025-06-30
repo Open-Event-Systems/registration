@@ -7,14 +7,14 @@ packages = [{ include = "oes" }]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-oes-utils = { git = "https://github.com/Open-Event-Systems/registration", subdirectory = "utils", rev = "11e5814bfea800250af8bd7f71b663bd33eb9370", extras = [
+oes-utils = { git = "https://github.com/Open-Event-Systems/registration", subdirectory = "utils", rev = "657cb63d91b49c3af1a36a32a5f1d86dd8b7162f", extras = [
     "typed-settings",
     "sanic",
     "sqlalchemy",
     "template",
 ] }
 sqlalchemy = { extras = ["asyncio"], version = "^2.0.30" }
-sanic = { extras = ["ext"], version = "^23.12.1" }
+sanic = {version = "^25.3.0", extras = ["ext"]}
 alembic = "^1.13.1"
 asyncpg = "^0.29.0"
 uvloop = "^0.19.0"
