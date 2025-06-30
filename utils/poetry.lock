@@ -4,7 +4,7 @@
 name = "aiofiles"
 version = "24.1.0"
 description = "File support for asyncio."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5"},
@@ -237,7 +237,7 @@ test = ["objgraph", "psutil"]
 name = "html5tagger"
 version = "1.3.0"
 description = "Pythonic HTML generation/templating (no template files)"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "html5tagger-1.3.0-py3-none-any.whl", hash = "sha256:ce14313515edffec8ed8a36c5890d023922641171b4e6e5774ad1a74998f5351"},
@@ -248,7 +248,7 @@ files = [
 name = "httptools"
 version = "0.6.4"
 description = "A collection of framework independent HTTP protocol utils."
-optional = true
+optional = false
 python-versions = ">=3.8.0"
 files = [
     {file = "httptools-0.6.4-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:3c73ce323711a6ffb0d247dcd5a550b8babf0f757e86a52558fe5b86d6fefcc0"},
@@ -419,7 +419,7 @@ files = [
 name = "multidict"
 version = "6.6.2"
 description = "multidict implementation"
-optional = true
+optional = false
 python-versions = ">=3.9"
 files = [
     {file = "multidict-6.6.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:cfd9c74d337e710d7ee26e72a7dbedbd60e0c58d3df7c5ccbb748857e977783c"},
@@ -774,13 +774,13 @@ files = [
 
 [[package]]
 name = "sanic"
-version = "23.12.2"
+version = "25.3.0"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "sanic-23.12.2-py3-none-any.whl", hash = "sha256:b65a13ff8c06f3fb5790a132d9b7740cde1d5f70c0fd25c44a587552eeb3dbab"},
-    {file = "sanic-23.12.2.tar.gz", hash = "sha256:4d909aa8a1cb39b0c42a5ec9fe6eb128013cc822bcf4c554326304b9ac427117"},
+    {file = "sanic-25.3.0-py3-none-any.whl", hash = "sha256:fb519b38b4c220569b0e2e868583ffeaffaab96a78b2e42ae78bc56a644a4cd7"},
+    {file = "sanic-25.3.0.tar.gz", hash = "sha256:775d522001ec81f034ec8e4d7599e2175bfc097b8d57884f5e4c9322f5e369bb"},
 ]
 
 [package.dependencies]
@@ -789,6 +789,7 @@ html5tagger = ">=1.2.1"
 httptools = ">=0.0.10"
 multidict = ">=5.0,<7.0"
 sanic-routing = ">=23.12.0"
+setuptools = ">=70.1.0"
 tracerite = ">=1.0.0"
 typing-extensions = ">=4.4.0"
 ujson = {version = ">=1.35", markers = "sys_platform != \"win32\" and implementation_name == \"cpython\""}
@@ -796,23 +797,43 @@ uvloop = {version = ">=0.15.0", markers = "sys_platform != \"win32\" and impleme
 websockets = ">=10.0"
 
 [package.extras]
-all = ["autodocsumm (>=0.2.11)", "bandit", "beautifulsoup4", "chardet (==3.*)", "coverage", "cryptography", "docutils", "enum-tools[sphinx]", "m2r2", "mistune (<2.0.0)", "mypy", "pygments", "pytest (==7.1.*)", "pytest-benchmark", "pytest-sanic", "ruff", "sanic-testing (>=23.6.0)", "slotscheck (>=0.8.0,<1)", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
-dev = ["bandit", "beautifulsoup4", "chardet (==3.*)", "coverage", "cryptography", "docutils", "mypy", "pygments", "pytest (==7.1.*)", "pytest-benchmark", "pytest-sanic", "ruff", "sanic-testing (>=23.6.0)", "slotscheck (>=0.8.0,<1)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
-docs = ["autodocsumm (>=0.2.11)", "docutils", "enum-tools[sphinx]", "m2r2", "mistune (<2.0.0)", "pygments", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)"]
+all = ["autodocsumm (>=0.2.11)", "bandit", "beautifulsoup4", "chardet (==3.*)", "coverage", "cryptography", "docutils", "enum-tools[sphinx]", "m2r2", "mistune (<2.0.0)", "mypy", "pygments", "pytest (>=8.2.2)", "pytest-benchmark", "pytest-sanic", "ruff", "sanic-testing (>=23.6.0)", "slotscheck (>=0.8.0,<1)", "sphinx (>=2.1.2)", "sphinx_rtd_theme (>=0.4.3)", "towncrier", "tox", "types-ujson", "uvicorn"]
+dev = ["bandit", "beautifulsoup4", "chardet (==3.*)", "coverage", "cryptography", "docutils", "mypy", "pygments", "pytest (>=8.2.2)", "pytest-benchmark", "pytest-sanic", "ruff", "sanic-testing (>=23.6.0)", "slotscheck (>=0.8.0,<1)", "towncrier", "tox", "types-ujson", "uvicorn"]
+docs = ["autodocsumm (>=0.2.11)", "docutils", "enum-tools[sphinx]", "m2r2", "mistune (<2.0.0)", "pygments", "sphinx (>=2.1.2)", "sphinx_rtd_theme (>=0.4.3)"]
 ext = ["sanic-ext"]
 http3 = ["aioquic"]
-test = ["bandit", "beautifulsoup4", "chardet (==3.*)", "coverage", "docutils", "mypy", "pygments", "pytest (==7.1.*)", "pytest-benchmark", "pytest-sanic", "ruff", "sanic-testing (>=23.6.0)", "slotscheck (>=0.8.0,<1)", "types-ujson", "uvicorn (<0.15.0)"]
+test = ["bandit", "beautifulsoup4", "chardet (==3.*)", "coverage", "docutils", "mypy", "pygments", "pytest (>=8.2.2)", "pytest-benchmark", "pytest-sanic", "ruff", "sanic-testing (>=23.6.0)", "slotscheck (>=0.8.0,<1)", "types-ujson", "uvicorn"]
 
 [[package]]
 name = "sanic-routing"
 version = "23.12.0"
 description = "Core routing component for Sanic"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "sanic-routing-23.12.0.tar.gz", hash = "sha256:1dcadc62c443e48c852392dba03603f9862b6197fc4cba5bbefeb1ace0848b04"},
     {file = "sanic_routing-23.12.0-py3-none-any.whl", hash = "sha256:1558a72afcb9046ed3134a5edae02fc1552cff08f0fff2e8d5de0877ea43ed73"},
 ]
+
+[[package]]
+name = "setuptools"
+version = "80.9.0"
+description = "Easily download, build, install, upgrade, and uninstall Python packages"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "setuptools-80.9.0-py3-none-any.whl", hash = "sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922"},
+    {file = "setuptools-80.9.0.tar.gz", hash = "sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c"},
+]
+
+[package.extras]
+check = ["pytest-checkdocs (>=2.4)", "pytest-ruff (>=0.2.1)", "ruff (>=0.8.0)"]
+core = ["importlib_metadata (>=6)", "jaraco.functools (>=4)", "jaraco.text (>=3.7)", "more_itertools", "more_itertools (>=8.8)", "packaging (>=24.2)", "platformdirs (>=4.2.2)", "tomli (>=2.0.1)", "wheel (>=0.43.0)"]
+cover = ["pytest-cov"]
+doc = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "pygments-github-lexers (==0.0.5)", "pyproject-hooks (!=1.1)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-favicon", "sphinx-inline-tabs", "sphinx-lint", "sphinx-notfound-page (>=1,<2)", "sphinx-reredirects", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
+enabler = ["pytest-enabler (>=2.2)"]
+test = ["build[virtualenv] (>=1.0.3)", "filelock (>=3.4.0)", "ini2toml[lite] (>=0.14)", "jaraco.develop (>=7.21)", "jaraco.envs (>=2.2)", "jaraco.path (>=3.7.2)", "jaraco.test (>=5.5)", "packaging (>=24.2)", "pip (>=19.1)", "pyproject-hooks (!=1.1)", "pytest (>=6,!=8.1.*)", "pytest-home (>=0.5)", "pytest-perf", "pytest-subprocess", "pytest-timeout", "pytest-xdist (>=3)", "tomli-w (>=1.0.0)", "virtualenv (>=13.0.0)", "wheel (>=0.44.0)"]
+type = ["importlib_metadata (>=7.0.2)", "jaraco.develop (>=7.21)", "mypy (==1.14.*)", "pytest-mypy"]
 
 [[package]]
 name = "sqlalchemy"
@@ -954,7 +975,7 @@ files = [
 name = "tracerite"
 version = "1.1.3"
 description = "Human-readable HTML tracebacks for Python exceptions"
-optional = true
+optional = false
 python-versions = "*"
 files = [
     {file = "tracerite-1.1.3-py3-none-any.whl", hash = "sha256:811d8e2e0fb563b77340eebe2e9f7b324acfe01e09ea58db8bcaecb24327c823"},
@@ -1002,7 +1023,7 @@ files = [
 name = "ujson"
 version = "5.10.0"
 description = "Ultra fast JSON encoder and decoder for Python"
-optional = true
+optional = false
 python-versions = ">=3.8"
 files = [
     {file = "ujson-5.10.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:2601aa9ecdbee1118a1c2065323bda35e2c5a2cf0797ef4522d485f9d3ef65bd"},
@@ -1089,7 +1110,7 @@ files = [
 name = "uvloop"
 version = "0.21.0"
 description = "Fast implementation of asyncio event loop on top of libuv"
-optional = true
+optional = false
 python-versions = ">=3.8.0"
 files = [
     {file = "uvloop-0.21.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ec7e6b09a6fdded42403182ab6b832b71f4edaf7f37a9a0e371a01db5f0cb45f"},
@@ -1140,7 +1161,7 @@ test = ["aiohttp (>=3.10.5)", "flake8 (>=5.0,<6.0)", "mypy (>=0.800)", "psutil",
 name = "websockets"
 version = "15.0.1"
 description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
-optional = true
+optional = false
 python-versions = ">=3.9"
 files = [
     {file = "websockets-15.0.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d63efaa0cd96cf0c5fe4d581521d9fa87744540d4bc999ae6e08595a1014b45b"},
@@ -1238,4 +1259,4 @@ typed-settings = ["ruamel-yaml", "typed-settings"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "7f93f81d1e19d6221f28d57970943baba3445bbf17ec6abfb3124da02df8887b"
+content-hash = "370e43d3eba3b27950bc12c2d5b34e6f815fe7b13027dfaccc71d6703de6d66f"

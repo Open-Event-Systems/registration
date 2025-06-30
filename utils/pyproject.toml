@@ -9,7 +9,7 @@ packages = [{ include = "oes" }]
 python = "^3.10"
 loguru = "^0.7.2"
 sqlalchemy = { version = "^2.0.29", optional = true }
-sanic = { version = "^23.12.1", optional = true }
+sanic = "^25.3.0"
 attrs = "^25.3.0"
 cattrs = "^25.1.1"
 typed-settings = { version = "^24.2.0", optional = true }
