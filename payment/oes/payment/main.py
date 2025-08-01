@@ -4,6 +4,7 @@ import os
 import sys
 
 from cattrs import Converter
+from httpx import AsyncClient
 from oes.payment.config import get_config
 from oes.payment.mq import MQService
 from oes.payment.service import PaymentRepo, PaymentServicesSvc, PaymentSvc
@@ -58,5 +59,15 @@ def create_app() -> Sanic:
     @app.after_server_stop
     async def stop_mq(app: Sanic):
         await app.ctx.mq.stop()
+
+    @app.before_server_start
+    async def start_httpx(app: Sanic):
+        client = AsyncClient()
+        app.ctx.httpx_client = client
+        app.ext.dependency(client)
+
+    @app.after_server_stop
+    async def stop_httpx(app: Sanic):
+        await app.ctx.httpx_client.aclose()
 
     return app

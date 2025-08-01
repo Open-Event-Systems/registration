@@ -4,22 +4,27 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
+import stripe
 from attrs import frozen
 from cattrs import Converter
 from oes.payment.payment import (
     CancelPaymentRequest,
     CreatePaymentRequest,
+    ParsedWebhook,
     PaymentMethodConfig,
+    PaymentMethodError,
     PaymentResult,
     PaymentStateError,
     PaymentStatus,
     UpdatePaymentRequest,
+    WebhookRequest,
+    WebhookUpdateRequest,
 )
 from oes.payment.types import CartData
-from stripe import Customer, CustomerService, StripeClient
-from stripe.checkout import SessionService
+from stripe import Customer, CustomerService, SignatureVerificationError, StripeClient
+from stripe.checkout import Session, SessionService
 
 
 @frozen
@@ -28,6 +33,7 @@ class StripeConfig:
 
     publishable_key: str
     secret_key: str
+    webhook_secret: str | None = None
 
 
 @frozen
@@ -46,10 +52,17 @@ class StripeService:
 
     name = "stripe"
 
-    def __init__(self, publishable_key: str, secret_key: str, converter: Converter):
+    def __init__(
+        self,
+        publishable_key: str,
+        secret_key: str,
+        webhook_secret: str,
+        converter: Converter,
+    ):
         self.publishable_key = publishable_key
         self.converter = converter
         self.stripe = StripeClient(api_key=secret_key)
+        self._webhook_secret = webhook_secret
 
     def get_payment_method(
         self, config: PaymentMethodConfig, /
@@ -92,6 +105,42 @@ class StripeService:
             external_id=res.id,
             status=PaymentStatus.canceled,
             date_created=datetime.fromtimestamp(res.created).astimezone(),
+        )
+
+    def parse_webhook(self, request: WebhookRequest, /) -> ParsedWebhook:
+        """Parse a webhook."""
+        header = request.headers.get("stripe-signature", "")
+
+        try:
+            event = stripe.Webhook.construct_event(
+                request.body, header, self._webhook_secret
+            )
+        except ValueError as e:
+            raise PaymentMethodError("Invalid body") from e
+        except SignatureVerificationError as e:
+            raise PaymentMethodError("Invalid signature") from e
+
+        if event.type == "checkout.session.completed":
+            data = cast(Session, event.data.object)
+            parsed = ParsedWebhook("stripe", data.id, data)
+            return parsed
+        else:
+            raise PaymentMethodError("Unsupported event")
+
+    async def handle_webhook(self, request: WebhookUpdateRequest, /) -> PaymentResult:
+        """Handle a webhook."""
+        data = Session.construct_from(dict(request.body), None)
+
+        if data.status != "complete":
+            raise PaymentStateError("Payment not complete")
+
+        return PaymentResult(
+            id=request.id,
+            service=request.service,
+            external_id=data.id,
+            status=PaymentStatus.completed,
+            date_closed=datetime.now().astimezone(),
+            date_created=datetime.fromtimestamp(data.created).astimezone(),
         )
 
 
@@ -222,5 +271,8 @@ def make_stripe_payment_service(
     """Create a Square payment service."""
     stripe_config = converter.structure(config, StripeConfig)
     return StripeService(
-        stripe_config.publishable_key, stripe_config.secret_key, converter
+        stripe_config.publishable_key,
+        stripe_config.secret_key,
+        stripe_config.webhook_secret or "",
+        converter,
     )
