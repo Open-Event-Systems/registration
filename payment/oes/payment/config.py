@@ -33,6 +33,9 @@ class Config:
     amqp_url: str = ts.option(
         default="amqp://guest:guest@localhost/", help="the AMQP server URL"
     )
+    registration_service_url = ts.option(
+        default="http://registration:8000", help="the registration service URL"
+    )
 
     services: Mapping[str, Mapping[str, Any]] = ts.option(
         factory=dict, help="payment service configuration"

@@ -72,6 +72,7 @@ class UpdatablePaymentService(PaymentService, Protocol):
         ...
 
 
+@runtime_checkable
 class WebhookPaymentService(PaymentService, Protocol):
     """A payment service that receives webhooks."""
 

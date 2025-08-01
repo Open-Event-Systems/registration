@@ -4,7 +4,11 @@ from collections.abc import Iterator, Mapping, Sequence
 from datetime import datetime
 from typing import Any
 
+import orjson
 from attrs import frozen
+from httpx import AsyncClient
+from loguru import logger
+from oes.payment.config import Config
 from oes.payment.mq import MQService
 from oes.payment.payment import (
     Payment,
@@ -13,6 +17,7 @@ from oes.payment.payment import (
     PaymentOption,
     PaymentServiceUnsupported,
     PaymentStatus,
+    WebhookRequest,
 )
 from oes.payment.pricing import PricingResult
 from oes.payment.service import PaymentRepo, PaymentServicesSvc, PaymentSvc
@@ -92,6 +97,7 @@ class PaymentResultResponse:
     id: str
     service: str
     status: PaymentStatus
+    prev_status: PaymentStatus | None
     body: Mapping[str, Any]
 
 
@@ -194,6 +200,7 @@ async def create_payment(
         id=res.id,
         service=res.service,
         status=res.status,
+        prev_status=None,
         body=res.body,
     )
 
@@ -233,6 +240,8 @@ async def update_payment(
     body = request.json or {}
     async with transaction():
         payment = raise_not_found(await repo.get(payment_id, lock=True))
+        prev_status = payment.status
+
         try:
             res = await payment_svc.update_payment(payment, body)
         except PaymentNotFoundError:
@@ -241,13 +250,67 @@ async def update_payment(
             raise NotFound
         except PaymentMethodError as e:
             raise UnprocessableEntity(str(e))
-    await _send_receipt(message_queue, payment)
+
+    if prev_status != PaymentStatus.completed and res.status == PaymentStatus.completed:
+        await _send_receipt(message_queue, payment)
     return PaymentResultResponse(
         id=res.id,
         service=res.service,
         status=res.status,
+        prev_status=prev_status,
         body=res.body,
     )
+
+
+@routes.post("/webhooks/payment/<service_id>")
+async def update_payment_webhook(
+    request: Request,
+    service_id: str,
+    repo: PaymentRepo,
+    payment_svc: PaymentSvc,
+    message_queue: MQService,
+    config: Config,
+    httpx_client: AsyncClient,
+) -> HTTPResponse:
+    """Update a payment via webhook."""
+    req = WebhookRequest(request.url, request.headers, request.body)
+    send_receipt = False
+    async with transaction():
+        try:
+            prev_status, payment, _ = await payment_svc.update_payment_from_webhook(
+                service_id, req
+            )
+        except PaymentServiceUnsupported:
+            raise NotFound
+        except PaymentNotFoundError:
+            # ignore calls for unknown payments
+            logger.info(f"Received {service_id} webhook for unknown payment ID")
+            return HTTPResponse(status=204)
+        except PaymentMethodError as e:
+            logger.error(f"Payment failed: {e}")
+            raise UnprocessableEntity(str(e))
+
+        if (
+            prev_status != PaymentStatus.completed
+            and payment.status == PaymentStatus.completed
+        ):
+            # This completes the transaction
+            res_status = await _apply_cart_change(
+                httpx_client, config.registration_service_url, payment.cart_data
+            )
+            if 200 <= res_status < 300:
+                send_receipt = True
+            elif res_status == 409:
+                logger.error("Failed to apply changes during webhook update")
+            else:
+                raise RuntimeError(
+                    f"Got unexpected http status from registration service: {res_status}"
+                )
+
+    if send_receipt:
+        await _send_receipt(message_queue, payment)
+
+    return HTTPResponse(status=204)
 
 
 async def _send_receipt(message_queue: MQService, payment: Payment):
@@ -289,6 +352,7 @@ async def cancel_payment(
 ) -> PaymentResultResponse:
     """Cancel a payment."""
     payment = raise_not_found(await repo.get(payment_id, lock=True))
+    prev_status = payment.status
     try:
         res = await payment_svc.cancel_payment(payment)
     except PaymentServiceUnsupported:
@@ -297,6 +361,7 @@ async def cancel_payment(
         id=res.id,
         service=res.service,
         status=res.status,
+        prev_status=prev_status,
         body=res.body,
     )
 
@@ -326,3 +391,31 @@ async def healthcheck(
     if not message_queue.ready:
         return HTTPResponse(status=503)
     return HTTPResponse(status=204)
+
+
+async def _apply_cart_change(
+    httpx_client: AsyncClient,
+    registration_service_url: str,
+    cart_data: CartData,
+) -> int:
+    event_id = cart_data["event_id"]
+    regs = cart_data.get("registrations", [])
+    updated_regs = [r["new"] for r in regs]
+    access_codes = {
+        r["id"]: r["meta"]["access_code"]
+        for r in regs
+        if "meta" in r and r["meta"].get("access_code")
+    }
+
+    req_body = {
+        "changes": [dict(r) for r in updated_regs],
+        "access_codes": access_codes or {},
+    }
+    req_json = orjson.dumps(req_body)
+
+    res = await httpx_client.post(
+        f"{registration_service_url}/events" f"/{event_id}/batch-change/apply",
+        content=req_json,
+        headers={"Content-Type": "application/json"},
+    )
+    return res.status_code

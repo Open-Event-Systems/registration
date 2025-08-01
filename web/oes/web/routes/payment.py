@@ -54,7 +54,21 @@ async def update_payment(
     )
 
     if res_status == 409:
-        resp = json(_strip_cart_error(res_body), status=res_status)
+        payment = await payment_service.get_payment(payment_id)
+        if payment and payment["status"] == "completed":
+            # hack: payment already completed, just return success silently
+            resp = json(
+                {
+                    "id": payment["id"],
+                    "service": payment["service"],
+                    "status": payment["status"],
+                    "prev_status": payment["status"],
+                    "body": {},
+                },
+                200,
+            )
+        else:
+            resp = json(_strip_cart_error(res_body), status=res_status)
     elif res_status == 200:
         payment = res_body.get("payment", {})
         resp = json(payment, status=res_status)
