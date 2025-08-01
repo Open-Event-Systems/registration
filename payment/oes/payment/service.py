@@ -11,14 +11,22 @@ from oes.payment.payment import (
     CreatePaymentRequest,
     Payment,
     PaymentMethodConfig,
+    PaymentNotFoundError,
     PaymentResult,
     PaymentServiceUnsupported,
     PaymentStatus,
     UpdatePaymentRequest,
+    WebhookRequest,
+    WebhookUpdateRequest,
     make_receipt_id,
 )
 from oes.payment.pricing import PricingResult
-from oes.payment.types import CartData, PaymentService, UpdatablePaymentService
+from oes.payment.types import (
+    CartData,
+    PaymentService,
+    UpdatablePaymentService,
+    WebhookPaymentService,
+)
 from oes.utils.logic import evaluate
 from oes.utils.orm import Repo
 from sqlalchemy import ColumnElement, func, or_, select
@@ -28,6 +36,21 @@ class PaymentRepo(Repo[Payment, str]):
     """Payment repository."""
 
     entity_type = Payment
+
+    async def get_by_external_id(
+        self, service: str, external_id: str, *, lock: bool = False
+    ) -> Payment | None:
+        """Get a payment by external ID."""
+        q = select(Payment).where(
+            Payment.service == service,
+            Payment.external_id == external_id,
+        )
+
+        if lock:
+            q = q.with_for_update()
+
+        res = await self.session.execute(q)
+        return res.scalar()
 
     async def get_by_receipt_id(self, receipt_id: str) -> Payment | None:
         """Get a payment by receipt ID."""
@@ -210,6 +233,46 @@ class PaymentSvc:
             payment.receipt_id = make_receipt_id()
 
         return res
+
+    async def update_payment_from_webhook(
+        self, service_id: str, webhook: WebhookRequest
+    ) -> tuple[PaymentStatus, Payment, PaymentResult]:
+        """Update a payment from a webhook.
+
+        Returns:
+            The previous payment status, the updated :class:`Payment`, and the
+            :class:`PaymentResult`.
+        """
+        svc = self._get_service(service_id)
+        if not isinstance(svc, WebhookPaymentService):
+            raise PaymentServiceUnsupported
+
+        parsed = svc.parse_webhook(webhook)
+
+        payment = await self.repo.get_by_external_id(
+            service_id, parsed.external_id, lock=True
+        )
+        if not payment:
+            raise PaymentNotFoundError
+
+        prev_status = payment.status
+
+        req = WebhookUpdateRequest(
+            payment.id,
+            service=payment.service,
+            external_id=payment.external_id,
+            body=parsed.body,
+        )
+        res = await svc.handle_webhook(req)
+        payment.status = res.status
+        payment.date_closed = res.date_closed
+        payment.data = {**payment.data, **res.data}
+
+        # assign receipt ID
+        if payment.receipt_id is None and payment.status == PaymentStatus.completed:
+            payment.receipt_id = make_receipt_id()
+
+        return prev_status, payment, res
 
     async def cancel_payment(self, payment: Payment) -> PaymentResult:
         """Cancel a payment."""

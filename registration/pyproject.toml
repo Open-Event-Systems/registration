@@ -7,8 +7,8 @@ packages = [{include = "oes"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-attrs = "^24.3.0"
-cattrs = "^24.1.2"
+attrs = "^25.3.0"
+cattrs = "^25.1.1"
 orjson = "^3.10.1"
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.29"}
 typing-extensions = "^4.11.0"
@@ -16,11 +16,11 @@ psycopg2-binary = "^2.9.9"
 asyncpg = "^0.29.0"
 alembic = "^1.13.1"
 uvloop = "^0.19.0"
-sanic = {extras = ["ext"], version = "^23.12.1"}
+sanic = {version = "^25.3.0", extras = ["ext"]}
 loguru = "^0.7.2"
 typed-settings = {extras = ["attrs", "cattrs"], version = "^24.2.0"}
 ruamel-yaml = "^0.18.6"
-oes-utils = { git = "https://github.com/waweber/registration-monorepo-tmp.git", subdirectory = "utils", rev = "16a9631ab53a16cdd940f2df890d2bc63449d2f5", extras = [
+oes-utils = { git = "https://github.com/Open-Event-Systems/registration", subdirectory = "utils", rev = "657cb63d91b49c3af1a36a32a5f1d86dd8b7162f", extras = [
     "typed-settings",
     "sanic",
     "sqlalchemy",

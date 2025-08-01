@@ -157,6 +157,11 @@ POLICY: PolicyTree = {
     "self-service": {
         "events": {"/": Scope.selfservice, "*": {"registrations": Scope.selfservice}},
     },
+    "webhooks": {
+        "payment": {
+            "*": (lambda p, m, s: True),
+        }
+    },
 }
 
 

@@ -12,9 +12,13 @@ RUN go build ./cmd/print-worker
 
 
 FROM base AS target
-RUN apk add font-noto-all
-RUN apk add chromium chromium-swiftshader cups-client
+RUN apk add font-noto-all font-noto-cjk font-noto-cjk-extra
+RUN apk add curl chromium chromium-swiftshader cups-client
 RUN adduser -D app
+RUN mkdir /home/app/.fonts \
+    && curl -L -o /home/app/.fonts/BabelStoneHan.ttf https://www.babelstone.co.uk/Fonts/Download/BabelStoneHan.ttf \
+    && chown -R app:app /home/app/.fonts \
+    && su app -c "fc-cache -fv"
 RUN mkdir /config /data && chown app:app /data
 COPY --chown=app:app print.example.yml /config/print.yml
 COPY --chown=app:app template.example.html /config/template.html
