@@ -199,7 +199,7 @@ class StripeCheckoutPaymentMethod:
                             "name": pr_li.name or "Registration",
                             "description": pr_li.description or "",
                         },
-                        "unit_amount": request.pricing_result.total_price,
+                        "unit_amount": pr_li.total_price,
                     },
                     "quantity": 1,
                 }
