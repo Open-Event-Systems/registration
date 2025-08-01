@@ -13,6 +13,7 @@ from oes.payment.payment import (
     CancelPaymentRequest,
     CreatePaymentRequest,
     ParsedWebhook,
+    Payment,
     PaymentMethodConfig,
     PaymentMethodError,
     PaymentResult,
@@ -71,6 +72,18 @@ class StripeService:
             self.publishable_key, self.converter, self.stripe
         )
 
+    def get_payment_info_url(self, payment: Payment, /) -> str | None:
+        """Get the URL to a payment info page."""
+        payment_id = payment.data.get("payment_id")
+        live_mode = payment.data.get("live_mode")
+
+        if not payment_id:
+            return None
+        elif live_mode:
+            return f"https://dashboard.stripe.com/payments/{payment_id}"
+        else:
+            return f"https://dashboard.stripe.com/test/payments/{payment_id}"
+
     async def update_payment(self, request: UpdatePaymentRequest) -> PaymentResult:
         """Update a payment."""
         checkout = await self.stripe.checkout.sessions.retrieve_async(
@@ -85,12 +98,16 @@ class StripeService:
         else:
             raise PaymentStateError
 
+        payment_id = checkout.payment_intent
+        live_mode = checkout.livemode
+
         res = PaymentResult(
             id=request.id,
             service=request.service,
             external_id=checkout.id,
             date_created=datetime.fromtimestamp(checkout.created).astimezone(),
             status=status,
+            data={**request.data, "payment_id": payment_id, "live_mode": live_mode},
         )
 
         return res
@@ -134,6 +151,9 @@ class StripeService:
         if data.status != "complete":
             raise PaymentStateError("Payment not complete")
 
+        payment_id = data.payment_intent
+        live_mode = data.livemode
+
         return PaymentResult(
             id=request.id,
             service=request.service,
@@ -141,6 +161,7 @@ class StripeService:
             status=PaymentStatus.completed,
             date_closed=datetime.now().astimezone(),
             date_created=datetime.fromtimestamp(data.created).astimezone(),
+            data={"payment_id": payment_id, "live_mode": live_mode},
         )
 
 
