@@ -83,11 +83,13 @@ class Registration(dict[str, Any]):
         return self["date_updated"]
 
     def has_permission(self, account_id: str | None, email: str | None) -> bool:
+        reg_email = self.get("email")
+        reg_email = reg_email.lower() if reg_email else reg_email
         return (
             bool(account_id)
             and account_id == self.get("account_id")
             or bool(email)
-            and email == self.get("email")
+            and email.lower() == reg_email
             or not account_id
             and not email  # when auth is disabled
         )
