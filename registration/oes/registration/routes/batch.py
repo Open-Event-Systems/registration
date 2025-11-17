@@ -97,7 +97,9 @@ async def apply_changes(
                 )
             except IntegrityError:
                 await transaction.rollback()
-                return json(None, status=409)
+                response = response_converter.make_response(CheckResultBody(results))
+                response.status = 409
+                return response
             payment_success, payment_status_code, payment_res = (
                 await _handle_payment(
                     req_body.payment_url, req_body.payment_body, service
