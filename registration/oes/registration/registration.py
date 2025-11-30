@@ -404,7 +404,7 @@ def _get_search_clauses(query: str) -> Iterable[ColumnElement]:
     if len(parts) == 2:
         yield _get_full_name_search_clause(parts[0], parts[1])
     else:
-        if re.match(r"^[0-9]+$", query):
+        if re.match(r"^[0-9]{1,9}$", query):
             yield _get_number_search_clause(int(query))
         if "@" not in query:
             yield _get_name_search_clause(query)
