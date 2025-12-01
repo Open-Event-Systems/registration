@@ -9,6 +9,7 @@ from oes.payment.config import Config
 from oes.payment.payment import (
     CancelPaymentRequest,
     CreatePaymentRequest,
+    ParsedWebhook,
     Payment,
     PaymentMethodConfig,
     PaymentNotFoundError,
@@ -234,14 +235,13 @@ class PaymentSvc:
 
         return res
 
-    async def update_payment_from_webhook(
+    async def parse_webhook_request(
         self, service_id: str, webhook: WebhookRequest
-    ) -> tuple[PaymentStatus, Payment, PaymentResult]:
-        """Update a payment from a webhook.
+    ) -> tuple[ParsedWebhook, Payment]:
+        """Parse a payment update from a webhook request.
 
         Returns:
-            The previous payment status, the updated :class:`Payment`, and the
-            :class:`PaymentResult`.
+            The parsed request and the :class:`Payment`.
         """
         svc = self._get_service(service_id)
         if not isinstance(svc, WebhookPaymentService):
@@ -249,8 +249,25 @@ class PaymentSvc:
 
         parsed = svc.parse_webhook(webhook)
 
+        payment = await self.repo.get_by_external_id(service_id, parsed.external_id)
+        if not payment:
+            raise PaymentNotFoundError
+        return parsed, payment
+
+    async def update_payment_from_webhook(
+        self, webhook: ParsedWebhook
+    ) -> tuple[PaymentStatus, Payment, PaymentResult]:
+        """Update a payment from a webhook.
+
+        Returns:
+            The previous payment status, the updated :class:`Payment`, and the
+            :class:`PaymentResult`.
+        """
+        svc = self._get_service(webhook.service)
+        if not isinstance(svc, WebhookPaymentService):
+            raise PaymentServiceUnsupported
         payment = await self.repo.get_by_external_id(
-            service_id, parsed.external_id, lock=True
+            webhook.service, webhook.external_id, lock=True
         )
         if not payment:
             raise PaymentNotFoundError
@@ -261,7 +278,7 @@ class PaymentSvc:
             payment.id,
             service=payment.service,
             external_id=payment.external_id,
-            body=parsed.body,
+            body=webhook.body,
         )
         res = await svc.handle_webhook(req)
         payment.status = res.status

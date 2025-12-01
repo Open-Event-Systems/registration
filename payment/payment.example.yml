@@ -3,6 +3,7 @@
 db_url: postgresql+asyncpg:///payment
 amqp_url: amqp://guest:guest@localhost/
 registration_service_url: http://registration:8000
+payment_service_url: http://payment:8000
 
 services:
   system: {}
