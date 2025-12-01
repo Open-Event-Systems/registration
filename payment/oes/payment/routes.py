@@ -266,20 +266,19 @@ async def update_payment(
 async def update_payment_webhook(
     request: Request,
     service_id: str,
-    repo: PaymentRepo,
     payment_svc: PaymentSvc,
-    message_queue: MQService,
     config: Config,
     httpx_client: AsyncClient,
 ) -> HTTPResponse:
     """Update a payment via webhook."""
     req = WebhookRequest(request.url, request.headers, request.body)
-    send_receipt = False
     async with transaction():
         try:
-            prev_status, payment, _ = await payment_svc.update_payment_from_webhook(
-                service_id, req
-            )
+            _parsed, payment = await payment_svc.parse_webhook_request(service_id, req)
+            payment_id = payment.id
+            prev_status = payment.status
+            cart_data = payment.cart_data
+            await transaction.rollback()
         except PaymentServiceUnsupported:
             raise NotFound
         except PaymentNotFoundError:
@@ -290,25 +289,21 @@ async def update_payment_webhook(
             logger.error(f"Payment failed: {e}")
             raise UnprocessableEntity(str(e))
 
-        if (
-            prev_status != PaymentStatus.completed
-            and payment.status == PaymentStatus.completed
-        ):
-            # This completes the transaction
-            res_status = await _apply_cart_change(
-                httpx_client, config.registration_service_url, payment.cart_data
+    if prev_status == PaymentStatus.pending:
+        # Apply batch change
+        res_status = await _apply_cart_change(
+            httpx_client,
+            payment_id,
+            config.registration_service_url,
+            config.payment_service_url,
+            cart_data,
+        )
+        if res_status == 409:
+            logger.error("Failed to apply changes during webhook update")
+        elif res_status >= 300:
+            raise RuntimeError(
+                f"Got unexpected http status from registration service: {res_status}"
             )
-            if 200 <= res_status < 300:
-                send_receipt = True
-            elif res_status == 409:
-                logger.error("Failed to apply changes during webhook update")
-            else:
-                raise RuntimeError(
-                    f"Got unexpected http status from registration service: {res_status}"
-                )
-
-    if send_receipt:
-        await _send_receipt(message_queue, payment)
 
     return HTTPResponse(status=204)
 
@@ -395,7 +390,9 @@ async def healthcheck(
 
 async def _apply_cart_change(
     httpx_client: AsyncClient,
+    payment_id: str,
     registration_service_url: str,
+    payment_service_url: str,
     cart_data: CartData,
 ) -> int:
     event_id = cart_data["event_id"]
@@ -410,6 +407,7 @@ async def _apply_cart_change(
     req_body = {
         "changes": [dict(r) for r in updated_regs],
         "access_codes": access_codes or {},
+        "payment_url": f"{payment_service_url}/payments/{payment_id}/update",
     }
     req_json = orjson.dumps(req_body)
 

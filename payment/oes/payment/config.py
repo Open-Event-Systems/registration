@@ -36,6 +36,9 @@ class Config:
     registration_service_url = ts.option(
         default="http://registration:8000", help="the registration service URL"
     )
+    payment_service_url = ts.option(
+        default="http://payment:8000", help="the URL of this service"
+    )
 
     services: Mapping[str, Mapping[str, Any]] = ts.option(
         factory=dict, help="payment service configuration"

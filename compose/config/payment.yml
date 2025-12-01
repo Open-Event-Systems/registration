@@ -3,6 +3,7 @@
 db_url: postgresql+asyncpg://registration:changeit@db/payment
 amqp_url: amqp://registration:changeit@rabbitmq/
 registration_service_url: http://registration:8000
+payment_service_url: http://payment:8000
 
 services:
   mock: {}
