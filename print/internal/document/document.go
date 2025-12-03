@@ -1,22 +1,27 @@
 package document
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
-	cmdExec "os/exec"
+	"net/http"
+	"os"
 	"print/internal/logic"
 
+	"github.com/OpenPrinting/goipp"
 	"github.com/nikolalohinski/gonja/v2/config"
 	"github.com/nikolalohinski/gonja/v2/exec"
 	"github.com/nikolalohinski/gonja/v2/loaders"
 )
 
 type PrintConfig struct {
-	Server      string           `yaml:"server"`
-	Destination string           `yaml:"destination"`
-	When        *logic.Condition `yaml:"when"`
+	URL      string           `yaml:"url"`
+	Username string           `yaml:"username"`
+	Password string           `yaml:"password"`
+	When     *logic.Condition `yaml:"when"`
 }
 
 type DocumentTypeConfig struct {
@@ -129,18 +134,70 @@ func (c *PrintConfig) EvaluateCondition(change map[string]any) bool {
 
 // Submit a print job
 func (c *PrintConfig) Submit(filename string) error {
-	cmd := cmdExec.Command(
-		"lp",
-		"-h",
-		c.Server,
-		"-d",
-		c.Destination,
-		"--",
-		filename,
-	)
-	err := cmd.Run()
+	f, err := os.Open(filename)
 	if err != nil {
 		return err
 	}
+	defer f.Close()
+	err = submitFile(c.URL, c.Username, c.Password, f)
+	return err
+}
+
+func submitFile(printerURL string, username string, password string, file io.Reader) error {
+	req := goipp.NewRequest(goipp.DefaultVersion, goipp.OpPrintJob, 1)
+
+	// https://datatracker.ietf.org/doc/html/rfc8011#section-4.2.1.1
+	req.Operation.Add(goipp.MakeAttr("attributes-charset", goipp.TagCharset, goipp.String("utf-8")))
+	req.Operation.Add(goipp.MakeAttr("attributes-natural-language", goipp.TagLanguage, goipp.String("en")))
+	req.Operation.Add(goipp.MakeAttr("printer-uri", goipp.TagURI, goipp.String(printerURL)))
+
+	if username != "" {
+		req.Operation.Add(goipp.MakeAttr("requesting-user-name", goipp.TagName, goipp.String(username)))
+	}
+
+	req.Operation.Add(goipp.MakeAttr("document-format", goipp.TagMimeType, goipp.String("application/pdf")))
+
+	ippData, err := req.EncodeBytes()
+	if err != nil {
+		return err
+	}
+
+	body := io.MultiReader(bytes.NewBuffer(ippData), file)
+
+	httpReq, err := http.NewRequest("POST", printerURL, body)
+	if err != nil {
+		return err
+	}
+
+	httpReq.Header.Set("content-type", goipp.ContentType)
+	httpReq.Header.Set("accept", goipp.ContentType)
+
+	if username != "" {
+		httpReq.SetBasicAuth(username, password)
+	}
+
+	resp, err := http.DefaultClient.Do(httpReq)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var ippResp goipp.Message
+	err = ippResp.Decode(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if goipp.Status(ippResp.Code) != goipp.StatusOk {
+		return fmt.Errorf("unexpected IPP status: %d %s", ippResp.Code, goipp.Status(ippResp.Code))
+	}
+
 	return nil
 }

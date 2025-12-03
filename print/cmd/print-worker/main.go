@@ -206,5 +206,5 @@ func printDocument(printCfg *document.PrintConfig, eventId string, id string, do
 		return
 	}
 
-	log.Printf("submitted %s/%s/%s to %s/%s", eventId, id, docType.Id, printCfg.Server, printCfg.Destination)
+	log.Printf("submitted %s/%s/%s to %s", eventId, id, docType.Id, printCfg.URL)
 }
