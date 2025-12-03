@@ -12,7 +12,8 @@ events:
         dependencies: [version]
         when: status == "created"
         print:
-          - server: localhost
-            destination: example
+          - server: ipp://localhost/printers/example
+            username: example
+            password: changeit
             when: true
 chromium-exec: chromium-browser

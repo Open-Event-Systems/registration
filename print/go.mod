@@ -5,6 +5,7 @@ go 1.23.0
 toolchain go1.24.4
 
 require (
+	github.com/OpenPrinting/goipp v1.2.0
 	github.com/nikolalohinski/gonja/v2 v2.3.4
 	github.com/rabbitmq/amqp091-go v1.10.0
 	gopkg.in/yaml.v3 v3.0.1
