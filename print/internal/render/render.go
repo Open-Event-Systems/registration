@@ -40,6 +40,7 @@ func (r *Renderer) Render(inputFileName string, outputFileName string) error {
 		"--headless=new",
 		"--disable-gpu",
 		"--no-sandbox",
+		"--disable-dev-shm-usage",
 		"--print-to-pdf="+tmpFile.Name(),
 		"--no-pdf-header-footer",
 		"--virtual-time-budget=5000",
