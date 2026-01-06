@@ -189,6 +189,10 @@ def get_interview_data(
             "event": event.get_template_context(),
             "account_id": account_id,
             "email": email,
+            "user": {
+                "role": None,
+                "email": email,
+            },
             "access_code": access_code.code if access_code else None,
         },
     )

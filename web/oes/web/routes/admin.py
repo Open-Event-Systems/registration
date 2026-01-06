@@ -36,6 +36,7 @@ async def start_direct_admin_add_interview(
     interview_service: InterviewService,
 ) -> InterviewState:
     """Start an admin add interview."""
+    user_email = request.headers.get("x-email")
     user_role = request.headers.get("x-role")
     event = raise_not_found(config.events.get(event_id))
     opt = raise_not_found(
@@ -54,6 +55,10 @@ async def start_direct_admin_add_interview(
     context = {
         "event_id": event_id,
         "event": event.get_template_context(),
+        "user": {
+            "role": user_role,
+            "email": user_email,
+        },
     }
 
     data = {
@@ -87,6 +92,7 @@ async def start_direct_admin_change_interview(
     interview_service: InterviewService,
 ) -> InterviewState:
     """Start an admin change interview."""
+    user_email = request.headers.get("x-email")
     user_role = request.headers.get("x-role")
     event = raise_not_found(config.events.get(event_id))
     reg = raise_not_found(
@@ -108,6 +114,10 @@ async def start_direct_admin_change_interview(
     context = {
         "event_id": event_id,
         "event": event.get_template_context(),
+        "user": {
+            "role": user_role,
+            "email": user_email,
+        },
     }
 
     data = {
@@ -135,6 +145,7 @@ async def start_cart_admin_add_interview(
     interview_service: InterviewService,
 ) -> InterviewState:
     """Start an admin interview to add to a cart."""
+    user_email = request.headers.get("x-email")
     user_role = request.headers.get("x-role")
 
     cart = raise_not_found(await cart_service.get_cart(cart_id))
@@ -157,6 +168,10 @@ async def start_cart_admin_add_interview(
     context = {
         "event_id": event.id,
         "event": event.get_template_context(),
+        "user": {
+            "role": user_role,
+            "email": user_email,
+        },
     }
 
     data = {
@@ -191,6 +206,7 @@ async def start_cart_admin_change_interview(
     cart_service: CartService,
 ) -> InterviewState:
     """Start an admin change interview to add to a cart."""
+    user_email = request.headers.get("x-email")
     user_role = request.headers.get("x-role")
     cart = raise_not_found(await cart_service.get_cart(cart_id))
     event = raise_not_found(config.events.get(cart["cart"]["event_id"]))
@@ -214,6 +230,10 @@ async def start_cart_admin_change_interview(
     context = {
         "event_id": event.id,
         "event": event.get_template_context(),
+        "user": {
+            "role": user_role,
+            "email": user_email,
+        },
     }
 
     data = {
