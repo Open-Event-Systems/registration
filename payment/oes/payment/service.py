@@ -90,7 +90,7 @@ class PaymentRepo(Repo[Payment, str]):
         if q:
             query = query.where(_get_search(q))
 
-        query.order_by(Payment.date_created.desc())
+        query = query.order_by(Payment.date_created.desc())
         query = query.limit(20)
 
         res = await self.session.execute(query)
