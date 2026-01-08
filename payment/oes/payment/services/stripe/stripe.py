@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from datetime import datetime
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 import stripe
 from attrs import frozen
@@ -14,6 +14,7 @@ from oes.payment.payment import (
     CreatePaymentRequest,
     ParsedWebhook,
     Payment,
+    PaymentError,
     PaymentMethodConfig,
     PaymentMethodError,
     PaymentResult,
@@ -24,7 +25,13 @@ from oes.payment.payment import (
     WebhookUpdateRequest,
 )
 from oes.payment.types import CartData
-from stripe import Customer, CustomerService, SignatureVerificationError, StripeClient
+from stripe import (
+    Customer,
+    CustomerService,
+    PaymentIntentService,
+    SignatureVerificationError,
+    StripeClient,
+)
 from stripe.checkout import Session, SessionService
 
 
@@ -38,14 +45,40 @@ class StripeConfig:
 
 
 @frozen
-class StripePaymentBody:
-    """Stripe payment body."""
+class StripeMethodOptions:
+    """Stripe payment method options."""
 
+    method: Literal["terminal", "checkout"] | None = None
+    reader_id: str | None = None
+
+
+@frozen
+class StripeCheckoutPaymentBody:
+    """Stripe checkout payment body."""
+
+    type: Literal["checkout"]
     id: str
     publishable_key: str
-    client_secret: str
     amount: int
     currency: str
+    client_secret: str
+
+
+@frozen
+class StripeTerminalPaymentBody:
+    """Stripe terminal payment body."""
+
+    type: Literal["terminal"]
+
+
+@frozen
+class StripePaymentData:
+    """Stripe payment data."""
+
+    type: Literal["checkout", "terminal"] | None = None
+    payment_id: str | None = None
+    reader_id: str | None = None
+    live_mode: bool | None = None
 
 
 class StripeService:
@@ -67,10 +100,21 @@ class StripeService:
 
     def get_payment_method(
         self, config: PaymentMethodConfig, /
-    ) -> StripeCheckoutPaymentMethod:
-        return StripeCheckoutPaymentMethod(
-            self.publishable_key, self.converter, self.stripe
-        )
+    ) -> StripeCheckoutPaymentMethod | StripeTerminalPaymentMethod:
+        options = self.converter.structure(config.options, StripeMethodOptions)
+        if options.method == "terminal":
+            return StripeTerminalPaymentMethod(
+                self.stripe,
+                self.publishable_key,
+                self.converter,
+                options.reader_id or "",
+            )
+        elif options.method == "checkout" or options.method is None:
+            return StripeCheckoutPaymentMethod(
+                self.stripe, self.publishable_key, self.converter
+            )
+        else:
+            raise PaymentError(f"Unknown payment type: {options.method}")
 
     def get_payment_info_url(self, payment: Payment, /) -> str | None:
         """Get the URL to a payment info page."""
@@ -86,6 +130,15 @@ class StripeService:
 
     async def update_payment(self, request: UpdatePaymentRequest) -> PaymentResult:
         """Update a payment."""
+        typ = request.data.get("type")
+        if typ == "terminal":
+            return await self._update_terminal(request)
+        elif typ == "checkout" or typ is None:
+            return await self._update_checkout(request)
+        else:
+            raise PaymentError(f"Unknown payment type: {typ}")
+
+    async def _update_checkout(self, request: UpdatePaymentRequest) -> PaymentResult:
         checkout = await self.stripe.checkout.sessions.retrieve_async(
             request.external_id
         )
@@ -112,17 +165,59 @@ class StripeService:
 
         return res
 
-    async def cancel_payment(self, request: CancelPaymentRequest, /) -> PaymentResult:
-        """Cancel a payment."""
-        res = await self.stripe.checkout.sessions.expire_async(request.external_id)
-        # TODO: handle errors
-        return PaymentResult(
+    async def _update_terminal(self, request: UpdatePaymentRequest) -> PaymentResult:
+        payment_intent = await self.stripe.payment_intents.retrieve_async(
+            request.external_id
+        )
+        # TODO: handle not found
+
+        if payment_intent.status == "succeeded":
+            status = PaymentStatus.completed
+        elif payment_intent.status == "canceled":
+            status = PaymentStatus.canceled
+        else:
+            status = PaymentStatus.pending
+
+        live_mode = payment_intent.livemode
+
+        res = PaymentResult(
             id=request.id,
             service=request.service,
-            external_id=res.id,
-            status=PaymentStatus.canceled,
-            date_created=datetime.fromtimestamp(res.created).astimezone(),
+            external_id=payment_intent.id,
+            date_created=datetime.fromtimestamp(payment_intent.created).astimezone(),
+            status=status,
+            data={**request.data, "payment_id": request.id, "live_mode": live_mode},
         )
+
+        return res
+
+    async def cancel_payment(self, request: CancelPaymentRequest, /) -> PaymentResult:
+        """Cancel a payment."""
+        typ = request.data.get("type")
+        if typ == "terminal":
+            res = await self.stripe.payment_intents.cancel_async(request.external_id)
+            reader_id = request.data.get("reader_id")
+            if reader_id:
+                await self.stripe.terminal.readers.cancel_action_async(reader_id)
+            return PaymentResult(
+                id=request.id,
+                service=request.service,
+                external_id=res.id,
+                status=PaymentStatus.canceled,
+                date_created=datetime.fromtimestamp(res.created).astimezone(),
+            )
+        elif typ == "checkout" or typ is None:
+            res = await self.stripe.checkout.sessions.expire_async(request.external_id)
+            # TODO: handle errors
+            return PaymentResult(
+                id=request.id,
+                service=request.service,
+                external_id=res.id,
+                status=PaymentStatus.canceled,
+                date_created=datetime.fromtimestamp(res.created).astimezone(),
+            )
+        else:
+            raise PaymentError(f"Unknown payment type: {typ}")
 
     def parse_webhook(self, request: WebhookRequest, /) -> ParsedWebhook:
         """Parse a webhook."""
@@ -165,19 +260,52 @@ class StripeService:
         )
 
 
+class _StripeCustomerHandler:
+    """Customer creation."""
+
+    def __init__(self, stripe: StripeClient):
+        self.stripe = stripe
+
+    async def get_or_create_customer(self, request: CreatePaymentRequest) -> str | None:
+        """Get or create a customer from a payment."""
+        cart_cust = _cart_to_customer(request.cart_data) or {}
+        email = cart_cust.get("email") if cart_cust else None
+        existing = await self._get_customer(email) if email else None
+        if existing:
+            return existing.id
+        return await self._create_customer(request)
+
+    async def _create_customer(self, request: CreatePaymentRequest) -> str | None:
+        cust = _cart_to_customer(request.cart_data)
+        if not cust:
+            return None
+
+        res = await self.stripe.customers.create_async(params=cust)
+        return res.id
+
+    async def _get_customer(self, email: str) -> Customer | None:
+        res = await self.stripe.customers.list_async(
+            params={
+                "email": email.strip().lower(),
+            }
+        )
+        return next(iter(res.data), None)
+
+
 class StripeCheckoutPaymentMethod:
     """Stripe checkout payment method."""
 
     def __init__(
-        self, publishable_key: str, converter: Converter, stripe: StripeClient
+        self, stripe: StripeClient, publishable_key: str, converter: Converter
     ):
+        self.stripe = stripe
         self.publishable_key = publishable_key
         self.converter = converter
-        self.stripe = stripe
+        self._customer = _StripeCustomerHandler(stripe)
 
     async def create_payment(self, request: CreatePaymentRequest) -> PaymentResult:
         """Create a payment."""
-        cust_id = await self._get_or_create_customer(request)
+        cust_id = await self._customer.get_or_create_customer(request)
 
         params: SessionService.CreateParams = {
             "currency": request.pricing_result.currency,
@@ -211,12 +339,17 @@ class StripeCheckoutPaymentMethod:
 
         assert checkout.client_secret
 
-        body = StripePaymentBody(
+        body = StripeCheckoutPaymentBody(
+            type="checkout",
             id=checkout.id,
             publishable_key=self.publishable_key,
             client_secret=checkout.client_secret,
             amount=request.pricing_result.total_price,
             currency=request.pricing_result.currency,
+        )
+
+        data = StripePaymentData(
+            type="checkout",
         )
 
         return PaymentResult(
@@ -226,33 +359,64 @@ class StripeCheckoutPaymentMethod:
             status=PaymentStatus.pending,
             external_id=checkout.id,
             body=self.converter.unstructure(body),
+            data=self.converter.unstructure(data),
         )
 
-    async def _get_or_create_customer(
-        self, request: CreatePaymentRequest
-    ) -> str | None:
-        cart_cust = _cart_to_customer(request.cart_data) or {}
-        email = cart_cust.get("email") if cart_cust else None
-        existing = await self._get_customer(email) if email else None
-        if existing:
-            return existing.id
-        return await self._create_customer(request)
 
-    async def _create_customer(self, request: CreatePaymentRequest) -> str | None:
-        cust = _cart_to_customer(request.cart_data)
-        if not cust:
-            return None
+class StripeTerminalPaymentMethod:
+    """Stripe terminal payment method."""
 
-        res = await self.stripe.customers.create_async(params=cust)
-        return res.id
+    def __init__(
+        self,
+        stripe: StripeClient,
+        publishable_key: str,
+        converter: Converter,
+        reader_id: str,
+    ):
+        self.stripe = stripe
+        self.publishable_key = publishable_key
+        self.converter = converter
+        self._customer = _StripeCustomerHandler(stripe)
+        self.reader_id = reader_id
 
-    async def _get_customer(self, email: str) -> Customer | None:
-        res = await self.stripe.customers.list_async(
-            params={
-                "email": email.strip().lower(),
-            }
+    async def create_payment(self, request: CreatePaymentRequest) -> PaymentResult:
+        """Create a payment."""
+        cust_id = await self._customer.get_or_create_customer(request)
+
+        payment_params: PaymentIntentService.CreateParams = {
+            "amount": request.pricing_result.total_price,
+            "currency": request.pricing_result.currency.lower(),
+            "payment_method_types": ["card_present"],
+        }
+
+        if cust_id:
+            payment_params["customer"] = cust_id
+
+        payment = await self.stripe.payment_intents.create_async(payment_params)
+
+        await self.stripe.terminal.readers.process_payment_intent_async(
+            self.reader_id,
+            {
+                "payment_intent": payment.id,
+            },
         )
-        return next(iter(res.data), None)
+
+        body = StripeTerminalPaymentBody(type="terminal")
+        data = StripePaymentData(
+            type="terminal",
+            payment_id=payment.id,
+            reader_id=self.reader_id,
+        )
+
+        return PaymentResult(
+            id=request.id,
+            service=request.service,
+            date_created=datetime.fromtimestamp(payment.created).astimezone(),
+            status=PaymentStatus.pending,
+            external_id=payment.id,
+            body=self.converter.unstructure(body),
+            data=self.converter.unstructure(data),
+        )
 
 
 def _cart_to_customer(cart_data: CartData) -> CustomerService.CreateParams | None:
