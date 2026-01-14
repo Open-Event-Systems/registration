@@ -16,7 +16,13 @@ from oes.utils.logic import (
     make_value_or_evaluable_structure_fn,
     make_when_condition_structure_fn,
 )
-from oes.utils.template import Expression, make_expression_structure_fn
+from oes.utils.template import (
+    Expression,
+    make_expression_structure_fn,
+    template_filter_date,
+    template_filter_datetime,
+    template_fn_get_now,
+)
 from sqlalchemy import URL, make_url
 
 ENTRY_POINT_GROUP = "oes.payment.services"
@@ -72,6 +78,9 @@ _converter = ts.converters.get_default_cattrs_converter()
 _converter.register_structure_hook(URL, lambda v, t: make_url(v))
 
 _jinja2_env = ImmutableSandboxedEnvironment()
+_jinja2_env.globals["get_now"] = template_fn_get_now
+_jinja2_env.filters["datetime"] = template_filter_datetime
+_jinja2_env.filters["date"] = template_filter_date
 
 _converter.register_structure_hook(
     Expression, make_expression_structure_fn(_jinja2_env)
