@@ -33,9 +33,7 @@ class SuspendPaymentService:
         """Create a payment."""
         ext_id = nanoid.generate(size=14)
         now = datetime.now().astimezone()
-        import sys
 
-        print("config", self.config, file=sys.stderr)
         return PaymentResult(
             id=request.id,
             service=self.id,
